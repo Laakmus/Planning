@@ -1,0 +1,53 @@
+## BACKEND (SUPABASE BaaS)
+
+### Guidelines for TYPESCRIPT + SUPABASE
+
+#### SUPABASE CLIENT
+
+- Use Supabase client from `src/db/supabase.ts` with auto-generated types from `database.types.ts`
+- All database operations through Supabase Client (no direct SQL queries in frontend)
+- Use Row Level Security (RLS) policies for authorization - don't implement auth logic in code
+- Leverage Supabase Auth for user authentication (email/password, OAuth)
+- Use Supabase Storage for file uploads (offer images)
+- Implement Realtime subscriptions for chat functionality
+- Handle errors from Supabase operations gracefully with try-catch blocks
+
+#### COMMON OPERATIONS
+
+```typescript
+// Example: Fetching offers with type safety
+const { data: offers, error } = await supabase
+  .from('offers')
+  .select('*')
+  .eq('status', 'active')
+
+// Example: Creating an offer
+const { data: newOffer, error } = await supabase
+  .from('offers')
+  .insert([{ title: 'Book', category: 'books', city: 'Warsaw', user_id: userId }])
+  .select()
+  .single()
+
+// Example: Uploading image to Storage
+const { data, error } = await supabase.storage
+  .from('offer-images')
+  .upload(`${offerId}/${filename}`, file)
+```
+
+### Guidelines for DATABASE
+
+#### POSTGRES (via SUPABASE)
+
+- All tables have Row Level Security (RLS) enabled
+- Use JSONB columns for semi-structured data
+- Triggers automatically manage `updated_at` timestamps
+- Database migrations in `supabase/migrations/`
+- After schema changes, regenerate types: `supabase gen types typescript --local > src/db/database.types.ts`
+
+
+### Backend and Database
+
+- Use Supabase for backend services, including athentication and database interactions.
+- Follow Supabase guidelines for security and performance.
+- Use Zod schemas to validate dataa exchanged with the backend.
+- Use supabse from context. locals in Astro routes instead of importing supabaseClient directly.

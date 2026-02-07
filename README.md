@@ -1,46 +1,63 @@
-# Astro Starter Kit: Basics
+# Planning - System Zleceń Transportowych
 
-```sh
-npm create astro@latest -- --template basics
+Wewnętrzna aplikacja webowa do planowania i wystawiania zleceń transportowych.
+
+## Stack technologiczny
+
+- **Frontend:** Astro 5.x + React 19 + TypeScript + Tailwind CSS 4
+- **Backend/API:** Node.js + TypeScript
+- **Baza danych:** PostgreSQL (Supabase w środowisku testowym, firmowa infrastruktura w produkcji)
+- **Dane słownikowe:** Integracja z firmowym ERP
+- **CI/CD:** GitHub Actions
+- **Przeglądarka docelowa:** Chrome (laptopy)
+
+## Wymagania
+
+- Node.js 24+
+- npm
+
+## Instalacja
+
+```bash
+npm install
 ```
 
-> 🧑‍🚀 **Seasoned astronaut?** Delete this file. Have fun!
+## Skrypty
 
-## 🚀 Project Structure
+| Polecenie            | Opis                                      |
+| :------------------- | :---------------------------------------- |
+| `npm run dev`        | Uruchamia serwer deweloperski (port 4321) |
+| `npm run build`      | Buduje wersję produkcyjną do `./dist/`    |
+| `npm run preview`    | Podgląd wersji produkcyjnej               |
+| `npm run lint`       | Sprawdza kod (ESLint)                     |
+| `npm run lint:fix`   | Naprawia błędy ESLint                     |
+| `npm run format`     | Formatuje kod (Prettier)                  |
+| `npm run format:check` | Sprawdza formatowanie                   |
 
-Inside of your Astro project, you'll see the following folders and files:
+## Struktura projektu
 
-```text
+```
 /
-├── public/
-│   └── favicon.svg
-├── src
-│   ├── assets
-│   │   └── astro.svg
-│   ├── components
-│   │   └── Welcome.astro
-│   ├── layouts
-│   │   └── Layout.astro
-│   └── pages
-│       └── index.astro
+├── public/              # Pliki statyczne
+├── src/
+│   ├── assets/          # Zasoby (obrazy, ikony)
+│   ├── components/      # Komponenty (Astro + React)
+│   ├── layouts/         # Layouty stron
+│   ├── pages/           # Strony aplikacji (routing Astro)
+│   └── styles/          # Style globalne (Tailwind CSS)
+├── test/                # Testy
+├── .ai/                 # Dokumentacja projektu (PRD, schemat DB, reguły)
+├── astro.config.mjs     # Konfiguracja Astro
+├── eslint.config.js     # Konfiguracja ESLint
+├── tsconfig.json        # Konfiguracja TypeScript
 └── package.json
 ```
 
-To learn more about the folder structure of an Astro project, refer to [our guide on project structure](https://docs.astro.build/en/basics/project-structure/).
+## Dokumentacja
 
-## 🧞 Commands
+Szczegółowa dokumentacja projektu znajduje się w katalogu `.ai/`:
 
-All commands are run from the root of the project, from a terminal:
-
-| Command                   | Action                                           |
-| :------------------------ | :----------------------------------------------- |
-| `npm install`             | Installs dependencies                            |
-| `npm run dev`             | Starts local dev server at `localhost:4321`      |
-| `npm run build`           | Build your production site to `./dist/`          |
-| `npm run preview`         | Preview your build locally, before deploying     |
-| `npm run astro ...`       | Run CLI commands like `astro add`, `astro check` |
-| `npm run astro -- --help` | Get help using the Astro CLI                     |
-
-## 👀 Want to learn more?
-
-Feel free to check [our documentation](https://docs.astro.build) or jump into our [Discord server](https://astro.build/chat).
+- `prd.md` - Product Requirements Document
+- `db-plan.md` - Schemat bazy danych (tabele, relacje, indeksy, RLS)
+- `rules/tech-stack.md` - Opis stacku technologicznego
+- `rules/` - Reguły i konwencje dla kodowania, testów, komponentów UI

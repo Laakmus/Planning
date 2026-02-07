@@ -1,0 +1,564 @@
+### 1. Lista tabel z kolumnami, typami danych i ograniczeniami
+
+#### 1.1 `transport_orders` – zlecenia transportowe (nagłówek)
+
+Tabela główna, centralna dla całego systemu.
+
+- **id**: `uuid`  
+  - PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
+- **order_no**: `text`  
+  - biznesowy numer zlecenia (np. `ZT2026/0001`), `NOT NULL`, `UNIQUE`  
+  - **nigdy niezmieniany** po utworzeniu (blokowane triggerem)
+- **status_code**: `text`  
+  - aktualny status zlecenia, `NOT NULL`  
+  - FK → `order_statuses.code`
+- **transport_type_code**: `text`  
+  - typ transportu (kraj, eksport, eksport kontenerowy, import), `NOT NULL`  
+  - FK → `transport_types.code`
+- **currency_code**: `text`  
+  - kod waluty (`PLN`, `EUR`, `USD`), `NOT NULL`  
+  - `CHECK (currency_code IN ('PLN','EUR','USD'))`
+- **price_amount**: `numeric(12,2)`  
+  - globalna cena transportu; może być `NULL` dla wierszy roboczych
+- **total_load_tons**: `numeric(12,3)`  
+  - łączna ilość ładunku w tonach; może być `NULL` na etapie planowania
+- **summary_route**: `varchar(500)`  
+  - skrótowy opis trasy do widoku planistycznego (np. `PL: Kęty → DE: Hamburg`)
+- **first_loading_date**: `date`  
+  - data pierwszego punktu załadunku (denormalizacja z `order_stops`)
+- **first_loading_time**: `time without time zone`  
+  - godzina pierwszego załadunku
+- **first_unloading_date**: `date`  
+  - data pierwszego rozładunku
+- **first_unloading_time**: `time without time zone`  
+  - godzina pierwszego rozładunku
+- **transport_year**: `integer`  
+  - rok transportu (np. z `first_loading_date`) – pomoc do raportów
+- **first_loading_country**: `text`  
+  - kraj pierwszego załadunku (snapshot)
+- **first_unloading_country**: `text`  
+  - kraj pierwszego rozładunku (snapshot)
+- **carrier_company_id**: `uuid`  
+  - przewoźnik; FK → `companies.id`, może być `NULL` na etapie roboczym
+- **carrier_name_snapshot**: `varchar(500)`  
+  - nazwa przewoźnika użyta w zleceniu (zabezpieczenie względem zmian w słowniku)
+- **carrier_location_name_snapshot**: `varchar(500)`  
+  - nazwa lokalizacji przewoźnika (jeśli używana)
+- **carrier_address_snapshot**: `varchar(500)`  
+  - adres przewoźnika (jeśli potrzebny na dokumencie)
+- **shipper_location_id**: `uuid`  
+  - główna lokalizacja nadawcy (opcjonalnie), FK → `locations.id`
+- **shipper_name_snapshot**: `varchar(500)`  
+  - snapshot nazwy nadawcy
+- **shipper_address_snapshot**: `varchar(500)`  
+  - snapshot adresu nadawcy
+- **receiver_location_id**: `uuid`  
+  - główna lokalizacja odbiorcy (opcjonalnie), FK → `locations.id`
+- **receiver_name_snapshot**: `varchar(500)`  
+  - snapshot nazwy odbiorcy
+- **receiver_address_snapshot**: `varchar(500)`  
+  - snapshot adresu odbiorcy
+- **vehicle_variant_code**: `text`  
+  - wybrany wariant pojazdu (typ + pojemność), `NOT NULL`  
+  - FK → `vehicle_variants.code`
+- **required_documents_text**: `varchar(500)`  
+  - wymagane dokumenty dla kierowcy (np. `CMR, WZ, BDO`)
+- **general_notes**: `varchar(500)`  
+  - ogólne uwagi do zlecenia
+- **complaint_reason**: `varchar(500)`  
+  - powód reklamacji (gdy status = reklamacja), opcjonalne
+- **sender_contact_name**: `varchar(200)`  
+  - imię i nazwisko osoby wysyłającej zlecenie (snapshot)
+- **sender_contact_phone**: `varchar(100)`  
+  - numer telefonu osoby wysyłającej (snapshot)
+- **sender_contact_email**: `varchar(320)`  
+  - email osoby wysyłającej (snapshot)
+- **search_text**: `text`  
+  - zdenormalizowany tekst do globalnego wyszukiwania (numer, firmy, lokalizacje, uwagi itd.)
+- **search_vector**: `tsvector`  
+  - opcjonalny wektor pełnotekstowy wygenerowany z `search_text`
+- **created_at**: `timestamptz`  
+  - `DEFAULT now()`, `NOT NULL`
+- **created_by_user_id**: `uuid`  
+  - identyfikator użytkownika (z Supabase Auth), `NOT NULL`
+- **updated_at**: `timestamptz`  
+  - `DEFAULT now()`, `NOT NULL`
+- **updated_by_user_id**: `uuid`  
+  - ostatni modyfikujący użytkownik, może być `NULL` przy tworzeniu
+- **locked_by_user_id**: `uuid`  
+  - kto aktualnie edytuje zlecenie (blokada współbieżna), może być `NULL`
+- **locked_at**: `timestamptz`  
+  - kiedy blokada została ustawiona, może być `NULL`
+
+Klucz główny:  
+- PK(`id`)
+
+Najważniejsze ograniczenia:  
+- `order_no` – `UNIQUE`, trigger blokujący zmianę tej kolumny po utworzeniu.  
+- Spójność `status_code` z logiką biznesową egzekwowana dodatkowo w triggerach (np. brak edycji pól biznesowych, gdy status w zbiorze {zrealizowane, anulowane}).
+
+---
+
+#### 1.2 `order_stops` – punkty trasy (załadunki / rozładunki)
+
+- **id**: `uuid`  
+  - PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
+- **order_id**: `uuid`  
+  - FK → `transport_orders.id`, `NOT NULL`, `ON DELETE CASCADE`
+- **kind**: `text`  
+  - typ punktu: `LOADING` lub `UNLOADING`, `NOT NULL`  
+  - `CHECK (kind IN ('LOADING','UNLOADING'))`
+- **sequence_no**: `smallint`  
+  - pozycja na trasie (1,2,3,...) w ramach danego zlecenia, `NOT NULL`
+- **date_local**: `date`  
+  - data załadunku/rozładunku (lokalna), może być `NULL` w wersji roboczej
+- **time_local**: `time without time zone`  
+  - godzina lokalna, może być `NULL`
+- **location_id**: `uuid`  
+  - FK → `locations.id`, może być `NULL` (puste planistyczne)
+- **location_name_snapshot**: `varchar(500)`  
+  - snapshot nazwy lokalizacji
+- **company_name_snapshot**: `varchar(500)`  
+  - snapshot nazwy firmy
+- **address_snapshot**: `varchar(500)`  
+  - snapshot pełnego adresu (kraj, miasto, ulica, numer, kod)
+- **notes**: `varchar(500)`  
+  - uwagi do punktu trasy
+
+Klucze i ograniczenia:  
+- PK(`id`)  
+- `UNIQUE(order_id, sequence_no)` – każdy numer sekwencji w ramach zlecenia jest unikalny.  
+- (opcjonalnie w przyszłości) trigger ograniczający maksymalnie 8 punktów załadunku i 3 rozładunku na zlecenie.
+
+---
+
+#### 1.3 `order_items` – pozycje towarowe w zleceniu
+
+- **id**: `uuid`  
+  - PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
+- **order_id**: `uuid`  
+  - FK → `transport_orders.id`, `NOT NULL`, `ON DELETE CASCADE`
+- **product_id**: `uuid`  
+  - FK → `products.id`, może być `NULL` (np. pozycja wprowadzona tylko tekstowo)
+- **product_name_snapshot**: `varchar(500)`  
+  - snapshot nazwy towaru
+- **default_loading_method_snapshot**: `varchar(100)`  
+  - snapshot domyślnego sposobu załadunku dla tego towaru (np. `PALETA`, `LUZEM`)
+- **quantity_tons**: `numeric(12,3)`  
+  - ilość w tonach, może być `NULL` dla wierszy czysto planistycznych
+- **notes**: `varchar(500)`  
+  - uwagi do towaru (np. informacja o paletach/sztukach)
+
+Klucze i ograniczenia:  
+- PK(`id`)  
+- `CHECK (quantity_tons IS NULL OR quantity_tons >= 0)`
+
+---
+
+#### 1.4 `order_status_history` – historia zmian statusów
+
+- **id**: `bigserial`  
+  - PK, `NOT NULL`
+- **order_id**: `uuid`  
+  - FK → `transport_orders.id`, `NOT NULL`, `ON DELETE CASCADE`
+- **old_status_code**: `text`  
+  - poprzedni status, `NOT NULL`, FK → `order_statuses.code`
+- **new_status_code**: `text`  
+  - nowy status, `NOT NULL`, FK → `order_statuses.code`
+- **changed_by_user_id**: `uuid`  
+  - użytkownik zmieniający status, `NOT NULL`
+- **changed_at**: `timestamptz`  
+  - `DEFAULT now()`, `NOT NULL`
+
+PK:  
+- PK(`id`)
+
+---
+
+#### 1.5 `order_change_log` – log zmian pól zlecenia
+
+- **id**: `bigserial`  
+  - PK, `NOT NULL`
+- **order_id**: `uuid`  
+  - FK → `transport_orders.id`, `NOT NULL`, `ON DELETE CASCADE`
+- **field_name**: `varchar(100)`  
+  - nazwa zmienionego pola (np. `price_amount`, `first_loading_date`), `NOT NULL`
+- **old_value**: `text`  
+  - poprzednia wartość w formie tekstowej/JSON
+- **new_value**: `text`  
+  - nowa wartość
+- **changed_by_user_id**: `uuid`  
+  - użytkownik wykonujący zmianę, `NOT NULL`
+- **changed_at**: `timestamptz`  
+  - `DEFAULT now()`, `NOT NULL`
+
+PK:  
+- PK(`id`)
+
+---
+
+#### 1.6 `companies` – firmy (przewoźnicy, nadawcy, odbiorcy)
+
+- **id**: `uuid`  
+  - PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
+- **erp_id**: `text`  
+  - identyfikator firmy w ERP, może być `NULL`, `UNIQUE` gdy nie-NULL
+- **name**: `varchar(500)`  
+  - nazwa firmy, `NOT NULL`
+- **type**: `text`  
+  - rola firmy (np. `CARRIER`, `SHIPPER`, `RECEIVER`, `INTERNAL`), opcjonalne
+- **tax_id**: `varchar(50)`  
+  - NIP lub inny identyfikator podatkowy, opcjonalne
+- **notes**: `varchar(500)`  
+  - uwagi do firmy
+- **is_active**: `boolean`  
+  - czy firma jest aktywna i powinna być dostępna w słownikach, `NOT NULL`, `DEFAULT true`
+
+PK:  
+- PK(`id`)  
+Unikalność:  
+- częściowy indeks unikalny na `erp_id` (`WHERE erp_id IS NOT NULL`)
+
+---
+
+#### 1.7 `locations` – lokalizacje / oddziały firm
+
+- **id**: `uuid`  
+  - PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
+- **erp_id**: `text`  
+  - identyfikator lokalizacji w ERP, może być `NULL`, `UNIQUE` gdy nie-NULL
+- **company_id**: `uuid`  
+  - FK → `companies.id`, `NOT NULL`
+- **name**: `varchar(500)`  
+  - nazwa lokalizacji (np. `NORD Główny`, `NORD oddział w Kętach`), `NOT NULL`
+- **country**: `varchar(100)`  
+  - kraj (tekst z danych słownikowych/ERP), `NOT NULL`
+- **city**: `varchar(200)`  
+  - miasto, `NOT NULL`
+- **street_and_number**: `varchar(200)`  
+  - ulica + numer budynku/lokalu, `NOT NULL`
+- **postal_code**: `varchar(20)`  
+  - kod pocztowy, `NOT NULL`
+- **notes**: `varchar(500)`  
+  - dodatkowe informacje o lokalizacji
+- **is_active**: `boolean`  
+  - czy lokalizacja jest aktywna, `NOT NULL`, `DEFAULT true`
+
+PK:  
+- PK(`id`)  
+Unikalność:  
+- częściowy indeks unikalny na `erp_id` (`WHERE erp_id IS NOT NULL`)
+
+---
+
+#### 1.8 `products` – towary z domyślnym typem załadunku
+
+(połączenie słowników towarów i typów załadunku)
+
+- **id**: `uuid`  
+  - PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
+- **erp_id**: `text`  
+  - identyfikator towaru w ERP, może być `NULL`, `UNIQUE` gdy nie-NULL
+- **name**: `varchar(500)`  
+  - nazwa towaru, `NOT NULL`
+- **description**: `varchar(500)`  
+  - krótki opis/kategoria, opcjonalne
+- **default_loading_method_code**: `text`  
+  - domyślny sposób załadunku (np. `PALETA`, `PALETA_BIGBAG`, `LUZEM`, `KOSZE`), `NOT NULL`  
+  - `CHECK (default_loading_method_code IN ('PALETA','PALETA_BIGBAG','LUZEM','KOSZE'))` – lista może być rozszerzana przy zmianie schematu
+- **is_active**: `boolean`  
+  - czy towar jest aktywny, `NOT NULL`, `DEFAULT true`
+
+PK:  
+- PK(`id`)  
+Unikalność:  
+- częściowy indeks unikalny na `erp_id` (`WHERE erp_id IS NOT NULL`)
+
+---
+
+#### 1.9 `transport_types` – typy transportu
+
+- **code**: `text`  
+  - kod typu (`PL`, `EXP`, `EXP_K`, `IMP`), `PRIMARY KEY`
+- **name**: `varchar(200)`  
+  - nazwa opisowa, `NOT NULL`
+- **description**: `varchar(500)`  
+  - opis pomocniczy, opcjonalne
+- **is_active**: `boolean`  
+  - flaga aktywności, `NOT NULL`, `DEFAULT true`
+
+PK:  
+- PK(`code`)
+
+---
+
+#### 1.10 `order_statuses` – statusy zleceń
+
+- **code**: `text`  
+  - kod statusu (`ROB`, `WYS`, `KOR`, `KOR_WYS`, `ZRE`, `ANL`, `REK` lub tekstowe kody wg uznania), `PRIMARY KEY`
+- **name**: `varchar(200)`  
+  - nazwa opisowa (np. `robocze`, `wysłane`), `NOT NULL`
+- **view_group**: `text`  
+  - do której zakładki należy (`CURRENT`, `COMPLETED`, `CANCELLED`), `NOT NULL`
+- **is_editable**: `boolean`  
+  - czy w tym statusie wolno edytować dane zlecenia, `NOT NULL`
+- **sort_order**: `smallint`  
+  - kolejność wyświetlania, opcjonalna
+
+PK:  
+- PK(`code`)
+
+---
+
+#### 1.11 `vehicle_variants` – typy pojazdów + pojemności
+
+(połączenie typów pojazdów i pojemności)
+
+- **code**: `text`  
+  - techniczny kod wariantu (np. `HAK_24T`, `FIRANKA_24T`), `PRIMARY KEY`
+- **name**: `varchar(200)`  
+  - nazwa opisowa wariantu (np. `hakowiec 24t`), `NOT NULL`
+- **vehicle_type**: `varchar(100)`  
+  - ogólny typ pojazdu (np. `HAKOWIEC`, `FIRANKA`, `RUCHOMA_PODLOGA`), `NOT NULL`
+- **capacity_tons**: `numeric(12,3)`  
+  - nośność w tonach, `NOT NULL`, `CHECK (capacity_tons > 0)`
+- **description**: `varchar(500)`  
+  - dodatkowe parametry (np. objętość, długość naczepy), opcjonalne
+- **is_active**: `boolean`  
+  - flaga aktywności, `NOT NULL`, `DEFAULT true`
+
+PK:  
+- PK(`code`)
+
+---
+
+#### 1.12 `user_profiles` – profile użytkowników (nad Supabase Auth)
+### ta tabela będzie zarządzana przez Supabase Auth
+
+- **id**: `uuid`  
+  - identyfikator użytkownika, zgodny z `auth.users.id`, `PRIMARY KEY`
+- **email**: `varchar(320)`  
+  - adres e‑mail, `NOT NULL`, `UNIQUE`
+- **full_name**: `varchar(200)`  
+  - imię i nazwisko, opcjonalne
+- **phone**: `varchar(100)`  
+  - numer telefonu, opcjonalne
+- **role**: `text`  
+  - rola w systemie (`ADMIN`, `PLANNER`, `READ_ONLY`), `NOT NULL`  
+  - `CHECK (role IN ('ADMIN','PLANNER','READ_ONLY'))`
+- **created_at**: `timestamptz`  
+  - `DEFAULT now()`, `NOT NULL`
+- **updated_at**: `timestamptz`  
+  - `DEFAULT now()`, `NOT NULL`
+
+PK:  
+- PK(`id`)
+
+---
+
+### 2. Relacje między tabelami
+
+1. **`transport_orders` → `order_stops`**  
+   - relacja 1:N  
+   - `order_stops.order_id` FK → `transport_orders.id` (`ON DELETE CASCADE`)
+
+2. **`transport_orders` → `order_items`**  
+   - relacja 1:N  
+   - `order_items.order_id` FK → `transport_orders.id` (`ON DELETE CASCADE`)
+
+3. **`transport_orders` → `order_status_history`**  
+   - relacja 1:N  
+   - `order_status_history.order_id` FK → `transport_orders.id` (`ON DELETE CASCADE`)
+
+4. **`transport_orders` → `order_change_log`**  
+   - relacja 1:N  
+   - `order_change_log.order_id` FK → `transport_orders.id` (`ON DELETE CASCADE`)
+
+5. **`companies` → `locations`**  
+   - relacja 1:N  
+   - `locations.company_id` FK → `companies.id` (`ON DELETE RESTRICT` / `NO ACTION`)
+
+6. **`transport_orders` → `companies`**  
+   - relacja N:1 (przewoźnik)  
+   - `transport_orders.carrier_company_id` FK → `companies.id` (`ON DELETE RESTRICT`)
+
+7. **`transport_orders` → `locations`**  
+   - relacje N:1 (opcjonalne powiązania nagłówkowe):  
+   - `transport_orders.shipper_location_id` FK → `locations.id` (`ON DELETE RESTRICT`)  
+   - `transport_orders.receiver_location_id` FK → `locations.id` (`ON DELETE RESTRICT`)
+
+8. **`order_stops` → `locations`**  
+   - relacja N:1  
+   - `order_stops.location_id` FK → `locations.id` (`ON DELETE RESTRICT`)
+
+9. **`order_items` → `products`**  
+   - relacja N:1  
+   - `order_items.product_id` FK → `products.id` (`ON DELETE RESTRICT`)
+
+10. **`transport_orders` → `transport_types`**  
+    - relacja N:1  
+    - `transport_orders.transport_type_code` FK → `transport_types.code`
+
+11. **`transport_orders` / `order_status_history` → `order_statuses`**  
+    - `transport_orders.status_code` FK → `order_statuses.code`  
+    - `order_status_history.old_status_code` / `new_status_code` FK → `order_statuses.code`
+
+12. **`transport_orders` → `vehicle_variants`**  
+    - relacja N:1  
+    - `transport_orders.vehicle_variant_code` FK → `vehicle_variants.code`
+
+13. **`transport_orders` / logi → `user_profiles` / `auth.users`**  
+    - `transport_orders.created_by_user_id` / `updated_by_user_id`,  
+      `order_status_history.changed_by_user_id`,  
+      `order_change_log.changed_by_user_id`  
+      – przechowują `uuid` zgodny z `user_profiles.id` (i Supabase `auth.users.id`).  
+    - formalne FK do `user_profiles.id` są opcjonalne (zależnie od konfiguracji Supabase).
+
+---
+
+### 3. Indeksy
+
+#### 3.1 Indeksy na `transport_orders`
+
+- PK indeks na `id` (automatyczny).  
+- `UNIQUE INDEX` na `order_no`.  
+- `INDEX` na `status_code`.  
+- `INDEX` na `transport_type_code`.  
+- `INDEX` na `carrier_company_id`.  
+- `INDEX` na `(first_loading_date, order_no)` – domyślne sortowanie w widoku „aktualne”.  
+- (opcjonalnie) `INDEX` na `(transport_type_code, first_loading_date)` – filtrowanie po typie transportu i dacie.  
+- (opcjonalnie) `GIN INDEX` na `search_vector` – do pełnotekstowego wyszukiwania (wymaga rozszerzeń `pg_trgm`/`unaccent`/konfiguracji FTS).
+
+#### 3.2 Indeksy na `order_stops`
+
+- PK na `id`.  
+- `UNIQUE INDEX` na `(order_id, sequence_no)`.  
+- `INDEX` na `order_id`.  
+- `INDEX` na `location_id`.  
+- (opcjonalnie) `INDEX` na `(kind, date_local)` – jeśli często filtrujemy np. „załadunki w danym dniu”.
+
+#### 3.3 Indeksy na `order_items`
+
+- PK na `id`.  
+- `INDEX` na `order_id`.  
+- `INDEX` na `product_id`.
+
+#### 3.4 Indeksy na logach
+
+- `order_status_history`:  
+  - PK na `id`  
+  - `INDEX` na `(order_id, changed_at)`
+- `order_change_log`:  
+  - PK na `id`  
+  - `INDEX` na `(order_id, changed_at)`
+
+#### 3.5 Indeksy na słownikach
+
+- `companies`:  
+  - PK na `id`  
+  - częściowy `UNIQUE INDEX` na `erp_id WHERE erp_id IS NOT NULL`  
+  - `INDEX` na `name`
+- `locations`:  
+  - PK na `id`  
+  - częściowy `UNIQUE INDEX` na `erp_id WHERE erp_id IS NOT NULL`  
+  - `INDEX` na `(company_id, name)`  
+  - `INDEX` na `(city, country)`
+- `products`:  
+  - PK na `id`  
+  - częściowy `UNIQUE INDEX` na `erp_id WHERE erp_id IS NOT NULL`  
+  - `INDEX` na `name`
+- `transport_types`:  
+  - PK na `code`
+- `order_statuses`:  
+  - PK na `code`
+- `vehicle_variants`:  
+  - PK na `code`
+- `user_profiles`:  
+  - PK na `id`  
+  - `UNIQUE INDEX` na `email`
+
+---
+
+### 4. Zasady PostgreSQL / RLS (wysoki poziom)
+
+> Uwaga: poniższe zasady opisują koncepcję; dokładna implementacja w Supabase będzie wykorzystywać `auth.uid()` i funkcje pomocnicze mapujące użytkownika na rekord w `user_profiles`.
+
+#### 4.1 Role bazy danych
+
+- **Rola aplikacyjna** (np. `app_user`):  
+  - używana przez API/Supabase; ma włączony RLS na tabelach domenowych.
+- **Rola ETL/ELT** (np. `etl_user`):  
+  - służy do integracji i raportów; ma pełny `SELECT` na wszystkich tabelach, może mieć wyłączone RLS (`ALTER ROLE etl_user SET row_security = off;`), bez uprawnień `INSERT/UPDATE/DELETE`.
+
+#### 4.2 RLS – `user_profiles`
+
+- RLS można wyłączyć (profil zarządzany przez administratora) lub:  
+  - `SELECT`: wszyscy uwierzytelnieni użytkownicy mogą odczytać swój własny rekord i ewentualnie listę użytkowników (do doprecyzowania).  
+  - `INSERT/UPDATE`: tylko administratorzy (`role = 'ADMIN'`) mogą zmieniać role innych użytkowników.
+
+#### 4.3 RLS – tabele domenowe (`transport_orders`, `order_stops`, `order_items`, logi)
+
+Przy założeniu, że wszyscy zalogowani widzą wszystkie zlecenia:
+
+- **Polityka SELECT** (dla roli aplikacyjnej):  
+  - `USING (true)` – wszyscy uwierzytelnieni użytkownicy mogą czytać wszystkie wiersze.
+
+- **Polityka INSERT/UPDATE/DELETE**:  
+  - dozwolona tylko dla użytkowników, których `user_profiles.role IN ('ADMIN','PLANNER')`.  
+  - użytkownicy z rolą `READ_ONLY` mają tylko `SELECT`.
+
+Przykładowo (pseudokodowo):
+
+```sql
+CREATE POLICY app_orders_select ON transport_orders
+FOR SELECT
+USING (true);
+
+CREATE POLICY app_orders_write ON transport_orders
+FOR INSERT, UPDATE, DELETE
+USING (
+  EXISTS (
+    SELECT 1 FROM user_profiles p
+    WHERE p.id = auth.uid()
+      AND p.role IN ('ADMIN','PLANNER')
+  )
+);
+```
+
+Analogiczne polityki mogą zostać zastosowane do `order_stops`, `order_items`, `order_status_history`, `order_change_log`.
+
+#### 4.4 Ograniczenie edycji statusów zrealizowane/anulowane
+
+Ten aspekt lepiej zrealizować **triggerami biznesowymi** niż RLS:
+
+- Trigger `BEFORE UPDATE` na `transport_orders`:
+  - jeśli `OLD.status_code` należy do zbioru statusów nieedytowalnych (np. `ZRE`, `ANL`), a aktualizacja próbuje zmienić jakiekolwiek pola inne niż status i niewielki zestaw techniczny, rzuca błąd.  
+  - dopuszcza specjalny przypadek zmiany `status_code` z `ZRE`/`ANL` na `KOR` w operacji „przywróć do aktualnych”.
+
+---
+
+### 5. Dodatkowe uwagi projektowe
+
+- **Normalizacja**:  
+  - Schemat jest zasadniczo w 3NF dla głównych encji (zlecenia, punkty, pozycje, słowniki).  
+  - Wprowadzono świadome denormalizacje (np. `summary_route`, pierwsze daty załadunku/rozładunku, snapshoty tekstowe firm/lokalizacji/towarów, `search_text`) w celu uproszczenia zapytań i przyspieszenia widoku planistycznego oraz raportów.
+
+- **Wyszukiwanie tekstowe**:  
+  - W MVP globalne wyszukiwanie może działać przez `ILIKE`/`LOWER()` na `search_text`, z wykorzystaniem rozszerzenia `unaccent`, aby ignorować polskie znaki diakrytyczne.  
+  - Docelowo można zbudować `search_vector` jako `tsvector` i indeks GIN, aby uzyskać pełnotekstowe wyszukiwanie.
+
+- **Integracja z ERP**:  
+  - Kolumny `erp_id` w słownikach firm, lokalizacji i towarów pozwalają później powiązać rekordy z ERP bez zmiany lokalnych kluczy głównych.  
+  - Rekordy użyte w zleceniach nie są fizycznie usuwane; zamiast tego używana jest flaga `is_active`, a UI nie pokazuje nieaktywnych pozycji w nowych zleceniach.
+
+- **Środowisko testowe vs produkcyjne**:  
+  - Testowy projekt Supabase powinien używać **identycznego schematu** jak produkcja, z innym zestawem danych słownikowych.  
+  - Lokalne `id` w słownikach mogą różnić się między środowiskami; stabilną osią integracji pozostają `erp_id`.
+
+- **Raportowanie i ETL**:  
+  - Na start raporty mogą korzystać bezpośrednio z tabel operacyjnych (z użyciem roli `etl_user`).  
+  - W przyszłości można dodać osobny schemat/bazę raportową zasilaną przez ETL/ELT, bez konieczności zmiany schematu operacyjnego.
+
+- **Nazewnictwo**:  
+  - Nazwy tabel i kolumn są po angielsku (`snake_case`), zgodnie z dobrymi praktykami w projektach TypeScript/Node + PostgreSQL; warstwa aplikacyjna może mapować je na etykiety w języku polskim w UI.
+
