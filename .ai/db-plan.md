@@ -18,10 +18,16 @@ Tabela główna, centralna dla całego systemu.
 - **currency_code**: `text`  
   - kod waluty (`PLN`, `EUR`, `USD`), `NOT NULL`  
   - `CHECK (currency_code IN ('PLN','EUR','USD'))`
-- **price_amount**: `numeric(12,2)`  
+- **price_amount**: `numeric(12,2)`
   - globalna cena transportu; może być `NULL` dla wierszy roboczych
-- **total_load_tons**: `numeric(12,3)`  
+- **payment_term_days**: `smallint`
+  - termin płatności w dniach (np. 14, 30, 60); może być `NULL`
+- **payment_method**: `varchar(100)`
+  - forma płatności (np. „przelew", „gotówka"); może być `NULL`
+- **total_load_tons**: `numeric(12,3)`
   - łączna ilość ładunku w tonach; może być `NULL` na etapie planowania
+- **total_load_volume_m3**: `numeric(12,3)`
+  - łączna objętość ładunku w m³; może być `NULL`
 - **summary_route**: `varchar(500)`  
   - skrótowy opis trasy do widoku planistycznego (np. `PL: Kęty → DE: Hamburg`)
 - **first_loading_date**: `date`  
@@ -58,10 +64,12 @@ Tabela główna, centralna dla całego systemu.
   - snapshot nazwy odbiorcy
 - **receiver_address_snapshot**: `varchar(500)`  
   - snapshot adresu odbiorcy
-- **vehicle_variant_code**: `text`  
-  - wybrany wariant pojazdu (typ + pojemność), `NOT NULL`  
+- **vehicle_variant_code**: `text`
+  - wybrany wariant pojazdu (typ + pojemność), `NOT NULL`
   - FK → `vehicle_variants.code`
-- **required_documents_text**: `varchar(500)`  
+- **special_requirements**: `varchar(500)`
+  - wymagania specjalne (np. ADR, chłodnia); może być `NULL`
+- **required_documents_text**: `varchar(500)`
   - wymagane dokumenty dla kierowcy (np. `CMR, WZ, BDO`)
 - **general_notes**: `varchar(500)`  
   - ogólne uwagi do zlecenia
