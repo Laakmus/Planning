@@ -36,9 +36,17 @@ Tabela główna, centralna dla całego systemu.
   - godzina pierwszego załadunku
 - **first_unloading_date**: `date`  
   - data pierwszego rozładunku
-- **first_unloading_time**: `time without time zone`  
+- **first_unloading_time**: `time without time zone`
   - godzina pierwszego rozładunku
-- **transport_year**: `integer`  
+- **last_loading_date**: `date`
+  - data ostatniego załadunku (denormalizacja z `order_stops`)
+- **last_loading_time**: `time without time zone`
+  - godzina ostatniego załadunku
+- **last_unloading_date**: `date`
+  - data ostatniego rozładunku (denormalizacja z `order_stops`)
+- **last_unloading_time**: `time without time zone`
+  - godzina ostatniego rozładunku
+- **transport_year**: `integer`
   - rok transportu (np. z `first_loading_date`) – pomoc do raportów
 - **first_loading_country**: `text`  
   - kraj pierwszego załadunku (snapshot)
