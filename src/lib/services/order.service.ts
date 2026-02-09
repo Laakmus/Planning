@@ -19,6 +19,8 @@ import type {
   UnlockOrderResponseDto,
   DuplicateOrderResponseDto,
   OrderDetailStopDto as PatchStopResponseDto,
+  StatusHistoryItemDto,
+  ChangeLogItemDto,
 } from "../../types";
 import type { OrderListQueryInput } from "../schemas/order-list.schema";
 import type { CreateOrderInput } from "../schemas/create-order.schema";
@@ -1641,4 +1643,92 @@ export async function patchStop(
     addressSnapshot: updatedStop.address_snapshot,
     notes: updatedStop.notes,
   };
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/orders/{orderId}/history/status — status history
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns a chronological list of status changes for a given order.
+ *
+ * Queries `order_status_history` with a join on `user_profiles` to resolve
+ * the `changedByUserName` display name. Results are sorted ascending by
+ * `changed_at` so the earliest change comes first.
+ *
+ * @returns Array of StatusHistoryItemDto (empty array if no history found).
+ */
+export async function getStatusHistory(
+  supabase: SupabaseClient<Database>,
+  orderId: string
+): Promise<StatusHistoryItemDto[]> {
+  const { data, error } = await supabase
+    .from("order_status_history")
+    .select(
+      "id, old_status_code, new_status_code, changed_at, changed_by_user_id, user_profiles!order_status_history_changed_by_user_id_fkey(full_name)"
+    )
+    .eq("order_id", orderId)
+    .order("changed_at", { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    // Supabase returns the joined user_profiles as a nested object
+    const userInfo = row.user_profiles as unknown as {
+      full_name: string | null;
+    } | null;
+
+    return {
+      id: row.id,
+      oldStatusCode: row.old_status_code,
+      newStatusCode: row.new_status_code,
+      changedAt: row.changed_at,
+      changedByUserId: row.changed_by_user_id,
+      changedByUserName: userInfo?.full_name ?? null,
+    };
+  });
+}
+
+// ---------------------------------------------------------------------------
+// GET /api/v1/orders/{orderId}/history/changes — field change log
+// ---------------------------------------------------------------------------
+
+/**
+ * Returns a chronological log of field-level changes for a given order.
+ *
+ * Queries `order_change_log` with a join on `user_profiles` to resolve
+ * the `changedByUserName` display name. Results are sorted ascending by
+ * `changed_at` so the earliest change comes first.
+ *
+ * @returns Array of ChangeLogItemDto (empty array if no changes found).
+ */
+export async function getChangeLog(
+  supabase: SupabaseClient<Database>,
+  orderId: string
+): Promise<ChangeLogItemDto[]> {
+  const { data, error } = await supabase
+    .from("order_change_log")
+    .select(
+      "id, field_name, old_value, new_value, changed_at, changed_by_user_id, user_profiles!order_change_log_changed_by_user_id_fkey(full_name)"
+    )
+    .eq("order_id", orderId)
+    .order("changed_at", { ascending: true });
+
+  if (error) throw error;
+
+  return (data ?? []).map((row) => {
+    const userInfo = row.user_profiles as unknown as {
+      full_name: string | null;
+    } | null;
+
+    return {
+      id: row.id,
+      fieldName: row.field_name,
+      oldValue: row.old_value,
+      newValue: row.new_value,
+      changedAt: row.changed_at,
+      changedByUserId: row.changed_by_user_id,
+      changedByUserName: userInfo?.full_name ?? null,
+    };
+  });
 }
