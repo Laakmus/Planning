@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>ZT LOGISTICS - Transport Orders Planning</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style type="text/tailwindcss">
+        @layer base {
+            body {
+                font-family: 'Inter', sans-serif;
+                -webkit-font-smoothing: antialiased;
+            }
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #101922;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #1e293b;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #334155;
+        }
+        .sticky-column {
+            position: sticky;
+            right: 0;
+            z-index: 10;
+        }
+        .dense-table td, .dense-table th {
+            padding: 0.5rem 0.75rem;
+            font-size: 0.75rem;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 font-display flex flex-col h-screen overflow-hidden">
+<header class="sticky top-0 z-50 bg-slate-900/80 backdrop-blur-md border-b border-slate-800 px-4 h-14 flex items-center justify-between">
+<div class="flex items-center space-x-6">
+<div class="flex items-center space-x-2">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-icons-round text-white text-xl">local_shipping</span>
+</div>
+<h1 class="font-bold text-lg tracking-tight text-white">ZT LOGISTICS</h1>
+</div>
+<nav class="flex bg-slate-800 p-1 rounded-lg">
+<button class="px-4 py-1.5 text-xs font-medium rounded-md bg-white text-slate-900 shadow-[0_0_15px_rgba(255,255,255,0.15)] transition-all">Aktualne</button>
+<button class="px-4 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition-all">Zrealizowane</button>
+<button class="px-4 py-1.5 text-xs font-medium rounded-md text-slate-400 hover:text-white transition-all">Anulowane</button>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<button class="text-slate-400 hover:text-white"><span class="material-icons-round text-lg">notifications</span></button>
+<div class="flex items-center space-x-2 pl-4 border-l border-slate-800">
+<div class="text-right">
+<p class="text-[11px] font-medium leading-none text-white">Jan Kowalski</p>
+<p class="text-[10px] text-slate-500">Dyspozytor</p>
+</div>
+<div class="w-8 h-8 rounded-full bg-slate-700 overflow-hidden border border-slate-600">
+<img alt="User avatar" src="https://lh3.googleusercontent.com/aida-public/AB6AXuC0dFoC7z7DDQk7isoDzsHY-yCEMyBNW8q-GFRi6GrZFIfyi-BTW2vizLEVrsNBMYUDNtnv1gVoWpFDD8h6SSDjw-gaqQ_O95x6PRUNpDt3gSu3Gg8sFdCnNQp7RogRkU1PqW5CxtKBFjTHour_nD_ts-gkXW0u8_XnhPLHZo54aLAVQgM3fshQV_g9zti0FZznaNCBxA3U4XLQajyTtfWViKkRRDQpZE4e-Lwp1xqjAReA_ecEaWOBqaBgSZQvTnHrukRWmQluvE0"/>
+</div>
+</div>
+</div>
+</header>
+<section class="bg-slate-900 border-b border-slate-800 px-4 py-3">
+<div class="flex flex-wrap items-center gap-3">
+<div class="flex-1 grid grid-cols-4 gap-3">
+<div class="space-y-1">
+<label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Przewoźnik</label>
+<select class="w-full h-9 bg-slate-800 border-slate-700 text-slate-200 text-xs rounded-md focus:ring-primary focus:border-primary">
+<option>Wszyscy przewoźnicy</option>
+<option>Trans-Global Sp. z o.o.</option>
+<option>FastWay Logistics</option>
+</select>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Towar</label>
+<input class="w-full h-9 bg-slate-800 border-slate-700 text-slate-200 text-xs rounded-md focus:ring-primary focus:border-primary" placeholder="Szukaj towaru..." type="text"/>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Relacja (Od/Do)</label>
+<input class="w-full h-9 bg-slate-800 border-slate-700 text-slate-200 text-xs rounded-md focus:ring-primary focus:border-primary" placeholder="Kraków / Berlin" type="text"/>
+</div>
+<div class="space-y-1">
+<label class="text-[10px] uppercase font-bold text-slate-500 tracking-wider">Zakres Dat</label>
+<div class="relative">
+<input class="w-full h-9 bg-slate-800 border-slate-700 text-slate-200 text-xs rounded-md focus:ring-primary focus:border-primary" type="text" value="20.05.2024 - 27.05.2024"/>
+<span class="material-icons-round absolute right-2 top-2.5 text-slate-500 text-sm">calendar_today</span>
+</div>
+</div>
+</div>
+<div class="flex items-end pt-5">
+<button class="bg-primary hover:bg-blue-600 text-white text-xs font-semibold h-9 px-4 rounded-md flex items-center space-x-2 transition-colors">
+<span class="material-icons-round text-sm">add</span>
+<span>Nowe Zlecenie</span>
+</button>
+</div>
+</div>
+</section>
+<main class="flex-1 overflow-hidden flex flex-col">
+<div class="flex-1 overflow-auto custom-scrollbar">
+<table class="w-full border-collapse dense-table text-left relative">
+<thead class="sticky top-0 z-20 bg-slate-900 border-b border-slate-700 shadow-sm">
+<tr class="text-slate-400 font-semibold uppercase tracking-wider text-[10px]">
+<th class="w-16">ID</th>
+<th class="w-24">Status</th>
+<th class="w-48">Klient</th>
+<th class="w-48">Przewoźnik</th>
+<th class="w-[300px]">Trasa</th>
+<th class="min-w-[250px]">Towar</th>
+<th class="w-32">Data Załadunku</th>
+<th class="w-24 text-center sticky-column bg-slate-900 border-l border-slate-800 shadow-[-10px_0_15px_-5px_rgba(0,0,0,0.5)]">Akcje</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-800/50">
+<tr class="hover:bg-slate-800/40 bg-primary/5 transition-colors group">
+<td class="font-mono text-slate-400">#9402</td>
+<td>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/20 text-primary border border-primary/30">WYS</span>
+</td>
+<td class="font-medium text-slate-200">Apple Systems EU</td>
+<td class="text-slate-400">Trans-Global Sp. z o.o.</td>
+<td>
+<div class="flex items-center flex-wrap gap-y-1 gap-x-1.5">
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">L1:KRK</span>
+</span>
+<span class="material-icons-round text-[12px] text-slate-600">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">L2:WAW</span>
+</span>
+<span class="material-icons-round text-[12px] text-slate-600">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">U1:BER</span>
+</span>
+</div>
+</td>
+<td>
+<div class="flex flex-col">
+<span class="text-slate-300 font-medium">Elektronika (4t), AGD (2t), Tekstylia (1t)</span>
+<span class="text-[10px] text-slate-500">Razem: 7t, 14 EP</span>
+</div>
+</td>
+<td class="text-slate-300 text-[11px]">22.05.2024 08:00</td>
+<td class="sticky-column bg-slate-900/40 backdrop-blur-sm border-l border-slate-800 group-hover:bg-slate-800 transition-colors">
+<div class="flex justify-center space-x-2">
+<button class="text-slate-500 hover:text-primary transition-colors"><span class="material-icons-round text-lg">edit</span></button>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-icons-round text-lg">visibility</span></button>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-icons-round text-lg">print</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-800/40 transition-colors group">
+<td class="font-mono text-slate-400">#9403</td>
+<td>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-500/20 text-amber-500 border border-amber-500/30">TRA</span>
+</td>
+<td class="font-medium text-slate-200">Volkswagen Parts</td>
+<td class="text-slate-400">FastWay Logistics</td>
+<td>
+<div class="flex items-center flex-wrap gap-y-1 gap-x-1.5">
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">L1:WRO</span>
+</span>
+<span class="material-icons-round text-[12px] text-slate-600">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">U1:PAR</span>
+</span>
+<span class="material-icons-round text-[12px] text-slate-600">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">U2:LYO</span>
+</span>
+</div>
+</td>
+<td>
+<div class="flex flex-col">
+<span class="text-slate-300 font-medium">Części silnikowe (8t), Opony (3t)</span>
+<span class="text-[10px] text-slate-500">Razem: 11t, 22 EP</span>
+</div>
+</td>
+<td class="text-slate-300 text-[11px]">22.05.2024 10:30</td>
+<td class="sticky-column bg-background-dark/80 backdrop-blur-sm border-l border-slate-800 group-hover:bg-slate-800 transition-colors">
+<div class="flex justify-center space-x-2">
+<button class="text-slate-500 hover:text-primary transition-colors"><span class="material-icons-round text-lg">edit</span></button>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-icons-round text-lg">visibility</span></button>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-icons-round text-lg">print</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-800/40 bg-emerald-500/5 transition-colors group">
+<td class="font-mono text-slate-400">#9404</td>
+<td><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-500/20 text-emerald-500 border border-emerald-500/30">ZRE</span></td>
+<td class="font-medium text-slate-200">Amazon Logistics</td>
+<td class="text-slate-400">Pekaes S.A.</td>
+<td>
+<div class="flex items-center flex-wrap gap-y-1 gap-x-1.5">
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">L1:GDN</span>
+</span>
+<span class="material-icons-round text-[12px] text-slate-600">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500 ring-2 ring-emerald-500/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">L2:SZC</span>
+</span>
+<span class="material-icons-round text-[12px] text-slate-600">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-primary ring-2 ring-primary/20"></span>
+<span class="font-bold text-slate-200 text-[11px]">U1:HAM</span>
+</span>
+</div>
+</td>
+<td>
+<div class="flex flex-col text-[11px]">
+<span class="text-slate-300">Kosmetyki (5t), Chemia (3t), Papier (10t)</span>
+<span class="text-[10px] text-slate-500">Razem: 18t, 33 EP</span>
+</div>
+</td>
+<td class="text-slate-300 text-[11px]">22.05.2024 12:00</td>
+<td class="sticky-column bg-background-dark/80 backdrop-blur-sm border-l border-slate-800 group-hover:bg-slate-800 transition-colors">
+<div class="flex justify-center space-x-2">
+<button class="text-slate-500 hover:text-primary transition-colors"><span class="material-icons-round text-lg">edit</span></button>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-icons-round text-lg">visibility</span></button>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-icons-round text-lg">print</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-800/40 transition-colors group">
+<td class="font-mono text-slate-400">#9405</td>
+<td><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-700/50 text-slate-400 border border-slate-600/30">NOW</span></td>
+<td class="font-medium text-slate-200">Home Improvement Co.</td>
+<td class="text-slate-400">M-Trans Sp.j.</td>
+<td>
+<div class="flex items-center space-x-1.5">
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500"></span>
+<span class="font-bold text-slate-200 text-[11px]">L1:WAW</span>
+</span>
+<span class="material-icons-round text-[12px] text-slate-600">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-primary"></span>
+<span class="font-bold text-slate-200 text-[11px]">U1:MAD</span>
+</span>
+</div>
+</td>
+<td>
+<div class="flex flex-col text-[11px]">
+<span class="text-slate-300">Farby (2t), Drewno (12t), Płytki (4t)</span>
+<span class="text-[10px] text-slate-500">Razem: 18t, 24 EP</span>
+</div>
+</td>
+<td class="text-slate-300 text-[11px]">23.05.2024 07:00</td>
+<td class="sticky-column bg-background-dark/80 backdrop-blur-sm border-l border-slate-800 group-hover:bg-slate-800 transition-colors">
+<div class="flex justify-center space-x-2">
+<button class="text-slate-500 hover:text-primary transition-colors"><span class="material-icons-round text-lg">edit</span></button>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-icons-round text-lg">visibility</span></button>
+<button class="text-slate-500 hover:text-white transition-colors"><span class="material-icons-round text-lg">print</span></button>
+</div>
+</td>
+</tr>
+<tr class="hover:bg-slate-800/40 transition-colors group">
+<td class="font-mono text-slate-400">#9406</td>
+<td>
+<span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary/70 border border-primary/20">WYS</span>
+</td>
+<td class="text-slate-300">General Distribution</td>
+<td class="text-slate-500 italic">Nieprzypisany</td>
+<td>
+<div class="flex items-center flex-wrap gap-y-1 gap-x-1.5">
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-emerald-500/50"></span>
+<span class="font-bold text-slate-400 text-[11px]">L1:KTW</span>
+</span>
+<span class="material-icons-round text-[10px] text-slate-700">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-primary/50"></span>
+<span class="font-bold text-slate-400 text-[11px]">U1:LON</span>
+</span>
+<span class="material-icons-round text-[10px] text-slate-700">east</span>
+<span class="flex items-center space-x-1">
+<span class="w-2 h-2 rounded-full bg-primary/50"></span>
+<span class="font-bold text-slate-400 text-[11px]">U2:BRS</span>
+</span>
+</div>
+</td>
+<td>
+<div class="text-slate-500 text-[11px]">Meble (3t), Szkło (1t), Narzędzia (1t)</div>
+</td>
+<td class="text-slate-400 text-[11px]">24.05.2024 09:15</td>
+<td class="sticky-column bg-background-dark/80 backdrop-blur-sm border-l border-slate-800 group-hover:bg-slate-800">
+<div class="flex justify-center space-x-2 opacity-50 group-hover:opacity-100">
+<button class="text-slate-500 hover:text-primary"><span class="material-icons-round text-lg">edit</span></button>
+<button class="text-slate-500 hover:text-white"><span class="material-icons-round text-lg">visibility</span></button>
+<button class="text-slate-500 hover:text-white"><span class="material-icons-round text-lg">print</span></button>
+</div>
+</td>
+</tr>
+<script>
+                    const data = [
+                        { route: 'L1:POZ -> U1:BER -> U2:HAM', cargo: 'Komponenty (6t), Plastiki (2t)' },
+                        { route: 'L1:WRO -> L2:KRK -> U1:VIE', cargo: 'Odzież (4t), Buty (1.5t), Akcesoria (0.5t)' },
+                        { route: 'L1:GDA -> U1:OSL', cargo: 'Ryby (18t), Mrożonki (2t)' },
+                        { route: 'L1:RZE -> L2:LUZ -> U1:KIE', cargo: 'Leki (1t), Sprzęt med. (2t)' },
+                        { route: 'L1:WAW -> U1:MIL -> U2:ROM', cargo: 'Wino (5t), Oliwa (3t), Sery (2t)' }
+                    ];
+                    for(let i=0; i<10; i++) {
+                        const row = data[i % data.length];
+                        const nodes = row.route.split(' -> ');
+                        let routeHtml = '<div class="flex items-center flex-wrap gap-y-1 gap-x-1.5">';
+                        nodes.forEach((n, idx) => {
+                            const isL = n.startsWith('L');
+                            const colorClass = isL ? 'bg-emerald-500/50' : 'bg-primary/50';
+                            routeHtml += `
+                                <span class="flex items-center space-x-1">
+                                    <span class="w-2 h-2 rounded-full ${colorClass}"></span>
+                                    <span class="font-bold text-slate-400 text-[11px]">${n}</span>
+                                </span>
+                            `;
+                            if(idx < nodes.length - 1) {
+                                routeHtml += `<span class="material-icons-round text-[10px] text-slate-700">east</span>`;
+                            }
+                        });
+                        routeHtml += '</div>';
+                        document.write(`
+                            <tr class="hover:bg-slate-800/40 transition-colors group border-b border-slate-800/30">
+                                <td class="font-mono text-slate-500 text-[11px]">#94${i+10}</td>
+                                <td><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-primary/10 text-primary/70 border border-primary/20">WYS</span></td>
+                                <td class="text-slate-400">Global Logistics Ltd</td>
+                                <td class="text-slate-500 italic">Nieprzypisany</td>
+                                <td>${routeHtml}</td>
+                                <td class="text-slate-500 text-[11px] truncate max-w-[250px]">${row.cargo}</td>
+                                <td class="text-slate-400 text-[11px]">25.05.2024 11:00</td>
+                                <td class="sticky-column bg-background-dark/80 backdrop-blur-sm border-l border-slate-800 group-hover:bg-slate-800">
+                                    <div class="flex justify-center space-x-2 opacity-50 group-hover:opacity-100">
+                                        <button class="text-slate-500 hover:text-primary"><span class="material-icons-round text-lg">edit</span></button>
+                                        <button class="text-slate-500 hover:text-white"><span class="material-icons-round text-lg">visibility</span></button>
+                                        <button class="text-slate-500 hover:text-white"><span class="material-icons-round text-lg">print</span></button>
+                                    </div>
+                                </td>
+                            </tr>
+                        `);
+                    }
+                </script>
+</tbody>
+</table>
+</div>
+</main>
+<footer class="sticky bottom-0 bg-slate-900 border-t border-slate-800 px-4 h-10 flex items-center justify-between text-[11px] font-medium z-30">
+<div class="flex items-center space-x-6">
+<div class="flex items-center space-x-2">
+<span class="text-slate-500">Aktywne:</span>
+<span class="text-primary font-bold">12</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-slate-500">W trasie:</span>
+<span class="text-amber-500 font-bold">45</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-slate-500">Opóźnione:</span>
+<span class="text-red-500 font-bold">2</span>
+</div>
+<div class="flex items-center space-x-2">
+<span class="text-slate-500">Zrealizowane (dzisiaj):</span>
+<span class="text-emerald-500 font-bold">18</span>
+</div>
+</div>
+<div class="flex items-center space-x-4">
+<div class="flex items-center space-x-2 text-slate-400">
+<span class="material-icons-round text-[14px]">storage</span>
+<span>DB-Cluster-01</span>
+</div>
+<div class="flex items-center space-x-2">
+<div class="w-2 h-2 rounded-full bg-emerald-500 relative">
+<div class="absolute inset-0 w-2 h-2 rounded-full bg-emerald-500 animate-ping opacity-75"></div>
+</div>
+<span class="text-emerald-500 uppercase tracking-tighter font-bold">System Live</span>
+</div>
+</div>
+</footer>
+
+</body></html>

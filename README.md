@@ -15,6 +15,9 @@ Wewnętrzna aplikacja webowa do planowania i wystawiania zleceń transportowych.
 
 - Node.js 24+
 - npm
+- [Supabase CLI](https://supabase.com/docs/guides/cli) (do lokalnego logowania i bazy)
+
+**Logowanie:** Aby móc się zalogować do aplikacji, potrzebny jest działający lokalny Supabase i użytkownik w Auth. Instrukcja krok po kroku: **[docs/LOGOWANIE.md](docs/LOGOWANIE.md)**.
 
 ## Instalacja
 

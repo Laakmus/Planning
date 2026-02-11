@@ -62,27 +62,37 @@ Nowy produkt ma przede wszystkim poprawić:
 
 3.1 Zakres MVP (etap 1)
 
-3.1.1 Dostęp i uwierzytelnianie
+3.1.1 Dostęp, uwierzytelnianie i role
 
 - Proste logowanie użytkownika (login/hasło) dla pracowników wewnętrznych firmy.
 - Dostęp do aplikacji z poziomu przeglądarki Chrome na laptopach.
 - Aplikacja przeznaczona do użycia głównie z sieci firmowej lub przez VPN (konfiguracja po stronie IT).
+- System definiuje trzy role użytkowników:
+  - ADMIN: pełny dostęp do wszystkich funkcji, w tym synchronizacji słowników i zarządzania użytkownikami,
+  - PLANNER: pełny dostęp do planowania zleceń (tworzenie, edycja, wysyłka, zmiana statusów) oraz synchronizacji słowników,
+  - READ_ONLY: podgląd listy zleceń, szczegółów i historii zmian bez możliwości edycji, tworzenia ani zmiany statusów.
+- Rola przypisywana jest na poziomie konta użytkownika w systemie.
 
   3.1.2 Widok planistyczny aktualnych zleceń
 
 - Główny ekran aplikacji prezentuje listę wierszy reprezentujących zlecenia transportowe w zakładce aktualne.
 - Każdy wiersz (zlecenie) w widoku skróconym prezentuje m.in.:
+  - ikonę blokady (jeśli zlecenie edytowane przez innego użytkownika),
   - numer zlecenia,
-  - rodzaj transportu (krajowy, eksport drogowy, kontener morski),
-  - sekwencję miejsc rozładunku (np. w skróconej formie),
-  - sekwencję miejsc załadunku,
+  - rodzaj transportu (krajowy, eksport drogowy, kontener morski, import) — jako kolorowy badge,
+  - sekwencję punktów trasy w formie wizualnej (node-string): skrócone kody miejsc załadunku (zielone) i rozładunku (niebieskie) połączone strzałkami i linią, np. L1:KRK → L2:KAT → U1:BER,
   - datę i godzinę pierwszego i ostatniego załadunku i rozładunku (w formie czytelnego skrótu),
-  - przewoźnika (firma transportowa),
-  - opis towaru (skrócony),
-  - koszt transportu (cena globalna za transport),
-  - status zlecenia (np. robocze, wysłane, korekta, korekta wysłane, zrealizowane, anulowane, reklamacja),
-  - podstawowe uwagi do zlecenia.
-- Wiersze mają wyraźne oznaczenia kolorystyczne zależne od  ui kontekstu widoku (np. neutralny kolor dla aktualnych roboczych, inne kolory dla zrealizowanych i anulowanych).
+  - przewoźnika (nazwa firmy + skrócona informacja o kontakcie),
+  - opis towaru (nazwa produktu + ikona typu opakowania, np. Kontener, Big-Bag, Luzem),
+  - koszt transportu (cena globalna za transport z walutą),
+  - status zlecenia (np. robocze, wysłane, korekta, korekta wysłane, zrealizowane, anulowane, reklamacja) — jako kolorowy badge,
+  - podstawowe uwagi do zlecenia (skrócone),
+  - ikonę „Wyślij maila" jako bezpośrednią akcję.
+- Wiersze mają wyraźne oznaczenia kolorystyczne zależne od statusu zlecenia (jaśniejszy odcień koloru statusu jako tło wiersza).
+- Na dole widoku wyświetlany jest pasek statystyk z liczbą zleceń w poszczególnych statusach oraz informacją o ostatniej aktualizacji danych.
+- Widok oferuje dwa warianty prezentacji listy:
+  - widok trasy: trasa w jednej kolumnie (node-string), daty załadunku/rozładunku osobno,
+  - widok kolumn: miejsca załadunków i rozładunków w osobnych kolumnach, daty w osobnych kolumnach.
 
   3.1.3 Filtrowanie i sortowanie w widoku planistycznym
 
@@ -129,14 +139,13 @@ Nowy produkt ma przede wszystkim poprawić:
     - przewoźnik (firma transportowa),
     - firma nadawcy (od której odbieramy towar) wraz z lokalizacją (oddział),
     - firma odbiorcy (gdzie dostarczamy towar) wraz z lokalizacją (oddział),
-    - osoba kontaktowa z danymi (imię, nazwisko, telefon, e-mail),
+    - osoba kontaktowa po stronie nadawcy z danymi (imię, telefon, e-mail),
   - informacje o ładunku (globalne dla zlecenia, nie per pozycja towaru):
     - opis towaru,
     - ilość (np. liczba ton, liczba palet),
     - masa, objętość (opcjonalne parametry),
-    - typ pojazdu (wybór z listy, np. hakowiec, firanka, ruchoma podłoga, wywrotka, bus, hakowiec z HDS),
+    - wariant pojazdu (wybór z listy rozwijanych łączący typ pojazdu i pojemność, np. „Hakowiec 30m³", „Firanka 90m³", „Wywrotka 25m³", „Bus 10m³", „Hakowiec z HDS 30m³"; każdy wariant ma przypisany kod, który łączy typ pojazdu z jego pojemnością),
     - sposób załadunku (wybór z listy, np. paleta, paleta + BigBag, BigBag, luzem, kosze),
-    - pojemność auta (wybór z listy),
     - wymagania specjalne (np. ADR, chłodnia),
   - trasa:
     - minimalnie 1 punkt załadunku i 1 punkt rozładunku,
@@ -297,7 +306,7 @@ Nowy produkt ma przede wszystkim poprawić:
   - komunikaty o powodzeniu/porażce autozapisu.
 - Zaawansowana wysyłka maili z poziomu aplikacji (integracja z Outlook/Exchange/SMTP).
 - Zaawansowane raporty (koszty, ilości towarów, liczba transportów per przewoźnik i kierunek).
-- Ewentualne role i ograniczenia dostępu do danych finansowych lub raportów.
+- Granularne role i ograniczenia dostępu do danych finansowych lub raportów (w MVP dostępne są trzy podstawowe role: ADMIN, PLANNER, READ_ONLY; rozbudowa ról planowana na etap 2).
 
 ## 4. Granice produktu
 
@@ -324,7 +333,7 @@ Poza zakresem pierwszej wersji znajdują się:
 - pełne odwzorowanie układu PDF 1:1 z firmowym szablonem (sztywne współrzędne wszystkich pól),
 - automatyczny harmonogram synchronizacji słowników (np. nocne integracje),
 - rozbudowane raporty i dashboardy (w tym eksporty, wykresy, analizy),
-- zaawansowane mechanizmy bezpieczeństwa (SSO, 2FA, granularne role uprawnień),
+- zaawansowane mechanizmy bezpieczeństwa (SSO, 2FA, granularne ograniczenia w ramach ról),
 - wysyłanie maili bezpośrednio z aplikacji z dołączonym PDF,
 - automatyczne czyszczenie/anonymizacja danych historycznych wg polityk prawnych (poza usuwaniem anulacji po 24 h),
 - praca mobilna (optymalizacja pod telefony) – priorytet stanowi wygoda na laptopach.
@@ -345,6 +354,7 @@ Kryteria akceptacji:
 - Po poprawnym wprowadzeniu danych użytkownik jest przekierowany do głównego widoku planistycznego.
 - Przy błędnych danych logowania wyświetlany jest czytelny komunikat o błędzie bez ujawniania, które pole jest niepoprawne.
 - Po wylogowaniu użytkownik nie ma dostępu do żadnych widoków zleceń bez ponownego logowania.
+- Dostępne funkcje w widoku zależą od roli użytkownika (ADMIN, PLANNER, READ_ONLY) — użytkownik READ_ONLY nie widzi przycisków tworzenia, edycji, zmiany statusu ani synchronizacji danych.
 
 ### 5.2 Widok planistyczny i filtrowanie
 

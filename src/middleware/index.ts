@@ -27,7 +27,7 @@ export const onRequest = defineMiddleware((context, next) => {
     // Even if there is no token, we still create the client — the endpoint
     // (via requireAuth) will return 401 when getUser() fails.
     const supabaseUrl = import.meta.env.SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.SUPABASE_KEY;
+    const supabaseAnonKey = import.meta.env.SUPABASE_ANON_KEY;
 
     const supabase = createClient<Database>(supabaseUrl, supabaseAnonKey, {
       global: {
