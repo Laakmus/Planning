@@ -160,6 +160,7 @@ export type Database = {
         Row: {
           default_loading_method_snapshot: string | null
           id: string
+          loading_method_code: string | null
           notes: string | null
           order_id: string
           product_id: string | null
@@ -169,6 +170,7 @@ export type Database = {
         Insert: {
           default_loading_method_snapshot?: string | null
           id?: string
+          loading_method_code?: string | null
           notes?: string | null
           order_id: string
           product_id?: string | null
@@ -178,6 +180,7 @@ export type Database = {
         Update: {
           default_loading_method_snapshot?: string | null
           id?: string
+          loading_method_code?: string | null
           notes?: string | null
           order_id?: string
           product_id?: string | null
@@ -385,6 +388,7 @@ export type Database = {
           id: string
           locked_at: string | null
           locked_by_user_id: string | null
+          main_product_name: string | null
           order_no: string
           price_amount: number | null
           receiver_address_snapshot: string | null
@@ -396,6 +400,8 @@ export type Database = {
           sender_contact_email: string | null
           sender_contact_name: string | null
           sender_contact_phone: string | null
+          sent_at: string | null
+          sent_by_user_id: string | null
           shipper_address_snapshot: string | null
           shipper_location_id: string | null
           shipper_name_snapshot: string | null
@@ -407,6 +413,7 @@ export type Database = {
           updated_at: string
           updated_by_user_id: string | null
           vehicle_variant_code: string
+          week_number: number | null
         }
         Insert: {
           carrier_address_snapshot?: string | null
@@ -427,6 +434,7 @@ export type Database = {
           id?: string
           locked_at?: string | null
           locked_by_user_id?: string | null
+          main_product_name?: string | null
           order_no: string
           price_amount?: number | null
           receiver_address_snapshot?: string | null
@@ -438,6 +446,8 @@ export type Database = {
           sender_contact_email?: string | null
           sender_contact_name?: string | null
           sender_contact_phone?: string | null
+          sent_at?: string | null
+          sent_by_user_id?: string | null
           shipper_address_snapshot?: string | null
           shipper_location_id?: string | null
           shipper_name_snapshot?: string | null
@@ -449,6 +459,7 @@ export type Database = {
           updated_at?: string
           updated_by_user_id?: string | null
           vehicle_variant_code: string
+          week_number?: number | null
         }
         Update: {
           carrier_address_snapshot?: string | null
@@ -469,6 +480,7 @@ export type Database = {
           id?: string
           locked_at?: string | null
           locked_by_user_id?: string | null
+          main_product_name?: string | null
           order_no?: string
           price_amount?: number | null
           receiver_address_snapshot?: string | null
@@ -480,6 +492,8 @@ export type Database = {
           sender_contact_email?: string | null
           sender_contact_name?: string | null
           sender_contact_phone?: string | null
+          sent_at?: string | null
+          sent_by_user_id?: string | null
           shipper_address_snapshot?: string | null
           shipper_location_id?: string | null
           shipper_name_snapshot?: string | null
@@ -491,6 +505,7 @@ export type Database = {
           updated_at?: string
           updated_by_user_id?: string | null
           vehicle_variant_code?: string
+          week_number?: number | null
         }
         Relationships: [
           {
@@ -519,6 +534,13 @@ export type Database = {
             columns: ["receiver_location_id"]
             isOneToOne: false
             referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "transport_orders_sent_by_user_id_fkey"
+            columns: ["sent_by_user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
           {
@@ -612,6 +634,7 @@ export type Database = {
       vehicle_variants: {
         Row: {
           capacity_tons: number
+          capacity_volume_m3: number | null
           code: string
           description: string | null
           is_active: boolean
@@ -620,6 +643,7 @@ export type Database = {
         }
         Insert: {
           capacity_tons: number
+          capacity_volume_m3?: number | null
           code: string
           description?: string | null
           is_active?: boolean
@@ -628,6 +652,7 @@ export type Database = {
         }
         Update: {
           capacity_tons?: number
+          capacity_volume_m3?: number | null
           code?: string
           description?: string | null
           is_active?: boolean

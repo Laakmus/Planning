@@ -617,7 +617,41 @@ CREATE TRIGGER set_week_number
 
 ---
 
-### 5. Dodatkowe uwagi projektowe
+### 5. Logika automatycznego wypełniania pól
+
+#### 5.1 Automatyczny wybór wymaganych dokumentów (pole `required_documents_text`)
+
+Przy zmianie pola `transport_type_code` w zleceniu system automatycznie ustawia wartość pola `required_documents_text` według następujących zasad:
+
+- **Jeśli `transport_type_code` IN (`EXP`, `EXP_K`, `IMP`)** (eksport, eksport kontener, import):
+  - `required_documents_text` ← `"WZE, Aneks VII, CMR"`
+
+- **Jeśli `transport_type_code` = `PL`** (kraj):
+  - `required_documents_text` ← `"WZ, KPO, kwit wagowy"`
+
+**Uwagi implementacyjne:**
+- Automatyczna aktualizacja następuje przy każdej zmianie rodzaju transportu (także przy edycji istniejącego zlecenia).
+- Użytkownik może **ręcznie zmienić** automatycznie wybraną wartość — po ręcznym wpisie pole nie jest nadpisywane przy kolejnych zapisach (o ile rodzaj transportu nie zmieni się ponownie).
+- Logika realizowana w warstwie API (endpoint `PUT /api/v1/orders/{id}`) lub przez trigger/funkcję bazodanową.
+
+#### 5.2 Automatyczny wybór waluty (pole `currency_code`)
+
+Przy zmianie pola `transport_type_code` system automatycznie ustawia wartość pola `currency_code` według następujących zasad:
+
+- **Jeśli `transport_type_code` = `PL`** (kraj):
+  - `currency_code` ← `PLN`
+
+- **Jeśli `transport_type_code` IN (`EXP`, `EXP_K`, `IMP`)** (eksport, eksport kontener, import):
+  - `currency_code` ← `EUR`
+
+**Uwagi implementacyjne:**
+- Automatyczna aktualizacja następuje przy każdej zmianie rodzaju transportu (także przy edycji istniejącego zlecenia).
+- Użytkownik może **ręcznie wybrać inną walutę** z listy (PLN, EUR, USD) — wybór użytkownika jest respektowany do momentu ponownej zmiany rodzaju transportu.
+- Logika realizowana w warstwie API (endpoint `PUT /api/v1/orders/{id}`).
+
+---
+
+### 6. Dodatkowe uwagi projektowe
 
 - **Snapshoty (snapshot fields)**:
   - Wszystkie pola zawierające słowo „snapshot" w nazwie (np. `carrier_name_snapshot`, `location_name_snapshot`, `product_name_snapshot`, `sender_contact_name`) są **immutable** – ustawiane raz przy wyborze encji (przewoźnika, lokalizacji, towaru, wysyłce) i **nigdy nie są automatycznie aktualizowane**.

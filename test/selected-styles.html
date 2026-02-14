@@ -1,0 +1,269 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Wybrane Style - Widok Trasy i Kolumn</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#137fec',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 p-8">
+
+    <div class="max-w-7xl mx-auto space-y-8">
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-2xl font-bold text-slate-800 mb-2">Wybrane Style — Referencja Implementacyjna</h1>
+            <p class="text-sm text-slate-600">Style zatwierdzone do użycia w implementacji widoku zleceń</p>
+        </div>
+
+        <!-- Section 1: Status Badges (BEZ PULSE) -->
+        <section class="bg-white p-6 rounded-lg border border-slate-200">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">1. Statusy (bez animacji pulse)</h2>
+            <div class="flex flex-wrap gap-3">
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                    Robocze
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                    Wysłane
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                    Korekta
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                    Korekta wysłane
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                    Zrealizowane
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200">
+                    Reklamacja
+                </span>
+                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-500 border border-slate-200">
+                    Anulowane
+                </span>
+            </div>
+        </section>
+
+        <!-- Section 2: Widok TRASA - Kompaktowe node badges -->
+        <section class="bg-white p-6 rounded-lg border border-slate-200">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">2. Widok TRASA — Kompaktowe węzły (max 4 w linii)</h2>
+            <p class="text-sm text-slate-600 mb-4">Format: <code>L{n}:{nazwa} → U{n}:{nazwa}</code><br>
+            <span class="text-xs text-amber-600">⚠️ Maksymalnie 4 węzły w jednej linii, następne zawijają się automatycznie</span></p>
+
+            <!-- Przykład 1: Krótka trasa -->
+            <div class="mb-6">
+                <div class="text-xs text-slate-500 mb-2">Przykład 1: Krótka trasa (3 węzły — mieści się w jednej linii)</div>
+                <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:Nord</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L2:Recykling</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:BER</span>
+                </div>
+            </div>
+
+            <!-- Przykład 2: Średnia trasa -->
+            <div class="mb-6">
+                <div class="text-xs text-slate-500 mb-2">Przykład 2: 4 węzły (dokładnie linia)</div>
+                <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:Nord</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L2:Recykling</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L3:MetalWay</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:BER</span>
+                </div>
+            </div>
+
+            <!-- Przykład 3: Długa trasa z zawijaniem -->
+            <div class="mb-6">
+                <div class="text-xs text-slate-500 mb-2">Przykład 3: Długa trasa (11 węzłów — zawija się automatycznie po 4 węzłach)</div>
+                <div class="flex items-center space-x-1 flex-wrap gap-y-1 max-w-xl">
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:Nord</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L2:Recykling</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L3:MetalWay</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L4:StalPol</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L5:PolScrap</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L6:EkoMet</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L7:Metalex</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L8:RecyPol</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:CentralMet</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U2:StalHub</span>
+                    <span class="text-slate-300">→</span>
+                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U3:MetalCenter</span>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 3: Widok KOLUMNY - Okrągłe badge z numerami -->
+        <section class="bg-white p-6 rounded-lg border border-slate-200">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">3. Widok KOLUMNY — Miejsca z okrągłymi badge'ami</h2>
+
+            <div class="grid grid-cols-2 gap-8">
+                <!-- Miejsca załadunku -->
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-700 mb-3">Miejsca załadunku (emerald)</h3>
+                    <div class="space-y-2">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                <span class="font-medium text-[12px]">Nord Metals Sp. z o.o.</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pl-6">oddział Kraków</div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L2</span>
+                                <span class="font-medium text-[12px]">Recykling Sp. z o.o.</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pl-6">oddział Katowice</div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L3</span>
+                                <span class="font-medium text-[12px]">MetalWay Sp. z o.o.</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pl-6">oddział Sosnowiec</div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L4</span>
+                                <span class="font-medium text-[12px]">StalPol Sp. z o.o.</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pl-6">oddział Gliwice</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Miejsca rozładunku -->
+                <div>
+                    <h3 class="text-sm font-semibold text-slate-700 mb-3">Miejsca rozładunku (primary/blue)</h3>
+                    <div class="space-y-2">
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                <span class="font-medium text-[12px]">CentralMet GmbH</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pl-6">oddział Berlin</div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U2</span>
+                                <span class="font-medium text-[12px]">StalHub AG</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pl-6">oddział Hamburg</div>
+                        </div>
+                        <div class="space-y-1">
+                            <div class="flex items-center gap-1.5">
+                                <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U3</span>
+                                <span class="font-medium text-[12px]">MetalCenter GmbH</span>
+                            </div>
+                            <div class="text-[11px] text-slate-500 pl-6">oddział München</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Section 4: Przykładowy wiersz tabeli -->
+        <section class="bg-white p-6 rounded-lg border border-slate-200 overflow-x-auto">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">4. Przykładowy wiersz tabeli (widok TRASA)</h2>
+            <table class="w-full border-collapse text-left">
+                <thead class="bg-slate-50 border-b">
+                    <tr>
+                        <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Nr zlecenia</th>
+                        <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Status</th>
+                        <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Rodzaj</th>
+                        <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Trasa</th>
+                        <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Firma transportowa</th>
+                        <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Typ auta</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr class="bg-white border-b">
+                        <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0156</td>
+                        <td class="py-1 px-4 text-[12px]">
+                            <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                                Robocze
+                            </span>
+                        </td>
+                        <td class="py-1 px-4 text-[12px]">kraj</td>
+                        <td class="py-1 px-4 text-[12px]">
+                            <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                                <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:Nord</span>
+                                <span class="text-slate-300">→</span>
+                                <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L2:Recykling</span>
+                                <span class="text-slate-300">→</span>
+                                <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:BER</span>
+                            </div>
+                        </td>
+                        <td class="py-1 px-4 text-[12px]">Mega Transport</td>
+                        <td class="py-1 px-4 text-[12px]">firanka (100m³)</td>
+                    </tr>
+                </tbody>
+            </table>
+        </section>
+
+        <!-- CSS Reference -->
+        <section class="bg-slate-100 p-6 rounded-lg border border-slate-300">
+            <h2 class="text-lg font-semibold text-slate-800 mb-4">📋 Referencja CSS</h2>
+            <div class="space-y-4 text-[12px] font-mono">
+                <div>
+                    <div class="font-bold text-slate-700 mb-1">StatusBadge (bez pulse):</div>
+                    <div class="bg-white p-2 rounded">inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full</div>
+                </div>
+                <div>
+                    <div class="font-bold text-slate-700 mb-1">Node załadunku (L):</div>
+                    <div class="bg-white p-2 rounded">bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700</div>
+                </div>
+                <div>
+                    <div class="font-bold text-slate-700 mb-1">Node rozładunku (U):</div>
+                    <div class="bg-white p-2 rounded">bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary</div>
+                </div>
+                <div>
+                    <div class="font-bold text-slate-700 mb-1">Container trasy (z zawijaniem):</div>
+                    <div class="bg-white p-2 rounded">flex items-center space-x-1 flex-wrap gap-y-1</div>
+                </div>
+                <div>
+                    <div class="font-bold text-slate-700 mb-1">Okrągły badge L (Kolumny):</div>
+                    <div class="bg-white p-2 rounded">inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold</div>
+                </div>
+                <div>
+                    <div class="font-bold text-slate-700 mb-1">Okrągły badge U (Kolumny):</div>
+                    <div class="bg-white p-2 rounded">inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold</div>
+                </div>
+            </div>
+        </section>
+
+    </div>
+
+</body>
+</html>

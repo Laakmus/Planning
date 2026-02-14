@@ -259,13 +259,17 @@ OrdersApp (React island — korzenny komponent)
   - `<StatusBadge>` — pełna nazwa statusu (statusName z API)
   - **Tydzień** — numer tygodnia ISO 8601 (`order.weekNumber` z API), wyświetlany jako liczba całkowita (np. 7); pole obliczane automatycznie przez backend, **nie edytowalne**
   - Rodzaj transportu (nazwa)
-  - Miejsce załadunku — każdy punkt w nowej linii: „L1 NazwaFirmy: oddział X" (dane z `order.stops` gdzie `kind=LOADING`)
+  - **Miejsce załadunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`, wewnątrz `<div class="space-y-1">`:
+    - **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L{n}</span>` i nazwą firmy `<span class="font-medium">{companyName}</span>`
+    - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Kraków")
   - Data załadunku — lista dat z godzinami dla każdego punktu załadunku (dane z `order.stops`); **format daty: DD.MM.YYYY** (backend zwraca YYYY-MM-DD, frontend formatuje przez `formatDate()`)
-  - Miejsce rozładunku — „U1 NazwaFirmy: oddział Y" (dane z `order.stops` gdzie `kind=UNLOADING`)
+  - **Miejsce rozładunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`, wewnątrz `<div class="space-y-1">`:
+    - **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U{n}</span>` i nazwą firmy `<span class="font-medium">{companyName}</span>`
+    - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Berlin")
   - Data rozładunku — lista dat z godzinami dla każdego punktu rozładunku (dane z `order.stops`); **format daty: DD.MM.YYYY** (backend zwraca YYYY-MM-DD, frontend formatuje przez `formatDate()`)
   - Towar — pozycje numerowane z `order.items`: nazwa (`productNameSnapshot`), ilość (`quantityTons`), opakowanie (`loadingMethodCode`); ostatnia linia „Razem: Xt"
   - Komentarz — lista ponumerowana uwag z `order.items[].notes` (powiązana z pozycjami towaru)
-  - Firma transportowa (`carrierName` z API)
+  - **Firma transportowa** — tylko nazwa firmy (`carrierName` z API), **bez** osoby kontaktowej i telefonu
   - Typ auta — `vehicleVariantName` + objętość w nawiasie (`vehicleCapacityVolumeM3`, np. „firanka (90m³)")
   - Stawka — `priceAmount` + `currencyCode` (np. 1450 PLN)
   - Data wysłania zlecenia — **linia 1:** `sentByUserName`, **linia 2:** `sentAt` sformatowane jako **DD.MM.YYYY** (bez godziny, backend zwraca timestamptz, frontend formatuje przez `formatDate()`)
@@ -291,16 +295,16 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.10 StatusBadge
 
-- **Opis**: Badge statusu zlecenia z mapowaniem koloru i opcjonalną animacją pulsowania. Styl: `flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`.
-- **Główne elementy**: `<span>` z opcjonalną kropką `<span class="w-1.5 h-1.5 rounded-full bg-{color}-600 animate-pulse">` dla aktywnych statusów.
-- **Mapowanie kolorów i animacji** (wyświetlana pełna nazwa z `statusName`):
-  - Robocze → `bg-slate-100 text-slate-700` — brak pulse
-  - Wysłane → `bg-blue-50 text-blue-600` — **pulse** (aktywny)
-  - Korekta → `bg-orange-50 text-orange-600` — brak pulse
-  - Korekta wysłane → `bg-teal-50 text-teal-600` — brak pulse
-  - Zrealizowane → `bg-green-50 text-green-600` — brak pulse
-  - Anulowane → `bg-gray-100 text-gray-500` — brak pulse
-  - Reklamacja → `bg-red-50 text-red-600` — brak pulse
+- **Opis**: Badge statusu zlecenia z mapowaniem koloru. Styl: `inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`.
+- **Główne elementy**: `<span>` bez animacji pulsowania.
+- **Mapowanie kolorów** (wyświetlana pełna nazwa z `statusName`):
+  - Robocze → `bg-slate-100 text-slate-700`
+  - Wysłane → `bg-blue-50 text-blue-600 border border-blue-200`
+  - Korekta → `bg-orange-50 text-orange-600 border border-orange-200`
+  - Korekta wysłane → `bg-amber-50 text-amber-700 border border-amber-200`
+  - Zrealizowane → `bg-emerald-50 text-emerald-700 border border-emerald-200`
+  - Anulowane → `bg-slate-100 text-slate-500 border border-slate-200`
+  - Reklamacja → `bg-red-50 text-red-600 border border-red-200`
 - **Propsy**:
   ```ts
   interface StatusBadgeProps {
@@ -610,33 +614,21 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.25 RouteSummaryCell (Node-String)
 
-- **Opis**: Wizualizacja trasy jako ciągu kolorowych węzłów połączonych strzałkami na tle linii. Kluczowy element designu z mockupu `test/main_view.html`.
-- **Główne elementy**: `<div class="flex items-center space-x-1 node-line relative">` z `<RouteNode>` × N rozdzielonymi `<span class="z-10 text-slate-300">→</span>`.
-- **CSS (global):**
-  ```css
-  .node-line { position: relative; }
-  .node-line::after {
-    content: "";
-    position: absolute;
-    top: 50%;
-    left: 0;
-    right: 0;
-    height: 1px;
-    background: #e2e8f0;
-    z-index: 0;
-  }
-  ```
+- **Opis**: Wizualizacja trasy jako ciągu kompaktowych węzłów połączonych strzałkami. Kluczowy element designu widoku Trasa. Format: `L1:Nord → L2:Recykling → U1:BER`. **Zawijanie**: Maksymalnie 4 węzły w linii, następne węzły zawijają się do nowej linii.
+- **Główne elementy**: `<div class="flex items-center space-x-1 flex-wrap gap-y-1">` z węzłami `<span>` rozdzielonymi `<span class="text-slate-300">→</span>`.
+- **CSS (global) — opcjonalny:** Linia w tle NIE jest stosowana, aby uniknąć problemów z zawijaniem na wiele linii.
 - **Kolorystyka węzłów:**
-  - LOADING (L1, L2, ...): `z-10 bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700`
-  - UNLOADING (U1, U2, ...): `z-10 bg-primary/10 dark:bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary`
-- **Format kodu**: `{L|U}{sequenceNo}:{skrót_miasta}` — np. `L1:KRK`, `U1:BER`
+  - LOADING (L1, L2, ...): `bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700`
+  - UNLOADING (U1, U2, ...): `bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary`
+- **Format węzła**: `{L|U}{sequenceNo}:{nazwa_lub_skrót}` — np. `L1:Nord`, `L2:Recykling`, `U1:CentralMet`
+- **Layout**: Container z `flex-wrap` pozwala na automatyczne zawijanie; maksymalnie 4 węzły + 3 strzałki w jednej linii (łącznie 7 elementów), reszta przechodzi do następnej linii.
 - **Propsy**:
   ```ts
   interface RouteSummaryCellProps {
     stops: Array<{
       kind: StopKind;
       sequenceNo: number;
-      cityCode: string;  // skrót miasta (3 litery)
+      companyNameShort: string;  // skrócona nazwa firmy lub skrót miasta (3+ znaków)
     }>;
   }
   ```
@@ -1153,10 +1145,10 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 15. **Zaimplementować `FilterBar.tsx`** — kolejność filtrów zgodna z PRD 3.1.2a: rodzaj transportu, status (select), firma załadunku, firma rozładunku, Firma transportowa, towar, numer tygodnia (pole tekstowe), wyszukiwanie pełnotekstowe; przycisk „Wyczyść filtry"; z prawej przycisk „Nowe zlecenie" (tylko Aktualne + Admin/Planner). Debounce 300ms na polach tekstowych/autocomplete.
 16. **Zaimplementować `AutocompleteFilter`** — generyczny komponent filtra z autocomplete (shadcn Command).
 17. **Zaimplementować `ListSettings.tsx`** — pageSize + viewMode toggle.
-18. **Zaimplementować komponenty badge'ów** — `StatusBadge.tsx` (wyświetlanie `statusName`, z pulsem dla Wysłane), `TransportTypeBadge.tsx`.
+18. **Zaimplementować komponenty badge'ów** — `StatusBadge.tsx` (wyświetlanie `statusName`, bez animacji pulse), `TransportTypeBadge.tsx`.
 19. **Zaimplementować `OrderTable.tsx`** — tabela z `min-w-[1280px]`, sticky nagłówkiem (`bg-slate-50, text-[11px] uppercase`), sticky kolumną Akcje z prawej (shadow), hover na wierszach. Wzór: `test/main_view.html`.
 20. **Zaimplementować `OrderRow.tsx`** — kompaktowy wiersz (`py-1 px-4 text-[12px]`) z tłem wg statusu, dwuwiersz przewoźnika, towar z ikoną + badge, dwa warianty kolumn.
-21. **Zaimplementować `RouteSummaryCell.tsx`** — wizualizacja trasy node-string z kolorowymi węzłami (emerald załadunki, primary rozładunki), linią łączącą (pseudo-element `::after`) i strzałkami. Format: `L1:KRK → L2:KAT → U1:BER`.
+21. **Zaimplementować `RouteSummaryCell.tsx`** — wizualizacja trasy node-string z kompaktowymi węzłami (emerald załadunki, primary rozładunki) rozdzielonymi strzałkami. Format: `L1:Nord → L2:Recykling → U1:BER`. Opcjonalnie linia łącząca (pseudo-element `::after`) z `z-10` na węzłach i strzałkach.
 22. **Zaimplementować `LockIndicator.tsx`** — ikona blokady z tooltipem.
 23. **Zaimplementować `AddOrderButton.tsx`** — przycisk tworzenia zlecenia.
 24. **Zaimplementować `EmptyState.tsx`** — tylko dwa warianty (PRD 3.1.2a): „Brak zleceń" (z przyciskiem „Dodaj nowy wiersz" w Aktualne) oraz „Brak wyników dla zastosowanych filtrów" (z przyciskiem „Wyczyść filtry").
@@ -1227,7 +1219,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 53. **Dodać obsługę `beforeunload`** — ostrzeżenie przy niezapisanych zmianach (zamykanie karty/refresh).
 54. **Dodać kolorystykę wierszy wg statusu** — jaśniejszy odcień koloru statusu jako tło wiersza (Robocze: white, Wysłane: blue-50/30, Korekta: orange-50/30, itd.); mapowanie po `statusCode` lub `statusName`.
 55. **Zaimplementować `StatusFooter.tsx`** — pasek stopki sticky na dole (`h-10 bg-slate-50 border-t`): lewa strona — liczniki (np. „Aktywne: X" dla bieżącej zakładki lub per status); **bez** „W trasie", „Załadunek", „Opóźnione" (PRD 3.1.2a, ui-plan). Prawa strona: „System Status: OK", „Ostatnia aktualizacja: HH:MM".
-56. **Dodać animację pulsowania** do StatusBadge dla aktywnych statusów (Wysłane → `animate-pulse`).
+56. **Sprawdzić spójność stylów** — StatusBadge bez animacji pulse, kolory zgodne z dokumentacją (emerald dla Zrealizowane, amber dla Korekta wysłane, border dla wszystkich poza Robocze).
 57. **Dodać dark mode** — warianty `dark:` dla wszystkich komponentów. Tło: `#101922`, nagłówek: `bg-slate-900`, tabela: `bg-slate-800`/`bg-slate-900`.
 58. **Dodać responsywność** — jeden breakpoint, tabela z `min-w-[1280px]` i scrollbar-hide.
 59. **Dodać ukrywanie akcji dla READ_ONLY** — sprawdzanie roli we wszystkich komponentach z akcjami.

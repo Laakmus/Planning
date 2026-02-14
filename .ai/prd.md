@@ -344,14 +344,14 @@ Przycisk „Usuń pozycję" przy każdej pozycji towarowej.
 | 2 | NIP | Tylko do odczytu (tekst) | Auto po wyborze firmy przewoźnika |
 | 3 | Typ auta | Lista zamknięta (select) | Z wariantów pojazdu (np. Firanka, Hakowiec, Wywrotka, Bus) |
 | 4 | Objętość w m³ | Lista zamknięta z wpisywaniem (combobox) | Wartości: 10, 20, 30, …, 100 m³; wpis filtruje listę; klik bez wpisu = pełna lista. Na MVP dozwolone tylko wartości z listy (co 10) |
-| 5 | Wymagane dokumenty | Lista zamknięta (select, **2 opcje**) | **1.** „WZ, KPO, kwit wagowy" **2.** „WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** z dwóch opcji (select, nie checkboxy) |
+| 5 | Wymagane dokumenty | Lista zamknięta (select, **2 opcje**) | **1.** „WZ, KPO, kwit wagowy" **2.** „WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** z dwóch opcji (select, nie checkboxy). **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 2): jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić automatycznie wybraną wartość |
 
 **Sekcja 5 — Finanse**
 
 | Lp. | Pole | Typ pola | Uwagi |
 |-----|------|----------|-------|
 | 1 | Stawka* | Pole liczbowe (kwota) | ≥ 0; przy nowym zleceniu puste |
-| 2 | Waluta* | Lista zamknięta (select) | PLN, EUR, USD; domyślnie z rodzaju transportu: kraj → PLN, eksport/import → EUR lub USD. Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie wybrać inną walutę |
+| 2 | Waluta* | Lista zamknięta (select) | PLN, EUR, USD. **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 2): jeśli kraj → PLN; jeśli eksport / eksport kontener / import → EUR. Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie wybrać inną walutę z listy |
 | 3 | Termin płatności | Pole liczbowe (dni) | Domyślnie 21 |
 | 4 | Forma płatności | Lista zamknięta (select) | Domyślnie „Przelew" |
 
@@ -388,7 +388,8 @@ Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 
 
 **6. Zależności między sekcjami**
 
-- **Sekcja 2 → Sekcja 5:** Rodzaj transportu (z Sekcji 2) określa domyślną walutę w Sekcji 5 (kraj → PLN, eksport/import → EUR lub USD). Auto-aktualizacja waluty przy każdej zmianie rodzaju transportu (także przy edycji istniejącego zlecenia), ale użytkownik może ręcznie wybrać inną walutę.
+- **Sekcja 2 → Sekcja 4:** Rodzaj transportu (z Sekcji 2) określa automatyczny wybór wymaganych dokumentów w Sekcji 4: jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie zmienić wartość.
+- **Sekcja 2 → Sekcja 5:** Rodzaj transportu (z Sekcji 2) określa domyślną walutę w Sekcji 5: kraj → PLN, eksport / eksport kontener / import → EUR. Auto-aktualizacja waluty przy każdej zmianie rodzaju transportu (także przy edycji istniejącego zlecenia), ale użytkownik może ręcznie wybrać inną walutę.
 - **Sekcja 2 (punkty trasy):** Firma → lista oddziałów (select); oddział → adres i NIP (readonly). Przy zmianie firmy — zerowanie oddziału, adresu, NIP.
 - **Sekcja 3:** Wybór towaru → domyślny sposób załadunku (nadpisywalny per pozycja).
 - **Sekcja 7:** Pole „Powód reklamacji" widoczne tylko przy statusie Reklamacja lub wyborze przejścia na Reklamację.

@@ -139,14 +139,14 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
    - „Brak wyników dla zastosowanych filtrów" — z przyciskiem „Wyczyść filtry".
    - Wariant „Przekroczono limit wyników — zawęź filtry" **nie jest używany**.
 
-8. **StatusBadge** — komponent badge'a statusu z mapowaniem koloru:
-   - Robocze: szary/neutralny.
-   - Wysłane: niebieski.
-   - Korekta: pomarańczowy.
-   - Korekta wysłane: zielono-niebieski.
-   - Zrealizowane: zielony.
-   - Anulowane: ciemnoszary.
-   - Reklamacja: czerwony.
+8. **StatusBadge** — komponent badge'a statusu z mapowaniem koloru **bez animacji pulse**:
+   - Robocze: szary/neutralny (`bg-slate-100 text-slate-700`).
+   - Wysłane: niebieski (`bg-blue-50 text-blue-600 border border-blue-200`).
+   - Korekta: pomarańczowy (`bg-orange-50 text-orange-600 border border-orange-200`).
+   - Korekta wysłane: bursztynowy (`bg-amber-50 text-amber-700 border border-amber-200`).
+   - Zrealizowane: szmaragdowy (`bg-emerald-50 text-emerald-700 border border-emerald-200`).
+   - Anulowane: ciemnoszary (`bg-slate-100 text-slate-500 border border-slate-200`).
+   - Reklamacja: czerwony (`bg-red-50 text-red-600 border border-red-200`).
 
 #### UX, dostępność i bezpieczeństwo
 
@@ -667,35 +667,37 @@ Poniższa sekcja definiuje szczegółowe wymagania wizualne, które stanowią re
 
 ### 6.2 Wizualizacja trasy (node-string)
 
-Kluczowy element wizualny widoku listy. Trasa prezentowana jako ciąg kolorowych węzłów połączonych strzałkami na tle poziomej linii łączącej.
+Kluczowy element wizualny widoku Trasa. Trasa prezentowana jako ciąg kompaktowych kolorowych węzłów połączonych strzałkami.
 
 **Struktura:**
 ```
-[L1:KRK] → [L2:KAT] → [U1:BER]
+[L1:Nord] → [L2:Recykling] → [L3:Metal] → [L4:Stahl]
+[U1:BER] → [U2:HAM]
 ```
 
-**CSS linia łącząca (pseudo-element `::after`):**
-```css
-.node-line {
-  position: relative;
-}
-.node-line::after {
-  content: "";
-  position: absolute;
-  top: 50%;
-  left: 0;
-  right: 0;
-  height: 1px;
-  background: #e2e8f0;
-  z-index: 0;
-}
-```
+Format węzła: `{L|U}{sequenceNo}:{nazwa_lub_skrót}` — np. `L1:Nord`, `L2:Recykling`, `U1:CentralMet`
+
+**Zawijanie:** Maksymalnie 4 węzły w linii. Przy dłuższych trasach kolejne węzły automatycznie zawijają się do następnej linii dzięki `flex-wrap`.
 
 **Kolorystyka węzłów:**
-- **Załadunki (L1, L2, ...):** `bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-500/30 text-emerald-700` — z-10
-- **Rozładunki (U1, U2, ...):** `bg-primary/10 dark:bg-primary/10 border border-primary/30 text-primary` — z-10
-- **Strzałki:** `text-slate-300 z-10`
-- Każdy węzeł: `px-1.5 py-0.5 rounded text-[10px] font-bold`
+- **Załadunki (L1, L2, ...):** `bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700`
+- **Rozładunki (U1, U2, ...):** `bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary`
+- **Strzałki:** `text-slate-300`
+- Container: `flex items-center space-x-1 flex-wrap gap-y-1`
+
+**Uwaga:** Linia w tle (pseudo-element `::after`) NIE jest stosowana, aby uniknąć problemów wizualnych przy zawijaniu na wiele linii.
+
+### 6.2a Kolumny miejsc (widok Kolumny)
+
+W widoku Kolumny miejsca załadunku i rozładunku prezentowane są z okrągłymi badge'ami:
+
+**Miejsce załadunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`:
+- **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L{n}</span>` i nazwą firmy `<span class="font-medium">{companyName}</span>`
+- **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Kraków")
+
+**Miejsce rozładunku** — analogicznie:
+- Badge: `bg-primary/10 text-primary` z oznaczeniem `U{n}`
+- Nazwa firmy i oddział jak wyżej
 
 ### 6.3 Tabela zleceń
 
@@ -720,35 +722,33 @@ tr:hover td {
 | Robocze | `bg-white` (domyślne) |
 | Wysłane | `bg-blue-50/30` |
 | Korekta | `bg-orange-50/30` |
-| Korekta wysłane | `bg-teal-50/30` |
-| Zrealizowane | `bg-green-50/30` |
+| Korekta wysłane | `bg-amber-50/30` |
+| Zrealizowane | `bg-emerald-50/30` |
 | Anulowane | `bg-gray-50/50` |
 | Reklamacja | `bg-red-50/30` |
 
 **Scrollbar:** Na wąskich ekranach pasek przewijania poziomego **musi być widoczny** (użytkownik ma rozumieć, że są kolejne kolumny). Na szerokich ekranach dopuszczalne ukrycie scrollbara (`.scrollbar-hide`).
 
-### 6.4 Badge statusu z animacją
+### 6.4 Badge statusu
 
-Badge statusu zawiera opcjonalną animowaną kropkę (pulse) dla statusów oznaczających aktywną akcję:
+Badge statusu **bez animacji pulse** — prosty badge z ramką:
 
-| Status | Styl badge | Pulse |
-|---|---|---|
-| Robocze | `bg-slate-100 text-slate-700` | Nie |
-| Wysłane | `bg-blue-50 text-blue-600 border-blue-200` | Tak (`animate-pulse`) |
-| Korekta | `bg-orange-50 text-orange-600` | Nie |
-| Korekta wysłane | `bg-teal-50 text-teal-600` | Nie |
-| Zrealizowane | `bg-green-50 text-green-600` | Nie |
-| Anulowane | `bg-gray-100 text-gray-500` | Nie |
-| Reklamacja | `bg-red-50 text-red-600` | Nie |
+| Status | Styl badge |
+|---|---|
+| Robocze | `bg-slate-100 text-slate-700` |
+| Wysłane | `bg-blue-50 text-blue-600 border border-blue-200` |
+| Korekta | `bg-orange-50 text-orange-600 border border-orange-200` |
+| Korekta wysłane | `bg-amber-50 text-amber-700 border border-amber-200` |
+| Zrealizowane | `bg-emerald-50 text-emerald-700 border border-emerald-200` |
+| Anulowane | `bg-slate-100 text-slate-500 border border-slate-200` |
+| Reklamacja | `bg-red-50 text-red-600 border border-red-200` |
 
-Badge: `flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`
-Kropka pulse: `w-1.5 h-1.5 rounded-full bg-{color}-600 animate-pulse`
+Badge: `inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`
 
-### 6.5 Kolumna Przewoźnika (dwuwiersz)
+### 6.5 Kolumna Firma transportowa
 
-Kolumna przewoźnika wyświetla dane w dwóch wierszach:
-- **Wiersz 1:** Nazwa firmy — `font-semibold text-slate-700`
-- **Wiersz 2:** Osoba kontaktowa + telefon — `text-[10px] text-slate-400`
+Kolumna Firma transportowa wyświetla **tylko nazwę firmy** (bez osoby kontaktowej i telefonu):
+- Nazwa firmy — `text-[12px]` (standardowa czcionka wiersza tabeli)
 
 ### 6.6 Kolumna Towaru (ikona + badge)
 
