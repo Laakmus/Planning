@@ -48,30 +48,32 @@ Tabela główna, centralna dla całego systemu.
   - godzina ostatniego rozładunku
 - **transport_year**: `integer`
   - rok transportu (np. z `first_loading_date`) – pomoc do raportów
-- **first_loading_country**: `text`  
+- **week_number**: `integer`
+  - numer tygodnia ISO 8601 wyliczony automatycznie z `first_loading_date`; aktualizowany triggerem przy każdej zmianie `first_loading_date`; może być `NULL` gdy `first_loading_date` jest `NULL`
+- **first_loading_country**: `text`
   - kraj pierwszego załadunku (snapshot)
 - **first_unloading_country**: `text`  
   - kraj pierwszego rozładunku (snapshot)
-- **carrier_company_id**: `uuid`  
+- **carrier_company_id**: `uuid`
   - przewoźnik; FK → `companies.id`, może być `NULL` na etapie roboczym
-- **carrier_name_snapshot**: `varchar(500)`  
-  - nazwa przewoźnika użyta w zleceniu (zabezpieczenie względem zmian w słowniku)
-- **carrier_location_name_snapshot**: `varchar(500)`  
-  - nazwa lokalizacji przewoźnika (jeśli używana)
-- **carrier_address_snapshot**: `varchar(500)`  
-  - adres przewoźnika (jeśli potrzebny na dokumencie)
-- **shipper_location_id**: `uuid`  
+- **carrier_name_snapshot**: `varchar(500)`
+  - nazwa przewoźnika użyta w zleceniu (zabezpieczenie względem zmian w słowniku); **immutable** – ustawiana raz przy wyborze przewoźnika, nigdy nie aktualizowana automatycznie
+- **carrier_location_name_snapshot**: `varchar(500)`
+  - nazwa lokalizacji przewoźnika (jeśli używana); **immutable**
+- **carrier_address_snapshot**: `varchar(500)`
+  - adres przewoźnika (jeśli potrzebny na dokumencie); **immutable**
+- **shipper_location_id**: `uuid`
   - główna lokalizacja nadawcy (opcjonalnie), FK → `locations.id`
-- **shipper_name_snapshot**: `varchar(500)`  
-  - snapshot nazwy nadawcy
-- **shipper_address_snapshot**: `varchar(500)`  
-  - snapshot adresu nadawcy
-- **receiver_location_id**: `uuid`  
+- **shipper_name_snapshot**: `varchar(500)`
+  - snapshot nazwy nadawcy; **immutable** – ustawiana raz, nigdy nie aktualizowana automatycznie
+- **shipper_address_snapshot**: `varchar(500)`
+  - snapshot adresu nadawcy; **immutable**
+- **receiver_location_id**: `uuid`
   - główna lokalizacja odbiorcy (opcjonalnie), FK → `locations.id`
-- **receiver_name_snapshot**: `varchar(500)`  
-  - snapshot nazwy odbiorcy
-- **receiver_address_snapshot**: `varchar(500)`  
-  - snapshot adresu odbiorcy
+- **receiver_name_snapshot**: `varchar(500)`
+  - snapshot nazwy odbiorcy; **immutable** – ustawiana raz, nigdy nie aktualizowana automatycznie
+- **receiver_address_snapshot**: `varchar(500)`
+  - snapshot adresu odbiorcy; **immutable**
 - **vehicle_variant_code**: `text`
   - wybrany wariant pojazdu (typ + pojemność), `NOT NULL`
   - FK → `vehicle_variants.code`
@@ -83,13 +85,20 @@ Tabela główna, centralna dla całego systemu.
   - ogólne uwagi do zlecenia
 - **complaint_reason**: `varchar(500)`  
   - powód reklamacji (gdy status = reklamacja), opcjonalne
-- **sender_contact_name**: `varchar(200)`  
-  - imię i nazwisko osoby wysyłającej zlecenie (snapshot)
-- **sender_contact_phone**: `varchar(100)`  
-  - numer telefonu osoby wysyłającej (snapshot)
-- **sender_contact_email**: `varchar(320)`  
-  - email osoby wysyłającej (snapshot)
-- **search_text**: `text`  
+- **sender_contact_name**: `varchar(200)`
+  - imię i nazwisko osoby wysyłającej zlecenie; **immutable snapshot** – ustawiane przy wysyłce zlecenia
+- **sender_contact_phone**: `varchar(100)`
+  - numer telefonu osoby wysyłającej; **immutable snapshot** – ustawiane przy wysyłce zlecenia
+- **sender_contact_email**: `varchar(320)`
+  - email osoby wysyłającej; **immutable snapshot** – ustawiane przy wysyłce zlecenia
+- **main_product_name**: `varchar(500)`
+  - nazwa głównego towaru (denormalizacja z `order_items` — pierwszy aktywny item); aktualizowana triggerem lub logiką serwisową przy zapisie pozycji
+- **sent_by_user_id**: `uuid`
+  - użytkownik, który wysłał zlecenie (ustawiane automatycznie przy `prepare-email`), może być `NULL`
+- **sent_at**: `timestamptz`
+  - data i godzina wysłania zlecenia (ustawiane automatycznie przy `prepare-email`), może być `NULL`
+  - przy ponownym wysłaniu (korekta wysłane) wartość jest **nadpisywana** na aktualną datę i użytkownika
+- **search_text**: `text`
   - zdenormalizowany tekst do globalnego wyszukiwania (numer, firmy, lokalizacje, uwagi itd.)
 - **search_vector**: `tsvector`  
   - opcjonalny wektor pełnotekstowy wygenerowany z `search_text`
@@ -130,14 +139,14 @@ Najważniejsze ograniczenia:
   - data załadunku/rozładunku (lokalna), może być `NULL` w wersji roboczej
 - **time_local**: `time without time zone`  
   - godzina lokalna, może być `NULL`
-- **location_id**: `uuid`  
+- **location_id**: `uuid`
   - FK → `locations.id`, może być `NULL` (puste planistyczne)
-- **location_name_snapshot**: `varchar(500)`  
-  - snapshot nazwy lokalizacji
-- **company_name_snapshot**: `varchar(500)`  
-  - snapshot nazwy firmy
-- **address_snapshot**: `varchar(500)`  
-  - snapshot pełnego adresu (kraj, miasto, ulica, numer, kod)
+- **location_name_snapshot**: `varchar(500)`
+  - snapshot nazwy lokalizacji; **immutable** – ustawiana raz przy wyborze lokalizacji
+- **company_name_snapshot**: `varchar(500)`
+  - snapshot nazwy firmy; **immutable** – ustawiana raz przy wyborze lokalizacji
+- **address_snapshot**: `varchar(500)`
+  - snapshot pełnego adresu (kraj, miasto, ulica, numer, kod); **immutable**
 - **notes**: `varchar(500)`  
   - uwagi do punktu trasy
 
@@ -154,13 +163,16 @@ Klucze i ograniczenia:
   - PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
 - **order_id**: `uuid`  
   - FK → `transport_orders.id`, `NOT NULL`, `ON DELETE CASCADE`
-- **product_id**: `uuid`  
+- **product_id**: `uuid`
   - FK → `products.id`, może być `NULL` (np. pozycja wprowadzona tylko tekstowo)
-- **product_name_snapshot**: `varchar(500)`  
-  - snapshot nazwy towaru
-- **default_loading_method_snapshot**: `varchar(100)`  
-  - snapshot domyślnego sposobu załadunku dla tego towaru (np. `PALETA`, `LUZEM`)
-- **quantity_tons**: `numeric(12,3)`  
+- **product_name_snapshot**: `varchar(500)`
+  - snapshot nazwy towaru; **immutable** – ustawiana raz przy wyborze produktu
+- **default_loading_method_snapshot**: `varchar(100)`
+  - snapshot domyślnego sposobu załadunku z produktu (np. `PALETA`, `LUZEM`); **immutable** – wypełniany automatycznie przy wyborze produktu
+- **loading_method_code**: `varchar(100)`
+  - aktualny sposób załadunku dla tej pozycji; domyślnie kopiowany z `default_loading_method_snapshot`, ale **nadpisywalny** przez użytkownika w formularzu
+  - `CHECK (loading_method_code IS NULL OR loading_method_code IN ('PALETA','PALETA_BIGBAG','LUZEM','KOSZE'))`
+- **quantity_tons**: `numeric(12,3)`
   - ilość w tonach, może być `NULL` dla wierszy czysto planistycznych
 - **notes**: `varchar(500)`  
   - uwagi do towaru (np. informacja o paletach/sztukach)
@@ -310,12 +322,26 @@ PK:
 
 #### 1.10 `order_statuses` – statusy zleceń
 
-- **code**: `text`  
-  - kod statusu (`ROB`, `WYS`, `KOR`, `KOR_WYS`, `ZRE`, `ANL`, `REK` lub tekstowe kody wg uznania), `PRIMARY KEY`
-- **name**: `varchar(200)`  
-  - nazwa opisowa (np. `robocze`, `wysłane`), `NOT NULL`
+W systemie używane są **pełne nazwy statusów** (bez skrótów). Kolumna `code` jest jednocześnie kluczem technicznym **i** pełną nazwą statusu (pisaną małymi literami). Dzięki temu `code` = `name` — nie ma osobnego mapowania.
+
+**Dane referencyjne (seed):**
+
+| code | name | view_group | is_editable | sort_order |
+|---|---|---|---|---|
+| `robocze` | Robocze | CURRENT | true | 1 |
+| `wysłane` | Wysłane | CURRENT | false | 2 |
+| `korekta` | Korekta | CURRENT | true | 3 |
+| `korekta wysłane` | Korekta wysłane | CURRENT | false | 4 |
+| `reklamacja` | Reklamacja | CURRENT | false | 5 |
+| `zrealizowane` | Zrealizowane | COMPLETED | false | 6 |
+| `anulowane` | Anulowane | CANCELLED | false | 7 |
+
+- **code**: `text`
+  - kod statusu = pełna nazwa małymi literami (np. `robocze`, `wysłane`, `korekta wysłane`), `PRIMARY KEY`
+- **name**: `varchar(200)`
+  - pełna nazwa statusu do wyświetlania w UI (z wielką literą: `Robocze`, `Wysłane` itd.), `NOT NULL`
 - **view_group**: `text`  
-  - do której zakładki należy (`CURRENT`, `COMPLETED`, `CANCELLED`), `NOT NULL`
+  - do której zakładki/widoku należy: `CURRENT` (aktualne) = robocze, wysłane, korekta, korekta wysłane, reklamacja; `COMPLETED` (zrealizowane) = zrealizowane; `CANCELLED` (anulowane) = anulowane, `NOT NULL`
 - **is_editable**: `boolean`  
   - czy w tym statusie wolno edytować dane zlecenia, `NOT NULL`
 - **sort_order**: `smallint`  
@@ -336,10 +362,13 @@ PK:
   - nazwa opisowa wariantu (np. `hakowiec 24t`), `NOT NULL`
 - **vehicle_type**: `varchar(100)`  
   - ogólny typ pojazdu (np. `HAKOWIEC`, `FIRANKA`, `RUCHOMA_PODLOGA`), `NOT NULL`
-- **capacity_tons**: `numeric(12,3)`  
+- **capacity_tons**: `numeric(12,3)`
   - nośność w tonach, `NOT NULL`, `CHECK (capacity_tons > 0)`
-- **description**: `varchar(500)`  
-  - dodatkowe parametry (np. objętość, długość naczepy), opcjonalne
+- **capacity_volume_m3**: `numeric(12,1)`
+  - objętość ładunkowa w m³ (np. 90, 30); może być `NULL` jeśli nieistotna dla danego wariantu
+  - używana w UI do wyświetlania „firanka (90m³)" w kolumnie „Typ auta"
+- **description**: `varchar(500)`
+  - dodatkowe parametry (np. długość naczepy), opcjonalne
 - **is_active**: `boolean`  
   - flaga aktywności, `NOT NULL`, `DEFAULT true`
 
@@ -423,11 +452,11 @@ PK:
     - relacja N:1  
     - `transport_orders.vehicle_variant_code` FK → `vehicle_variants.code`
 
-13. **`transport_orders` / logi → `user_profiles` / `auth.users`**  
-    - `transport_orders.created_by_user_id` / `updated_by_user_id`,  
-      `order_status_history.changed_by_user_id`,  
-      `order_change_log.changed_by_user_id`  
-      – przechowują `uuid` zgodny z `user_profiles.id` (i Supabase `auth.users.id`).  
+13. **`transport_orders` / logi → `user_profiles` / `auth.users`**
+    - `transport_orders.created_by_user_id` / `updated_by_user_id` / `sent_by_user_id`,
+      `order_status_history.changed_by_user_id`,
+      `order_change_log.changed_by_user_id`
+      – przechowują `uuid` zgodny z `user_profiles.id` (i Supabase `auth.users.id`).
     - formalne FK do `user_profiles.id` są opcjonalne (zależnie od konfiguracji Supabase).
 
 ---
@@ -444,6 +473,7 @@ PK:
 - `INDEX` na `(first_loading_date, order_no)` – domyślne sortowanie w widoku „aktualne”.  
 - (opcjonalnie) `INDEX` na `(transport_type_code, first_loading_date)` – filtrowanie po typie transportu i dacie.  
 - (opcjonalnie) `GIN INDEX` na `search_vector` – do pełnotekstowego wyszukiwania (wymaga rozszerzeń `pg_trgm`/`unaccent`/konfiguracji FTS).
+- (opcjonalnie) `INDEX` na `sent_at` – sortowanie / filtrowanie po dacie wysłania.
 
 #### 3.2 Indeksy na `order_stops`
 
@@ -548,15 +578,54 @@ Analogiczne polityki mogą zostać zastosowane do `order_stops`, `order_items`, 
 Ten aspekt lepiej zrealizować **triggerami biznesowymi** niż RLS:
 
 - Trigger `BEFORE UPDATE` na `transport_orders`:
-  - jeśli `OLD.status_code` należy do zbioru statusów nieedytowalnych (np. `ZRE`, `ANL`), a aktualizacja próbuje zmienić jakiekolwiek pola inne niż status i niewielki zestaw techniczny, rzuca błąd.  
-  - dopuszcza specjalny przypadek zmiany `status_code` z `ZRE`/`ANL` na `KOR` w operacji „przywróć do aktualnych”.
+  - jeśli aktualny status to zrealizowane lub anulowane, a aktualizacja próbuje zmienić jakiekolwiek pola inne niż status i niewielki zestaw techniczny, rzuca błąd.  
+  - dopuszcza specjalny przypadek zmiany statusu z zrealizowane/anulowane na korekta w operacji „przywróć do aktualnych” (endpoint `/restore`).
+
+- **Zlecenia anulowane**: po upływie 24 godzin od anulowania zlecenia są **fizycznie usuwane z bazy** (job w tle, szczegóły w api-plan). Nie są wykorzystywane w raportach. Zlecenia zrealizowane pozostają w bazie bez limitu czasu.
+
+#### 4.5 Trigger dla automatycznego obliczania numeru tygodnia
+
+Kolumna `week_number` w tabeli `transport_orders` jest automatycznie aktualizowana przy każdej zmianie pola `first_loading_date`. Implementacja wymaga następującego triggera:
+
+```sql
+-- Funkcja triggera obliczająca numer tygodnia ISO 8601
+CREATE OR REPLACE FUNCTION update_week_number()
+RETURNS TRIGGER AS $$
+BEGIN
+  IF NEW.first_loading_date IS NOT NULL THEN
+    NEW.week_number := EXTRACT(WEEK FROM NEW.first_loading_date)::integer;
+  ELSE
+    NEW.week_number := NULL;
+  END IF;
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql;
+
+-- Trigger uruchamiany przed INSERT/UPDATE
+CREATE TRIGGER set_week_number
+  BEFORE INSERT OR UPDATE OF first_loading_date ON transport_orders
+  FOR EACH ROW
+  EXECUTE FUNCTION update_week_number();
+```
+
+**Uwagi implementacyjne**:
+- Trigger działa **przed** zapisem (`BEFORE INSERT OR UPDATE`), modyfikując wartość `week_number` przed zapisem do bazy
+- Uruchamia się tylko przy zmianie `first_loading_date` (optymalizacja `UPDATE OF`)
+- Używa standardu ISO 8601 dla numeracji tygodni (funkcja `EXTRACT(WEEK FROM ...)`)
+- Pole `week_number` nie może być edytowane bezpośrednio przez użytkownika – wszelkie próby ręcznego ustawienia wartości będą nadpisane przez trigger
+- W API endpoint PUT nie przyjmuje pola `weekNumber` – jest ono ignorowane, jeśli zostanie przesłane
 
 ---
 
 ### 5. Dodatkowe uwagi projektowe
 
-- **Normalizacja**:  
-  - Schemat jest zasadniczo w 3NF dla głównych encji (zlecenia, punkty, pozycje, słowniki).  
+- **Snapshoty (snapshot fields)**:
+  - Wszystkie pola zawierające słowo „snapshot" w nazwie (np. `carrier_name_snapshot`, `location_name_snapshot`, `product_name_snapshot`, `sender_contact_name`) są **immutable** – ustawiane raz przy wyborze encji (przewoźnika, lokalizacji, towaru, wysyłce) i **nigdy nie są automatycznie aktualizowane**.
+  - Celem snapshotów jest zachowanie nazw firm, lokalizacji i towarów dokładnie w takiej formie, jaka była użyta w momencie tworzenia zlecenia, nawet jeśli później dane w słownikach ulegną zmianie.
+  - Snapshoty mogą być edytowane **ręcznie** przez użytkownika bezpośrednio w formularzu (np. poprawienie literówki w nazwie firmy), ale system nigdy nie aktualizuje ich automatycznie przy zmianach w słownikach.
+
+- **Normalizacja**:
+  - Schemat jest zasadniczo w 3NF dla głównych encji (zlecenia, punkty, pozycje, słowniki).
   - Wprowadzono świadome denormalizacje (np. `summary_route`, pierwsze daty załadunku/rozładunku, snapshoty tekstowe firm/lokalizacji/towarów, `search_text`) w celu uproszczenia zapytań i przyspieszenia widoku planistycznego oraz raportów.
 
 - **Wyszukiwanie tekstowe**:  
