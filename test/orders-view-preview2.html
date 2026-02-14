@@ -1,0 +1,468 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "primary-hover": "#0d6bd9",
+                        "background-light": "#f1f5f9",
+                        "background-dark": "#0f172a",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "system-ui", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.375rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "2xl": "1rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+    <title>Główny widok — Lista zleceń transportowych 2</title>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen flex flex-col">
+
+<!-- Nagłówek aplikacji (sticky) -->
+<header class="shrink-0 h-14 px-4 border-b border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 sticky top-0 z-50 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-4 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0">
+            <span class="material-icons-round text-white text-lg">local_shipping</span>
+        </div>
+        <h1 class="text-sm font-bold tracking-tight text-slate-800 dark:text-slate-100 uppercase shrink-0">Zlecenia Transportowe</h1>
+        <nav class="flex p-1 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0" role="tablist">
+            <button type="button" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 text-primary border border-slate-200 dark:border-slate-600 transition-all" role="tab" aria-selected="true">Aktualne</button>
+            <button type="button" class="px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md transition-all" role="tab" aria-selected="false">Zrealizowane</button>
+            <button type="button" class="px-3 py-1.5 text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 rounded-md transition-all" role="tab" aria-selected="false">Anulowane</button>
+        </nav>
+        <button type="button" class="inline-flex items-center gap-1.5 px-2 py-1.5 text-xs font-medium border border-slate-200 dark:border-slate-700 rounded-lg bg-white dark:bg-slate-800 hover:bg-slate-50 dark:hover:bg-slate-700 text-slate-600 dark:text-slate-300 transition-all shrink-0" title="Aktualizuj dane">
+            <span class="material-icons-round text-sm">sync</span>
+            Aktualizuj dane
+        </button>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+        <button id="theme-toggle" class="p-1.5 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 text-slate-500 dark:text-slate-400 transition-all" title="Przełącz tryb jasny/ciemny">
+            <span class="material-icons-round text-lg dark:hidden">dark_mode</span>
+            <span class="material-icons-round text-lg hidden dark:inline">light_mode</span>
+        </button>
+        <div class="text-right border-r border-slate-200 dark:border-slate-700 pr-3">
+            <div class="text-xs font-medium text-slate-800 dark:text-slate-100">Jan Kowalski</div>
+            <div class="text-[10px] text-slate-500 dark:text-slate-400">Admin</div>
+        </div>
+        <button type="button" class="px-2 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-all">Wyloguj</button>
+    </div>
+</header>
+
+<!-- Pasek filtrów (sticky) -->
+<div class="shrink-0 px-4 py-2 border-b border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center gap-2">
+    <select class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1.5 px-2 min-w-[100px] transition-all" title="Rodzaj transportu">
+        <option>Rodzaj transportu</option>
+        <option>kraj</option>
+        <option>eksport drogowy</option>
+        <option>kontener morski</option>
+        <option>import</option>
+    </select>
+    <select class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1.5 px-2 min-w-[100px] transition-all" title="Status">
+        <option>Status</option>
+        <option>robocze</option>
+        <option>wysłane</option>
+        <option>korekta</option>
+        <option>korekta wysłane</option>
+        <option>zrealizowane</option>
+        <option>reklamacja</option>
+        <option>anulowane</option>
+    </select>
+    <input type="text" placeholder="Firma załadunku" class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1.5 px-2 w-40 placeholder:text-slate-400 transition-all"/>
+    <input type="text" placeholder="Firma rozładunku" class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1.5 px-2 w-40 placeholder:text-slate-400 transition-all"/>
+    <input type="text" placeholder="Firma transportowa" class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1.5 px-2 w-40 placeholder:text-slate-400 transition-all"/>
+    <input type="text" placeholder="Towar" class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1.5 px-2 w-32 placeholder:text-slate-400 transition-all"/>
+    <input type="text" placeholder="Nr tygodnia" class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1.5 px-2 w-24 placeholder:text-slate-400 transition-all" title="np. 07 lub 2026-07"/>
+    <input type="text" placeholder="Wyszukiwanie..." class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1.5 px-2 w-36 placeholder:text-slate-400 transition-all"/>
+    <button type="button" class="text-xs font-medium text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-200 transition-all">Wyczyść filtry</button>
+
+    <div class="ml-auto flex items-center gap-3">
+        <div class="flex items-center gap-1.5">
+            <span class="text-[10px] text-slate-500 dark:text-slate-400">Strona:</span>
+            <select class="text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-600 rounded-lg py-1 px-1.5 w-14 transition-all">
+                <option>50</option>
+                <option selected>100</option>
+                <option>200</option>
+            </select>
+        </div>
+        <div class="flex rounded-lg overflow-hidden border border-slate-200 dark:border-slate-600">
+            <button type="button" class="px-2 py-1 text-[10px] font-medium bg-slate-200 dark:bg-slate-600 text-slate-700 dark:text-slate-200 transition-all">Trasa</button>
+            <button type="button" class="px-2 py-1 text-[10px] font-medium bg-primary text-white transition-all">Kolumny</button>
+        </div>
+        <button type="button" class="inline-flex items-center gap-1 px-2 py-1.5 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg border border-emerald-700 dark:border-emerald-500 transition-all">
+            <span class="material-icons-round text-sm">add</span>
+            Nowe zlecenie
+        </button>
+    </div>
+</div>
+
+<!-- Tabela zleceń (przewijalna pionowo; poziomo przy wąskim ekranie) -->
+<div class="flex-1 overflow-auto min-h-0 p-4 custom-scrollbar">
+    <div class="table-wrapper min-h-full">
+        <table class="modern-table w-full min-w-[1280px]" role="table">
+            <thead>
+                <tr>
+                    <th class="w-10"></th>
+                    <th class="cursor-pointer hover:text-primary">Nr zlecenia</th>
+                    <th class="cursor-pointer hover:text-primary">Status</th>
+                    <th>Rodzaj transportu</th>
+                    <th class="min-w-[140px]">Miejsce załadunku</th>
+                    <th class="min-w-[120px]">Miejsce rozładunku</th>
+                    <th class="cursor-pointer hover:text-primary min-w-[100px]">Data załadunku</th>
+                    <th class="min-w-[90px]">Data rozładunku</th>
+                    <th class="min-w-[140px]">Towar</th>
+                    <th class="min-w-[120px]">Komentarz</th>
+                    <th class="cursor-pointer hover:text-primary min-w-[140px]">Firma transportowa</th>
+                    <th class="min-w-[90px]">Typ auta</th>
+                    <th class="min-w-[80px]">Stawka</th>
+                    <th class="min-w-[90px]">Data wysłania</th>
+                    <th class="modern-table-actions-col"></th>
+                </tr>
+            </thead>
+            <tbody>
+            <!-- Wiersz 1: wysłane -->
+            <tr class="row-sent" role="row">
+                <td class="text-center"></td>
+                <td class="font-medium">ZT-2026-0042</td>
+                <td><span class="badge badge-success">wysłane</span></td>
+                <td>kraj</td>
+                <td class="leading-tight whitespace-pre-line">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="leading-tight whitespace-pre-line">U1 Berlina: oddział Berlin</td>
+                <td class="leading-tight whitespace-pre-line">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="leading-tight">13.02.2026 09:00</td>
+                <td class="leading-tight whitespace-pre-line">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="leading-tight whitespace-pre-line">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="font-medium">Transport Express Sp. z o.o.</td>
+                <td>firanka (90m³)</td>
+                <td class="font-semibold">1450 PLN</td>
+                <td class="leading-tight whitespace-pre-line">Jan Kowalski
+11.02.2026</td>
+                <td class="modern-table-actions-cell row-sent">
+                    <button type="button" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-primary transition-all" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 2: robocze, zablokowane -->
+            <tr role="row">
+                <td class="text-center text-amber-500 dark:text-amber-400" title="Zlecenie edytowane przez innego użytkownika"><span class="material-icons-round text-sm">lock</span></td>
+                <td class="font-medium">ZT-2026-0043</td>
+                <td><span class="badge badge-neutral">robocze</span></td>
+                <td>eksport drogowy</td>
+                <td class="leading-tight whitespace-pre-line">L1 Nord: oddział Gorzyce</td>
+                <td class="leading-tight whitespace-pre-line">U1 Berlina: oddział Berlin</td>
+                <td class="leading-tight">14.02.2026 07:00</td>
+                <td class="leading-tight">15.02.2026 10:00</td>
+                <td class="leading-tight whitespace-pre-line">1. aluminium (8t, luzem)
+Razem: 8t</td>
+                <td class="text-slate-500 dark:text-slate-400">—</td>
+                <td class="font-medium">Trans-Euro Sp. z o.o.</td>
+                <td>hakowiec (30m³)</td>
+                <td class="font-semibold">2200 EUR</td>
+                <td class="text-slate-500 dark:text-slate-400">—</td>
+                <td class="modern-table-actions-cell">
+                    <button type="button" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-primary transition-all" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 3: korekta -->
+            <tr class="row-correction" role="row">
+                <td class="text-center"></td>
+                <td class="font-medium">ZT-2026-0041</td>
+                <td><span class="badge badge-warning">korekta</span></td>
+                <td>kraj</td>
+                <td class="leading-tight whitespace-pre-line">L1 Metalex: oddział Katowice</td>
+                <td class="leading-tight whitespace-pre-line">U1 Stalpol: oddział Wrocław</td>
+                <td class="leading-tight">11.02.2026 09:00</td>
+                <td class="leading-tight">11.02.2026 16:00</td>
+                <td class="leading-tight whitespace-pre-line">1. miedź wire rod (12t, paleta)
+Razem: 12t</td>
+                <td class="text-slate-500 dark:text-slate-400">—</td>
+                <td class="font-medium">Transport Express Sp. z o.o.</td>
+                <td>firanka (90m³)</td>
+                <td class="font-semibold">1800 PLN</td>
+                <td class="leading-tight whitespace-pre-line">Anna Nowak
+10.02.2026</td>
+                <td class="modern-table-actions-cell row-correction">
+                    <button type="button" class="p-1 rounded hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-500 hover:text-primary transition-all" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+        </tbody>
+    </table>
+    </div>
+</div>
+
+<!-- Stopka (sticky na dole) -->
+<footer class="shrink-0 h-10 px-4 border-t border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 flex items-center justify-between text-[11px] text-slate-500 dark:text-slate-400">
+    <div class="flex items-center gap-4">
+        <span>Aktywne: 3</span>
+    </div>
+    <div class="flex items-center gap-4">
+        <span>System Status: OK</span>
+        <span>Ostatnia aktualizacja: 14:32</span>
+    </div>
+</footer>
+
+<style>
+    /* Table wrapper – SaaS 2026 */
+    .table-wrapper {
+        background: white;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, 0.06);
+        overflow: hidden;
+        border: 1px solid rgb(226 232 240);
+    }
+    .dark .table-wrapper {
+        background: rgb(15 23 42);
+        border-color: rgb(51 65 85);
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+    }
+
+    .modern-table {
+        width: 100%;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 0.875rem;
+        box-sizing: border-box;
+    }
+
+    .modern-table thead {
+        background: linear-gradient(to bottom, #ffffff, #f8fafc);
+    }
+    .dark .modern-table thead {
+        background: linear-gradient(to bottom, rgb(30 41 59), rgb(15 23 42));
+    }
+
+    .modern-table thead th {
+        position: sticky;
+        top: 0;
+        z-index: 5;
+        text-align: left;
+        font-weight: 600;
+        color: rgb(71 85 105);
+        padding: 14px 18px;
+        font-size: 0.75rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        border-bottom: 1px solid rgb(226 232 240);
+        background: linear-gradient(to bottom, #ffffff, #f8fafc);
+    }
+    .dark .modern-table thead th {
+        color: rgb(203 213 225);
+        border-bottom-color: rgb(51 65 85);
+        background: linear-gradient(to bottom, rgb(30 41 59), rgb(15 23 42));
+    }
+
+    .modern-table th.modern-table-actions-col {
+        width: 3.5rem;
+        min-width: 3.5rem;
+        border-left: 1px solid rgb(226 232 240);
+    }
+    .dark .modern-table th.modern-table-actions-col {
+        border-left-color: rgb(51 65 85);
+    }
+
+    .modern-table td {
+        padding: 16px 18px;
+        color: rgb(15 23 42);
+        border-bottom: 1px solid rgb(241 245 249);
+        transition: all 0.2s ease;
+    }
+    .dark .modern-table td {
+        color: rgb(226 232 240);
+        border-bottom-color: rgb(51 65 85);
+    }
+
+    .modern-table tbody tr {
+        transition: background 0.2s ease, transform 0.15s ease;
+        cursor: pointer;
+    }
+
+    .modern-table tbody tr:hover {
+        background: rgb(248 250 252);
+        transform: scale(1.002);
+    }
+    .dark .modern-table tbody tr:hover {
+        background: rgb(30 41 59);
+    }
+
+    .modern-table tbody tr.row-sent:hover {
+        background: rgb(239 246 255);
+    }
+    .dark .modern-table tbody tr.row-sent:hover {
+        background: rgb(30 58 138 / 0.3);
+    }
+
+    .modern-table tbody tr.row-correction:hover {
+        background: rgb(255 247 237);
+    }
+    .dark .modern-table tbody tr.row-correction:hover {
+        background: rgb(124 45 18 / 0.2);
+    }
+
+    .modern-table tbody tr.row-sent {
+        background: rgb(239 246 255);
+    }
+    .dark .modern-table tbody tr.row-sent {
+        background: rgb(30 58 138 / 0.15);
+    }
+    .modern-table tbody tr.row-correction {
+        background: rgb(255 247 237);
+    }
+    .dark .modern-table tbody tr.row-correction {
+        background: rgb(124 45 18 / 0.1);
+    }
+
+    .modern-table tbody tr:last-child td {
+        border-bottom: none;
+    }
+
+    .modern-table td.modern-table-actions-cell {
+        position: sticky;
+        right: 0;
+        width: 3.5rem;
+        min-width: 3.5rem;
+        border-left: 1px solid rgb(226 232 240);
+        background: inherit;
+    }
+    .dark .modern-table td.modern-table-actions-cell {
+        border-left-color: rgb(51 65 85);
+    }
+    .modern-table tbody tr:hover td.modern-table-actions-cell {
+        background: inherit;
+    }
+    .modern-table td.modern-table-actions-cell.row-sent {
+        background: rgb(239 246 255);
+    }
+    .dark .modern-table td.modern-table-actions-cell.row-sent {
+        background: rgb(30 58 138 / 0.15);
+    }
+    .modern-table tbody tr.row-sent:hover td.modern-table-actions-cell.row-sent {
+        background: rgb(239 246 255);
+    }
+    .dark .modern-table tbody tr.row-sent:hover td.modern-table-actions-cell.row-sent {
+        background: rgb(30 58 138 / 0.3);
+    }
+    .modern-table td.modern-table-actions-cell.row-correction {
+        background: rgb(255 247 237);
+    }
+    .dark .modern-table td.modern-table-actions-cell.row-correction {
+        background: rgb(124 45 18 / 0.1);
+    }
+    .modern-table tbody tr.row-correction:hover td.modern-table-actions-cell.row-correction {
+        background: rgb(255 247 237);
+    }
+    .dark .modern-table tbody tr.row-correction:hover td.modern-table-actions-cell.row-correction {
+        background: rgb(124 45 18 / 0.2);
+    }
+
+    /* Badge – statusy */
+    .badge {
+        padding: 4px 10px;
+        font-size: 0.7rem;
+        border-radius: 999px;
+        font-weight: 600;
+        display: inline-block;
+    }
+    .badge-success {
+        background: rgb(220 252 231);
+        color: rgb(22 101 52);
+    }
+    .dark .badge-success {
+        background: rgb(22 101 52 / 0.4);
+        color: rgb(134 239 172);
+    }
+    .badge-warning {
+        background: rgb(254 243 199);
+        color: rgb(146 64 14);
+    }
+    .dark .badge-warning {
+        background: rgb(146 64 14 / 0.4);
+        color: rgb(254 215 170);
+    }
+    .badge-danger {
+        background: rgb(254 226 226);
+        color: rgb(127 29 29);
+    }
+    .dark .badge-danger {
+        background: rgb(127 29 29 / 0.4);
+        color: rgb(254 202 202);
+    }
+    .badge-neutral {
+        background: rgb(241 245 249);
+        color: rgb(71 85 105);
+    }
+    .dark .badge-neutral {
+        background: rgb(51 65 85);
+        color: rgb(203 213 225);
+    }
+
+    /* Scrollbar */
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 10px;
+        height: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgb(241 245 249);
+        border-radius: 10px;
+    }
+    .dark .custom-scrollbar::-webkit-scrollbar-track {
+        background: rgb(30 41 59);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgb(148 163 184);
+        border-radius: 10px;
+        border: 2px solid rgb(241 245 249);
+    }
+    .dark .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: rgb(71 85 105);
+        border-color: rgb(30 41 59);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: rgb(100 116 139);
+    }
+</style>
+
+<script>
+    const themeToggle = document.getElementById('theme-toggle');
+    const htmlElement = document.documentElement;
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            htmlElement.classList.toggle('dark');
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        htmlElement.classList.remove('dark');
+    } else if (savedTheme === 'dark') {
+        htmlElement.classList.add('dark');
+    }
+</script>
+
+</body>
+</html>

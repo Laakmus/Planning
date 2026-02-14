@@ -1,0 +1,371 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Transport Planning - Detailed Column View</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Outlined" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                        "neutral-dark": "#1a2530",
+                        "border-dark": "#2d3a4b",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+            font-size: 12px;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            height: 8px;
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #101922;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #2d3a4b;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #137fec;
+        }
+        .sticky-col-left {
+            position: sticky;
+            left: 0;
+            z-index: 20;
+            background-color: inherit;
+        }
+        .sticky-col-right {
+            position: sticky;
+            right: 0;
+            z-index: 20;
+            background-color: inherit;
+        }
+        .row-hover:hover {
+            background-color: rgba(19, 127, 236, 0.05) !important;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 antialiased font-display">
+<div class="flex flex-col h-screen overflow-hidden">
+<!-- Top Navigation / Header -->
+<header class="flex items-center justify-between px-4 py-3 border-b border-slate-200 dark:border-border-dark bg-white dark:bg-background-dark shrink-0">
+<div class="flex items-center space-x-6">
+<div class="flex items-center space-x-2">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center">
+<span class="material-icons-outlined text-white text-lg">local_shipping</span>
+</div>
+<span class="font-bold text-lg tracking-tight">TRANS<span class="text-primary">PRO</span></span>
+</div>
+<nav class="hidden md:flex items-center space-x-1">
+<a class="px-3 py-1.5 rounded bg-primary/10 text-primary font-medium" href="#">Zlecenia</a>
+<a class="px-3 py-1.5 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-neutral-dark" href="#">Flota</a>
+<a class="px-3 py-1.5 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-neutral-dark" href="#">Kierowcy</a>
+<a class="px-3 py-1.5 rounded text-slate-500 hover:bg-slate-100 dark:hover:bg-neutral-dark" href="#">Raporty</a>
+</nav>
+</div>
+<div class="flex items-center space-x-4">
+<div class="relative">
+<span class="material-icons-outlined absolute left-2.5 top-1/2 -translate-y-1/2 text-slate-400 text-sm">search</span>
+<input class="bg-slate-100 dark:bg-neutral-dark border-none rounded-lg pl-9 pr-4 py-1.5 text-xs w-64 focus:ring-1 focus:ring-primary" placeholder="Szukaj zlecenia..." type="text"/>
+</div>
+<button class="relative p-2 text-slate-400 hover:text-primary">
+<span class="material-icons-outlined">notifications</span>
+<span class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-background-dark"></span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-slate-200 dark:border-border-dark">
+<img alt="Avatar" data-alt="Profile picture of a male user" src="https://lh3.googleusercontent.com/aida-public/AB6AXuCU1lf5bI0Fej9E9xlE6Efa_uYr6W7mXagIW3Ed5WlPhbzDNZ5JOhp4uO84IFqVTulO44saMldSBMmTDCqq_55TS9quMrpBZaxbh0lL4-_IX6s_VlQJwVS9V_ubECUDmEChc-ZCssXWo_EF1AXM8mJeMlxlRftI2J4r8xyMbPHyuZ-Vs3TD5PFE_IVuIbGe2R55uCIbjkPBSnZCtL2Iwx4A8sORA0ZfXJJtP_jAdnLxOEBumPS-eAJ5rlKXLqWWSXKzmEoyHJHEjCI"/>
+</div>
+</div>
+</header>
+<!-- Sub-header Toolbar -->
+<div class="px-4 py-2 bg-slate-50 dark:bg-[#0d141b] border-b border-slate-200 dark:border-border-dark flex items-center justify-between shrink-0">
+<div class="flex items-center space-x-4">
+<div class="flex bg-slate-200 dark:bg-neutral-dark p-1 rounded-lg">
+<button class="px-3 py-1 rounded text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-200">Trasa</button>
+<button class="px-3 py-1 rounded bg-white dark:bg-primary text-slate-900 dark:text-white text-xs font-medium shadow-sm">Kolumny</button>
+</div>
+<div class="h-4 w-px bg-slate-300 dark:bg-border-dark"></div>
+<div class="flex items-center space-x-2">
+<span class="text-slate-500 text-[11px] uppercase font-semibold tracking-wider">Filtry:</span>
+<button class="flex items-center space-x-1 px-2 py-1 rounded border border-slate-200 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-neutral-dark">
+<span class="text-[11px]">Status: Wszystkie</span>
+<span class="material-icons-outlined text-xs">expand_more</span>
+</button>
+<button class="flex items-center space-x-1 px-2 py-1 rounded border border-slate-200 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-neutral-dark">
+<span class="text-[11px]">Data: Dzisiaj</span>
+<span class="material-icons-outlined text-xs">expand_more</span>
+</button>
+</div>
+</div>
+<div class="flex items-center space-x-2">
+<button class="bg-primary hover:bg-primary/90 text-white px-3 py-1.5 rounded-lg flex items-center space-x-2 font-medium transition-colors">
+<span class="material-icons-outlined text-sm">add</span>
+<span>Nowe zlecenie</span>
+</button>
+<button class="p-1.5 rounded border border-slate-200 dark:border-border-dark hover:bg-slate-100 dark:hover:bg-neutral-dark">
+<span class="material-icons-outlined text-sm">file_download</span>
+</button>
+</div>
+</div>
+<!-- Main Content Area - Table -->
+<main class="flex-1 overflow-auto custom-scrollbar bg-white dark:bg-background-dark">
+<table class="w-full border-separate border-spacing-0 min-w-[1400px]">
+<thead class="sticky top-0 z-30">
+<tr class="bg-slate-50 dark:bg-neutral-dark">
+<th class="sticky-col-left bg-slate-50 dark:bg-neutral-dark z-40 px-4 py-3 text-left border-b border-r border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider w-24">ID Zlecenia</th>
+<th class="px-4 py-3 text-left border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider">Miejsca Załadunków</th>
+<th class="px-4 py-3 text-left border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider">Miejsca Rozładunków</th>
+<th class="px-4 py-3 text-left border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider">Daty Załadunków</th>
+<th class="px-4 py-3 text-left border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider">Daty Rozładunków</th>
+<th class="px-4 py-3 text-left border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider">Towar</th>
+<th class="px-4 py-3 text-left border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider">Przewoźnik</th>
+<th class="px-4 py-3 text-right border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider">Cena</th>
+<th class="px-4 py-3 text-center border-b border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider">Status</th>
+<th class="sticky-col-right bg-slate-50 dark:bg-neutral-dark z-40 px-4 py-3 text-center border-b border-l border-slate-200 dark:border-border-dark text-[11px] font-bold uppercase text-slate-500 tracking-wider w-32">Akcje</th>
+</tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-border-dark">
+<!-- Row 1: In Transit -->
+<tr class="row-hover dark:bg-[#121c27]">
+<td class="sticky-col-left px-4 py-3 font-mono font-medium text-primary border-r border-slate-100 dark:border-border-dark">ORD-2024-001</td>
+<td class="px-4 py-3">
+<div class="flex flex-col gap-1">
+<span class="font-semibold">KRK</span>
+<span class="text-slate-400 text-[10px]">Kraków, PL</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-col gap-1">
+<span class="font-semibold">BER</span>
+<span class="text-slate-400 text-[10px]">Berlin, DE</span>
+</div>
+</td>
+<td class="px-4 py-3 font-mono text-slate-300">2026-02-10 08:00</td>
+<td class="px-4 py-3 font-mono text-slate-300">2026-02-12 14:00</td>
+<td class="px-4 py-3">
+<div class="flex flex-wrap gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-neutral-dark text-[10px] border border-slate-200 dark:border-border-dark">Palety x12</span>
+<span class="px-1.5 py-0.5 rounded bg-red-500/10 text-red-500 text-[10px] border border-red-500/20">ADR</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-col">
+<span class="font-semibold">LogicTrans Sp. z o.o.</span>
+<span class="text-slate-400 text-[11px]">Jan Kowalski (+48 600...)</span>
+</div>
+</td>
+<td class="px-4 py-3 text-right font-semibold">1 250,00 EUR</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<span class="px-2 py-0.5 rounded-full bg-blue-500/10 text-blue-500 border border-blue-500/20 text-[10px] font-bold uppercase">W trasie</span>
+</div>
+</td>
+<td class="sticky-col-right px-4 py-3 border-l border-slate-100 dark:border-border-dark">
+<div class="flex items-center justify-center space-x-1">
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">visibility</span></button>
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">edit</span></button>
+<button class="p-1 hover:bg-red-500/10 hover:text-red-500 rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 2: Pending -->
+<tr class="row-hover dark:bg-[#101922]">
+<td class="sticky-col-left px-4 py-3 font-mono font-medium text-primary border-r border-slate-100 dark:border-border-dark">ORD-2024-002</td>
+<td class="px-4 py-3">
+<div class="flex flex-col gap-1">
+<div class="flex items-center gap-1"><span class="font-semibold">WAW</span><span class="text-[10px] text-slate-500">→</span><span class="font-semibold">WRO</span></div>
+<span class="text-slate-400 text-[10px]">Warszawa / Wrocław, PL</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-col gap-1">
+<span class="font-semibold">PAR</span>
+<span class="text-slate-400 text-[10px]">Paris, FR</span>
+</div>
+</td>
+<td class="px-4 py-3 font-mono text-slate-300">2026-02-11 06:30</td>
+<td class="px-4 py-3 font-mono text-slate-300">2026-02-14 10:00</td>
+<td class="px-4 py-3">
+<div class="flex flex-wrap gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-neutral-dark text-[10px] border border-slate-200 dark:border-border-dark">Elektronika</span>
+</div>
+</td>
+<td class="px-4 py-3 text-slate-500 italic">Nieprzypisany</td>
+<td class="px-4 py-3 text-right font-semibold">2 800,00 EUR</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<span class="px-2 py-0.5 rounded-full bg-amber-500/10 text-amber-500 border border-amber-500/20 text-[10px] font-bold uppercase">Oczekiwanie</span>
+</div>
+</td>
+<td class="sticky-col-right px-4 py-3 border-l border-slate-100 dark:border-border-dark">
+<div class="flex items-center justify-center space-x-1">
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">visibility</span></button>
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">edit</span></button>
+<button class="p-1 hover:bg-red-500/10 hover:text-red-500 rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 3: Delivered -->
+<tr class="row-hover dark:bg-[#0e161e]">
+<td class="sticky-col-left px-4 py-3 font-mono font-medium text-primary border-r border-slate-100 dark:border-border-dark">ORD-2024-003</td>
+<td class="px-4 py-3">
+<div class="flex flex-col gap-1">
+<span class="font-semibold">GDN</span>
+<span class="text-slate-400 text-[10px]">Gdańsk, PL</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-col gap-1">
+<span class="font-semibold">PRG</span>
+<span class="text-slate-400 text-[10px]">Prague, CZ</span>
+</div>
+</td>
+<td class="px-4 py-3 font-mono text-slate-300">2026-02-08 12:00</td>
+<td class="px-4 py-3 font-mono text-slate-300">2026-02-09 18:00</td>
+<td class="px-4 py-3">
+<div class="flex flex-wrap gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-neutral-dark text-[10px] border border-slate-200 dark:border-border-dark">Stal x20t</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-col">
+<span class="font-semibold">FastWay Logistics</span>
+<span class="text-slate-400 text-[11px]">Marek Nowak (+48 505...)</span>
+</div>
+</td>
+<td class="px-4 py-3 text-right font-semibold">950,00 EUR</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<span class="px-2 py-0.5 rounded-full bg-emerald-500/10 text-emerald-500 border border-emerald-500/20 text-[10px] font-bold uppercase">Dostarczone</span>
+</div>
+</td>
+<td class="sticky-col-right px-4 py-3 border-l border-slate-100 dark:border-border-dark">
+<div class="flex items-center justify-center space-x-1">
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">visibility</span></button>
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">edit</span></button>
+<button class="p-1 hover:bg-red-500/10 hover:text-red-500 rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Row 4: Confirmed -->
+<tr class="row-hover dark:bg-[#121c27]">
+<td class="sticky-col-left px-4 py-3 font-mono font-medium text-primary border-r border-slate-100 dark:border-border-dark">ORD-2024-004</td>
+<td class="px-4 py-3">
+<div class="flex flex-col gap-1">
+<span class="font-semibold">LCJ</span>
+<span class="text-slate-400 text-[10px]">Łódź, PL</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-col gap-1">
+<span class="font-semibold">MAD</span>
+<span class="text-slate-400 text-[10px]">Madrid, ES</span>
+</div>
+</td>
+<td class="px-4 py-3 font-mono text-slate-300">2026-02-15 09:00</td>
+<td class="px-4 py-3 font-mono text-slate-300">2026-02-19 12:00</td>
+<td class="px-4 py-3">
+<div class="flex flex-wrap gap-1">
+<span class="px-1.5 py-0.5 rounded bg-slate-100 dark:bg-neutral-dark text-[10px] border border-slate-200 dark:border-border-dark">Meble</span>
+<span class="px-1.5 py-0.5 rounded bg-primary/10 text-primary text-[10px] border border-primary/20">Express</span>
+</div>
+</td>
+<td class="px-4 py-3">
+<div class="flex flex-col">
+<span class="font-semibold">EuroTrans Int.</span>
+<span class="text-slate-400 text-[11px]">Anna Wiśniewska (+48 721...)</span>
+</div>
+</td>
+<td class="px-4 py-3 text-right font-semibold">4 100,00 EUR</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<span class="px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[10px] font-bold uppercase text-white">Zatwierdzone</span>
+</div>
+</td>
+<td class="sticky-col-right px-4 py-3 border-l border-slate-100 dark:border-border-dark">
+<div class="flex items-center justify-center space-x-1">
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">visibility</span></button>
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">edit</span></button>
+<button class="p-1 hover:bg-red-500/10 hover:text-red-500 rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+<!-- Duplicate generic rows for fill -->
+<tr class="row-hover dark:bg-[#101922]">
+<td class="sticky-col-left px-4 py-3 font-mono font-medium text-primary border-r border-slate-100 dark:border-border-dark">ORD-2024-005</td>
+<td class="px-4 py-3"><span class="font-semibold">WAW</span></td>
+<td class="px-4 py-3"><span class="font-semibold">VIE</span></td>
+<td class="px-4 py-3 font-mono text-slate-300 text-slate-500 italic">Brak daty</td>
+<td class="px-4 py-3 font-mono text-slate-300 text-slate-500 italic">Brak daty</td>
+<td class="px-4 py-3"><span class="text-[10px] text-slate-500 italic">Brak towaru</span></td>
+<td class="px-4 py-3 text-slate-500 italic">Nieprzypisany</td>
+<td class="px-4 py-3 text-right font-semibold">--</td>
+<td class="px-4 py-3">
+<div class="flex justify-center">
+<span class="px-2 py-0.5 rounded-full bg-slate-500/10 text-slate-400 border border-slate-500/20 text-[10px] font-bold uppercase">Szkic</span>
+</div>
+</td>
+<td class="sticky-col-right px-4 py-3 border-l border-slate-100 dark:border-border-dark">
+<div class="flex items-center justify-center space-x-1">
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">visibility</span></button>
+<button class="p-1 hover:bg-primary/10 hover:text-primary rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">edit</span></button>
+<button class="p-1 hover:bg-red-500/10 hover:text-red-500 rounded text-slate-400 transition-colors"><span class="material-icons-outlined text-sm">delete</span></button>
+</div>
+</td>
+</tr>
+</tbody>
+</table>
+</main>
+<!-- Footer / Pagination -->
+<footer class="px-4 py-3 border-t border-slate-200 dark:border-border-dark bg-white dark:bg-background-dark flex items-center justify-between shrink-0">
+<div class="flex items-center space-x-4 text-xs text-slate-500">
+<span>Pokazano <strong>1-10</strong> z <strong>124</strong> zleceń</span>
+<div class="flex items-center space-x-2 border-l border-slate-200 dark:border-border-dark pl-4">
+<span>Wierszy na stronę:</span>
+<select class="bg-transparent border-none p-0 pr-6 text-xs font-semibold focus:ring-0">
+<option>25</option>
+<option>50</option>
+<option>100</option>
+</select>
+</div>
+</div>
+<div class="flex items-center space-x-1">
+<button class="w-8 h-8 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-neutral-dark disabled:opacity-30" disabled="">
+<span class="material-icons-outlined text-sm">chevron_left</span>
+</button>
+<button class="w-8 h-8 rounded flex items-center justify-center bg-primary text-white text-xs font-bold">1</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-neutral-dark text-xs font-medium">2</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-neutral-dark text-xs font-medium">3</button>
+<span class="px-2 text-slate-400 text-xs">...</span>
+<button class="w-8 h-8 rounded flex items-center justify-center text-slate-500 hover:bg-slate-100 dark:hover:bg-neutral-dark text-xs font-medium">12</button>
+<button class="w-8 h-8 rounded flex items-center justify-center text-slate-400 hover:bg-slate-100 dark:hover:bg-neutral-dark">
+<span class="material-icons-outlined text-sm">chevron_right</span>
+</button>
+</div>
+</footer>
+</div>
+</body></html>

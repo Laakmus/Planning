@@ -1,0 +1,522 @@
+<!DOCTYPE html>
+<html class="dark" lang="pl">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                },
+            },
+        }
+    </script>
+    <title>5 Wariantów Layoutu Punktów Trasy</title>
+</head>
+<body class="font-display bg-background-dark text-slate-100 min-h-screen p-8">
+
+<div class="max-w-5xl mx-auto space-y-12">
+    <div class="text-center mb-12">
+        <h1 class="text-3xl font-bold mb-2">5 Wariantów Layoutu Punktów Trasy</h1>
+        <p class="text-slate-400">Porównanie różnych podejść do wyświetlania punktów załadunku/rozładunku</p>
+    </div>
+
+    <!-- WARIANT 1: Ultra-kompaktowy grid (obecny) -->
+    <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div>
+                <h2 class="text-xl font-bold text-primary">Wariant 1: Ultra-kompaktowy grid</h2>
+                <p class="text-sm text-slate-400">Grid 6-kolumn, bez labels, ~60-70px wysokości</p>
+            </div>
+            <span class="px-3 py-1 bg-green-500/20 text-green-400 text-xs font-bold rounded">OBECNY</span>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-xl p-6 space-y-2">
+            <!-- L1 -->
+            <div class="flex gap-2 items-start group">
+                <div class="flex flex-col items-center shrink-0 mt-1">
+                    <span class="material-icons-round text-slate-400 cursor-grab text-base">drag_indicator</span>
+                    <div class="w-px h-full bg-slate-700 my-0.5"></div>
+                </div>
+                <div class="flex-1 bg-slate-800/50 border border-slate-700 rounded p-2 hover:border-emerald-500/50 transition-all">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 rounded">L1</span>
+                        <button class="text-slate-500 hover:text-red-500 -mr-1"><span class="material-icons-round text-base">close</span></button>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1">
+                        <div class="col-span-3">
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1.5" type="text" value="Nord Sp. z o.o." placeholder="Firma..."/>
+                        </div>
+                        <div class="col-span-3">
+                            <select class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1.5">
+                                <option>Gorzyce</option>
+                            </select>
+                        </div>
+                        <div class="col-span-3">
+                            <input class="w-full text-[10px] bg-slate-900/50 border-slate-700 rounded py-1 px-1.5 text-slate-500" type="text" value="ul. Przemysłowa 15" readonly disabled/>
+                        </div>
+                        <div class="col-span-2">
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1.5" type="date" value="2026-02-12"/>
+                        </div>
+                        <div class="col-span-1">
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1.5" type="time" value="08:00"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- U1 -->
+            <div class="flex gap-2 items-start group">
+                <div class="flex flex-col items-center shrink-0 mt-1">
+                    <span class="material-icons-round text-slate-400 cursor-grab text-base">drag_indicator</span>
+                </div>
+                <div class="flex-1 bg-slate-800/50 border border-slate-700 rounded p-2 hover:border-amber-500/50 transition-all">
+                    <div class="flex justify-between items-center mb-1">
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded">U1</span>
+                        <button class="text-slate-500 hover:text-red-500 -mr-1"><span class="material-icons-round text-base">close</span></button>
+                    </div>
+                    <div class="grid grid-cols-6 gap-1">
+                        <div class="col-span-3">
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1.5" type="text" value="Berlina Logistik" placeholder="Firma..."/>
+                        </div>
+                        <div class="col-span-3">
+                            <select class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1.5">
+                                <option>Berlin</option>
+                            </select>
+                        </div>
+                        <div class="col-span-3">
+                            <input class="w-full text-[10px] bg-slate-900/50 border-slate-700 rounded py-1 px-1.5 text-slate-500" type="text" value="Berliner Str. 100" readonly disabled/>
+                        </div>
+                        <div class="col-span-2">
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1.5" type="date" value="2026-02-13"/>
+                        </div>
+                        <div class="col-span-1">
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1.5" type="time" value="09:00"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-green-500">check_circle</span>
+            <span><strong>Zalety:</strong> Bardzo kompaktowy, wszystkie pola widoczne, łatwa edycja</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-amber-500">warning</span>
+            <span><strong>Wady:</strong> Brak labels (trzeba znać kolejność pól), małe fonty</span>
+        </div>
+    </section>
+
+    <!-- WARIANT 2: Single-line ultra-compact -->
+    <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div>
+                <h2 class="text-xl font-bold text-primary">Wariant 2: Single-line (jedna linia)</h2>
+                <p class="text-sm text-slate-400">Wszystko w jednej linii, ~35-40px wysokości</p>
+            </div>
+            <span class="px-3 py-1 bg-purple-500/20 text-purple-400 text-xs font-bold rounded">ULTRA</span>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-xl p-6 space-y-2">
+            <!-- L1 -->
+            <div class="flex items-center gap-2 bg-slate-800/50 border border-slate-700 rounded p-2 hover:border-emerald-500/50 transition-all">
+                <span class="material-icons-round text-slate-400 cursor-grab text-base">drag_indicator</span>
+                <span class="text-[11px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 rounded shrink-0">L1</span>
+                <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2 min-w-0" type="text" value="Nord Sp. z o.o." placeholder="Firma"/>
+                <select class="w-24 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1">
+                    <option>Gorzyce</option>
+                </select>
+                <input class="w-28 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="date" value="2026-02-12"/>
+                <input class="w-16 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="time" value="08:00"/>
+                <button class="text-slate-500 hover:text-red-500 shrink-0"><span class="material-icons-round text-base">close</span></button>
+            </div>
+
+            <!-- U1 -->
+            <div class="flex items-center gap-2 bg-slate-800/50 border border-slate-700 rounded p-2 hover:border-amber-500/50 transition-all">
+                <span class="material-icons-round text-slate-400 cursor-grab text-base">drag_indicator</span>
+                <span class="text-[11px] font-bold px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded shrink-0">U1</span>
+                <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2 min-w-0" type="text" value="Berlina Logistik GmbH" placeholder="Firma"/>
+                <select class="w-24 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1">
+                    <option>Berlin</option>
+                </select>
+                <input class="w-28 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="date" value="2026-02-13"/>
+                <input class="w-16 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="time" value="09:00"/>
+                <button class="text-slate-500 hover:text-red-500 shrink-0"><span class="material-icons-round text-base">close</span></button>
+            </div>
+
+            <!-- L2 -->
+            <div class="flex items-center gap-2 bg-slate-800/50 border border-slate-700 rounded p-2 hover:border-emerald-500/50 transition-all">
+                <span class="material-icons-round text-slate-400 cursor-grab text-base">drag_indicator</span>
+                <span class="text-[11px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 rounded shrink-0">L2</span>
+                <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2 min-w-0" type="text" value="Metalex Sp. z o.o." placeholder="Firma"/>
+                <select class="w-24 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1">
+                    <option>Katowice</option>
+                </select>
+                <input class="w-28 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="date" value="2026-02-12"/>
+                <input class="w-16 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="time" value="14:00"/>
+                <button class="text-slate-500 hover:text-red-500 shrink-0"><span class="material-icons-round text-base">close</span></button>
+            </div>
+
+            <!-- U2 -->
+            <div class="flex items-center gap-2 bg-slate-800/50 border border-slate-700 rounded p-2 hover:border-amber-500/50 transition-all">
+                <span class="material-icons-round text-slate-400 cursor-grab text-base">drag_indicator</span>
+                <span class="text-[11px] font-bold px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded shrink-0">U2</span>
+                <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2 min-w-0" type="text" value="Hamburg Metals GmbH" placeholder="Firma"/>
+                <select class="w-24 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1">
+                    <option>Hamburg</option>
+                </select>
+                <input class="w-28 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="date" value="2026-02-14"/>
+                <input class="w-16 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="time" value="10:30"/>
+                <button class="text-slate-500 hover:text-red-500 shrink-0"><span class="material-icons-round text-base">close</span></button>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-green-500">check_circle</span>
+            <span><strong>Zalety:</strong> MAKSYMALNA kompaktowość, 10-12 punktów widocznych jednocześnie!</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-amber-500">warning</span>
+            <span><strong>Wady:</strong> Brak miejsca na adres/NIP, wymaga szerokiego ekranu (min. 1280px)</span>
+        </div>
+    </section>
+
+    <!-- WARIANT 3: Collapsible/Accordion -->
+    <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div>
+                <h2 class="text-xl font-bold text-primary">Wariant 3: Collapsible (rozwijany)</h2>
+                <p class="text-sm text-slate-400">Domyślnie zwinięty, szczegóły po kliknięciu, ~30-35px zwinięty</p>
+            </div>
+            <span class="px-3 py-1 bg-blue-500/20 text-blue-400 text-xs font-bold rounded">SMART</span>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-xl p-6 space-y-2">
+            <!-- L1 collapsed -->
+            <div class="bg-slate-800/50 border border-slate-700 rounded overflow-hidden hover:border-emerald-500/50 transition-all">
+                <div class="flex items-center gap-2 p-2 cursor-pointer" onclick="this.parentElement.classList.toggle('expanded')">
+                    <span class="material-icons-round text-slate-400 cursor-grab text-base">drag_indicator</span>
+                    <span class="text-[11px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 rounded">L1</span>
+                    <div class="flex-1 flex items-center gap-2 text-xs">
+                        <span class="font-semibold">Nord Sp. z o.o.</span>
+                        <span class="text-slate-500">→ Gorzyce</span>
+                        <span class="text-slate-400">12.02.2026 08:00</span>
+                    </div>
+                    <span class="material-icons-round text-slate-400 text-base transition-transform expand-icon">expand_more</span>
+                    <button class="text-slate-500 hover:text-red-500" onclick="event.stopPropagation()"><span class="material-icons-round text-base">close</span></button>
+                </div>
+                <div class="hidden expanded-content p-3 pt-0 border-t border-slate-700/50">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="text-[10px] text-slate-500 block mb-1">Firma</label>
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="text" value="Nord Sp. z o.o."/>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 block mb-1">Oddział</label>
+                            <select class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2">
+                                <option>Gorzyce</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-[10px] text-slate-500 block mb-1">Adres</label>
+                            <input class="w-full text-[11px] bg-slate-900/50 border-slate-700 rounded py-1 px-2 text-slate-500" type="text" value="ul. Przemysłowa 15, Gorzyce" readonly/>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 block mb-1">Data</label>
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="date" value="2026-02-12"/>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 block mb-1">Godzina</label>
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="time" value="08:00"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- U1 collapsed -->
+            <div class="bg-slate-800/50 border border-slate-700 rounded overflow-hidden hover:border-amber-500/50 transition-all">
+                <div class="flex items-center gap-2 p-2 cursor-pointer" onclick="this.parentElement.classList.toggle('expanded')">
+                    <span class="material-icons-round text-slate-400 cursor-grab text-base">drag_indicator</span>
+                    <span class="text-[11px] font-bold px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded">U1</span>
+                    <div class="flex-1 flex items-center gap-2 text-xs">
+                        <span class="font-semibold">Berlina Logistik</span>
+                        <span class="text-slate-500">→ Berlin</span>
+                        <span class="text-slate-400">13.02.2026 09:00</span>
+                    </div>
+                    <span class="material-icons-round text-slate-400 text-base transition-transform expand-icon">expand_more</span>
+                    <button class="text-slate-500 hover:text-red-500" onclick="event.stopPropagation()"><span class="material-icons-round text-base">close</span></button>
+                </div>
+                <div class="hidden expanded-content p-3 pt-0 border-t border-slate-700/50">
+                    <div class="grid grid-cols-2 gap-2 text-xs">
+                        <div>
+                            <label class="text-[10px] text-slate-500 block mb-1">Firma</label>
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="text" value="Berlina Logistik GmbH"/>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 block mb-1">Oddział</label>
+                            <select class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2">
+                                <option>Berlin</option>
+                            </select>
+                        </div>
+                        <div class="col-span-2">
+                            <label class="text-[10px] text-slate-500 block mb-1">Adres</label>
+                            <input class="w-full text-[11px] bg-slate-900/50 border-slate-700 rounded py-1 px-2 text-slate-500" type="text" value="Berliner Str. 100, Berlin" readonly/>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 block mb-1">Data</label>
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="date" value="2026-02-13"/>
+                        </div>
+                        <div>
+                            <label class="text-[10px] text-slate-500 block mb-1">Godzina</label>
+                            <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="time" value="09:00"/>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-green-500">check_circle</span>
+            <span><strong>Zalety:</strong> Bardzo kompaktowy w trybie zwiniętym, wszystkie pola dostępne po rozwinięciu</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-amber-500">warning</span>
+            <span><strong>Wady:</strong> Wymaga kliknięcia do edycji, dodatkowa interakcja</span>
+        </div>
+    </section>
+
+    <!-- WARIANT 4: Table row style -->
+    <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div>
+                <h2 class="text-xl font-bold text-primary">Wariant 4: Table Row (wiersz tabeli)</h2>
+                <p class="text-sm text-slate-400">Jak wiersz tabeli, ~40-45px wysokości</p>
+            </div>
+            <span class="px-3 py-1 bg-cyan-500/20 text-cyan-400 text-xs font-bold rounded">CLASSIC</span>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-xl p-6">
+            <div class="space-y-1">
+                <!-- Header -->
+                <div class="grid grid-cols-12 gap-1 text-[10px] font-bold text-slate-500 uppercase px-2 pb-2 border-b border-slate-700">
+                    <div class="col-span-1">Typ</div>
+                    <div class="col-span-3">Firma</div>
+                    <div class="col-span-2">Oddział</div>
+                    <div class="col-span-3">Adres</div>
+                    <div class="col-span-2">Data/Czas</div>
+                    <div class="col-span-1"></div>
+                </div>
+
+                <!-- L1 -->
+                <div class="grid grid-cols-12 gap-1 items-center bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-emerald-500/50 rounded p-2 transition-all">
+                    <div class="col-span-1 flex items-center gap-1">
+                        <span class="material-icons-round text-slate-400 cursor-grab text-sm">drag_indicator</span>
+                        <span class="text-[10px] font-bold px-1 py-0.5 bg-emerald-500/10 text-emerald-500 rounded">L1</span>
+                    </div>
+                    <div class="col-span-3">
+                        <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="text" value="Nord Sp. z o.o."/>
+                    </div>
+                    <div class="col-span-2">
+                        <select class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2">
+                            <option>Gorzyce</option>
+                        </select>
+                    </div>
+                    <div class="col-span-3">
+                        <input class="w-full text-[10px] bg-slate-900/50 border-slate-700 rounded py-1 px-2 text-slate-500" type="text" value="ul. Przemysłowa 15" readonly/>
+                    </div>
+                    <div class="col-span-2 flex gap-1">
+                        <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="date" value="2026-02-12"/>
+                        <input class="w-16 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="time" value="08:00"/>
+                    </div>
+                    <div class="col-span-1 text-right">
+                        <button class="text-slate-500 hover:text-red-500"><span class="material-icons-round text-base">close</span></button>
+                    </div>
+                </div>
+
+                <!-- U1 -->
+                <div class="grid grid-cols-12 gap-1 items-center bg-slate-800/30 hover:bg-slate-800/50 border border-slate-700/50 hover:border-amber-500/50 rounded p-2 transition-all">
+                    <div class="col-span-1 flex items-center gap-1">
+                        <span class="material-icons-round text-slate-400 cursor-grab text-sm">drag_indicator</span>
+                        <span class="text-[10px] font-bold px-1 py-0.5 bg-amber-500/10 text-amber-500 rounded">U1</span>
+                    </div>
+                    <div class="col-span-3">
+                        <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="text" value="Berlina Logistik"/>
+                    </div>
+                    <div class="col-span-2">
+                        <select class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2">
+                            <option>Berlin</option>
+                        </select>
+                    </div>
+                    <div class="col-span-3">
+                        <input class="w-full text-[10px] bg-slate-900/50 border-slate-700 rounded py-1 px-2 text-slate-500" type="text" value="Berliner Str. 100" readonly/>
+                    </div>
+                    <div class="col-span-2 flex gap-1">
+                        <input class="w-full text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="date" value="2026-02-13"/>
+                        <input class="w-16 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="time" value="09:00"/>
+                    </div>
+                    <div class="col-span-1 text-right">
+                        <button class="text-slate-500 hover:text-red-500"><span class="material-icons-round text-base">close</span></button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-green-500">check_circle</span>
+            <span><strong>Zalety:</strong> Przejrzysty, nagłówki kolumn, łatwo skanować wzrokiem</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-amber-500">warning</span>
+            <span><strong>Wady:</strong> Wymaga szerokiego ekranu (min. 1400px), średnia kompaktowość</span>
+        </div>
+    </section>
+
+    <!-- WARIANT 5: Hybrid - icons + text -->
+    <section class="space-y-4">
+        <div class="flex items-center justify-between border-b border-slate-700 pb-3">
+            <div>
+                <h2 class="text-xl font-bold text-primary">Wariant 5: Hybrid (ikony + tekst)</h2>
+                <p class="text-sm text-slate-400">Ikony zastępują część labels, ~50-55px wysokości</p>
+            </div>
+            <span class="px-3 py-1 bg-indigo-500/20 text-indigo-400 text-xs font-bold rounded">BALANCED</span>
+        </div>
+
+        <div class="bg-slate-900/50 rounded-xl p-6 space-y-2">
+            <!-- L1 -->
+            <div class="flex gap-2 items-start">
+                <span class="material-icons-round text-slate-400 cursor-grab text-base mt-1">drag_indicator</span>
+                <div class="flex-1 bg-slate-800/50 border border-slate-700 rounded p-2 hover:border-emerald-500/50 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 bg-emerald-500/10 text-emerald-500 rounded">L1: Załadunek</span>
+                        <button class="text-slate-500 hover:text-red-500"><span class="material-icons-round text-base">close</span></button>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-1 flex-1 min-w-[200px]">
+                            <span class="material-icons-round text-slate-500 text-sm">business</span>
+                            <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="text" value="Nord Sp. z o.o." placeholder="Firma"/>
+                        </div>
+                        <div class="flex items-center gap-1 w-32">
+                            <span class="material-icons-round text-slate-500 text-sm">location_on</span>
+                            <select class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1">
+                                <option>Gorzyce</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1 w-32">
+                            <span class="material-icons-round text-slate-500 text-sm">calendar_today</span>
+                            <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="date" value="2026-02-12"/>
+                        </div>
+                        <div class="flex items-center gap-1 w-20">
+                            <span class="material-icons-round text-slate-500 text-sm">schedule</span>
+                            <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="time" value="08:00"/>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-[10px] text-slate-500 flex items-center gap-1">
+                        <span class="material-icons-round text-xs">home</span>
+                        <span>ul. Przemysłowa 15, Gorzyce</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- U1 -->
+            <div class="flex gap-2 items-start">
+                <span class="material-icons-round text-slate-400 cursor-grab text-base mt-1">drag_indicator</span>
+                <div class="flex-1 bg-slate-800/50 border border-slate-700 rounded p-2 hover:border-amber-500/50 transition-all">
+                    <div class="flex items-center justify-between mb-2">
+                        <span class="text-[11px] font-bold px-1.5 py-0.5 bg-amber-500/10 text-amber-500 rounded">U1: Rozładunek</span>
+                        <button class="text-slate-500 hover:text-red-500"><span class="material-icons-round text-base">close</span></button>
+                    </div>
+                    <div class="flex items-center gap-2 flex-wrap">
+                        <div class="flex items-center gap-1 flex-1 min-w-[200px]">
+                            <span class="material-icons-round text-slate-500 text-sm">business</span>
+                            <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-2" type="text" value="Berlina Logistik GmbH" placeholder="Firma"/>
+                        </div>
+                        <div class="flex items-center gap-1 w-32">
+                            <span class="material-icons-round text-slate-500 text-sm">location_on</span>
+                            <select class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1">
+                                <option>Berlin</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1 w-32">
+                            <span class="material-icons-round text-slate-500 text-sm">calendar_today</span>
+                            <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="date" value="2026-02-13"/>
+                        </div>
+                        <div class="flex items-center gap-1 w-20">
+                            <span class="material-icons-round text-slate-500 text-sm">schedule</span>
+                            <input class="flex-1 text-[11px] bg-slate-900 border-slate-700 rounded py-1 px-1" type="time" value="09:00"/>
+                        </div>
+                    </div>
+                    <div class="mt-2 text-[10px] text-slate-500 flex items-center gap-1">
+                        <span class="material-icons-round text-xs">home</span>
+                        <span>Berliner Str. 100, Berlin</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-green-500">check_circle</span>
+            <span><strong>Zalety:</strong> Dobrze zbalansowany, ikony pomagają zidentyfikować pola, przejrzysty</span>
+        </div>
+        <div class="flex items-center gap-2 text-xs text-slate-400">
+            <span class="material-icons-round text-sm text-amber-500">warning</span>
+            <span><strong>Wady:</strong> Średnia kompaktowość (~5-6 punktów widocznych)</span>
+        </div>
+    </section>
+
+    <!-- Podsumowanie -->
+    <section class="bg-gradient-to-br from-primary/10 to-purple-500/10 rounded-xl p-8 border border-primary/20">
+        <h2 class="text-2xl font-bold mb-4 text-center">📊 Porównanie wysokości</h2>
+        <div class="grid grid-cols-5 gap-4 text-center">
+            <div>
+                <div class="text-4xl font-bold text-green-400 mb-2">~65px</div>
+                <div class="text-xs text-slate-400">Wariant 1<br/>Ultra-grid</div>
+            </div>
+            <div>
+                <div class="text-4xl font-bold text-purple-400 mb-2">~38px</div>
+                <div class="text-xs text-slate-400">Wariant 2<br/>Single-line</div>
+            </div>
+            <div>
+                <div class="text-4xl font-bold text-blue-400 mb-2">~32px</div>
+                <div class="text-xs text-slate-400">Wariant 3<br/>Collapsible</div>
+            </div>
+            <div>
+                <div class="text-4xl font-bold text-cyan-400 mb-2">~43px</div>
+                <div class="text-xs text-slate-400">Wariant 4<br/>Table Row</div>
+            </div>
+            <div>
+                <div class="text-4xl font-bold text-indigo-400 mb-2">~72px</div>
+                <div class="text-xs text-slate-400">Wariant 5<br/>Hybrid</div>
+            </div>
+        </div>
+        <div class="mt-6 text-center text-sm text-slate-300">
+            <p><strong>Rekomendacja:</strong> Wariant 2 (Single-line) lub Wariant 3 (Collapsible) dla maksymalnej kompaktowości</p>
+            <p class="text-xs text-slate-400 mt-2">Wariant 1 (obecny) to dobry kompromis między kompaktowością a czytelności</p>
+        </div>
+    </section>
+
+</div>
+
+<style>
+    .expanded .expanded-content {
+        display: block;
+    }
+    .expanded .expand-icon {
+        transform: rotate(180deg);
+    }
+</style>
+
+</body>
+</html>
