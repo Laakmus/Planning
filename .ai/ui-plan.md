@@ -677,15 +677,35 @@ Kluczowy element wizualny widoku Trasa. Trasa prezentowana jako ciąg kompaktowy
 
 Format węzła: `{L|U}{sequenceNo}:{nazwa_lub_skrót}` — np. `L1:Nord`, `L2:Recykling`, `U1:CentralMet`
 
-**Zawijanie:** Maksymalnie 4 węzły w linii. Przy dłuższych trasach kolejne węzły automatycznie zawijają się do następnej linii dzięki `flex-wrap`.
+**Zawijanie:** **Maksymalnie 4 węzły w linii** (+ 3 strzałki = 7 elementów). Przy dłuższych trasach (np. 11 węzłów) kolejne węzły automatycznie zawijają się do następnej linii dzięki `flex-wrap gap-y-1`.
 
 **Kolorystyka węzłów:**
 - **Załadunki (L1, L2, ...):** `bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700`
 - **Rozładunki (U1, U2, ...):** `bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary`
-- **Strzałki:** `text-slate-300`
-- Container: `flex items-center space-x-1 flex-wrap gap-y-1`
+- **Strzałki:** `<span class="text-slate-300">→</span>` — między każdymi dwoma węzłami
+- **Container:** `<div class="flex items-center space-x-1 flex-wrap gap-y-1">`
 
-**Uwaga:** Linia w tle (pseudo-element `::after`) NIE jest stosowana, aby uniknąć problemów wizualnych przy zawijaniu na wiele linii.
+**Przykład długiej trasy z zawijaniem:**
+```html
+<div class="flex items-center space-x-1 flex-wrap gap-y-1">
+  <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:Nord</span>
+  <span class="text-slate-300">→</span>
+  <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L2:Recykling</span>
+  <span class="text-slate-300">→</span>
+  <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L3:MetalWay</span>
+  <span class="text-slate-300">→</span>
+  <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L4:StalPol</span>
+  <!-- Linia się zawija tutaj (4 węzły + 3 strzałki) -->
+  <span class="text-slate-300">→</span>
+  <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:BER</span>
+  <span class="text-slate-300">→</span>
+  <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U2:HAM</span>
+</div>
+```
+
+**WAŻNE:** Linia w tle (pseudo-element `::after`) **NIE jest stosowana**, aby uniknąć problemów wizualnych przy zawijaniu na wiele linii. Zawijanie jest naturalne dzięki `flex-wrap`.
+
+---
 
 ### 6.2a Kolumny miejsc (widok Kolumny)
 
@@ -731,24 +751,33 @@ tr:hover td {
 
 ### 6.4 Badge statusu
 
-Badge statusu **bez animacji pulse** — prosty badge z ramką:
+Badge statusu **bez animacji pulse** — prosty badge z ramką (oprócz Robocze):
 
 | Status | Styl badge |
 |---|---|
-| Robocze | `bg-slate-100 text-slate-700` |
+| Robocze | `bg-slate-100 text-slate-700` **(bez border)** |
 | Wysłane | `bg-blue-50 text-blue-600 border border-blue-200` |
 | Korekta | `bg-orange-50 text-orange-600 border border-orange-200` |
 | Korekta wysłane | `bg-amber-50 text-amber-700 border border-amber-200` |
 | Zrealizowane | `bg-emerald-50 text-emerald-700 border border-emerald-200` |
-| Anulowane | `bg-slate-100 text-slate-500 border border-slate-200` |
+| Anulowane | `bg-slate-100 text-slate-500 border border-slate-200` **(z borderem, inaczej niż Robocze)** |
 | Reklamacja | `bg-red-50 text-red-600 border border-red-200` |
 
-Badge: `inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`
+**Badge base class:** `inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`
+
+**UWAGA:** Status "Robocze" nie ma ramki (border), pozostałe statusy mają `border border-{color}-200`.
 
 ### 6.5 Kolumna Firma transportowa
 
 Kolumna Firma transportowa wyświetla **tylko nazwę firmy** (bez osoby kontaktowej i telefonu):
 - Nazwa firmy — `text-[12px]` (standardowa czcionka wiersza tabeli)
+- Format: po prostu tekst z nazwą przewoźnika, np. "Mega Transport", "Transport Express Sp. z o.o."
+- **Bez dodatkowych elementów**: brak imienia osoby kontaktowej, brak numeru telefonu, brak ikony
+
+**Przykład w HTML:**
+```html
+<td class="py-1 px-4 text-[12px]">Mega Transport</td>
+```
 
 ### 6.6 Kolumna Towaru (ikona + badge)
 

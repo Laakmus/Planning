@@ -104,13 +104,29 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.2 AppHeader
 
-- **Opis**: Sticky nagłówek aplikacji (`h-14`) z logo, tytułem (UPPERCASE), zakładkami widoków, przyciskiem synchronizacji i blokiem użytkownika. Zgodnie z PRD 3.1.2a i ui-plan: **bez avatara i zdjęcia użytkownika**.
-- **Główne elementy**: `<header class="bg-white dark:bg-slate-900 border-b h-14 sticky top-0 z-50">`, `<OrderTabs />` (w środku nagłówka), `<SyncButton />`, `<UserInfo />`
+- **Opis**: Sticky nagłówek aplikacji (`h-14`) z logo, tytułem (UPPERCASE), zakładkami widoków, przyciskiem synchronizacji i blokiem użytkownika. Zgodnie z PRD 3.1.2a i ui-plan: **BEZ avatara i zdjęcia użytkownika**.
+- **Główne elementy**: `<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 h-14 sticky top-0 z-50 flex items-center justify-between px-4">`, `<OrderTabs />` (w środku nagłówka), `<SyncButton />`, `<UserInfo />`
 - **Styl nagłówka**:
-  - Logo: `w-8 h-8 bg-primary rounded` z białą ikoną (np. Lucide `Truck` lub Material `precision_manufacturing`)
-  - Tytuł: `font-bold tracking-tight text-slate-800 uppercase text-sm` (np. „Zlecenia Transportowe")
-  - Zakładki: `bg-slate-100 rounded-lg p-1`, aktywna: `bg-white shadow-sm text-primary font-semibold`, nieaktywna: `text-slate-500`
-  - **UserInfo (prawa strona):** bez avatara. **Wiersz 1:** imię i nazwisko zalogowanego użytkownika (`fullName`). **Wiersz 2:** rola zwykłym tekstem — „Admin", „Planner" lub „Read only". Na prawo od bloku imienia i roli: przycisk „Wyloguj".
+  - **Logo**: `w-8 h-8 bg-primary rounded` z białą ikoną (np. Lucide `Truck` lub Material `local_shipping`)
+  - **Tytuł**: `font-bold tracking-tight text-slate-800 dark:text-slate-100 uppercase text-sm` (np. „ZLECENIA TRANSPORTOWE")
+  - **Zakładki** (w środku nagłówka): `bg-slate-100 dark:bg-slate-800 rounded-lg p-1`
+    - Aktywna: `bg-white dark:bg-slate-900 shadow-sm text-primary font-semibold`
+    - Nieaktywna: `text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300`
+  - **UserInfo (prawa strona)**: **BEZ avatara**. Layout:
+    ```html
+    <div class="flex items-center gap-3">
+      <div class="text-right">
+        <div class="text-sm font-semibold text-slate-800 dark:text-slate-100">{fullName}</div>
+        <div class="text-xs text-slate-500 dark:text-slate-400">{role}</div>
+      </div>
+      <button class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
+        Wyloguj
+      </button>
+    </div>
+    ```
+    - **Wiersz 1**: imię i nazwisko (`fullName`)
+    - **Wiersz 2**: rola zwykłym tekstem — „Admin", „Planner" lub „Read only"
+    - **Przycisk Wyloguj**: po prawej od bloku imienia i roli
 - **Obsługiwane interakcje**:
   - Klik „Aktualizuj dane" → `POST /api/v1/dictionary-sync/run`, polling `GET /dictionary-sync/jobs/{jobId}`
   - Klik „Wyloguj" → Supabase `signOut()`, redirect na `/`
@@ -147,7 +163,20 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.5 FilterBar
 
-- **Opis**: Pasek filtrów pod nagłówkiem (sticky), oddzielony `border-t`, tło `bg-slate-50`. Kolejność filtrów zgodnie z PRD 3.1.2a: **rodzaj transportu | status | firma załadunku | firma rozładunku | Firma transportowa | towar | numer tygodnia | wyszukiwanie pełnotekstowe**. Z prawej strony pasa: przycisk „Nowe zlecenie" (tylko zakładka Aktualne, tylko Admin/Planner). Nazwy filtrów spójne z nazwami kolumn tabeli.
+- **Opis**: Pasek filtrów pod nagłówkiem (sticky razem z nagłówkiem tabeli), oddzielony `border-t`, tło `bg-slate-50 dark:bg-slate-900`. **Kolejność filtrów** zgodnie z PRD 3.1.2a i testowym HTML:
+  1. Rodzaj transportu (select)
+  2. Status (select)
+  3. Firma załadunku (autocomplete)
+  4. Firma rozładunku (autocomplete)
+  5. Firma transportowa (autocomplete)
+  6. Towar (autocomplete)
+  7. Numer tygodnia (input text)
+  8. Wyszukiwanie pełnotekstowe (input text)
+  9. Przycisk „Wyczyść filtry"
+  10. **Z prawej (`ml-auto`)**: Ustawienia listy (rozmiar strony, przełącznik Trasa|Kolumny) + przycisk „Nowe zlecenie"
+- **Layout**: `<div class="px-4 py-2 border-t bg-slate-50 dark:bg-slate-900 flex flex-wrap items-center gap-2">`
+- **Przycisk "Nowe zlecenie"**: widoczny **tylko** w zakładce Aktualne, **tylko** dla ról Admin/Planner; styl: `bg-emerald-600 text-white hover:bg-emerald-700`
+- **Nazwy filtrów**: spójne z nazwami kolumn tabeli (np. filtr "Firma załadunku" odpowiada kolumnie "Miejsce załadunku")
 - **Główne elementy**: `<div class="px-4 py-2 border-t bg-slate-50 flex flex-wrap items-center gap-2">` z polami:
   - **Rodzaj transportu** — select (lista zamknięta); wyświetlanie np. „kraj".
   - **Status** — select (lista zamknięta); jeden status z listy (robocze, wysłane, korekta, korekta wysłane, zrealizowane, reklamacja, anulowane).
@@ -222,11 +251,22 @@ OrdersApp (React island — korzenny komponent)
 
 - **Opis**: Tabela z listą zleceń. Pełna definicja kolumn, kolejności i formatu wyświetlania — **PRD sekcja 3.1.2a** oraz ui-plan. Minimalna szerokość tabeli 1280px; nagłówek tabeli oraz kolumna Akcje (z prawej) są sticky; przewija się wyłącznie ciało tabeli. Na wąskich ekranach tabela przewija się w poziomie z **widocznym** paskiem przewijania u dołu.
 - **Główne elementy**:
-  - Kontener: `<div class="min-w-[1280px]">` (scrollbar widoczny na wąskich ekranach; na szerokich dopuszczalne `.scrollbar-hide`)
-  - `<table class="w-full border-collapse text-left" role="table">`
-  - `<thead class="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b z-10">` — nagłówki: `text-[11px] font-bold uppercase tracking-wider text-slate-500`, sortowanie z `aria-sort`
-  - `<tbody class="divide-y divide-slate-100">` z `<OrderRow>` × N
-  - Kolumna Akcje: `<th>/<td> sticky right-0 shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]`
+  - **Kontener z przewijaniem**: `<div class="overflow-x-auto">` (wrapper)
+  - **Tabela**: `<table class="w-full border-collapse text-left min-w-[1280px]" role="table">`
+    - Min-width 1280px zapewnia, że tabela nie skurczy się zbyt mocno
+    - Na wąskich ekranach (< 1280px) pojawi się poziomy scrollbar
+  - **Nagłówek tabeli (sticky)**: `<thead class="sticky top-0 bg-slate-50 dark:bg-slate-800 border-b z-10">`
+    - Nagłówki: `text-[11px] font-bold uppercase tracking-wider text-slate-500`
+    - Sortowanie z `aria-sort` (ascending/descending/none)
+  - **Ciało tabeli**: `<tbody class="divide-y divide-slate-100 dark:divide-slate-800">`
+    - Wiersze: `<OrderRow>` × N
+    - Separator między wierszami: `divide-y divide-slate-100`
+  - **Kolumna Akcje (sticky right)**:
+    - `<th>/<td>` z klasami: `sticky right-0 bg-white dark:bg-slate-900`
+    - Cień: `shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]` (cień po lewej stronie kolumny)
+  - **Scrollbar**:
+    - **Na wąskich ekranach** (< 1280px): scrollbar **musi być widoczny** (domyślne zachowanie, nie ukrywamy)
+    - **Na szerokich ekranach** (≥ 1280px): scrollbar może być ukryty (`.scrollbar-hide` opcjonalnie, do decyzji implementacyjnej)
 - **Widok Kolumny (PRD 3.1.2a)**: Blokada (ikona, bez etykiety) | Nr zlecenia | Status | Rodzaj transportu | Miejsce załadunku (każdy punkt w nowej linii: L1 NazwaFirmy: oddział X) | Miejsce rozładunku (U1…) | Data załadunku (lista dat z godzinami) | Data rozładunku | Towar (pozycje numerowane + „Razem: Xt") | Komentarz | Firma transportowa | Typ auta (rodzaj + objętość, np. „firanka (90m³)") | Stawka | Data wysłania zlecenia (linia 1: imię i nazwisko, linia 2: data bez godziny) | Akcje.
 - **Widok Trasa**: Zamiast kolumn Miejsce załadunku i Miejsce rozładunku — jedna kolumna **Trasa** (node-string, np. L1:KRK → L2:KAT → U1:BER); osobne kolumny Data załadunku i Data rozładunku; pozostałe kolumny jak wyżej.
 - **Sortowanie**: Domyślnie `sortBy: FIRST_LOADING_DATETIME`, `sortDirection: ASC`. Sortowalne kolumny: data załadunku, data rozładunku, numer zlecenia, Firma transportowa (api-plan: `sortBy`: FIRST_LOADING_DATETIME | FIRST_UNLOADING_DATETIME | ORDER_NO | CARRIER_NAME).
@@ -254,27 +294,62 @@ OrdersApp (React island — korzenny komponent)
 
 - **Opis**: Pojedynczy wiersz tabeli zleceń. Kompaktowy (`py-1 px-4 text-[12px]`), tło wg statusu (jaśniejszy odcień koloru statusu). Zawartość kolumn i format zgodnie z **PRD 3.1.2a**.
 - **Główne elementy** (widok Kolumny): `<tr class={getRowBgClass(statusCode)} role="row">` z:
-  - **(bez etykiety)** `<LockIndicator>` — ikona blokady tylko gdy zlecenie zablokowane przez innego użytkownika
-  - Nr zlecenia (np. ZT-2026-0042)
-  - `<StatusBadge>` — pełna nazwa statusu (statusName z API)
-  - **Tydzień** — numer tygodnia ISO 8601 (`order.weekNumber` z API), wyświetlany jako liczba całkowita (np. 7); pole obliczane automatycznie przez backend, **nie edytowalne**
-  - Rodzaj transportu (nazwa)
-  - **Miejsce załadunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`, wewnątrz `<div class="space-y-1">`:
-    - **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L{n}</span>` i nazwą firmy `<span class="font-medium">{companyName}</span>`
-    - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Kraków")
-  - Data załadunku — lista dat z godzinami dla każdego punktu załadunku (dane z `order.stops`); **format daty: DD.MM.YYYY** (backend zwraca YYYY-MM-DD, frontend formatuje przez `formatDate()`)
-  - **Miejsce rozładunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`, wewnątrz `<div class="space-y-1">`:
-    - **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm `<span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U{n}</span>` i nazwą firmy `<span class="font-medium">{companyName}</span>`
-    - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Berlin")
-  - Data rozładunku — lista dat z godzinami dla każdego punktu rozładunku (dane z `order.stops`); **format daty: DD.MM.YYYY** (backend zwraca YYYY-MM-DD, frontend formatuje przez `formatDate()`)
-  - Towar — pozycje numerowane z `order.items`: nazwa (`productNameSnapshot`), ilość (`quantityTons`), opakowanie (`loadingMethodCode`); ostatnia linia „Razem: Xt"
-  - Komentarz — lista ponumerowana uwag z `order.items[].notes` (powiązana z pozycjami towaru)
-  - **Firma transportowa** — tylko nazwa firmy (`carrierName` z API), **bez** osoby kontaktowej i telefonu
-  - Typ auta — `vehicleVariantName` + objętość w nawiasie (`vehicleCapacityVolumeM3`, np. „firanka (90m³)")
-  - Stawka — `priceAmount` + `currencyCode` (np. 1450 PLN)
-  - Data wysłania zlecenia — **linia 1:** `sentByUserName`, **linia 2:** `sentAt` sformatowane jako **DD.MM.YYYY** (bez godziny, backend zwraca timestamptz, frontend formatuje przez `formatDate()`)
-  - Akcje — sticky right, przycisk/ikona „Wyślij maila"
-- **Widok Trasa**: zamiast czterech kolumn (Miejsce załadunku, Data załadunku, Miejsce rozładunku, Data rozładunku) używa jednej kolumny `<RouteSummaryCell>` (node-string, np. L1:KRK → L2:KAT → U1:BER) oraz dwóch kolumn Data załadunku i Data rozładunku (listy dat z godzinami); pozostałe kolumny (Lock, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania, Akcje) jak wyżej.
+  - **(bez etykiety)** `<LockIndicator>` — ikona blokady tylko gdy zlecenie zablokowane przez innego użytkownika (`lockedByUserId !== null && lockedByUserId !== currentUserId`)
+  - **Nr zlecenia** — np. ZT-2026-0042; styl: `text-[12px] font-medium`
+  - **StatusBadge** — pełna nazwa statusu (`statusName` z API), np. "Wysłane", "Robocze"
+  - **Tydzień** — numer tygodnia ISO 8601 (`order.weekNumber` z API), wyświetlany jako liczba całkowita (np. `7`); pole obliczane automatycznie przez backend, **nie edytowalne**; styl: `text-[12px]`
+  - **Rodzaj transportu** — nazwa (np. "eksport drogowy"); styl: `text-[12px]`
+  - **Miejsce załadunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`:
+    - `<div class="space-y-1">`:
+      - **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm:
+        ```html
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L{n}</span>
+        <span class="font-medium">{companyName}</span>
+        ```
+      - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Kraków")
+  - **Data załadunku** — lista dat z godzinami dla każdego punktu załadunku (dane z `order.stops`):
+    ```html
+    <div class="flex items-center gap-1.5">
+      <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L{n}</span>
+      <span class="whitespace-nowrap">{dateLocal} {timeLocal}</span>
+    </div>
+    ```
+    **Format daty: DD.MM.YYYY HH:MM** (backend zwraca YYYY-MM-DD + HH:MM:SS, frontend formatuje przez `formatDate()` i `formatTime()`)
+  - **Miejsce rozładunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`:
+    - `<div class="space-y-1">`:
+      - **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm:
+        ```html
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U{n}</span>
+        <span class="font-medium">{companyName}</span>
+        ```
+      - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Berlin")
+  - **Data rozładunku** — lista dat z godzinami dla każdego punktu rozładunku (analogicznie do daty załadunku); **format: DD.MM.YYYY HH:MM**
+  - **Towar** — pozycje numerowane z `order.items`:
+    ```html
+    <div class="space-y-0.5">
+      <div class="text-[11px] whitespace-nowrap">1. {productNameSnapshot} ({quantityTons}t, {loadingMethodCode})</div>
+      <div class="text-[11px] whitespace-nowrap">2. ...</div>
+      <div class="text-[10px] text-slate-500 font-semibold">Razem: {sumaTon}t</div>
+    </div>
+    ```
+  - **Komentarz** — lista ponumerowana uwag z `order.items[].notes` (powiązana z pozycjami towaru); jeśli brak — puste pole; styl: `text-[11px] text-slate-500`
+  - **Firma transportowa** — **tylko nazwa firmy** (`carrierName` z API), **bez** osoby kontaktowej i telefonu; styl: `text-[12px]`
+  - **Typ auta** — `vehicleVariantName` + objętość w nawiasie (`vehicleCapacityVolumeM3`), np. „firanka (90m³)"; styl: `text-[12px]`
+  - **Stawka** — `priceAmount` + `currencyCode` (np. "1450 PLN"); styl: `text-[12px] font-medium`
+  - **Data wysłania zlecenia** — dwulinijkowa:
+    ```html
+    <div class="space-y-0.5">
+      <div class="text-[11px]">{sentByUserName}</div>
+      <div class="text-[10px] text-slate-500">{sentAt formatted DD.MM.YYYY}</div>
+    </div>
+    ```
+    **Format daty: DD.MM.YYYY** (bez godziny; backend zwraca timestamptz, frontend formatuje)
+  - **Akcje** — sticky right, przycisk/ikona „Wyślij maila" (ikona Material: `mail_outline` lub Lucide `Mail`)
+- **Widok Trasa**: zamiast czterech kolumn (Miejsce załadunku, Data załadunku, Miejsce rozładunku, Data rozładunku) używa:
+  - **Kolumna "Trasa"** — `<RouteSummaryCell>` (node-string, np. `L1:Nord → L2:Recykling → U1:BER`; max 4 węzły w linii, automatyczne zawijanie z `flex-wrap gap-y-1`)
+  - **Kolumna "Data załadunku"** — lista dat z godzinami i okrągłymi badge'ami L1, L2, ... (format DD.MM.YYYY HH:MM)
+  - **Kolumna "Data rozładunku"** — lista dat z godzinami i okrągłymi badge'ami U1, U2, ... (format DD.MM.YYYY HH:MM)
+  - Pozostałe kolumny (Lock, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania, Akcje) — identyczne jak w widoku Kolumny
 - **Mapowanie tła wiersza wg statusu** (statusCode/statusName z API; w UI pełna nazwa):
   - Robocze: `bg-white`, Wysłane: `bg-blue-50/30`, Korekta: `bg-orange-50/30`, Korekta wysłane: `bg-teal-50/30`, Zrealizowane: `bg-green-50/30`, Anulowane: `bg-gray-50/50`, Reklamacja: `bg-red-50/30`
 - **Obsługiwane interakcje**:
@@ -295,16 +370,32 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.10 StatusBadge
 
-- **Opis**: Badge statusu zlecenia z mapowaniem koloru. Styl: `inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`.
-- **Główne elementy**: `<span>` bez animacji pulsowania.
+- **Opis**: Badge statusu zlecenia z mapowaniem koloru. **BEZ animacji pulse**. Styl base: `inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`.
+- **Główne elementy**: `<span>` z pełną nazwą statusu (`statusName`), bez ikony pulsowania, bez klasy `animate-pulse`.
 - **Mapowanie kolorów** (wyświetlana pełna nazwa z `statusName`):
-  - Robocze → `bg-slate-100 text-slate-700`
-  - Wysłane → `bg-blue-50 text-blue-600 border border-blue-200`
-  - Korekta → `bg-orange-50 text-orange-600 border border-orange-200`
-  - Korekta wysłane → `bg-amber-50 text-amber-700 border border-amber-200`
-  - Zrealizowane → `bg-emerald-50 text-emerald-700 border border-emerald-200`
-  - Anulowane → `bg-slate-100 text-slate-500 border border-slate-200`
-  - Reklamacja → `bg-red-50 text-red-600 border border-red-200`
+  - **Robocze** → `bg-slate-100 text-slate-700` **(BEZ border)**
+  - **Wysłane** → `bg-blue-50 text-blue-600 border border-blue-200`
+  - **Korekta** → `bg-orange-50 text-orange-600 border border-orange-200`
+  - **Korekta wysłane** → `bg-amber-50 text-amber-700 border border-amber-200`
+  - **Zrealizowane** → `bg-emerald-50 text-emerald-700 border border-emerald-200`
+  - **Anulowane** → `bg-slate-100 text-slate-500 border border-slate-200` **(z borderem, inaczej niż Robocze)**
+  - **Reklamacja** → `bg-red-50 text-red-600 border border-red-200`
+- **Implementacja**:
+  ```tsx
+  function StatusBadge({ statusCode, statusName }: StatusBadgeProps) {
+    const baseClass = "inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full";
+    const colorMap = {
+      ROBOCZE: "bg-slate-100 text-slate-700",
+      WYSLANE: "bg-blue-50 text-blue-600 border border-blue-200",
+      KOREKTA: "bg-orange-50 text-orange-600 border border-orange-200",
+      KOREKTA_WYSLANE: "bg-amber-50 text-amber-700 border border-amber-200",
+      ZREALIZOWANE: "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      ANULOWANE: "bg-slate-100 text-slate-500 border border-slate-200",
+      REKLAMACJA: "bg-red-50 text-red-600 border border-red-200",
+    };
+    return <span className={`${baseClass} ${colorMap[statusCode]}`}>{statusName}</span>;
+  }
+  ```
 - **Propsy**:
   ```ts
   interface StatusBadgeProps {
@@ -614,14 +705,41 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.25 RouteSummaryCell (Node-String)
 
-- **Opis**: Wizualizacja trasy jako ciągu kompaktowych węzłów połączonych strzałkami. Kluczowy element designu widoku Trasa. Format: `L1:Nord → L2:Recykling → U1:BER`. **Zawijanie**: Maksymalnie 4 węzły w linii, następne węzły zawijają się do nowej linii.
+- **Opis**: Wizualizacja trasy jako ciągu kompaktowych węzłów połączonych strzałkami. Kluczowy element designu widoku Trasa. Format: `L1:Nord → L2:Recykling → U1:BER`. **Zawijanie**: **Maksymalnie 4 węzły w linii** (+ 3 strzałki = 7 elementów), następne węzły automatycznie zawijają się do nowej linii.
 - **Główne elementy**: `<div class="flex items-center space-x-1 flex-wrap gap-y-1">` z węzłami `<span>` rozdzielonymi `<span class="text-slate-300">→</span>`.
-- **CSS (global) — opcjonalny:** Linia w tle NIE jest stosowana, aby uniknąć problemów z zawijaniem na wiele linii.
 - **Kolorystyka węzłów:**
-  - LOADING (L1, L2, ...): `bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700`
-  - UNLOADING (U1, U2, ...): `bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary`
+  - **LOADING (L1, L2, ...)**: `bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700`
+  - **UNLOADING (U1, U2, ...)**: `bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary`
 - **Format węzła**: `{L|U}{sequenceNo}:{nazwa_lub_skrót}` — np. `L1:Nord`, `L2:Recykling`, `U1:CentralMet`
-- **Layout**: Container z `flex-wrap` pozwala na automatyczne zawijanie; maksymalnie 4 węzły + 3 strzałki w jednej linii (łącznie 7 elementów), reszta przechodzi do następnej linii.
+- **Layout**: Container z `flex-wrap gap-y-1` pozwala na automatyczne zawijanie. **Przykład**: przy 11 węzłach (8L + 3U) układ będzie:
+  - Linia 1: L1 → L2 → L3 → L4
+  - Linia 2: → L5 → L6 → L7 → L8
+  - Linia 3: → U1 → U2 → U3
+- **WAŻNE**: Linia w tle (pseudo-element `::after`) **NIE jest stosowana**, aby uniknąć problemów wizualnych przy zawijaniu na wiele linii.
+- **Implementacja**:
+  ```tsx
+  function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
+    return (
+      <div className="flex items-center space-x-1 flex-wrap gap-y-1">
+        {stops.map((stop, index) => (
+          <React.Fragment key={index}>
+            {index > 0 && <span className="text-slate-300">→</span>}
+            <span
+              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                stop.kind === "LOADING"
+                  ? "bg-emerald-100 border border-emerald-500/30 text-emerald-700"
+                  : "bg-primary/10 border border-primary/30 text-primary"
+              }`}
+            >
+              {stop.kind === "LOADING" ? "L" : "U"}
+              {stop.sequenceNo}:{stop.companyNameShort}
+            </span>
+          </React.Fragment>
+        ))}
+      </div>
+    );
+  }
+  ```
 - **Propsy**:
   ```ts
   interface RouteSummaryCellProps {
@@ -635,18 +753,38 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.26 StatusFooter
 
-- **Opis**: Pasek stopki sticky na dole ekranu (h-10); zawsze widoczny, także przy pustej liście. Zgodnie z PRD 3.1.2a i ui-plan: **bez** „W trasie", „Załadunek", „Opóźnione".
-- **Główne elementy**: `<footer class="h-10 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 flex items-center justify-between px-4 z-50 sticky bottom-0">`.
-- **Lewa strona**: liczniki zleceń — np. tylko „Aktywne: X" dla bieżącej zakładki lub liczniki per status (Robocze, Wysłane, Korekta itd.). **Bez** „W trasie", „Załadunek", „Opóźnione".
-- **Prawa strona**: „System Status: OK" oraz „Ostatnia aktualizacja: HH:MM" (czas ostatniego pobrania listy).
-- **Dane**: Obliczane z bieżącej listy zleceń (totalItems dla zakładki lub zliczanie per status).
+- **Opis**: Pasek stopki sticky na dole ekranu (`h-10`); **zawsze widoczny**, także przy pustej liście. Zgodnie z PRD 3.1.2a i ui-plan: **BEZ** „W trasie", „Załadunek", „Opóźnione" — te liczniki **nie są wyświetlane**.
+- **Główne elementy**:
+  ```html
+  <footer class="h-10 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 z-50 sticky bottom-0">
+    <div class="flex items-center gap-4">
+      <div class="flex items-center gap-2">
+        <span class="w-2 h-2 rounded-full bg-primary"></span>
+        <span class="text-sm font-semibold text-slate-700 dark:text-slate-300">Aktywne: {totalItems}</span>
+      </div>
+      <!-- Opcjonalnie: liczniki per status -->
+    </div>
+    <div class="flex items-center gap-4 text-xs text-slate-500">
+      <span>System Status: OK</span>
+      <span class="border-l border-slate-300 pl-4">Ostatnia aktualizacja: {lastUpdateTime}</span>
+    </div>
+  </footer>
+  ```
+- **Lewa strona**: liczniki zleceń:
+  - **Podstawowy**: „Aktywne: X" dla bieżącej zakładki (wartość `totalItems` z API)
+  - **Opcjonalnie** (do decyzji implementacyjnej): liczniki per status (Robocze: X, Wysłane: Y, Korekta: Z itd.)
+  - **WAŻNE**: **NIE wyświetlamy** „W trasie", „Załadunek", „Opóźnione" — te liczniki zostały usunięte z projektu
+- **Prawa strona**:
+  - „System Status: OK" — stała wartość (w przyszłości może być dynamiczna)
+  - „Ostatnia aktualizacja: HH:MM:SS" — czas ostatniego pobrania listy (format `formatTime()`)
+- **Dane**: Obliczane z bieżącej listy zleceń (`totalItems` dla zakładki lub zliczanie per status z `statusCounts`).
 - **Propsy**:
   ```ts
   interface StatusFooterProps {
     activeView: ViewGroup;
-    totalItems: number;        // dla bieżącej zakładki
-    statusCounts?: Record<OrderStatusCode, number>;  // opcjonalnie per status
-    lastUpdateTime: string | null;
+    totalItems: number;        // liczba zleceń w bieżącej zakładce
+    statusCounts?: Record<OrderStatusCode, number>;  // opcjonalne liczniki per status
+    lastUpdateTime: string | null;  // ISO timestamp lub null
   }
   ```
 

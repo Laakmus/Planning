@@ -194,17 +194,22 @@ OrderDrawer (główny kontener)
 }
 ```
 
+**Layout punktu trasy**: Grid `grid-cols-2 md:grid-cols-route` gdzie `grid-cols-route: "11fr 6fr 3fr 3fr"` (Tailwind config):
+- Kolumna 1 (11fr): Firma (z ikoną `business`)
+- Kolumna 2 (6fr): Oddział (z ikoną `location_on`)
+- Kolumna 3 (3fr): Data (z ikoną `calendar_today`)
+- Kolumna 4 (3fr): Godzina
+
 **Pola na punkt trasy**:
 
 | Pole | Typ | Źródło | Walidacja | Logika |
 |------|-----|--------|-----------|--------|
-| Firma | Autocomplete | - | - | Wyszukiwanie w `GET /api/v1/companies`. **Przy zmianie firmy: zerowanie Oddziału, Adresu, NIP** |
-| Oddział firmy | Select (lista zamknięta) | - | - | **Zależne od Firmy**: `GET /api/v1/locations?companyId={id}`. **Przy wyborze: auto-wypełnienie Adresu i NIP** |
-| Adres | Text (readonly) | `stop.addressSnapshot` | - | Auto z wybranego oddziału. Format: "ulica, kod, miasto, kraj" |
-| NIP | Text (readonly) | z firmy/lokalizacji | - | Auto z wybranej firmy/oddziału |
-| Data załadunku/rozładunku | DatePicker | `stop.dateLocal` | Format YYYY-MM-DD | Możliwość ręcznego wpisu + kalendarz |
-| Godzina | TimePicker | `stop.timeLocal` | Format HH:MM:SS | Możliwość ręcznego wpisu + picker |
-| Uwagi do punktu | Textarea | `stop.notes` | - | Opcjonalne |
+| Firma | Input text + ikona | - | - | Wyszukiwanie w `GET /api/v1/companies`. **Przy zmianie firmy: zerowanie Oddziału, Adresu, NIP**. Ikona Material: `business` |
+| Oddział firmy | Select + ikona | - | - | **Zależne od Firmy**: `GET /api/v1/locations?companyId={id}`. **Przy wyborze: auto-wypełnienie Adresu i NIP**. Ikona Material: `location_on` |
+| Adres | Text (readonly, pod grid) | `stop.addressSnapshot` | - | Auto z wybranego oddziału. Format: "ulica, kod, miasto, kraj". Ikona Material: `home`, styl: `text-xs text-slate-500 dark:text-slate-400` |
+| Data załadunku/rozładunku | Input text + ikona | `stop.dateLocal` | Format dd.mm | Ręczny wpis format dd.mm (frontend konwertuje na YYYY-MM-DD). Ikona Material: `calendar_today` jako overlay (absolute right) |
+| Godzina | Input time | `stop.timeLocal` | Format HH:MM | HTML5 time picker. Styl: `flex-1 min-w-0 text-sm` |
+| Uwagi do punktu | Input text + ikona (pod grid) | `stop.notes` | Max 500 znaków | Opcjonalne. Ikona Material: `comment`, styl: `text-xs` |
 
 **Przyciski akcji**:
 - **"Dodaj załadunek"**: Dodaje punkt `kind: "LOADING"`, limit: **max 8 załadunków**
@@ -233,20 +238,28 @@ OrderDrawer (główny kontener)
 }
 ```
 
+**Layout pozycji towarowej**: Grid `grid-cols-12 gap-2`:
+- Kolumna 1 (col-span-12 md:col-span-6): Nazwa towaru (z ikoną `label`)
+- Kolumna 2 (col-span-6 md:col-span-2): Ilość w t (z ikoną `scale`)
+- Kolumna 3 (col-span-6 md:col-span-4): Sposób załadunku (z ikoną `widgets`)
+
 **Pola na pozycję towarową**:
 
 | Pole | Typ | Źródło | Walidacja | Logika |
 |------|-----|--------|-----------|--------|
-| Nazwa towaru* | Autocomplete | `item.productId` | Wymagane do wysyłki | Wyszukiwanie w `GET /api/v1/products`. **Przy wyborze towaru: auto-ustawienie Sposobu załadunku** (z `defaultLoadingMethodSnapshot`), ale nadpisywalne |
-| Ilość w t* | Number | `item.quantityTons` | Wymagane do wysyłki, ≥0 | Jednostka: tony (t) |
-| Sposób załadunku | Select | `item.loadingMethodCode` | - | Wartości: paleta, paleta + BigBag, luzem, kosze. **Domyślnie z produktu, ale użytkownik może nadpisać** |
-| Komentarz | Text / Textarea | `item.notes` | - | Uwagi do pozycji |
+| Nazwa towaru* | Input text + ikona | `item.productId` | Wymagane do wysyłki | Wyszukiwanie w `GET /api/v1/products`. **Przy wyborze towaru: auto-ustawienie Sposobu załadunku** (z `defaultLoadingMethodSnapshot`), ale nadpisywalne. Ikona Material: `label` |
+| Ilość w t* | Number input + ikona | `item.quantityTons` | Wymagane do wysyłki, ≥0 | Jednostka: tony (t), styl: `text-sm`, step="0.1", min="0". Ikona Material: `scale` |
+| Sposób załadunku | Select + ikona | `item.loadingMethodCode` | - | Wartości: paleta, paleta + BigBag, luzem, kosze. **Domyślnie z produktu, ale użytkownik może nadpisać**. Ikona Material: `widgets` |
+| Komentarz | Input text + ikona (pod grid) | `item.notes` | Max 500 znaków | Uwagi do pozycji, styl: `text-xs`. Ikona Material: `comment` |
 
 **Przyciski akcji**:
-- **"Dodaj kolejny asortyment"**: Dodaje nowy `CargoItem` (brak limitu)
-- **"Usuń pozycję"**: Oznacza pozycję jako `_deleted: true`
+- **"Dodaj kolejny asortyment"**: Dodaje nowy `CargoItem` (brak limitu). Styl: `bg-amber-500/10 text-amber-500 border border-amber-500/30`
+- **"Usuń pozycję"**: Oznacza pozycję jako `_deleted: true`. Ikona `close`, hover: `text-red-500`
 
-**Suma automatyczna**: Frontend może wyświetlać sumę ton (`Σ quantityTons`) pod listą pozycji (opcjonalnie)
+**Suma automatyczna**: Wyświetlana pod listą pozycji w osobnym bloku `bg-slate-50 dark:bg-slate-800/30`:
+- Tekst: "Razem: {suma}t"
+- Ikona Material: `summarize`
+- Styl: `text-sm font-bold text-slate-400`
 
 ---
 
@@ -254,13 +267,15 @@ OrderDrawer (główny kontener)
 
 **Cel**: Wybór przewoźnika i specyfikacja pojazdu
 
+**Layout sekcji**: Pola w osobnych wierszach z ikonami, tło `bg-slate-50 dark:bg-slate-900/20`, padding `p-4`, rounded `rounded-xl`.
+
 | Pole | Typ | Źródło | Walidacja | Logika |
 |------|-----|--------|-----------|--------|
-| Nazwa firmy (przewoźnik)* | Autocomplete | `order.carrierCompanyId` | Wymagane do wysyłki | Firmy typu przewoźnik: `GET /api/v1/companies?type=carrier`. **Przy wyborze: auto-wypełnienie NIP** |
-| NIP | Text (readonly) | `order.carrierNameSnapshot` (lub z companies) | - | Auto z wybranej firmy |
-| Typ auta* | Select | `order.vehicleVariantCode` (część) | Wymagane | Wartości: Firanka, Hakowiec, Wywrotka, Bus, Hakowiec z HDS. Mapowanie na `vehicle_type` w `vehicle_variants` |
-| Objętość w m³* | Combobox | `order.vehicleCapacityVolumeM3` | Wymagane | Lista: 10, 20, 30, ..., 100 (co 10 m³). Wpis filtruje listę. **Na MVP: tylko wartości z listy** |
-| Wymagane dokumenty | Select (single choice) | `order.requiredDocumentsText` | - | **2 opcje**: (1) "WZ, KPO, kwit wagowy", (2) "WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** opcję z listy (select, nie checkboxes) |
+| Nazwa firmy (przewoźnik)* | Input text + ikona | `order.carrierCompanyId` | Wymagane do wysyłki | Firmy typu przewoźnik: `GET /api/v1/companies?type=carrier`. **Przy wyborze: auto-wypełnienie NIP**. Ikona Material: `local_shipping` |
+| NIP | Input text readonly + ikona | `order.carrierNameSnapshot` (lub z companies) | - | Auto z wybranej firmy, disabled. Ikona Material: `badge` |
+| Typ auta* | Select + ikona | `order.vehicleVariantCode` (część) | Wymagane | Wartości: Firanka, Hakowiec, Wywrotka, Bus, Hakowiec z HDS. Mapowanie na `vehicle_type` w `vehicle_variants`. Ikona Material: `directions_car`. Grid: `col-span-12 md:col-span-7` |
+| Objętość w m³* | Select + ikona | `order.vehicleCapacityVolumeM3` | Wymagane | Lista: 10 m³, 20 m³, 30 m³, ..., 100 m³ (co 10 m³). **Na MVP: select z wartościami z listy** (nie combobox z wpisem). Ikona Material: `straighten`. Grid: `col-span-12 md:col-span-5` |
+| Wymagane dokumenty | Select + ikona | `order.requiredDocumentsText` | - | **2 opcje**: (1) "WZ, KPO, kwit wagowy", (2) "WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** opcję z listy (select, **nie checkboxes**). Ikona Material: `description` |
 
 **Uwaga o `vehicleVariantCode`**:
 - PRD mówi o "wariancie pojazdu" łączącym typ + objętość (np. `FIRANKA_90M3`)
@@ -273,7 +288,12 @@ OrderDrawer (główny kontener)
     "capacityVolumeM3": 90.0
   }
   ```
-- **Logika UI**: Użytkownik wybiera **Typ auta** (select) i **Objętość** (combobox) **oddzielnie**, frontend mapuje na odpowiedni `code` przy zapisie
+- **Logika UI**: Użytkownik wybiera **Typ auta** (select) i **Objętość** (select) **oddzielnie** w grid `grid-cols-12 gap-3`, frontend mapuje na odpowiedni `code` przy zapisie
+
+**Style wizualne**:
+- Etykiety: `text-xs font-semibold text-slate-400 block mb-1`
+- Inputy/selecty: `w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2`
+- NIP readonly: `bg-slate-100 dark:bg-slate-800` z `readonly disabled`
 
 ---
 
@@ -310,12 +330,23 @@ OrderDrawer (główny kontener)
 
 **Cel**: Zarządzanie statusem zlecenia i powodem reklamacji
 
+**Layout sekcji**: Tło `bg-slate-50 dark:bg-slate-900/20`, padding `p-4`, rounded `rounded-xl`.
+
 | Pole | Typ | Źródło | Walidacja | Logika |
 |------|-----|--------|-----------|--------|
-| Aktualny status | Badge / Text (readonly) | `order.statusCode` / `order.statusName` | - | Wyświetlanie pełnej nazwy: Robocze, Wysłane, Korekta, Korekta wysłane, Zrealizowane, Reklamacja, Anulowane |
-| Wybór nowego statusu | Select | - | Tylko dozwolone przejścia | **Lista zależna od aktualnego statusu** (patrz tabela przejść poniżej). Pełne nazwy statusów |
-| Przycisk "Zmień status" | Button | - | - | **Nie zapisuje natychmiast**. Zmiana statusu zapisywana razem z całym formularzem przy kliknięciu "Zapisz" w stopce |
-| Powód reklamacji | Textarea | `order.complaintReason` | **Wymagane przy Reklamacja** | **Widoczne tylko gdy**: aktualny status = Reklamacja **LUB** użytkownik wybiera przejście na Reklamacja. **Bez wypełnienia: zapis zablokowany** |
+| Aktualny status | Badge readonly + ikona | `order.statusCode` / `order.statusName` | - | Wyświetlanie pełnej nazwy: Robocze, Wysłane, Korekta, Korekta wysłane, Zrealizowane, Reklamacja, Anulowane. Badge z odpowiednim kolorem (patrz StatusBadge). Ikona Material: `label` |
+| Wybór nowego statusu | Przyciski (button group) + ikona | - | Tylko dozwolone przejścia | **Przyciski zamiast select**: `flex flex-wrap gap-2`, każdy przycisk z ikoną i tekstem. Kliknięty przycisk ma `ring-2 ring-offset-2 ring-{color}-500`. Ikona Material: `sync_alt` |
+| Powód reklamacji | Textarea + ikona (conditional) | `order.complaintReason` | **Wymagane przy Reklamacja** | **Widoczne tylko gdy**: aktualny status = Reklamacja **LUB** użytkownik kliknie przycisk Reklamacja. Tło `bg-red-500/5 border border-red-500/20`. **Bez wypełnienia: zapis zablokowany**. Ikona Material: `report_problem`, alert `⚠️` |
+
+**Przyciski statusów** (przykłady):
+- **Zrealizowane**: `bg-green-500/10 text-green-500 border-2 border-green-500/30`, ikona `check_circle`
+- **Reklamacja**: `bg-red-500/10 text-red-500 border-2 border-red-500/30`, ikona `report_problem`
+- **Anulowane**: `bg-slate-500/10 text-slate-500 border-2 border-slate-500/30`, ikona `cancel`
+- Wybrany przycisk dodatkowo: `ring-2 ring-offset-2 ring-{color}-500`
+
+**Informacja dla użytkownika** (pod sekcją):
+- Komunikat: "Zmiana statusu zostanie zapisana razem z całym formularzem przy kliknięciu \"Zapisz\" w stopce"
+- Ikona Material: `info`, styl: `text-xs text-slate-500`
 
 **Dozwolone przejścia ręczne** (zgodnie z PRD 3.1.7):
 
