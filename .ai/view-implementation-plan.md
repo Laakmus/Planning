@@ -284,6 +284,7 @@ function isValidUUID(value: string): boolean
 4. Generuj `order_no` — format `ZT{year}/{seqNo}` (np. `ZT2026/0001`):
    - Pobierz najwyższy `order_no` z tego roku lub użyj sekwencji DB.
    - **Rekomendacja:** Funkcja PostgreSQL (`rpc`) `generate_order_no()` z sekwencją.
+   - **Uwaga:** PRD używa formatu `ZT-2026-0042` (z myślnikami). Przyjęto format z db-plan.md (`ZT2026/0001`) jako źródło prawdy dla bazy — do uzgodnienia z właścicielem produktu.
 5. Automatyczne uzupełnienie pól:
    - `required_documents_text` wg `transport_type_code` (sekcja 5.1 db-plan)
    - `currency_code` wg `transport_type_code` (sekcja 5.2 db-plan) — nadpisz tylko jeśli user nie podał innej
@@ -457,8 +458,8 @@ function isValidUUID(value: string): boolean
 3. Pobierz zlecenie z bieżącym statusem.
 4. Jeśli status ∉ {zrealizowane, anulowane} → 400.
 5. Jeśli status = anulowane:
-   - Sprawdź czas od anulowania (np. `updated_at` lub dedykowane pole).
-   - Jeśli > 24h → 400 lub 410 Gone.
+   - Sprawdź czas od anulowania: pobierz `changed_at` z `order_status_history` WHERE `new_status_code = 'anulowane'` ORDER BY `changed_at DESC LIMIT 1`.
+   - Jeśli > 24h → 410 Gone (zlecenie mogło być już usunięte przez job w tle).
 6. UPDATE `status_code = 'korekta'`.
 7. INSERT do `order_status_history`.
 8. Zwróć 200 z `RestoreOrderResponseDto`.
@@ -478,7 +479,7 @@ function isValidUUID(value: string): boolean
 **Typ odpowiedzi:** `LockOrderResponseDto`
 
 **Przepływ (serwis `order-lock.service.ts` → `lockOrder`):**
-1. Auth guard.
+1. Auth guard + requireWriteAccess.
 2. Waliduj `orderId`.
 3. Pobierz zlecenie (only `locked_by_user_id`, `locked_at`).
 4. Jeśli `locked_by_user_id` ≠ null i ≠ current_user i blokada nie wygasła → 409.
@@ -488,7 +489,7 @@ function isValidUUID(value: string): boolean
 **Wygasanie blokady:** Np. 15 minut od `locked_at`. Konfiguracja stała w serwisie.
 
 **Błędy:**
-- 401, 404, 409
+- 401, 403, 404, 409
 
 ---
 
@@ -658,8 +659,10 @@ function isValidUUID(value: string): boolean
 5. Zmiana statusu:
    - robocze → wysłane
    - korekta → korekta wysłane
-   - Inne statusy — 400 (nie można wysyłać z tego statusu).
-6. Ustaw `sent_by_user_id = current_user`, `sent_at = now()`.
+   - wysłane → wysłane (ponowna wysyłka — status bez zmian, aktualizacja `sent_at` i `sent_by_user_id`)
+   - korekta wysłane → korekta wysłane (ponowna wysyłka — status bez zmian, aktualizacja `sent_at` i `sent_by_user_id`)
+   - Inne statusy (zrealizowane, anulowane, reklamacja) — 400 (nie można wysyłać z tego statusu).
+6. Ustaw `sent_by_user_id = current_user`, `sent_at = now()` (nadpisywane przy każdej wysyłce, w tym ponownej).
 7. Aktualizuj `main_product_name` jeśli puste.
 8. INSERT do `order_status_history`.
 9. Zwróć 200 z `PrepareEmailResponseDto` (w tym `emailOpenUrl` — mailto: link, `pdfFileName`).
@@ -750,9 +753,11 @@ export const isoTimeSchema = z.string().regex(/^\d{2}:\d{2}:\d{2}$/);
 ```typescript
 import { z } from "zod";
 
+const orderStatusCodeEnum = z.enum(["robocze", "wysłane", "korekta", "korekta wysłane", "zrealizowane", "reklamacja", "anulowane"]);
+
 export const orderListQuerySchema = z.object({
   view: z.enum(["CURRENT", "COMPLETED", "CANCELLED"]).default("CURRENT"),
-  status: z.union([z.string(), z.array(z.string())]).optional(),
+  status: z.union([orderStatusCodeEnum, z.array(orderStatusCodeEnum)]).optional(),
   transportType: z.enum(["PL", "EXP", "EXP_K", "IMP"]).optional(),
   carrierId: z.string().uuid().optional(),
   productId: z.string().uuid().optional(),
@@ -802,7 +807,7 @@ export const createOrderSchema = z.object({
   generalNotes: z.string().max(500).nullable(),
   senderContactName: z.string().max(200).nullable(),
   senderContactPhone: z.string().max(100).nullable(),
-  senderContactEmail: z.string().max(320).email().nullable().or(z.literal(null)),
+  senderContactEmail: z.string().max(320).email().nullable(),
   stops: z.array(createOrderStopSchema),
   items: z.array(createOrderItemSchema),
 });
@@ -818,12 +823,7 @@ export const updateOrderItemSchema = createOrderItemSchema.extend({
   _deleted: z.boolean(),
 });
 
-export const updateOrderSchema = createOrderSchema
-  .omit({ carrierCompanyId: true, shipperLocationId: true, receiverLocationId: true })
-  .extend({
-    carrierCompanyId: z.string().uuid().nullable(),
-    shipperLocationId: z.string().uuid().nullable(),
-    receiverLocationId: z.string().uuid().nullable(),
+export const updateOrderSchema = createOrderSchema.extend({
     complaintReason: z.string().max(500).nullable(),
     stops: z.array(updateOrderStopSchema),
     items: z.array(updateOrderItemSchema),
@@ -1019,13 +1019,19 @@ Istniejące indeksy (z `db-plan.md`):
 
 ## 9. Etapy wdrożenia
 
+### Etap 0: Migracja schematu DB (priorytet: P0, blokujące)
+
+0. **Migracja SQL:** Dodanie 8 brakujących kolumn do `transport_orders`: `payment_term_days`, `payment_method`, `total_load_volume_m3`, `special_requirements`, `last_loading_date`, `last_loading_time`, `last_unloading_date`, `last_unloading_time`.
+1. **Regeneracja typów:** `npx supabase gen types typescript --project-id <id> > src/db/database.types.ts`
+
 ### Etap 1: Infrastruktura (priorytet: P0)
 
-1. **Zainstalować Zod:** `npm install zod`
-2. **Utworzyć `src/lib/api-helpers.ts`** — funkcje `getAuthenticatedUser`, `requireWriteAccess`, `requireAdmin`, `jsonResponse`, `errorResponse`, `parseJsonBody`.
-3. **Zaktualizować middleware** (`src/middleware/index.ts`) — dodanie obsługi tokenu JWT z nagłówka `Authorization` (oprócz cookie).
-4. **Utworzyć `src/lib/validators/common.validator.ts`** — wspólne schematy Zod.
-5. **Utworzyć `src/lib/validators/order.validator.ts`** — schematy Zod dla zleceń.
+1. **Konfiguracja Astro SSR:** Dodać `output: 'server'` w `astro.config.mjs`, zainstalować adapter: `npm install @astrojs/node`, dodać do `integrations`.
+2. **Zainstalować Zod:** `npm install zod`
+3. **Utworzyć `src/lib/api-helpers.ts`** — funkcje `getAuthenticatedUser`, `requireWriteAccess`, `requireAdmin`, `jsonResponse`, `errorResponse`, `parseJsonBody`.
+4. **Zaktualizować middleware** (`src/middleware/index.ts`) — dodanie obsługi tokenu JWT z nagłówka `Authorization` (oprócz cookie).
+5. **Utworzyć `src/lib/validators/common.validator.ts`** — wspólne schematy Zod.
+6. **Utworzyć `src/lib/validators/order.validator.ts`** — schematy Zod dla zleceń.
 
 ### Etap 2: Auth + Słowniki (priorytet: P0)
 
@@ -1090,6 +1096,9 @@ api-helpers.ts ←── Etap 1
 
 **Wymagania wstępne:**
 - Baza danych Supabase z pełnym schematem (tabele, indeksy, RLS, triggery) — migracje w `supabase/migrations/`.
+- **UWAGA:** Schemat DB (`database.types.ts`) nie zawiera jeszcze 8 kolumn wymaganych przez `db-plan.md` i `types.ts`. Przed rozpoczęciem implementacji konieczna jest nowa migracja dodająca: `payment_term_days`, `payment_method`, `total_load_volume_m3`, `special_requirements`, `last_loading_date`, `last_loading_time`, `last_unloading_date`, `last_unloading_time` do tabeli `transport_orders`. Po migracji: `npx supabase gen types typescript` aby zregenerować `database.types.ts`.
+- Konfiguracja Astro SSR: dodać `output: 'server'` w `astro.config.mjs` oraz zainstalować adapter SSR (np. `@astrojs/node`).
+- Zainstalować Zod: `npm install zod`.
 - Dane seedowe w tabelach słownikowych (`transport_types`, `order_statuses`, `vehicle_variants`).
 - Zmienne środowiskowe `SUPABASE_URL` i `SUPABASE_KEY` w `.env`.
 
