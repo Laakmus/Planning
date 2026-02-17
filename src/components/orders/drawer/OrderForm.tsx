@@ -5,13 +5,13 @@
 
 import { useEffect, useRef, useState } from "react";
 
+import { ArrowLeftRight, Banknote, MessageSquare, Package, Route, Truck } from "lucide-react";
+
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDictionaries } from "@/contexts/DictionaryContext";
-import { formatDate } from "@/lib/format-utils";
 import type { CurrencyCode, OrderFormData, OrderFormItem, OrderFormStop, OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
 import type { OrderDetailDto, OrderItemDto, OrderStopDto } from "@/types";
 
-import { StatusBadge } from "../StatusBadge";
 import { CargoSection } from "./CargoSection";
 import { CarrierSection } from "./CarrierSection";
 import { FinanceSection } from "./FinanceSection";
@@ -92,13 +92,13 @@ function buildInitialForm(order: OrderDetailDto, stops: OrderStopDto[], items: O
 // Sekcja nagłówkowa (readonly)
 // ---------------------------------------------------------------------------
 
-function SectionHeader({ title }: { title: string }) {
+function SectionHeader({ icon, title }: { icon: React.ReactNode; title: string }) {
   return (
-    <div className="flex items-center gap-3 mb-4">
-      <h3 className="text-xs font-bold uppercase tracking-wide text-slate-500 dark:text-slate-400">
+    <div className="flex items-center gap-2 mb-4">
+      {icon}
+      <h3 className="text-sm font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
         {title}
       </h3>
-      <div className="flex-1 h-px bg-slate-100 dark:bg-slate-800" />
     </div>
   );
 }
@@ -163,38 +163,11 @@ export function OrderForm({
 
   return (
     <ScrollArea className="flex-1 min-h-0">
-      <div className="px-6 py-4 space-y-8">
-
-        {/* Sekcja 0 – Nagłówek */}
-        <section>
-          <SectionHeader title="Nagłówek" />
-          <div className="grid grid-cols-2 gap-x-6 gap-y-3 text-sm">
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Nr zlecenia</p>
-              <p className="font-semibold text-slate-900 dark:text-slate-100">{order.orderNo}</p>
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Status</p>
-              <StatusBadge statusCode={order.statusCode} statusName={statusName} />
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Data wystawienia</p>
-              <p className="text-slate-700 dark:text-slate-300">
-                {formatDate(order.createdAt.substring(0, 10))}
-              </p>
-            </div>
-            <div>
-              <p className="text-[10px] text-slate-500 uppercase tracking-wide mb-1">Tydzień</p>
-              <p className="text-slate-700 dark:text-slate-300">
-                {order.transportYear ? `${order.transportYear}` : "—"}
-              </p>
-            </div>
-          </div>
-        </section>
+      <div className="p-6 space-y-8">
 
         {/* Sekcja 1 – Trasa */}
         <section>
-          <SectionHeader title="Trasa" />
+          <SectionHeader icon={<Route className="w-4 h-4 text-primary" />} title="Sekcja 1: Trasa" />
           <RouteSection
             formData={formData}
             transportTypes={transportTypes}
@@ -207,7 +180,7 @@ export function OrderForm({
 
         {/* Sekcja 2 – Towar */}
         <section>
-          <SectionHeader title="Towar" />
+          <SectionHeader icon={<Package className="w-4 h-4 text-amber-500" />} title="Sekcja 2: Towar" />
           <CargoSection
             formData={formData}
             products={products}
@@ -218,53 +191,61 @@ export function OrderForm({
 
         {/* Sekcja 3 – Firma transportowa */}
         <section>
-          <SectionHeader title="Firma transportowa" />
-          <CarrierSection
-            formData={formData}
-            companies={companies}
-            vehicleVariants={vehicleVariants}
-            isReadOnly={isReadOnly}
-            onChange={patch}
-          />
+          <SectionHeader icon={<Truck className="w-4 h-4 text-violet-500" />} title="Sekcja 3: Firma transportowa" />
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+            <CarrierSection
+              formData={formData}
+              companies={companies}
+              vehicleVariants={vehicleVariants}
+              isReadOnly={isReadOnly}
+              onChange={patch}
+            />
+          </div>
         </section>
 
         {/* Sekcja 4 – Finanse */}
         <section>
-          <SectionHeader title="Finanse" />
-          <FinanceSection
-            formData={formData}
-            isReadOnly={isReadOnly}
-            onChange={patch}
-          />
+          <SectionHeader icon={<Banknote className="w-4 h-4 text-yellow-500" />} title="Sekcja 4: Finanse" />
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+            <FinanceSection
+              formData={formData}
+              isReadOnly={isReadOnly}
+              onChange={patch}
+            />
+          </div>
         </section>
 
         {/* Sekcja 5 – Uwagi */}
         <section>
-          <SectionHeader title="Uwagi" />
-          <NotesSection
-            formData={formData}
-            isReadOnly={isReadOnly}
-            onChange={patch}
-          />
+          <SectionHeader icon={<MessageSquare className="w-4 h-4 text-slate-400" />} title="Sekcja 5: Uwagi" />
+          <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+            <NotesSection
+              formData={formData}
+              isReadOnly={isReadOnly}
+              onChange={patch}
+            />
+          </div>
         </section>
 
         {/* Sekcja 6 – Zmiana statusu (tylko edycja) */}
         {!isReadOnly && (
           <section>
-            <SectionHeader title="Zmiana statusu" />
-            <StatusSection
-              currentStatusCode={order.statusCode}
-              currentStatusName={statusName}
-              pendingStatusCode={pendingStatusCode}
-              complaintReason={complaintReason}
-              onStatusChange={(code) => {
-                setPendingStatusCode(code);
-                const dirty = code !== null || JSON.stringify(formData) !== JSON.stringify(originalRef.current);
-                setIsDirty(dirty);
-                onDirtyChange(dirty);
-              }}
-              onComplaintReasonChange={setComplaintReason}
-            />
+            <SectionHeader icon={<ArrowLeftRight className="w-4 h-4 text-indigo-500" />} title="Sekcja 6: Zmiana statusu" />
+            <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+              <StatusSection
+                currentStatusCode={order.statusCode}
+                currentStatusName={statusName}
+                pendingStatusCode={pendingStatusCode}
+                complaintReason={complaintReason}
+                onStatusChange={(code) => {
+                  setPendingStatusCode(code);
+                  const dirty = code !== null || JSON.stringify(formData) !== JSON.stringify(originalRef.current);
+                  setIsDirty(dirty);
+                  onDirtyChange(dirty);
+                }}
+                onComplaintReasonChange={setComplaintReason}
+              />
+            </div>
           </section>
         )}
 

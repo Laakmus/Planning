@@ -92,11 +92,11 @@ export function CargoSection({
           return (
             <div
               key={idx}
-              className="rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 p-4 space-y-3"
+              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 p-3 space-y-3 hover:border-amber-500/50 transition-all"
             >
               <div className="flex items-center justify-between">
-                <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
-                  Towar {itemNo}
+                <span className="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase">
+                  Produkt {itemNo}
                 </span>
                 {!isReadOnly && (
                   <button
@@ -193,8 +193,10 @@ export function CargoSection({
 
       {/* Podsumowanie tonażu */}
       {activeItems.length > 0 && (
-        <div className="text-sm font-semibold text-slate-700 dark:text-slate-300 text-right">
-          Razem: {totalTons.toFixed(2)}t
+        <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-200 dark:border-slate-800">
+          <span className="text-sm font-bold text-slate-500">
+            Razem: {totalTons.toFixed(2)}t
+          </span>
         </div>
       )}
 
@@ -203,10 +205,10 @@ export function CargoSection({
         <button
           type="button"
           onClick={addItem}
-          className="w-full py-2 border-2 border-dashed border-slate-200 dark:border-slate-700 rounded-lg text-sm text-slate-500 hover:border-primary/40 hover:text-primary transition-colors flex items-center justify-center gap-1"
+          className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 rounded-lg hover:bg-amber-500/20 hover:border-amber-500/50 transition-all"
         >
-          <Plus className="w-3.5 h-3.5" />
-          Dodaj towar
+          <Plus className="w-4 h-4" />
+          Dodaj kolejny asortyment
         </button>
       )}
 

@@ -24,7 +24,7 @@ import {
 } from "@/components/ui/popover";
 
 interface AutocompleteFieldProps<T extends { id: string }> {
-  label: string;
+  label?: string;
   placeholder: string;
   items: T[];
   value: string | null;
@@ -33,6 +33,8 @@ interface AutocompleteFieldProps<T extends { id: string }> {
   onChange: (id: string | null, item: T | null) => void;
   disabled?: boolean;
   required?: boolean;
+  /** Tryb kompaktowy — bez labela, bez wrappera */
+  compact?: boolean;
 }
 
 export function AutocompleteField<T extends { id: string }>({
@@ -45,6 +47,7 @@ export function AutocompleteField<T extends { id: string }>({
   onChange,
   disabled = false,
   required = false,
+  compact = false,
 }: AutocompleteFieldProps<T>) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
@@ -75,21 +78,16 @@ export function AutocompleteField<T extends { id: string }>({
     onChange(null, null);
   }
 
-  return (
-    <div className="space-y-1">
-      <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
-        {label}
-        {required && <span className="text-red-500 ml-0.5">*</span>}
-      </Label>
-      <Popover open={open} onOpenChange={setOpen}>
-        <PopoverTrigger asChild>
-          <Button
-            variant="outline"
-            role="combobox"
-            aria-expanded={open}
-            disabled={disabled}
-            className="w-full justify-between font-normal text-sm h-8 px-3"
-          >
+  const popover = (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className={`w-full justify-between font-normal text-sm ${compact ? "h-auto py-1.5 px-2" : "h-8 px-3"}`}
+        >
             <span className={displayValue ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}>
               {displayValue || placeholder}
             </span>
@@ -140,7 +138,20 @@ export function AutocompleteField<T extends { id: string }>({
             </CommandList>
           </Command>
         </PopoverContent>
-      </Popover>
+    </Popover>
+  );
+
+  if (compact) return popover;
+
+  return (
+    <div className="space-y-1">
+      {label && (
+        <Label className="text-xs font-medium text-slate-700 dark:text-slate-300">
+          {label}
+          {required && <span className="text-red-500 ml-0.5">*</span>}
+        </Label>
+      )}
+      {popover}
     </div>
   );
 }

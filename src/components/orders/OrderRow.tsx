@@ -161,7 +161,7 @@ export function OrderRow({
         {viewMode === "route" ? (
           firstUnloading ? (
             <div className="flex items-center gap-1.5">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold shrink-0">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold shrink-0">
                 U1
               </span>
               <span className="whitespace-nowrap text-[12px]">

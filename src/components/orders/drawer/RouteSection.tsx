@@ -2,10 +2,11 @@
  * Sekcja 1 – Trasa.
  * Rodzaj transportu + lista punktów załadunku/rozładunku + kontakt nadawcy.
  * Obsługuje drag-and-drop (DndContext + SortableContext) do reorderingu punktów trasy.
+ * Drag handle jest NA ZEWNĄTRZ karty — w wrapperze flex.
  */
 
 import { useCallback } from "react";
-import { Plus } from "lucide-react";
+import { GripVertical, PlusCircle } from "lucide-react";
 import {
   DndContext,
   closestCenter,
@@ -19,9 +20,10 @@ import {
   SortableContext,
   verticalListSortingStrategy,
   arrayMove,
+  useSortable,
 } from "@dnd-kit/sortable";
+import { CSS } from "@dnd-kit/utilities";
 
-import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -48,6 +50,52 @@ interface RouteSectionProps {
 const MAX_LOADING = 8;
 const MAX_UNLOADING = 3;
 
+/** Wrapper sortable z drag handle NA ZEWNĄTRZ karty */
+function SortableStopWrapper({
+  sortableId,
+  isReadOnly,
+  children,
+}: {
+  sortableId: string;
+  isReadOnly: boolean;
+  children: React.ReactNode;
+}) {
+  const {
+    attributes,
+    listeners,
+    setNodeRef,
+    setActivatorNodeRef,
+    transform,
+    transition,
+    isDragging,
+  } = useSortable({ id: sortableId });
+
+  const style: React.CSSProperties = {
+    transform: CSS.Transform.toString(transform),
+    transition,
+    opacity: isDragging ? 0.5 : undefined,
+    zIndex: isDragging ? 50 : undefined,
+    position: "relative" as const,
+  };
+
+  return (
+    <div ref={setNodeRef} style={style} className="flex gap-2 items-start">
+      {!isReadOnly && (
+        <div
+          ref={setActivatorNodeRef}
+          {...attributes}
+          {...listeners}
+          className="cursor-grab active:cursor-grabbing text-slate-400 hover:text-slate-600 dark:hover:text-slate-300 touch-none mt-1"
+          aria-label="Przeciągnij"
+        >
+          <GripVertical className="w-4 h-4" />
+        </div>
+      )}
+      {children}
+    </div>
+  );
+}
+
 export function RouteSection({
   formData,
   transportTypes,
@@ -69,7 +117,6 @@ export function RouteSection({
   );
 
   // Build a mapping: activeIndex -> original index in formData.stops
-  // This is needed because formData.stops contains deleted stops as well.
   const activeIndexToOriginal: number[] = [];
   formData.stops.forEach((stop, origIdx) => {
     if (!stop._deleted) {
@@ -77,7 +124,7 @@ export function RouteSection({
     }
   });
 
-  // Sortable IDs for active stops (stable identifiers)
+  // Sortable IDs for active stops
   const sortableIds = activeStops.map((_, activeIdx) => `stop-${activeIndexToOriginal[activeIdx]}`);
 
   /**
@@ -85,7 +132,6 @@ export function RouteSection({
    * and produce the updated full stops array (preserving deleted stops).
    */
   function renumberAndBuild(newActiveStops: OrderFormStop[]): OrderFormStop[] {
-    // Enforce: all LOADINGs first, then UNLOADINGs (preserving relative order within each kind)
     const loadings = newActiveStops.filter((s) => s.kind === "LOADING");
     const unloadings = newActiveStops.filter((s) => s.kind === "UNLOADING");
     const ordered = [...loadings, ...unloadings];
@@ -95,7 +141,6 @@ export function RouteSection({
       sequenceNo: i + 1,
     }));
 
-    // Rebuild full array: keep deleted stops at the end (they don't affect ordering)
     const deletedStops = formData.stops.filter((s) => s._deleted);
     return [...renumbered, ...deletedStops];
   }
@@ -118,19 +163,6 @@ export function RouteSection({
     [formData.stops, onChange]
   );
 
-  // Move Up / Move Down handlers (button-based reorder)
-  // Enforce: LOADING stays within LOADINGs, UNLOADING within UNLOADINGs
-  function moveStop(activeIdx: number, direction: -1 | 1) {
-    const targetIdx = activeIdx + direction;
-    if (targetIdx < 0 || targetIdx >= activeStops.length) return;
-
-    // Don't allow crossing kind boundary
-    if (activeStops[activeIdx].kind !== activeStops[targetIdx].kind) return;
-
-    const reordered = arrayMove([...activeStops], activeIdx, targetIdx);
-    onChange({ stops: renumberAndBuild(reordered) });
-  }
-
   function patchStop(idx: number, patch: Partial<OrderFormStop>) {
     const updated = formData.stops.map((s, i) => (i === idx ? { ...s, ...patch } : s));
     onChange({ stops: updated });
@@ -140,10 +172,8 @@ export function RouteSection({
     const stop = formData.stops[idx];
     let updated: OrderFormStop[];
     if (stop.id === null) {
-      // nowy punkt — usuń całkowicie
       updated = formData.stops.filter((_, i) => i !== idx);
     } else {
-      // istniejący punkt — oznacz jako usunięty
       updated = formData.stops.map((s, i) => (i === idx ? { ...s, _deleted: true } : s));
     }
     onChange({ stops: updated });
@@ -153,7 +183,7 @@ export function RouteSection({
     const newStop: OrderFormStop = {
       id: null,
       kind,
-      sequenceNo: 0, // will be renumbered
+      sequenceNo: 0,
       dateLocal: null,
       timeLocal: null,
       locationId: null,
@@ -168,7 +198,6 @@ export function RouteSection({
     const deletedStops = formData.stops.filter((s) => s._deleted);
 
     if (kind === "LOADING") {
-      // Insert before first UNLOADING to enforce L...L...U...U order
       const firstUnloadingIdx = currentActive.findIndex((s) => s.kind === "UNLOADING");
       if (firstUnloadingIdx === -1) {
         currentActive.push(newStop);
@@ -176,21 +205,35 @@ export function RouteSection({
         currentActive.splice(firstUnloadingIdx, 0, newStop);
       }
     } else {
-      // UNLOADING: always at the end
       currentActive.push(newStop);
     }
 
-    // Renumber sequenceNo
     const renumbered = currentActive.map((s, i) => ({ ...s, sequenceNo: i + 1 }));
     onChange({ stops: [...renumbered, ...deletedStops] });
   }
 
-  // Mapowanie rzeczywistego indeksu w tablicy stops do indeksu L/U
   function getKindIndex(stop: OrderFormStop): { loadingIndex?: number; unloadingIndex?: number } {
     const activeOfKind = activeStops.filter((s) => s.kind === stop.kind);
     const kindIdx = activeOfKind.indexOf(stop);
     if (stop.kind === "LOADING") return { loadingIndex: kindIdx };
     return { unloadingIndex: kindIdx };
+  }
+
+  function renderStopCard(stop: OrderFormStop, activeIdx: number) {
+    const origIdx = activeIndexToOriginal[activeIdx];
+    const kindIdx = getKindIndex(stop);
+    return (
+      <RoutePointCard
+        stop={stop}
+        index={origIdx}
+        {...kindIdx}
+        companies={companies}
+        locations={locations}
+        isReadOnly={isReadOnly}
+        onChange={(patch) => patchStop(origIdx, patch)}
+        onRemove={() => removeStop(origIdx)}
+      />
+    );
   }
 
   return (
@@ -218,29 +261,14 @@ export function RouteSection({
         </Select>
       </div>
 
-      {/* Lista punktów trasy z drag-and-drop (DndContext tylko w trybie edycji) */}
+      {/* Lista punktów trasy */}
       {isReadOnly ? (
         <div className="space-y-3">
-          {activeStops.map((stop, activeIdx) => {
-            const origIdx = activeIndexToOriginal[activeIdx];
-            const kindIdx = getKindIndex(stop);
-            return (
-              <RoutePointCard
-                key={`stop-${origIdx}`}
-                stop={stop}
-                index={origIdx}
-                sortableId={`stop-${origIdx}`}
-                {...kindIdx}
-                companies={companies}
-                locations={locations}
-                isReadOnly={isReadOnly}
-                onChange={(patch) => patchStop(origIdx, patch)}
-                onRemove={() => removeStop(origIdx)}
-                isFirst={activeIdx === 0}
-                isLast={activeIdx === activeStops.length - 1}
-              />
-            );
-          })}
+          {activeStops.map((stop, activeIdx) => (
+            <div key={`stop-${activeIndexToOriginal[activeIdx]}`} className="flex gap-2 items-start">
+              {renderStopCard(stop, activeIdx)}
+            </div>
+          ))}
         </div>
       ) : (
         <DndContext
@@ -250,58 +278,41 @@ export function RouteSection({
         >
           <SortableContext items={sortableIds} strategy={verticalListSortingStrategy}>
             <div className="space-y-3">
-              {activeStops.map((stop, activeIdx) => {
-                const origIdx = activeIndexToOriginal[activeIdx];
-                const kindIdx = getKindIndex(stop);
-                return (
-                  <RoutePointCard
-                    key={sortableIds[activeIdx]}
-                    stop={stop}
-                    index={origIdx}
-                    sortableId={sortableIds[activeIdx]}
-                    {...kindIdx}
-                    companies={companies}
-                    locations={locations}
-                    isReadOnly={isReadOnly}
-                    onChange={(patch) => patchStop(origIdx, patch)}
-                    onRemove={() => removeStop(origIdx)}
-                    onMoveUp={() => moveStop(activeIdx, -1)}
-                    onMoveDown={() => moveStop(activeIdx, 1)}
-                    isFirst={activeIdx === 0 || activeStops[activeIdx - 1]?.kind !== stop.kind}
-                    isLast={activeIdx === activeStops.length - 1 || activeStops[activeIdx + 1]?.kind !== stop.kind}
-                  />
-                );
-              })}
+              {activeStops.map((stop, activeIdx) => (
+                <SortableStopWrapper
+                  key={sortableIds[activeIdx]}
+                  sortableId={sortableIds[activeIdx]}
+                  isReadOnly={isReadOnly}
+                >
+                  {renderStopCard(stop, activeIdx)}
+                </SortableStopWrapper>
+              ))}
             </div>
           </SortableContext>
         </DndContext>
       )}
 
-      {/* Przyciski dodaj */}
+      {/* Przyciski dodaj — pełnowymiarowe, kolorowe */}
       {!isReadOnly && (
         <div className="flex gap-2">
-          <Button
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             onClick={() => addStop("LOADING")}
             disabled={loadingStops.length >= MAX_LOADING}
-            className="text-emerald-700 border-emerald-300 hover:bg-emerald-50 dark:hover:bg-emerald-950/20"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/10 text-emerald-600 dark:text-emerald-500 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Plus className="w-3 h-3 mr-1" />
-            + Załadunek
-          </Button>
-          <Button
+            <PlusCircle className="w-4 h-4" />
+            Dodaj punkt załadunku (max {MAX_LOADING})
+          </button>
+          <button
             type="button"
-            variant="outline"
-            size="sm"
             onClick={() => addStop("UNLOADING")}
             disabled={unloadingStops.length >= MAX_UNLOADING}
-            className="text-orange-700 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/20"
+            className="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-blue-600 dark:text-blue-500 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 hover:border-blue-500/50 transition-all disabled:opacity-40 disabled:cursor-not-allowed"
           >
-            <Plus className="w-3 h-3 mr-1" />
-            + Rozładunek
-          </Button>
+            <PlusCircle className="w-4 h-4" />
+            Dodaj punkt rozładunku (max {MAX_UNLOADING})
+          </button>
         </div>
       )}
 

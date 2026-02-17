@@ -4,7 +4,7 @@
  * Max 4 węzły w linii; dłuższe trasy zawijają się do kolejnych linii (grupy po 4).
  *
  * Załadunki (L): bg-emerald-100 border border-emerald-500/30 text-emerald-700
- * Rozładunki (U): bg-orange-100 border border-orange-500/30 text-orange-700
+ * Rozładunki (U): bg-blue-100 border border-blue-500/30 text-blue-700
  */
 
 import { shortenName } from "@/lib/format-utils";
@@ -38,7 +38,7 @@ export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
     const name = shortenName(stop.companyNameSnapshot ?? stop.locationNameSnapshot);
     const cls = isLoading
       ? "bg-emerald-100 border border-emerald-500/30 text-emerald-700"
-      : "bg-orange-100 border border-orange-500/30 text-orange-700";
+      : "bg-blue-100 border border-blue-500/30 text-blue-700";
 
     return { prefix, name, cls };
   });

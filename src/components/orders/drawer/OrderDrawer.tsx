@@ -8,18 +8,21 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { History, X } from "lucide-react";
+
 import {
   Sheet,
   SheetContent,
-  SheetHeader,
-  SheetTitle,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
+import { formatDateFromTimestamp } from "@/lib/format-utils";
 import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
 import type {
   OrderDetailResponseDto,
   PrepareEmailResponseDto,
 } from "@/types";
+
+import { StatusBadge } from "../StatusBadge";
 
 import { DrawerFooter } from "./DrawerFooter";
 import { OrderForm } from "./OrderForm";
@@ -250,14 +253,26 @@ export function OrderDrawer({
   // Render
   // ---------------------------------------------------------------------------
 
-  const title = detail?.order.orderNo ?? (isLoading ? "Ładowanie…" : "Zlecenie");
+  // Status name lookup
+  const statusName = detail?.order.statusCode
+    ? detail.order.statusCode
+        .split(" ")
+        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+        .join(" ")
+    : "";
+
+  const historyHandler =
+    onShowHistory && orderId && detail
+      ? () => onShowHistory(orderId, detail.order.orderNo)
+      : undefined;
 
   return (
     <>
       <Sheet open={isOpen} onOpenChange={(open) => !open && handleCloseRequest()}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-[760px] p-0 flex flex-col"
+          className="w-full sm:max-w-[800px] p-0 flex flex-col"
+          showCloseButton={false}
           onInteractOutside={(e) => {
             e.preventDefault();
             handleCloseRequest();
@@ -267,9 +282,44 @@ export function OrderDrawer({
             handleCloseRequest();
           }}
         >
-          <SheetHeader className="shrink-0 px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-            <SheetTitle className="text-base font-semibold">{title}</SheetTitle>
-          </SheetHeader>
+          {/* Custom Header */}
+          <header className="shrink-0 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-950">
+            <div className="flex items-center gap-4">
+              <button
+                type="button"
+                onClick={handleCloseRequest}
+                className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"
+                title="Zamknij (Escape)"
+              >
+                <X className="w-5 h-5" />
+              </button>
+              <div>
+                <div className="flex items-center gap-3">
+                  <h1 className="text-xl font-bold tracking-tight">
+                    {detail?.order.orderNo ?? (isLoading ? "Ładowanie…" : "Zlecenie")}
+                  </h1>
+                  {detail && (
+                    <StatusBadge statusCode={detail.order.statusCode} statusName={statusName} />
+                  )}
+                </div>
+                {detail && (
+                  <p className="text-xs text-slate-500 mt-0.5">
+                    Utworzono: {formatDateFromTimestamp(detail.order.createdAt)}
+                  </p>
+                )}
+              </div>
+            </div>
+            {historyHandler && (
+              <button
+                type="button"
+                onClick={historyHandler}
+                className="text-sm font-medium text-primary hover:underline flex items-center gap-1"
+              >
+                <History className="w-3.5 h-3.5" />
+                Historia zmian
+              </button>
+            )}
+          </header>
 
           {isLoading && (
             <div className="flex-1 flex items-center justify-center">
@@ -304,11 +354,7 @@ export function OrderDrawer({
                     ? handleSendEmailFromDrawer
                     : undefined
                 }
-                onShowHistory={
-                  onShowHistory && orderId && detail
-                    ? () => onShowHistory(orderId, detail.order.orderNo)
-                    : undefined
-                }
+                onShowHistory={historyHandler}
               />
             </>
           )}
