@@ -19,8 +19,10 @@ interface OrderTableProps {
   viewMode: ListViewMode;
   isLoading: boolean;
   activeView: ViewGroup;
+  pendingNewOrder?: boolean;
   onSort: (sortBy: OrderSortBy) => void;
   onRowClick: (orderId: string) => void;
+  onNewRowClick?: () => void;
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
   onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
@@ -96,8 +98,10 @@ export function OrderTable({
   viewMode,
   isLoading,
   activeView,
+  pendingNewOrder,
   onSort,
   onRowClick,
+  onNewRowClick,
   onSendEmail,
   onShowHistory,
   onChangeStatus,
@@ -120,7 +124,7 @@ export function OrderTable({
         role="table"
         style={{ minWidth }}
       >
-        <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+        <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800">
           <tr className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
             <th className="py-2 px-4 w-10" />
             <SortableTh
@@ -180,7 +184,7 @@ export function OrderTable({
             <th className="py-2 px-4 min-w-[90px]">Data wysł.</th>
 
             {/* Sticky prawa kolumna Akcje */}
-            <th className="py-2 px-4 w-12 sticky right-0 bg-slate-50 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700" />
+            <th className="py-2 px-4 w-12 sticky right-0 bg-slate-50 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-800" />
           </tr>
         </thead>
 
@@ -211,6 +215,20 @@ export function OrderTable({
                 onRestore={onRestore}
               />
             ))
+          )}
+
+          {/* Pusty wiersz nowego zlecenia */}
+          {pendingNewOrder && (
+            <tr
+              className="bg-emerald-50/40 dark:bg-emerald-900/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 cursor-pointer transition-colors border-2 border-dashed border-emerald-300 dark:border-emerald-700"
+              onClick={onNewRowClick}
+            >
+              <td className="py-2 px-4" />
+              <td className="py-2 px-4 text-[12px] text-emerald-600 dark:text-emerald-400 font-medium italic" colSpan={viewMode === "columns" ? 14 : 12}>
+                Kliknij, aby wypełnić nowe zlecenie...
+              </td>
+              <td className="py-2 px-4 sticky right-0 bg-emerald-50/40 dark:bg-emerald-900/10 border-l border-slate-200 dark:border-slate-800" />
+            </tr>
           )}
         </tbody>
       </table>

@@ -13,6 +13,14 @@ export function formatDate(date: string | null | undefined): string {
   return `${parts[2]}.${parts[1]}.${parts[0]}`;
 }
 
+/** Formatuje datę ISO (YYYY-MM-DD) → DD.MM (bez roku). Zwraca "—" gdy brak. */
+export function formatDateShort(date: string | null | undefined): string {
+  if (!date) return "—";
+  const parts = date.split("-");
+  if (parts.length !== 3) return date;
+  return `${parts[2]}.${parts[1]}`;
+}
+
 /**
  * Formatuje timestamp ISO 8601 (np. "2026-02-17T14:32:01.000Z") → DD.MM.YYYY.
  * Wyciąga tylko część datową (przed T). Zwraca "—" gdy brak.
@@ -38,6 +46,20 @@ export function formatDateTime(
   time: string | null | undefined
 ): string {
   const d = formatDate(date);
+  if (d === "—") return "—";
+  const t = formatTime(time);
+  return t ? `${d} ${t}` : d;
+}
+
+/**
+ * Formatuje datę + czas → "DD.MM HH:MM" (bez roku).
+ * Zwraca "—" gdy brak daty; gdy brak czasu — tylko datę.
+ */
+export function formatDateTimeShort(
+  date: string | null | undefined,
+  time: string | null | undefined
+): string {
+  const d = formatDateShort(date);
   if (d === "—") return "—";
   const t = formatTime(time);
   return t ? `${d} ${t}` : d;

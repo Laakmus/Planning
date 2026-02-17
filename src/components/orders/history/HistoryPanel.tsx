@@ -106,7 +106,7 @@ export function HistoryPanel({ orderId, orderNo, isOpen, onClose }: HistoryPanel
         onEscapeKeyDown={() => onClose()}
       >
         {/* Nagłówek */}
-        <div className="shrink-0 px-5 py-4 border-b border-slate-200 dark:border-slate-700 flex items-center justify-between bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
+        <div className="shrink-0 px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex items-center gap-2">
             <History className="w-4 h-4 text-primary" />
             <div>

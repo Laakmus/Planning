@@ -85,8 +85,12 @@ export function RouteSection({
    * and produce the updated full stops array (preserving deleted stops).
    */
   function renumberAndBuild(newActiveStops: OrderFormStop[]): OrderFormStop[] {
-    // Assign sequential sequenceNo to the reordered active stops
-    const renumbered = newActiveStops.map((s, i) => ({
+    // Enforce: all LOADINGs first, then UNLOADINGs (preserving relative order within each kind)
+    const loadings = newActiveStops.filter((s) => s.kind === "LOADING");
+    const unloadings = newActiveStops.filter((s) => s.kind === "UNLOADING");
+    const ordered = [...loadings, ...unloadings];
+
+    const renumbered = ordered.map((s, i) => ({
       ...s,
       sequenceNo: i + 1,
     }));
@@ -115,9 +119,13 @@ export function RouteSection({
   );
 
   // Move Up / Move Down handlers (button-based reorder)
+  // Enforce: LOADING stays within LOADINGs, UNLOADING within UNLOADINGs
   function moveStop(activeIdx: number, direction: -1 | 1) {
     const targetIdx = activeIdx + direction;
     if (targetIdx < 0 || targetIdx >= activeStops.length) return;
+
+    // Don't allow crossing kind boundary
+    if (activeStops[activeIdx].kind !== activeStops[targetIdx].kind) return;
 
     const reordered = arrayMove([...activeStops], activeIdx, targetIdx);
     onChange({ stops: renumberAndBuild(reordered) });
@@ -142,11 +150,10 @@ export function RouteSection({
   }
 
   function addStop(kind: "LOADING" | "UNLOADING") {
-    const maxSeq = formData.stops.reduce((m, s) => Math.max(m, s.sequenceNo), 0);
     const newStop: OrderFormStop = {
       id: null,
       kind,
-      sequenceNo: maxSeq + 1,
+      sequenceNo: 0, // will be renumbered
       dateLocal: null,
       timeLocal: null,
       locationId: null,
@@ -156,7 +163,26 @@ export function RouteSection({
       notes: null,
       _deleted: false,
     };
-    onChange({ stops: [...formData.stops, newStop] });
+
+    const currentActive = formData.stops.filter((s) => !s._deleted);
+    const deletedStops = formData.stops.filter((s) => s._deleted);
+
+    if (kind === "LOADING") {
+      // Insert before first UNLOADING to enforce L...L...U...U order
+      const firstUnloadingIdx = currentActive.findIndex((s) => s.kind === "UNLOADING");
+      if (firstUnloadingIdx === -1) {
+        currentActive.push(newStop);
+      } else {
+        currentActive.splice(firstUnloadingIdx, 0, newStop);
+      }
+    } else {
+      // UNLOADING: always at the end
+      currentActive.push(newStop);
+    }
+
+    // Renumber sequenceNo
+    const renumbered = currentActive.map((s, i) => ({ ...s, sequenceNo: i + 1 }));
+    onChange({ stops: [...renumbered, ...deletedStops] });
   }
 
   // Mapowanie rzeczywistego indeksu w tablicy stops do indeksu L/U
@@ -241,8 +267,8 @@ export function RouteSection({
                     onRemove={() => removeStop(origIdx)}
                     onMoveUp={() => moveStop(activeIdx, -1)}
                     onMoveDown={() => moveStop(activeIdx, 1)}
-                    isFirst={activeIdx === 0}
-                    isLast={activeIdx === activeStops.length - 1}
+                    isFirst={activeIdx === 0 || activeStops[activeIdx - 1]?.kind !== stop.kind}
+                    isLast={activeIdx === activeStops.length - 1 || activeStops[activeIdx + 1]?.kind !== stop.kind}
                   />
                 );
               })}
@@ -271,7 +297,7 @@ export function RouteSection({
             size="sm"
             onClick={() => addStop("UNLOADING")}
             disabled={unloadingStops.length >= MAX_UNLOADING}
-            className="text-primary border-primary/30 hover:bg-primary/5"
+            className="text-orange-700 border-orange-300 hover:bg-orange-50 dark:hover:bg-orange-950/20"
           >
             <Plus className="w-3 h-3 mr-1" />
             + Rozładunek

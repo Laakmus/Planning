@@ -13,8 +13,25 @@ import { useDictionaries } from "@/contexts/DictionaryContext";
 import type { OrderListFilters } from "@/lib/view-models";
 import type { ListViewMode } from "@/lib/view-models";
 
+import type { OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
+
 import { AutocompleteFilter } from "./AutocompleteFilter";
 import { ListSettings } from "./ListSettings";
+
+/** Dozwolone kody rodzajów transportu (PRD §3.1.2a) + legacy mappings. */
+const VALID_TRANSPORT_CODES = new Set(["PL", "EXP", "EXP_K", "IMP", "KRAJ", "MIEDZY", "EKSPRES"]);
+
+/** Mapowanie na skróty wyświetlane w filtrze. */
+const TRANSPORT_DISPLAY: Record<string, string> = {
+  PL: "PL", EXP: "EXP", EXP_K: "EXP_K", IMP: "IMP",
+  KRAJ: "PL", MIEDZY: "EXP", EKSPRES: "IMP",
+};
+
+/** Dozwolone kody statusów (PRD §5). */
+const VALID_STATUS_CODES = new Set<OrderStatusCode>([
+  "robocze", "wysłane", "korekta", "korekta wysłane",
+  "zrealizowane", "reklamacja", "anulowane",
+]);
 
 interface FilterBarProps {
   filters: OrderListFilters;
@@ -92,28 +109,32 @@ export function FilterBar({
         onChange={(e) =>
           onFiltersChange({ transportType: (e.target.value as OrderListFilters["transportType"]) || undefined })
         }
-        className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 text-slate-700 dark:text-slate-300"
+        className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 text-slate-700 dark:text-slate-300"
       >
         <option value="">Rodzaj transportu</option>
-        {transportTypes.map((t) => (
-          <option key={t.code} value={t.code}>
-            {t.name}
-          </option>
-        ))}
+        {transportTypes
+          .filter((t) => VALID_TRANSPORT_CODES.has(t.code))
+          .map((t) => (
+            <option key={t.code} value={t.code}>
+              {TRANSPORT_DISPLAY[t.code] ?? t.code}
+            </option>
+          ))}
       </select>
 
       {/* 2. Status */}
       <select
         value={filters.status ?? ""}
         onChange={(e) => onFiltersChange({ status: e.target.value || undefined })}
-        className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 text-slate-700 dark:text-slate-300"
+        className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 text-slate-700 dark:text-slate-300"
       >
         <option value="">Status</option>
-        {orderStatuses.map((s) => (
-          <option key={s.code} value={s.code}>
-            {s.name}
-          </option>
-        ))}
+        {orderStatuses
+          .filter((s) => VALID_STATUS_CODES.has(s.code as OrderStatusCode))
+          .map((s) => (
+            <option key={s.code} value={s.code}>
+              {s.name}
+            </option>
+          ))}
       </select>
 
       {/* 3. Firma załadunku */}
@@ -158,7 +179,7 @@ export function FilterBar({
         placeholder="Tydzień"
         value={weekInput}
         onChange={(e) => handleWeekChange(e.target.value)}
-        className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 w-16 text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
+        className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 w-16 text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
       />
 
       {/* 8. Wyszukiwanie pełnotekstowe */}
@@ -169,7 +190,7 @@ export function FilterBar({
           placeholder="Szukaj..."
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
-          className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded pl-7 pr-2 w-28 text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
+          className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded pl-7 pr-2 w-28 text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
         />
       </div>
 

@@ -45,7 +45,7 @@ export default function StatusFooter({
   const label = VIEW_LABELS[activeView];
 
   return (
-    <footer className="h-10 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-700 flex items-center justify-between px-4 z-50 sticky bottom-0">
+    <footer className="h-10 bg-slate-50 dark:bg-slate-900 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between px-4 z-50 sticky bottom-0">
       {/* Lewa strona: liczniki */}
       <div className="flex items-center gap-4">
         <div className="flex items-center gap-2">

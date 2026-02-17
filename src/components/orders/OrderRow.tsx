@@ -7,7 +7,7 @@
 import { Mail } from "lucide-react";
 
 import { useAuth } from "@/contexts/AuthContext";
-import { formatDate, formatDateTime } from "@/lib/format-utils";
+import { formatDate, formatDateTimeShort } from "@/lib/format-utils";
 import type { OrderListItemDto } from "@/types";
 import type { ListViewMode, OrderStatusCode, ViewGroup } from "@/lib/view-models";
 
@@ -16,6 +16,18 @@ import { LockIndicator } from "./LockIndicator";
 import { OrderRowContextMenu } from "./OrderRowContextMenu";
 import { RouteSummaryCell } from "./RouteSummaryCell";
 import { StatusBadge } from "./StatusBadge";
+
+/** Mapowanie kodów transportu na skróty wyświetlane w tabeli (PRD §3.1.2a). */
+const TRANSPORT_CODE_DISPLAY: Record<string, string> = {
+  PL: "PL",
+  EXP: "EXP",
+  EXP_K: "EXP_K",
+  IMP: "IMP",
+  // Legacy codes z seed data
+  KRAJ: "PL",
+  MIEDZY: "EXP",
+  EKSPRES: "IMP",
+};
 
 /** Tło wiersza wg statusCode (plan implementacji §4.9). */
 const ROW_BG: Record<string, string> = {
@@ -102,7 +114,7 @@ export function OrderRow({
 
       {/* Rodzaj transportu */}
       <td className="py-1 px-4 text-[12px] min-w-[80px]">
-        {order.transportTypeName}
+        {TRANSPORT_CODE_DISPLAY[order.transportTypeCode] ?? order.transportTypeCode}
       </td>
 
       {/* Trasa lub Miejsca załadunku/rozładunku */}
@@ -126,7 +138,7 @@ export function OrderRow({
                 L1
               </span>
               <span className="whitespace-nowrap text-[12px]">
-                {formatDateTime(firstLoading.dateLocal, firstLoading.timeLocal)}
+                {formatDateTimeShort(firstLoading.dateLocal, firstLoading.timeLocal)}
               </span>
             </div>
           ) : (
@@ -149,11 +161,11 @@ export function OrderRow({
         {viewMode === "route" ? (
           firstUnloading ? (
             <div className="flex items-center gap-1.5">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold shrink-0">
+              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-orange-100 text-orange-700 text-[10px] font-bold shrink-0">
                 U1
               </span>
               <span className="whitespace-nowrap text-[12px]">
-                {formatDateTime(firstUnloading.dateLocal, firstUnloading.timeLocal)}
+                {formatDateTimeShort(firstUnloading.dateLocal, firstUnloading.timeLocal)}
               </span>
             </div>
           ) : (
@@ -166,20 +178,25 @@ export function OrderRow({
 
       {/* Towar */}
       <td className="py-1 px-4 min-w-[160px]">
-        <div className="space-y-0.5">
-          {order.items.map((item, idx) => (
-            <div key={idx} className="text-[11px] whitespace-nowrap">
-              {idx + 1}. {item.productNameSnapshot ?? "—"}
-              {item.quantityTons != null ? ` (${item.quantityTons}t` : ""}
-              {item.loadingMethodCode ? `, ${item.loadingMethodCode})` : item.quantityTons != null ? ")" : ""}
+        {(() => {
+          const validItems = order.items.filter((it) => it.productNameSnapshot);
+          return (
+            <div className="space-y-0.5">
+              {validItems.map((item, idx) => (
+                <div key={idx} className="text-[11px] whitespace-nowrap">
+                  {validItems.length > 1 ? `${idx + 1}. ` : ""}{item.productNameSnapshot}
+                  {item.quantityTons != null ? ` (${item.quantityTons}t` : ""}
+                  {item.loadingMethodCode ? `, ${item.loadingMethodCode})` : item.quantityTons != null ? ")" : ""}
+                </div>
+              ))}
+              {validItems.length > 1 && totalTons > 0 && (
+                <div className="text-[10px] text-slate-500 font-semibold">
+                  Razem: {totalTons}t
+                </div>
+              )}
             </div>
-          ))}
-          {order.items.length > 0 && totalTons > 0 && (
-            <div className="text-[10px] text-slate-500 font-semibold">
-              Razem: {totalTons}t
-            </div>
-          )}
-        </div>
+          );
+        })()}
       </td>
 
       {/* Komentarz */}
@@ -233,7 +250,7 @@ export function OrderRow({
 
       {/* Akcje — sticky right */}
       <td
-        className="py-1 px-4 sticky right-0 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 group-hover:bg-primary/5 w-12 text-center"
+        className="py-1 px-4 sticky right-0 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 group-hover:bg-primary/5 w-12 text-center"
         onClick={(e) => e.stopPropagation()}
       >
         {canWrite && (

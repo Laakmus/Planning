@@ -21,7 +21,7 @@ export function EmptyState({
 }: EmptyStateProps) {
   if (hasFilters) {
     return (
-      <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl py-16 flex flex-col items-center justify-center text-center mx-4 my-4">
+      <div className="border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl py-16 flex flex-col items-center justify-center text-center mx-4 my-4">
         <SearchX className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-4" />
         <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">
           Brak wyników dla zastosowanych filtrów
@@ -42,7 +42,7 @@ export function EmptyState({
   }
 
   return (
-    <div className="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl py-16 flex flex-col items-center justify-center text-center mx-4 my-4">
+    <div className="border-2 border-dashed border-slate-300 dark:border-slate-800 rounded-xl py-16 flex flex-col items-center justify-center text-center mx-4 my-4">
       <InboxIcon className="w-12 h-12 text-slate-300 dark:text-slate-600 mb-4" />
       <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">
         Brak zleceń

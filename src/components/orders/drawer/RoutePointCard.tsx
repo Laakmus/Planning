@@ -40,7 +40,7 @@ const KIND_LABEL: Record<StopKind, string> = {
 
 const KIND_BADGE_CLASS: Record<StopKind, string> = {
   LOADING: "bg-emerald-100 text-emerald-700",
-  UNLOADING: "bg-primary/10 text-primary",
+  UNLOADING: "bg-orange-100 text-orange-700",
 };
 
 export function RoutePointCard({

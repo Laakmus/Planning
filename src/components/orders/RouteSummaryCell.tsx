@@ -4,7 +4,7 @@
  * Max 4 węzły w linii; dłuższe trasy zawijają się do kolejnych linii (grupy po 4).
  *
  * Załadunki (L): bg-emerald-100 border border-emerald-500/30 text-emerald-700
- * Rozładunki (U): bg-primary/10 border border-primary/30 text-primary
+ * Rozładunki (U): bg-orange-100 border border-orange-500/30 text-orange-700
  */
 
 import { shortenName } from "@/lib/format-utils";
@@ -21,8 +21,11 @@ export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
     return <span className="text-slate-400 text-[11px]">—</span>;
   }
 
-  // Sortuj po sequenceNo i nadaj liczniki per kind
-  const sorted = [...stops].sort((a, b) => a.sequenceNo - b.sequenceNo);
+  // Sortuj: LOADING zawsze przed UNLOADING, w ramach kind po sequenceNo
+  const sorted = [...stops].sort((a, b) => {
+    if (a.kind !== b.kind) return a.kind === "LOADING" ? -1 : 1;
+    return a.sequenceNo - b.sequenceNo;
+  });
   let loadingCount = 0;
   let unloadingCount = 0;
 
@@ -35,7 +38,7 @@ export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
     const name = shortenName(stop.companyNameSnapshot ?? stop.locationNameSnapshot);
     const cls = isLoading
       ? "bg-emerald-100 border border-emerald-500/30 text-emerald-700"
-      : "bg-primary/10 border border-primary/30 text-primary";
+      : "bg-orange-100 border border-orange-500/30 text-orange-700";
 
     return { prefix, name, cls };
   });
@@ -49,7 +52,7 @@ export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
   return (
     <div className="space-y-1">
       {lines.map((line, lineIdx) => (
-        <div key={lineIdx} className="flex items-center flex-wrap gap-x-1 gap-y-1">
+        <div key={lineIdx} className="flex items-center flex-nowrap gap-x-1">
           {line.map((node, nodeIdx) => {
             const globalIdx = lineIdx * NODES_PER_LINE + nodeIdx;
             const isLast = globalIdx === nodes.length - 1;

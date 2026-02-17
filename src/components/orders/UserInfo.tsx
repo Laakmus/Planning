@@ -19,17 +19,17 @@ export default function UserInfo() {
 
   return (
     <div className="flex items-center gap-3">
-      <div className="text-right">
-        <div className="text-sm font-semibold text-slate-800 dark:text-slate-100 leading-tight">
+      <div className="text-right border-r border-slate-200 dark:border-slate-800 pr-3">
+        <div className="text-xs font-semibold text-slate-800 dark:text-slate-100 leading-tight">
           {user.fullName ?? user.email}
         </div>
-        <div className="text-xs text-slate-500 dark:text-slate-400 leading-tight">
+        <div className="text-[10px] text-slate-500 dark:text-slate-400 leading-tight">
           {ROLE_LABELS[user.role]}
         </div>
       </div>
       <button
         onClick={logout}
-        className="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200 transition-colors whitespace-nowrap"
+        className="px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:text-slate-400 dark:hover:bg-slate-800 rounded-md border border-slate-300 dark:border-slate-600 transition-colors whitespace-nowrap"
       >
         Wyloguj
       </button>

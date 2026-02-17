@@ -44,6 +44,9 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
+  // Stan pustego wiersza (nowe zlecenie)
+  const [pendingNewOrder, setPendingNewOrder] = useState(false);
+
   // Stan panelu historii
   const [historyOrderId, setHistoryOrderId] = useState<string | null>(null);
   const [historyOrderNo, setHistoryOrderNo] = useState<string>("");
@@ -121,6 +124,11 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   }
 
   function handleAddOrder() {
+    setPendingNewOrder(true);
+  }
+
+  function handleNewRowClick() {
+    setPendingNewOrder(false);
     setSelectedOrderId(null);
     setDrawerOpen(true);
   }
@@ -128,6 +136,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   function handleDrawerClose() {
     setDrawerOpen(false);
     setSelectedOrderId(null);
+    setPendingNewOrder(false);
   }
 
   function handleShowHistory(orderId: string, orderNo?: string) {
@@ -194,7 +203,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   const totalItems = data?.totalItems ?? 0;
   const totalPages = data?.totalPages ?? 1;
 
-  const isEmpty = !isLoading && orders.length === 0;
+  const isEmpty = !isLoading && orders.length === 0 && !pendingNewOrder;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -226,8 +235,10 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           viewMode={viewMode}
           isLoading={isLoading}
           activeView={activeView}
+          pendingNewOrder={pendingNewOrder}
           onSort={handleSort}
           onRowClick={handleRowClick}
+          onNewRowClick={handleNewRowClick}
           onSendEmail={handleSendEmail}
           onShowHistory={handleShowHistory}
           onChangeStatus={handleChangeStatus}
@@ -242,7 +253,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
-            className="text-xs px-3 py-1 rounded border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800"
+            className="text-xs px-3 py-1 rounded border border-slate-200 dark:border-slate-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Poprzednia
           </button>
@@ -252,7 +263,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
-            className="text-xs px-3 py-1 rounded border border-slate-200 dark:border-slate-700 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800"
+            className="text-xs px-3 py-1 rounded border border-slate-200 dark:border-slate-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Następna
           </button>

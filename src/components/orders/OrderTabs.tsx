@@ -28,8 +28,8 @@ export default function OrderTabs({ activeView, onViewChange }: OrderTabsProps) 
           onClick={() => onViewChange(tab.value)}
           className={
             tab.value === activeView
-              ? "px-3 py-1 rounded-md text-sm font-semibold text-primary bg-white dark:bg-slate-900 shadow-sm transition-all"
-              : "px-3 py-1 rounded-md text-sm text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300 transition-all"
+              ? "px-3 py-1.5 rounded-md text-xs font-semibold text-primary bg-white dark:bg-slate-700 shadow-sm transition-all"
+              : "px-3 py-1.5 rounded-md text-xs font-medium text-slate-500 hover:text-slate-700 dark:text-slate-400 dark:hover:text-slate-300 transition-all"
           }
           aria-current={tab.value === activeView ? "page" : undefined}
         >
