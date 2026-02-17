@@ -33,7 +33,7 @@ const STATUS_NAMES: Record<OrderStatusCode, string> = {
   robocze: "Robocze",
   wysłane: "Wysłane",
   korekta: "Korekta",
-  "korekta wysłane": "Korekta wysłane",
+  "korekta wysłane": "Korekta_w",
   zrealizowane: "Zrealizowane",
   reklamacja: "Reklamacja",
   anulowane: "Anulowane",

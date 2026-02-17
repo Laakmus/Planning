@@ -188,7 +188,7 @@ export function OrderTable({
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-slate-100 dark:divide-slate-800">
+        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
           {isLoading && orders.length === 0 ? (
             // Skeleton loading — 5 wierszy
             Array.from({ length: 5 }).map((_, i) => (

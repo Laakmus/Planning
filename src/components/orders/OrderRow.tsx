@@ -29,15 +29,15 @@ const TRANSPORT_CODE_DISPLAY: Record<string, string> = {
   EKSPRES: "IMP",
 };
 
-/** Tło wiersza wg statusCode (plan implementacji §4.9). */
+/** Tło wiersza wg statusCode — kolory zgodne z StatusBadge (wyraźne tło). */
 const ROW_BG: Record<string, string> = {
-  robocze: "bg-white dark:bg-slate-900",
-  wysłane: "bg-blue-50/30 dark:bg-blue-900/10",
-  korekta: "bg-orange-50/30 dark:bg-orange-900/10",
-  "korekta wysłane": "bg-amber-50/30 dark:bg-amber-900/10",
-  zrealizowane: "bg-emerald-50/30 dark:bg-emerald-900/10",
-  anulowane: "bg-slate-100/50 dark:bg-slate-800/30",
-  reklamacja: "bg-red-50/30 dark:bg-red-900/10",
+  robocze: "bg-slate-100 dark:bg-slate-800/50",
+  wysłane: "bg-emerald-100/70 dark:bg-emerald-900/40",
+  korekta: "bg-orange-100/70 dark:bg-orange-900/40",
+  "korekta wysłane": "bg-yellow-100/70 dark:bg-yellow-900/40",
+  zrealizowane: "bg-blue-100/70 dark:bg-blue-900/40",
+  anulowane: "bg-slate-200/70 dark:bg-slate-800/60",
+  reklamacja: "bg-red-100/70 dark:bg-red-900/40",
 };
 
 interface OrderRowProps {

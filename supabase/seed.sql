@@ -27,7 +27,7 @@ INSERT INTO public.order_statuses (code, name, view_group, is_editable, sort_ord
   ('robocze',          'Robocze',           'CURRENT',   true,  1),
   ('wysłane',          'Wysłane',           'CURRENT',   false, 2),
   ('korekta',          'Korekta',           'CURRENT',   true,  3),
-  ('korekta wysłane',  'Korekta wysłane',   'CURRENT',   false, 4),
+  ('korekta wysłane',  'Korekta_w',         'CURRENT',   false, 4),
   ('zrealizowane',     'Zrealizowane',      'COMPLETED', false, 5),
   ('reklamacja',       'Reklamacja',        'CURRENT',   false, 6),
   ('anulowane',        'Anulowane',         'CANCELLED', false, 7);
