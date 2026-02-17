@@ -123,3 +123,22 @@
     @apply bg-background text-foreground;
     }
 }
+
+@layer utilities {
+  /* Ukryj scrollbar, zachowaj scroll */
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+}
+
+/* Hover wierszy tabeli zleceń */
+.orders-table tbody tr:hover td {
+  background-color: rgba(19, 127, 236, 0.04);
+}
+.dark .orders-table tbody tr:hover td {
+  background-color: rgba(19, 127, 236, 0.08);
+}

@@ -296,7 +296,7 @@ Nagłówek jest stałym (sticky) elementem na górze drawera. Nie zawiera tytuł
 
 Formularz jest przewijalną częścią drawera między nagłówkiem a stopką. Sekcje są zawsze rozwinięte (bez accordionu). Pola wymagane do wysłania zlecenia mailem oznaczone gwiazdką (*). Formularz w siatce 2–4 kolumn, etykiety nad polami. Firma zlecająca (nasza firma) nie występuje w formularzu — jest domyślna.
 
-**Sekcja 1 — Nagłówek**
+**Sekcja 0 — Nagłówek**
 
 | Lp. | Pole | Typ pola | Uwagi |
 |-----|------|----------|-------|
@@ -307,7 +307,7 @@ Formularz jest przewijalną częścią drawera między nagłówkiem a stopką. S
 
 Ewentualna linia „Ostatnia zmiana: [imię], [data]" do doprecyzowania w implementacji.
 
-**Sekcja 2 — Trasa**
+**Sekcja 1 — Trasa**
 
 | Lp. | Pole | Typ pola | Uwagi |
 |-----|------|----------|-------|
@@ -323,7 +323,7 @@ Ewentualna linia „Ostatnia zmiana: [imię], [data]" do doprecyzowania w implem
 
 Zmiana kolejności: drag-and-drop + przyciski góra/dół. Przy zmianie firmy w punkcie: zerowanie oddziału, adresu i NIP; użytkownik wybiera oddział z nowej listy. Minimalna trasa: 1 załadunek + 1 rozładunek (walidacja biznesowa — przy wysyłce maila).
 
-**Sekcja 3 — Towar**
+**Sekcja 2 — Towar**
 
 | Lp. | Pole | Typ pola | Uwagi |
 |-----|------|----------|-------|
@@ -336,7 +336,7 @@ Zmiana kolejności: drag-and-drop + przyciski góra/dół. Przy zmianie firmy w 
 
 Przycisk „Usuń pozycję" przy każdej pozycji towarowej.
 
-**Sekcja 4 — Firma transportowa**
+**Sekcja 3 — Firma transportowa**
 
 | Lp. | Pole | Typ pola | Uwagi |
 |-----|------|----------|-------|
@@ -344,26 +344,26 @@ Przycisk „Usuń pozycję" przy każdej pozycji towarowej.
 | 2 | NIP | Tylko do odczytu (tekst) | Auto po wyborze firmy przewoźnika |
 | 3 | Typ auta | Lista zamknięta (select) | Z wariantów pojazdu (np. Firanka, Hakowiec, Wywrotka, Bus) |
 | 4 | Objętość w m³ | Lista zamknięta z wpisywaniem (combobox) | Wartości: 10, 20, 30, …, 100 m³; wpis filtruje listę; klik bez wpisu = pełna lista. Na MVP dozwolone tylko wartości z listy (co 10) |
-| 5 | Wymagane dokumenty | Lista zamknięta (select, **2 opcje**) | **1.** „WZ, KPO, kwit wagowy" **2.** „WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** z dwóch opcji (select, nie checkboxy). **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 2): jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić automatycznie wybraną wartość |
+| 5 | Wymagane dokumenty | Lista zamknięta (select, **2 opcje**) | **1.** „WZ, KPO, kwit wagowy" **2.** „WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** z dwóch opcji (select, nie checkboxy). **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 1): jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić automatycznie wybraną wartość |
 
-**Sekcja 5 — Finanse**
+**Sekcja 4 — Finanse**
 
 | Lp. | Pole | Typ pola | Uwagi |
 |-----|------|----------|-------|
 | 1 | Stawka* | Pole liczbowe (kwota) | ≥ 0; przy nowym zleceniu puste |
-| 2 | Waluta* | Lista zamknięta (select) | PLN, EUR, USD. **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 2): jeśli kraj → PLN; jeśli eksport / eksport kontener / import → EUR. Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie wybrać inną walutę z listy |
+| 2 | Waluta* | Lista zamknięta (select) | PLN, EUR, USD. **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 1): jeśli kraj → PLN; jeśli eksport / eksport kontener / import → EUR. Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie wybrać inną walutę z listy |
 | 3 | Termin płatności | Pole liczbowe (dni) | Domyślnie 21 |
 | 4 | Forma płatności | Lista zamknięta (select) | Domyślnie „Przelew" |
 
-**Sekcja 6 — Uwagi**
+**Sekcja 5 — Uwagi**
 
 | Lp. | Pole | Typ pola | Uwagi |
 |-----|------|----------|-------|
 | 1 | Uwagi ogólne do zlecenia | Pole tekstowe wielowierszowe (textarea) | Jedno pole na całe zlecenie; max 1000 znaków |
 
-Sekcja 6 zawiera tylko jedno pole. „Wymagane dokumenty" znajdują się w Sekcji 4.
+Sekcja 5 zawiera tylko jedno pole. „Wymagane dokumenty" znajdują się w Sekcji 3.
 
-**Sekcja 7 — Sekcja zmian (status)**
+**Sekcja 6 — Sekcja zmian (status)**
 
 | Lp. | Element | Typ pola | Uwagi |
 |-----|---------|----------|-------|
@@ -372,33 +372,33 @@ Sekcja 6 zawiera tylko jedno pole. „Wymagane dokumenty" znajdują się w Sekcj
 | 3 | Przycisk „Zmień status" | Przycisk (akcja) | Zmiana zapisywana przy ogólnym „Zapisz" |
 | 4 | Powód reklamacji | Pole tekstowe wielowierszowe (textarea) | Widoczne **tylko** gdy aktualny status = Reklamacja lub gdy użytkownik wybierze przejście na Reklamację. Wymagane przy zmianie na Reklamację — bez wypełnienia zapis jest zablokowany. Dowolny tekst (textarea), max 500 znaków |
 
-Sekcja 7 widoczna od razu (także przy nowym zleceniu). Zmiana statusu zapisywana dopiero przy kliknięciu ogólnego „Zapisz" w stopce — żadna zmiana (dane ani status) nie zapisuje się automatycznie.
+Sekcja 6 widoczna od razu (także przy nowym zleceniu). Zmiana statusu zapisywana dopiero przy kliknięciu ogólnego „Zapisz" w stopce — żadna zmiana (dane ani status) nie zapisuje się automatycznie.
 
 **5. Stopka drawera (sticky na dole)**
 
 Stopka jest stałym elementem na dole drawera z przyciskami akcji:
 
-- **Zapisz** (primary) — zapisuje wszystkie zmiany (dane formularza + ewentualną zmianę statusu) → `PUT /orders/{id}`. Po zapisie odświeżenie danych zlecenia (GET lub z odpowiedzi), żeby status (np. Korekta) i Sekcja 7 były aktualne. Toast sukcesu.
+- **Zapisz** (primary) — zapisuje wszystkie zmiany (dane formularza + ewentualną zmianę statusu) → `PUT /orders/{id}`. Po zapisie odświeżenie danych zlecenia (GET lub z odpowiedzi), żeby status (np. Korekta) i Sekcja 6 były aktualne. Toast sukcesu.
 - **Zamknij** — zamyka drawer; przy niezapisanych zmianach: modal „Zapisać?" z opcjami (Zapisz i zamknij / Odrzuć i zamknij / Zostań).
 - **Generuj PDF** — `POST /orders/{id}/pdf` → pobranie pliku PDF.
 - **Wyślij maila** — `POST /orders/{id}/prepare-email`. Przed wysyłką system sprawdza kompletność pól wymaganych. Przy brakach (422) — alert na górze formularza z listą brakujących pól; Outlook nie jest otwierany. Przy sukcesie — otwarcie Outlooka z załączonym PDF; status zmienia się automatycznie (robocze→wysłane, korekta→korekta wysłane).
 - **Historia zmian** (link) — otwiera panel historii zmian obok drawera. Alternatywnie dostępne z nagłówka drawera.
 
-Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 7 formularza i zapisywana razem z innymi zmianami przez „Zapisz".
+Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 6 formularza i zapisywana razem z innymi zmianami przez „Zapisz".
 
 **6. Zależności między sekcjami**
 
-- **Sekcja 2 → Sekcja 4:** Rodzaj transportu (z Sekcji 2) określa automatyczny wybór wymaganych dokumentów w Sekcji 4: jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie zmienić wartość.
-- **Sekcja 2 → Sekcja 5:** Rodzaj transportu (z Sekcji 2) określa domyślną walutę w Sekcji 5: kraj → PLN, eksport / eksport kontener / import → EUR. Auto-aktualizacja waluty przy każdej zmianie rodzaju transportu (także przy edycji istniejącego zlecenia), ale użytkownik może ręcznie wybrać inną walutę.
-- **Sekcja 2 (punkty trasy):** Firma → lista oddziałów (select); oddział → adres i NIP (readonly). Przy zmianie firmy — zerowanie oddziału, adresu, NIP.
-- **Sekcja 3:** Wybór towaru → domyślny sposób załadunku (nadpisywalny per pozycja).
-- **Sekcja 7:** Pole „Powód reklamacji" widoczne tylko przy statusie Reklamacja lub wyborze przejścia na Reklamację.
+- **Sekcja 1 → Sekcja 3:** Rodzaj transportu (z Sekcji 1) określa automatyczny wybór wymaganych dokumentów w Sekcji 3: jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie zmienić wartość.
+- **Sekcja 1 → Sekcja 4:** Rodzaj transportu (z Sekcji 1) określa domyślną walutę w Sekcji 4: kraj → PLN, eksport / eksport kontener / import → EUR. Auto-aktualizacja waluty przy każdej zmianie rodzaju transportu (także przy edycji istniejącego zlecenia), ale użytkownik może ręcznie wybrać inną walutę.
+- **Sekcja 1 (punkty trasy):** Firma → lista oddziałów (select); oddział → adres i NIP (readonly). Przy zmianie firmy — zerowanie oddziału, adresu, NIP.
+- **Sekcja 2:** Wybór towaru → domyślny sposób załadunku (nadpisywalny per pozycja).
+- **Sekcja 6:** Pole „Powód reklamacji" widoczne tylko przy statusie Reklamacja lub wyborze przejścia na Reklamację.
 
 **7. Tryb tylko do odczytu**
 
 Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
 - Wszystkie pola formularza disabled / grayed out.
-- Brak przycisków: Zapisz, Wyślij maila. Sekcja 6 (Zmiana statusu) niewidoczna.
+- Brak przycisków: Zapisz, Wyślij maila. Sekcja 6 (Zmiana statusu) niewidoczna. (Sekcja 5 Uwagi pozostaje widoczna — tylko do odczytu.)
 - Aktywne: **Generuj PDF**, link „Historia zmian" (tylko odczyt), przycisk „Zamknij".
 - Nad formularzem wyświetlany jest bursztynowy (amber) banner informujący o tym, kto aktualnie blokuje zlecenie (np. „Zlecenie edytowane przez Anna Nowak").
 

@@ -1,0 +1,15 @@
+---
+/**
+ * Strona główna widoku zleceń transportowych (/orders).
+ *
+ * Renderuje wyspę React OrdersApp z client:load.
+ * Uwierzytelnienie i autoryzacja zarządzane są po stronie klienta przez AuthProvider
+ * (przekierowanie na `/` gdy brak sesji).
+ */
+import Layout from "../layouts/Layout.astro";
+import OrdersApp from "../components/orders/OrdersApp";
+---
+
+<Layout title="Zlecenia Transportowe — System Zleceń Transportowych">
+  <OrdersApp client:load />
+</Layout>

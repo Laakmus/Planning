@@ -177,71 +177,76 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
 
 #### Sekcje formularza
 
-Formularz w siatce 2–4 kolumn, etykiety nad polami, pola wymagane do wysłania oznaczone gwiazdką (*).
+Formularz w siatce 2–4 kolumn, etykiety nad polami, pola wymagane do wysłania oznaczone gwiazdką (*). Sekcje numerowane od 0. Zgodność z PRD §3.1.5a (dokument autorytatywny).
 
-**Sekcja 1: Nagłówek**
-- Numer zlecenia (readonly, generowany przez serwer).
+**Sekcja 0: Nagłówek** *(tylko do odczytu — metadane zlecenia)*
+- Numer zlecenia (readonly, generowany przez serwer, niezmienny).
 - Data wystawienia (readonly, `createdAt`).
-- Rodzaj transportu (select: krajowy, eksport drogowy, kontener morski, import) — wymagane.
-- Waluta (select: PLN, EUR, USD) — wymagane.
-- Status (badge, readonly — zmiana przez dedykowaną akcję lub automatyczną logikę).
-- Informacje o autorze: „Utworzone przez [imię], [data]" / „Ostatnia zmiana: [imię], [data]".
+- Przez kogo utworzone (readonly, imię i nazwisko z API).
+- Aktualny status (badge readonly — zmiana przez Sekcję 6).
+- Link „Historia zmian" — otwiera panel historii obok drawera.
+- Opcjonalnie: „Ostatnia zmiana: [imię], [data]".
 
-**Sekcja 2: Strony (uczestnicy)**
-- Przewoźnik (autocomplete z `companies` typu carrier) — wymagane*.
-- Nadawca — firma + lokalizacja (autocomplete z `locations`) — wymagane*.
-- Odbiorca — firma + lokalizacja (autocomplete z `locations`) — wymagane*.
-- Osoba kontaktowa: imię, telefon, e-mail (pola tekstowe).
+**Sekcja 1: Trasa** *(Rodzaj transportu + punkty trasy)*
+- **Rodzaj transportu*** (select: krajowy, eksport drogowy, kontener morski, import) — jedno pole na całe zlecenie, na górze sekcji. Zmiana Rodzaju transportu automatycznie aktualizuje Wymagane dokumenty (Sekcja 3) i Walutę (Sekcja 4).
+- **Na każdy punkt trasy** (załadunek L1…L8 / rozładunek U1…U3):
+  - Typ punktu: badge ZAŁADUNEK / ROZŁADUNEK.
+  - Firma (autocomplete z `companies`) — podpowiedź z bazy.
+  - Oddział firmy (select — zależny od wybranej firmy; nie autocomplete). Przy zmianie firmy: zerowanie oddziału, adresu, NIP.
+  - Adres (readonly, wypełniany automatycznie po wyborze oddziału).
+  - NIP (readonly, auto po wyborze firmy/oddziału).
+  - Data załadunku/rozładunku (datepicker + ręczne wpisanie).
+  - Godzina załadunku/rozładunku (timepicker + ręczne wpisanie).
+  - Uwagi do punktu (opcjonalnie).
+- Przyciski „Dodaj załadunek" / „Dodaj rozładunek" (z walidacją limitów: max 8 załadunków, 3 rozładunki).
+- Zmiana kolejności: drag-and-drop + przyciski góra/dół (dostępność klawiaturowa).
+- Przycisk „Usuń punkt" przy każdym punkcie (z potwierdzeniem jeśli punkt ma dane).
+- **Osoba kontaktowa po stronie nadawcy** (pola tekstowe na dole sekcji): imię i nazwisko (`senderContactName`), telefon (`senderContactPhone`), e-mail (`senderContactEmail`).
+- Minimalna trasa: 1 załadunek + 1 rozładunek (walidacja biznesowa przy wysyłce maila).
 
-Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z danych słownikowych. Wybór z listy uzupełnia powiązane pola (adres, NIP itp.).
+Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z danych słownikowych. Wybór uzupełnia powiązane pola.
 
-**Sekcja 3: Ładunek**
-- Pozycje towarowe (`items`) — lista edytowalna:
-  - Towar (autocomplete z `products`) — wymagany*.
-  - Ilość ton (`quantityTons`) — wymagana*.
-  - Sposób załadunku (`loadingMethodCode`) — select (PALETA, PALETA_BIGBAG, LUZEM, KOSZE); domyślnie ustawiany z `defaultLoadingMethodCode` wybranego produktu, ale **nadpisywalny** przez użytkownika per pozycję.
-  - Uwagi do pozycji.
-  - Przycisk „Dodaj pozycję" / „Usuń pozycję".
-- Typ pojazdu (select z `vehicle_variants`; wyświetla `name` zawierające typ + objętość, np. „firanka 90m³") — wymagany.
+**Sekcja 2: Towar** *(pozycje towarowe)*
+- Pozycje towarowe (`items`) — lista edytowalna, każda pozycja zawiera:
+  - Nazwa towaru* (autocomplete z `products`) — wybór ustawia domyślny sposób załadunku.
+  - Ilość w tonach* (`quantityTons`) — pole liczbowe ≥ 0.
+  - Sposób załadunku (`loadingMethodCode`) — select (PALETA, PALETA_BIGBAG, LUZEM, KOSZE); domyślnie z wybranego produktu, **nadpisywalny** per pozycja.
+  - Komentarz do pozycji (`notes`) — pole tekstowe.
+  - Przycisk „Usuń pozycję".
+- Przycisk „Dodaj pozycję".
 - Masa całkowita (`totalLoadTons`) — obliczana lub ręczna.
 - Objętość (`totalLoadVolumeM3`) — opcjonalna.
-- Wymagania specjalne (textarea, np. ADR, chłodnia).
+- Wymagania specjalne (`specialRequirements`) — textarea (np. ADR, chłodnia).
 
-**Sekcja 4: Trasa**
-- Lista punktów załadunku (max 8) i rozładunku (max 3).
-- Każdy punkt:
-  - Typ: badge ZAŁADUNEK / ROZŁADUNEK.
-  - Data (datepicker + ręczne wpisanie).
-  - Godzina (timepicker + ręczne wpisanie).
-  - Firma/lokalizacja (autocomplete z `locations`).
-  - Adres (wypełniany automatycznie po wyborze lokalizacji, readonly lub edytowalny).
-  - Uwagi do punktu.
-- Przyciski „Dodaj miejsce załadunku" / „Dodaj miejsce rozładunku" (z walidacją limitów 8/3).
-- Zmiana kolejności: drag-and-drop + przyciski góra/dół (dla dostępności klawiatury).
-- Przycisk „Usuń punkt" przy każdym punkcie (z potwierdzeniem jeśli punkt ma dane).
+**Sekcja 3: Firma transportowa** *(przewoźnik, pojazd, dokumenty)*
+- Nazwa firmy (przewoźnik)* — autocomplete z `companies` (typ carrier).
+- NIP — readonly, auto po wyborze firmy przewoźnika.
+- Wariant pojazdu* — select z `vehicle_variants`; wyświetla `name` (typ + objętość, np. „firanka 90m³"). `vehicleVariantCode` przesyłany do API.
+- Wymagane dokumenty — select (**2 opcje**): „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR". **Automatyczny wybór** przy zmianie Rodzaju transportu (Sekcja 1): eksport/eksport kontener/import → „WZE, Aneks VII, CMR"; kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić.
 
-**Sekcja 5: Warunki finansowe**
-- Cena za transport (`priceAmount`) — wymagana*.
-- Termin płatności (`paymentTermDays`).
-- Forma płatności (`paymentMethod`).
+**Sekcja 4: Finanse**
+- Stawka* (`priceAmount`) — pole liczbowe ≥ 0.
+- Waluta* (`currencyCode`) — select (PLN, EUR, USD). **Automatyczny wybór** przy zmianie Rodzaju transportu (Sekcja 1): kraj → PLN; eksport/import → EUR. Użytkownik może ręcznie zmienić.
+- Termin płatności (`paymentTermDays`) — domyślnie 21 dni.
+- Forma płatności (`paymentMethod`) — select, domyślnie „Przelew".
 
-**Sekcja 6: Dokumenty i uwagi**
-- Wymagane dokumenty dla kierowcy (`requiredDocumentsText`) — textarea.
-- Uwagi do zlecenia (`generalNotes`) — textarea, 3–4 wiersze z resize.
-- Powód reklamacji (`complaintReason`) — przy **zmianie statusu na Reklamacja** wymagane jest okienko lub **panel na dole widoku** (obok danych zlecenia) z polem „Powód reklamacji"; zapis zmiany statusu na Reklamacja jest zablokowany, dopóki pole nie zostanie wypełnione. Pole widoczne także przy statusie Reklamacja w formularzu.
+**Sekcja 5: Uwagi**
+- Uwagi ogólne do zlecenia (`generalNotes`) — textarea, max 1000 znaków, 3–4 wiersze z resize.
+- Sekcja 5 zawiera tylko to jedno pole. Wymagane dokumenty dla kierowcy znajdują się w Sekcji 3.
 
-**Sekcja 7: Zmiana statusu** (w panelu lub w stopce)
-- **Reklamacja** należy do widoku **Aktualne** (główny ekran); zlecenia w statusie Reklamacja wyświetlane są w zakładce Aktualne.
-- Dostępne przejścia statusu zależne od aktualnego statusu (tylko dozwolone przejścia są oferowane w UI):
-  - **Robocze** → Zrealizowane, Anulowane (ręczne). Reklamacja nie jest dostępna z Robocze.
-  - **Wysłane** → Zrealizowane, Reklamacja, Anulowane (ręczne).
-  - **Korekta** → Zrealizowane, Reklamacja, Anulowane (ręczne).
-  - **Korekta wysłane** → Zrealizowane, Reklamacja, Anulowane (ręczne).
-  - **Reklamacja** → Zrealizowane, Anulowane (ręczne).
-  - Statusy Wysłane i Korekta wysłane ustawiane tylko automatycznie (prepare-email).
-  - Z **Zrealizowane** nie ma opcji „Anulowane" — tylko „Przywróć do aktualnych" (po przywróceniu status → Korekta; anulowanie możliwe dopiero z głównego ekranu).
-- Przy wyborze Reklamacja wymagane pole „Powód reklamacji" w panelu na dole widoku; bez wypełnienia nie można zapisać zmiany statusu.
-- W zakładkach Zrealizowane/Anulowane: przycisk „Przywróć do aktualnych" (`POST /restore`); po przywróceniu status ustawiany na **Korekta**. Z Anulowane przywrócenie możliwe tylko w ciągu 24 h; po 24 h zlecenie jest usuwane z bazy.
+**Sekcja 6: Zmiana statusu**
+- Aktualny status (badge readonly).
+- Wybór nowego statusu — select (tylko dozwolone przejścia ręczne zgodnie z PRD §3.1.7 i `ALLOWED_MANUAL_STATUS_TRANSITIONS`):
+  - **Robocze** → Zrealizowane, Anulowane. (Reklamacja niedostępna z Robocze.)
+  - **Wysłane** → Zrealizowane, Reklamacja, Anulowane.
+  - **Korekta** → Zrealizowane, Reklamacja, Anulowane.
+  - **Korekta wysłane** → Zrealizowane, Reklamacja, Anulowane.
+  - **Reklamacja** → Zrealizowane, Anulowane.
+  - Statusy Wysłane i Korekta wysłane — ustawiane **wyłącznie automatycznie** przez prepare-email.
+  - Z **Zrealizowane / Anulowane** — brak ręcznej zmiany; dostępne „Przywróć do aktualnych" (`POST /restore`, status → Korekta). Z Anulowane: tylko w ciągu 24 h.
+- Przycisk „Zmień status" — zmiana zapisywana razem z danymi formularza przy kliknięciu „Zapisz" w stopce.
+- **Powód reklamacji** (`complaintReason`) — pole textarea widoczne **tylko** gdy status = Reklamacja lub użytkownik wybiera przejście na Reklamację. Wymagane przy zmianie na Reklamację — zapis zablokowany bez wypełnienia. Max 500 znaków.
+- Sekcja 6 widoczna od razu (także przy nowym zleceniu). Żadna zmiana nie zapisuje się automatycznie — tylko przy „Zapisz".
 
 #### Stopka draweru
 

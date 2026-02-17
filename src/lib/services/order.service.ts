@@ -11,7 +11,9 @@ import type {
   DuplicateOrderResponseDto,
   OrderDetailResponseDto,
   OrderListItemDto,
+  OrderListItemInnerDto,
   OrderListResponseDto,
+  OrderListStopDto,
   PatchStopResponseDto,
   PrepareEmailResponseDto,
   UpdateOrderResponseDto,
@@ -56,7 +58,13 @@ function mapRowToOrderListItemDto(
     last_loading_time?: string | null;
     last_unloading_date?: string | null;
     last_unloading_time?: string | null;
-  }
+    week_number?: number | null;
+    vehicle_capacity_volume_m3?: number | null;
+    sent_by_user_name?: string | null;
+    sent_at?: string | null;
+  },
+  stops: OrderListStopDto[],
+  items: OrderListItemInnerDto[]
 ): OrderListItemDto {
   return {
     id: row.id,
@@ -67,6 +75,7 @@ function mapRowToOrderListItemDto(
     transportTypeCode: row.transport_type_code,
     transportTypeName: row.transport_types?.name ?? "",
     summaryRoute: row.summary_route,
+    stops,
     firstLoadingDate: row.first_loading_date,
     firstLoadingTime: row.first_loading_time,
     firstUnloadingDate: row.first_unloading_date,
@@ -75,15 +84,20 @@ function mapRowToOrderListItemDto(
     lastLoadingTime: row.last_loading_time ?? null,
     lastUnloadingDate: row.last_unloading_date ?? null,
     lastUnloadingTime: row.last_unloading_time ?? null,
+    weekNumber: row.week_number ?? null,
     carrierCompanyId: row.carrier_company_id,
     carrierName: row.carrier_name_snapshot,
     mainProductName: row.main_product_name ?? null,
+    items,
     priceAmount: row.price_amount,
     currencyCode: row.currency_code,
     vehicleVariantCode: row.vehicle_variant_code,
     vehicleVariantName: row.vehicle_variants?.name ?? "",
+    vehicleCapacityVolumeM3: row.vehicle_capacity_volume_m3 ?? null,
     requiredDocumentsText: row.required_documents_text,
     generalNotes: row.general_notes,
+    sentByUserName: row.sent_by_user_name ?? null,
+    sentAt: row.sent_at ?? null,
     lockedByUserId: row.locked_by_user_id,
     lockedByUserName: row.locked_by_user?.full_name ?? null,
     lockedAt: row.locked_at,
@@ -269,14 +283,68 @@ export async function listOrders(
     throw error;
   }
 
-  const items = (rows ?? []).map((row) =>
-    mapRowToOrderListItemDto(row as unknown as TransportOrderRow & Record<string, unknown>)
+  const safeRows = (rows ?? []) as unknown as Array<{ id: string }>;
+  const orderIds = safeRows.map((r) => r.id);
+
+  // Fetch stops and items for the returned page in bulk
+  const [stopsResult, itemsResult] = await Promise.all([
+    orderIds.length > 0
+      ? supabase
+          .from("order_stops")
+          .select("order_id, kind, sequence_no, company_name_snapshot, location_name_snapshot, date_local, time_local")
+          .in("order_id", orderIds)
+          .order("sequence_no", { ascending: true })
+      : Promise.resolve({ data: [], error: null }),
+    orderIds.length > 0
+      ? supabase
+          .from("order_items")
+          .select("order_id, product_name_snapshot, quantity_tons, loading_method_code, notes")
+          .in("order_id", orderIds)
+      : Promise.resolve({ data: [], error: null }),
+  ]);
+
+  if (stopsResult.error) throw stopsResult.error;
+  if (itemsResult.error) throw itemsResult.error;
+
+  // Group stops and items by order_id
+  const stopsByOrderId = new Map<string, OrderListStopDto[]>();
+  for (const s of stopsResult.data ?? []) {
+    const list = stopsByOrderId.get(s.order_id) ?? [];
+    list.push({
+      kind: s.kind,
+      sequenceNo: s.sequence_no,
+      companyNameSnapshot: s.company_name_snapshot ?? null,
+      locationNameSnapshot: s.location_name_snapshot ?? null,
+      dateLocal: s.date_local ?? null,
+      timeLocal: s.time_local ?? null,
+    });
+    stopsByOrderId.set(s.order_id, list);
+  }
+
+  const itemsByOrderId = new Map<string, OrderListItemInnerDto[]>();
+  for (const it of itemsResult.data ?? []) {
+    const list = itemsByOrderId.get(it.order_id) ?? [];
+    list.push({
+      productNameSnapshot: it.product_name_snapshot ?? null,
+      quantityTons: it.quantity_tons ?? null,
+      loadingMethodCode: it.loading_method_code ?? null,
+      notes: it.notes ?? null,
+    });
+    itemsByOrderId.set(it.order_id, list);
+  }
+
+  const mappedItems = safeRows.map((row) =>
+    mapRowToOrderListItemDto(
+      row as unknown as TransportOrderRow & Record<string, unknown>,
+      stopsByOrderId.get(row.id) ?? [],
+      itemsByOrderId.get(row.id) ?? []
+    )
   );
   const totalItems = count ?? 0;
   const totalPages = Math.ceil(totalItems / pageSize) || 1;
 
   return {
-    items,
+    items: mappedItems,
     page,
     pageSize,
     totalItems,
@@ -1504,12 +1572,11 @@ export async function prepareEmailForOrder(
   return {
     success: true,
     data: {
-      id: orderId,
-      orderNo: order.orderNo,
-      statusCode: newStatusCode,
+      orderId,
+      statusBefore: order.statusCode,
+      statusAfter: newStatusCode,
       emailOpenUrl,
       pdfFileName: null,
-      sentAt: now,
     },
   };
 }

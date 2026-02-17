@@ -474,14 +474,15 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.14 OrderForm
 
-- **Opis**: Formularz edycji zlecenia z **6 sekcjami**: Trasa, Towar, Firma transportowa, Finanse, Uwagi, Zmiana statusu. Etykiety nad polami, siatka kolumn wewnątrz sekcji.
+- **Opis**: Formularz edycji zlecenia z **7 sekcjami (Sekcja 0–Sekcja 6)**. Sekcje zawsze rozwinięte (bez accordionu). Etykiety nad polami, siatka kolumn wewnątrz sekcji. Zgodność z PRD §3.1.5a (dokument autorytatywny).
 - **Struktura sekcji**:
-  - **Sekcja 1 – Trasa**: punkty L1, U1, L2, U2 (i kolejne) w kolejności, każdy punkt to karta z polami: data, godzina, firma (select/autocomplete), lokalizacja (select), adres, uwagi; uchwyt drag-and-drop; przycisk usuń; na dole przyciski „+ Dodaj załadunek" i „+ Dodaj rozładunek".
-  - **Sekcja 2 – Towar**: lista pozycji towarowych z polami: nazwa towaru, waga (t), typ załadunku, uwagi; na dole przycisk „+ Dodaj towar"; podsumowanie „Razem: Xt".
-  - **Sekcja 3 – Firma transportowa**: nazwa firmy (autocomplete/select), NIP (Input `disabled` — uzupełniany automatycznie), typ pojazdu (Select `vehicleVariantCode`), objętość (Select), dokumenty (Select wielokrotny lub Input).
-  - **Sekcja 4 – Finanse**: stawka (Input), waluta (Select PLN/EUR/USD), termin płatności (Input dni), forma płatności (Select).
-  - **Sekcja 5 – Uwagi**: `<Textarea>` z licznikiem znaków (max 1000).
-  - **Sekcja 6 – Zmiana statusu** (tylko tryb edycji, niewidoczna w trybie readonly): aktualny badge statusu + przyciski zmiany statusu: „Zrealizowane", „Reklamacja", „Anulowane"; nota informacyjna o konsekwencji zmiany.
+  - **Sekcja 0 – Nagłówek** *(tylko do odczytu)*: Nr zlecenia (readonly), data wystawienia (`createdAt` readonly), autor (readonly), aktualny badge statusu (readonly), link „Historia zmian".
+  - **Sekcja 1 – Trasa**: Rodzaj transportu* (Select u góry sekcji — zmiana auto-aktualizuje dokumenty w Sekcji 3 i walutę w Sekcji 4); następnie punkty L1, U1, L2, U2 (i kolejne) — każdy punkt: data, godzina, firma (autocomplete), oddział (select zależny od firmy), adres (readonly), NIP (readonly), uwagi; uchwyt drag-and-drop; przycisk usuń; przyciski „+ Dodaj załadunek" i „+ Dodaj rozładunek" (limity 8/3); na końcu sekcji: pola Osoba kontaktowa (`senderContactName`, `senderContactPhone`, `senderContactEmail`).
+  - **Sekcja 2 – Towar**: lista pozycji towarowych z polami: nazwa towaru* (autocomplete), waga t* (Input ≥ 0), sposób załadunku (Select PALETA/PALETA_BIGBAG/LUZEM/KOSZE — domyślnie z produktu, nadpisywalny), komentarz (Input); na dole przycisk „+ Dodaj towar"; podsumowanie „Razem: Xt"; pola globalne: `totalLoadTons`, `totalLoadVolumeM3`, `specialRequirements`.
+  - **Sekcja 3 – Firma transportowa**: nazwa firmy (autocomplete carriers), NIP (Input `disabled` — auto), wariant pojazdu* (Select `vehicleVariantCode` — jeden select łączący typ + objętość, np. „firanka 90m³"), wymagane dokumenty (Select 2 opcje: „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR" — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny).
+  - **Sekcja 4 – Finanse**: stawka* (Input ≥ 0), waluta* (Select PLN/EUR/USD — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny), termin płatności (Input dni, default 21), forma płatności (Select, default „Przelew").
+  - **Sekcja 5 – Uwagi**: `<Textarea generalNotes>` z licznikiem znaków (max 1000). Tylko to jedno pole.
+  - **Sekcja 6 – Zmiana statusu** (niewidoczna w trybie readonly): aktualny badge statusu + Select dozwolonych przejść ręcznych (wg `ALLOWED_MANUAL_STATUS_TRANSITIONS`); pole „Powód reklamacji" (Textarea, max 500 znaków) — widoczne tylko gdy status = Reklamacja lub wybrano przejście na Reklamację, wymagane przy zapisie; przycisk „Zmień status" — zmiana zapisywana przy „Zapisz".
 - **Główne elementy**: `<form>` z sekcjami `<fieldset>`, pola shadcn (`<Input>`, `<Select>`, `<Textarea>`, `<AutocompleteField>`), sekcja trasy `<RouteSection>`, sekcja pozycji `<CargoSection>`.
 - **Obsługiwane interakcje**:
   - Zmiana dowolnego pola → aktualizacja lokalnego stanu formularza → flaga `isDirty`

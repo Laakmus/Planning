@@ -27,6 +27,24 @@ export interface PaginatedResponse<T> {
   totalPages: number;
 }
 
+/** Uproszczony punkt trasy w liście zleceń (GET /api/v1/orders). */
+export interface OrderListStopDto {
+  kind: string;
+  sequenceNo: number;
+  companyNameSnapshot: string | null;
+  locationNameSnapshot: string | null;
+  dateLocal: string | null;
+  timeLocal: string | null;
+}
+
+/** Uproszczona pozycja towarowa w liście zleceń (GET /api/v1/orders). */
+export interface OrderListItemInnerDto {
+  productNameSnapshot: string | null;
+  quantityTons: number | null;
+  loadingMethodCode: string | null;
+  notes: string | null;
+}
+
 /**
  * Jedna pozycja listy zleceń — GET /api/v1/orders.
  * Pola w camelCase dla API.
@@ -40,6 +58,7 @@ export interface OrderListItemDto {
   transportTypeCode: string;
   transportTypeName: string;
   summaryRoute: string | null;
+  stops: OrderListStopDto[];
   firstLoadingDate: string | null;
   firstLoadingTime: string | null;
   firstUnloadingDate: string | null;
@@ -48,15 +67,20 @@ export interface OrderListItemDto {
   lastLoadingTime: string | null;
   lastUnloadingDate: string | null;
   lastUnloadingTime: string | null;
+  weekNumber: number | null;
   carrierCompanyId: string | null;
   carrierName: string | null;
   mainProductName: string | null;
+  items: OrderListItemInnerDto[];
   priceAmount: number | null;
   currencyCode: string;
   vehicleVariantCode: string;
   vehicleVariantName: string;
+  vehicleCapacityVolumeM3: number | null;
   requiredDocumentsText: string | null;
   generalNotes: string | null;
+  sentByUserName: string | null;
+  sentAt: string | null;
   lockedByUserId: string | null;
   lockedByUserName: string | null;
   lockedAt: string | null;
@@ -303,12 +327,11 @@ export interface PrepareEmailCommand {
 
 /** Odpowiedź POST /api/v1/orders/{orderId}/prepare-email. */
 export interface PrepareEmailResponseDto {
-  id: string;
-  orderNo: string;
-  statusCode: string;
+  orderId: string;
+  statusBefore: string;
+  statusAfter: string;
   emailOpenUrl: string;
   pdfFileName: string | null;
-  sentAt: string | null;
 }
 
 /** Odpowiedź POST /api/v1/orders/{orderId}/duplicate (kopia zlecenia). */
