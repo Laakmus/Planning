@@ -69,7 +69,7 @@
 </div>
 <!-- Dark Backdrop for Side Sheet -->
 <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"></div>
-<!-- Change History Side Sheet (450px wide) -->
+<!-- Change History Side Sheet (~450px wide) -->
 <aside class="fixed right-0 top-0 h-full w-[450px] bg-background-light dark:bg-[#16202a] shadow-2xl z-50 flex flex-col border-l border-slate-200 dark:border-slate-800">
 <!-- Header -->
 <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-background-light/80 dark:bg-[#16202a]/80 backdrop-blur-md z-10">
@@ -86,7 +86,8 @@
 </div>
 <!-- Scrollable Timeline Content -->
 <div class="flex-1 overflow-y-auto custom-scrollbar px-6 py-4">
-<!-- Date Group: Dzisiaj -->
+
+<!-- ===== Date Group: Dzisiaj ===== -->
 <div class="mb-8">
 <div class="flex items-center gap-4 mb-6">
 <span class="text-xs font-bold uppercase tracking-wider text-primary/80">Dzisiaj</span>
@@ -95,49 +96,66 @@
 <div class="relative space-y-8">
 <!-- Vertical Line -->
 <div class="absolute left-[17px] top-2 bottom-0 w-[2px] bg-slate-200 dark:bg-slate-800"></div>
-<!-- Entry: Field Change -->
+
+<!-- Entry 1: Field Change (single field — edit icon badge) -->
 <div class="relative pl-12">
-<!-- Avatar on line -->
+<!-- Avatar on timeline -->
 <div class="absolute left-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
 <span class="text-xs font-bold text-white">MK</span>
+</div>
+<!-- Icon badge (edit) — positioned bottom-right of avatar -->
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">edit</span>
 </div>
 <div class="flex justify-between items-start">
 <span class="text-sm font-semibold">Marek Kowalski</span>
 <span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">14:20</span>
 </div>
-<p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Zaktualizowano parametry ładunku</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana pola</p>
 <div class="mt-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+<label class="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Waga ładunku</label>
 <div class="grid grid-cols-2 gap-4">
 <div>
-<label class="text-[10px] uppercase font-bold text-slate-400">Z</label>
+<label class="text-[10px] uppercase font-bold text-slate-400">Było</label>
 <p class="text-sm line-through opacity-50">1200 kg</p>
 </div>
 <div>
-<label class="text-[10px] uppercase font-bold text-primary">Na</label>
+<label class="text-[10px] uppercase font-bold text-primary">Jest</label>
 <p class="text-sm font-bold">1500 kg</p>
 </div>
 </div>
 </div>
 </div>
-<!-- Entry: Status Change -->
+
+<!-- Entry 2: Status Change (sync icon badge) -->
 <div class="relative pl-12">
+<!-- Avatar on timeline -->
 <div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
-<span class="text-xs font-bold">AD</span>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-300">AN</span>
+</div>
+<!-- Icon badge (sync) -->
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">sync</span>
 </div>
 <div class="flex justify-between items-start">
 <span class="text-sm font-semibold">Anna Nowak</span>
 <span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">11:05</span>
 </div>
-<p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Zmieniono status zlecenia</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana statusu</p>
+<!-- Status badges: old → new (using StatusBadge styles from ui-plan 6.4) -->
 <div class="mt-3 flex items-center gap-2">
-<span class="px-2 py-1 bg-slate-100 dark:bg-slate-800 text-[11px] font-bold rounded border border-slate-200 dark:border-slate-700">ROB</span>
+<!-- Robocze badge (no border per spec) -->
+<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">Robocze</span>
 <span class="material-icons text-sm text-slate-400">arrow_forward</span>
-<span class="px-2 py-1 bg-primary/20 text-primary text-[11px] font-bold rounded border border-primary/30 uppercase">WYS</span>
+<!-- Wysłane badge (blue with border per spec) -->
+<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">Wysłane</span>
 </div>
 </div>
+
 </div>
 </div>
-<!-- Date Group: Wczoraj -->
+
+<!-- ===== Date Group: Wczoraj ===== -->
 <div class="mb-8">
 <div class="flex items-center gap-4 mb-6">
 <span class="text-xs font-bold uppercase tracking-wider text-slate-400">Wczoraj</span>
@@ -146,36 +164,51 @@
 <div class="relative space-y-8">
 <!-- Vertical Line -->
 <div class="absolute left-[17px] top-2 bottom-0 w-[2px] bg-slate-200 dark:bg-slate-800"></div>
-<!-- Entry: Assignment -->
+
+<!-- Entry 3: Field Change — carrier assignment (edit icon badge) -->
 <div class="relative pl-12">
 <div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
-<span class="text-xs font-bold">SY</span>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-300">SY</span>
+</div>
+<!-- Icon badge (edit) -->
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">edit</span>
 </div>
 <div class="flex justify-between items-start">
 <span class="text-sm font-semibold">System</span>
 <span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">16:45</span>
 </div>
-<p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Przypisano przewoźnika do trasy</p>
-<div class="mt-3 flex items-center gap-3 bg-primary/5 dark:bg-primary/10 p-2.5 rounded-lg border border-primary/10">
-<div class="w-8 h-8 rounded bg-white dark:bg-slate-800 flex items-center justify-center shadow-sm">
-<span class="material-icons text-primary text-sm">local_shipping</span>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana pola</p>
+<div class="mt-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+<label class="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Firma transportowa</label>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-[10px] uppercase font-bold text-slate-400">Było</label>
+<p class="text-sm line-through opacity-50 italic text-slate-400">— brak —</p>
 </div>
 <div>
-<p class="text-xs font-bold text-primary">DHL Express Sp. z o.o.</p>
-<p class="text-[10px] text-slate-400">ID: 4492-AX</p>
+<label class="text-[10px] uppercase font-bold text-primary">Jest</label>
+<p class="text-sm font-bold">DHL Express Sp. z o.o.</p>
 </div>
 </div>
 </div>
-<!-- Entry: Multiple Fields Change -->
+</div>
+
+<!-- Entry 4: Multiple Fields Change (playlist_add_check icon badge) -->
 <div class="relative pl-12">
 <div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
-<span class="text-xs font-bold">MK</span>
+<span class="text-xs font-bold text-slate-600 dark:text-slate-300">MK</span>
+</div>
+<!-- Icon badge (playlist_add_check — multi-field) -->
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">playlist_add_check</span>
 </div>
 <div class="flex justify-between items-start">
 <span class="text-sm font-semibold">Marek Kowalski</span>
 <span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">09:12</span>
 </div>
-<p class="text-sm text-slate-500 dark:text-slate-400 mt-0.5">Edytowano dane rozładunku</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana wielu pól (Rozładunek U1)</p>
+<!-- List of old→new field values -->
 <div class="mt-3 space-y-2">
 <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800">
 <label class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Miejscowość</label>
@@ -193,18 +226,62 @@
 <span class="text-xs font-bold">14467</span>
 </div>
 </div>
+<div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800">
+<label class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Adres</label>
+<div class="flex items-center gap-2">
+<span class="text-xs line-through opacity-50">Alexanderplatz 1</span>
+<span class="material-icons text-[12px] text-slate-400">east</span>
+<span class="text-xs font-bold">Am Neuen Palais 10</span>
 </div>
 </div>
 </div>
 </div>
-<!-- Date Group: 12 Października -->
+
+</div>
+</div>
+
+<!-- ===== Date Group: 8 lut 2026 ===== -->
 <div class="mb-8">
 <div class="flex items-center gap-4 mb-6">
-<span class="text-xs font-bold uppercase tracking-wider text-slate-400">12 Października</span>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">8 lut 2026</span>
 <div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div>
 </div>
 <div class="relative space-y-8">
-<!-- Entry: Order Creation -->
+
+<!-- Entry 5: Status Change — Reklamacja (sync badge, red status) -->
+<div class="relative pl-12">
+<div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
+<span class="text-xs font-bold text-slate-600 dark:text-slate-300">AN</span>
+</div>
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">sync</span>
+</div>
+<div class="flex justify-between items-start">
+<span class="text-sm font-semibold">Anna Nowak</span>
+<span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">10:30</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana statusu</p>
+<div class="mt-3 flex items-center gap-2">
+<!-- Wysłane badge -->
+<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">Wysłane</span>
+<span class="material-icons text-sm text-slate-400">arrow_forward</span>
+<!-- Reklamacja badge -->
+<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">Reklamacja</span>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ===== Date Group: 5 lut 2026 (Order Creation) ===== -->
+<div class="mb-8">
+<div class="flex items-center gap-4 mb-6">
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">5 lut 2026</span>
+<div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div>
+</div>
+<div class="relative space-y-8">
+
+<!-- Entry 6: Order Creation (rocket_launch icon — special entry) -->
 <div class="relative pl-12 pb-4">
 <div class="absolute left-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10 shadow-lg shadow-primary/20">
 <span class="material-icons text-white text-lg">rocket_launch</span>
@@ -215,11 +292,13 @@
 </div>
 <div class="mt-2 bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-4">
 <p class="text-sm font-bold text-primary mb-1">Zlecenie utworzone</p>
-<p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Pomyślnie zaimportowano zlecenie z zewnętrznego systemu ERP (SAP v2). Wygenerowano unikalny identyfikator TRK-88291.</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Zaimportowano zlecenie z systemu ERP. Wygenerowano identyfikator TRK-88291.</p>
 </div>
 </div>
+
 </div>
 </div>
+
 </div>
 <!-- Footer / Legend -->
 <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#101922]">

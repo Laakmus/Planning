@@ -346,9 +346,9 @@ OrdersApp (React island — korzenny komponent)
     **Format daty: DD.MM.YYYY** (bez godziny; backend zwraca timestamptz, frontend formatuje)
   - **Akcje** — sticky right, przycisk/ikona „Wyślij maila" (ikona Material: `mail_outline` lub Lucide `Mail`)
 - **Widok Trasa**: zamiast czterech kolumn (Miejsce załadunku, Data załadunku, Miejsce rozładunku, Data rozładunku) używa:
-  - **Kolumna "Trasa"** — `<RouteSummaryCell>` (node-string, np. `L1:Nord → L2:Recykling → U1:BER`; max 4 węzły w linii, automatyczne zawijanie z `flex-wrap gap-y-1`)
-  - **Kolumna "Data załadunku"** — lista dat z godzinami i okrągłymi badge'ami L1, L2, ... (format DD.MM.YYYY HH:MM)
-  - **Kolumna "Data rozładunku"** — lista dat z godzinami i okrągłymi badge'ami U1, U2, ... (format DD.MM.YYYY HH:MM)
+  - **Kolumna "Trasa"** — `<RouteSummaryCell>` (node-string, np. `L1:Nord → L2:Recykling → U1:BER`; max 4 węzły w linii, kolejne węzły zawijają się do nowej linii w grupach po 4)
+  - **Kolumna "Data załadunku"** — **tylko PIERWSZA** data załadunku (L1) z okrągłym badge'em `L1` (emerald, `w-5 h-5 rounded-full`), format DD.MM.YYYY HH:MM. Jeśli brak daty — `—`.
+  - **Kolumna "Data rozładunku"** — **tylko PIERWSZA** data rozładunku (U1) z okrągłym badge'em `U1` (primary, `w-5 h-5 rounded-full`), format DD.MM.YYYY HH:MM. Jeśli brak daty — `—`.
   - Pozostałe kolumny (Lock, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania, Akcje) — identyczne jak w widoku Kolumny
 - **Mapowanie tła wiersza wg statusu** (statusCode/statusName z API; w UI pełna nazwa):
   - Robocze: `bg-white`, Wysłane: `bg-blue-50/30`, Korekta: `bg-orange-50/30`, Korekta wysłane: `bg-teal-50/30`, Zrealizowane: `bg-green-50/30`, Anulowane: `bg-gray-50/50`, Reklamacja: `bg-red-50/30`
@@ -474,7 +474,14 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.14 OrderForm
 
-- **Opis**: Formularz edycji zlecenia z sekcjami: Nagłówek, Strony, Ładunek, Trasa, Finanse, Dokumenty/Uwagi, Status. Siatka 2–4 kolumn, etykiety nad polami.
+- **Opis**: Formularz edycji zlecenia z **6 sekcjami**: Trasa, Towar, Firma transportowa, Finanse, Uwagi, Zmiana statusu. Etykiety nad polami, siatka kolumn wewnątrz sekcji.
+- **Struktura sekcji**:
+  - **Sekcja 1 – Trasa**: punkty L1, U1, L2, U2 (i kolejne) w kolejności, każdy punkt to karta z polami: data, godzina, firma (select/autocomplete), lokalizacja (select), adres, uwagi; uchwyt drag-and-drop; przycisk usuń; na dole przyciski „+ Dodaj załadunek" i „+ Dodaj rozładunek".
+  - **Sekcja 2 – Towar**: lista pozycji towarowych z polami: nazwa towaru, waga (t), typ załadunku, uwagi; na dole przycisk „+ Dodaj towar"; podsumowanie „Razem: Xt".
+  - **Sekcja 3 – Firma transportowa**: nazwa firmy (autocomplete/select), NIP (Input `disabled` — uzupełniany automatycznie), typ pojazdu (Select `vehicleVariantCode`), objętość (Select), dokumenty (Select wielokrotny lub Input).
+  - **Sekcja 4 – Finanse**: stawka (Input), waluta (Select PLN/EUR/USD), termin płatności (Input dni), forma płatności (Select).
+  - **Sekcja 5 – Uwagi**: `<Textarea>` z licznikiem znaków (max 1000).
+  - **Sekcja 6 – Zmiana statusu** (tylko tryb edycji, niewidoczna w trybie readonly): aktualny badge statusu + przyciski zmiany statusu: „Zrealizowane", „Reklamacja", „Anulowane"; nota informacyjna o konsekwencji zmiany.
 - **Główne elementy**: `<form>` z sekcjami `<fieldset>`, pola shadcn (`<Input>`, `<Select>`, `<Textarea>`, `<AutocompleteField>`), sekcja trasy `<RouteSection>`, sekcja pozycji `<CargoSection>`.
 - **Obsługiwane interakcje**:
   - Zmiana dowolnego pola → aktualizacja lokalnego stanu formularza → flaga `isDirty`
@@ -608,13 +615,21 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.19 DrawerFooter
 
-- **Opis**: Sticky stopka draweru z przyciskami akcji.
-- **Główne elementy**: `<div>` sticky bottom z przyciskami: Zapisz (primary), Anuluj (outline), Generuj PDF (ghost), Wyślij maila (ghost z ikoną Mail).
+- **Opis**: Sticky stopka draweru z przyciskami akcji. Zawartość zależy od trybu (edycja vs. readonly).
+- **Tryb edycji** (`isReadOnly: false`):
+  - Lewa strona: Generuj PDF (ghost), Wyślij maila (ghost z ikoną Mail), Historia zmian (ghost)
+  - Prawa strona: Zamknij (outline), Zapisz (primary)
+- **Tryb readonly** (`isReadOnly: true`):
+  - Lewa strona: Generuj PDF (ghost), Historia zmian (ghost)
+  - Prawa strona: Zamknij (outline)
+  - **BEZ** „Wyślij maila" i **BEZ** „Zapisz"
+- **Banner lock (readonly)**: Nad stopką (lub na górze contentu) wyświetlany jest bursztynowy (amber) pasek: „Zlecenie edytowane przez {userName}" — informuje, że zlecenie jest zablokowane przez innego użytkownika.
 - **Obsługiwane interakcje**:
   - „Zapisz" → walidacja techniczna → `PUT /orders/{id}` → toast sukcesu
-  - „Anuluj" → zamknięcie draweru (z ostrzeżeniem jeśli dirty)
+  - „Zamknij" → zamknięcie draweru (z ostrzeżeniem jeśli dirty w trybie edycji)
   - „Generuj PDF" → `POST /orders/{id}/pdf` → pobranie pliku
   - „Wyślij maila" → `POST /orders/{id}/prepare-email` → otwarcie `mailto:` URL / wyświetlenie 422
+  - „Historia zmian" → otwarcie panelu `<HistoryPanel>`
 - **Walidacja**: Brak bezpośrednio — deleguje do handlera.
 - **Propsy**:
   ```ts
@@ -622,10 +637,12 @@ OrdersApp (React island — korzenny komponent)
     isReadOnly: boolean;
     isSaving: boolean;
     isDirty: boolean;
+    lockedByUserName?: string;  // jeśli podane → wyświetl banner lock
     onSave: () => void;
-    onCancel: () => void;
+    onClose: () => void;
     onGeneratePdf: () => void;
     onSendEmail: () => void;
+    onShowHistory: () => void;
   }
   ```
 
@@ -705,36 +722,47 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.25 RouteSummaryCell (Node-String)
 
-- **Opis**: Wizualizacja trasy jako ciągu kompaktowych węzłów połączonych strzałkami. Kluczowy element designu widoku Trasa. Format: `L1:Nord → L2:Recykling → U1:BER`. **Zawijanie**: **Maksymalnie 4 węzły w linii** (+ 3 strzałki = 7 elementów), następne węzły automatycznie zawijają się do nowej linii.
-- **Główne elementy**: `<div class="flex items-center space-x-1 flex-wrap gap-y-1">` z węzłami `<span>` rozdzielonymi `<span class="text-slate-300">→</span>`.
+- **Opis**: Wizualizacja trasy jako ciągu kompaktowych węzłów połączonych strzałkami. Kluczowy element designu widoku Trasa. Format: `L1:Nord → L2:Recykling → U1:BER`. **Zawijanie**: **Maksymalnie 4 węzły w linii** — węzły grupowane są w chunk'i po 4, każda grupa renderowana w osobnym `<div>` (nie `flex-wrap`).
+- **Główne elementy**: `<div class="space-y-1">` z wierszami `<div class="flex items-center space-x-1">` (jeden wiersz = jeden chunk 4 węzłów).
 - **Kolorystyka węzłów:**
   - **LOADING (L1, L2, ...)**: `bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700`
   - **UNLOADING (U1, U2, ...)**: `bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary`
 - **Format węzła**: `{L|U}{sequenceNo}:{nazwa_lub_skrót}` — np. `L1:Nord`, `L2:Recykling`, `U1:CentralMet`
-- **Layout**: Container z `flex-wrap gap-y-1` pozwala na automatyczne zawijanie. **Przykład**: przy 11 węzłach (8L + 3U) układ będzie:
+- **Layout**: Chunking po 4 węzły — każdy chunk to osobny wiersz `<div class="flex items-center space-x-1">`. **Przykład**: przy 6 węzłach (4L + 2U) układ będzie:
   - Linia 1: L1 → L2 → L3 → L4
-  - Linia 2: → L5 → L6 → L7 → L8
-  - Linia 3: → U1 → U2 → U3
-- **WAŻNE**: Linia w tle (pseudo-element `::after`) **NIE jest stosowana**, aby uniknąć problemów wizualnych przy zawijaniu na wiele linii.
+  - Linia 2: U1 → U2
+- **WAŻNE**: Linia w tle (pseudo-element `::after`) **NIE jest stosowana**. **NIE używamy `flex-wrap`** na jednym kontenerze — zamiast tego jawne chunki w osobnych `<div>`.
 - **Implementacja**:
   ```tsx
   function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
+    const NODES_PER_LINE = 4;
+    const chunks: typeof stops[] = [];
+    for (let i = 0; i < stops.length; i += NODES_PER_LINE) {
+      chunks.push(stops.slice(i, i + NODES_PER_LINE));
+    }
     return (
-      <div className="flex items-center space-x-1 flex-wrap gap-y-1">
-        {stops.map((stop, index) => (
-          <React.Fragment key={index}>
-            {index > 0 && <span className="text-slate-300">→</span>}
-            <span
-              className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
-                stop.kind === "LOADING"
-                  ? "bg-emerald-100 border border-emerald-500/30 text-emerald-700"
-                  : "bg-primary/10 border border-primary/30 text-primary"
-              }`}
-            >
-              {stop.kind === "LOADING" ? "L" : "U"}
-              {stop.sequenceNo}:{stop.companyNameShort}
-            </span>
-          </React.Fragment>
+      <div className="space-y-1">
+        {chunks.map((chunk, chunkIndex) => (
+          <div key={chunkIndex} className="flex items-center space-x-1">
+            {chunk.map((stop, idx) => {
+              const globalIndex = chunkIndex * NODES_PER_LINE + idx;
+              return (
+                <React.Fragment key={globalIndex}>
+                  {globalIndex > 0 && <span className="text-slate-300">→</span>}
+                  <span
+                    className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${
+                      stop.kind === "LOADING"
+                        ? "bg-emerald-100 border border-emerald-500/30 text-emerald-700"
+                        : "bg-primary/10 border border-primary/30 text-primary"
+                    }`}
+                  >
+                    {stop.kind === "LOADING" ? "L" : "U"}
+                    {stop.sequenceNo}:{stop.companyNameShort}
+                  </span>
+                </React.Fragment>
+              );
+            })}
+          </div>
         ))}
       </div>
     );

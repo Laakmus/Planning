@@ -1,0 +1,895 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>All Views Preview — Zlecenia Transportowe</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+<script>
+tailwind.config = {
+    darkMode: "class",
+    theme: {
+        extend: {
+            colors: { "primary": "#137fec", "background-light": "#f6f7f8", "background-dark": "#101922" },
+            fontFamily: { "display": ["Inter", "sans-serif"] },
+            borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+            gridTemplateColumns: { "route": "11fr 6fr 3fr 3fr" },
+        },
+    },
+}
+</script>
+<style>
+body { font-family: 'Inter', sans-serif; }
+.custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 10px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+.sticky-column { position: sticky; right: 0; z-index: 10; }
+</style>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen">
+
+<!-- =============================== VIEW 1: LOGIN =============================== -->
+<div id="view-1" class="hidden min-h-screen flex items-center justify-center bg-background-light dark:bg-background-dark">
+    <div class="w-full max-w-sm mx-auto p-8 bg-white dark:bg-slate-900 rounded-xl shadow-lg border border-slate-200 dark:border-slate-800">
+        <div class="flex flex-col items-center mb-8">
+            <div class="w-12 h-12 rounded-lg bg-primary flex items-center justify-center shadow-lg mb-4">
+                <span class="material-icons-round text-white text-2xl">local_shipping</span>
+            </div>
+            <h1 class="text-lg font-bold text-slate-900 dark:text-white">System Zleceń Transportowych</h1>
+            <p class="text-xs text-slate-500 mt-1">Zaloguj się, aby kontynuować</p>
+        </div>
+        <form class="space-y-4" onsubmit="return false">
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" for="login-email">Login</label>
+                <input id="login-email" type="email" placeholder="jan.kowalski@firma.pl" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
+            </div>
+            <div>
+                <label class="block text-xs font-semibold text-slate-500 dark:text-slate-400 mb-1" for="login-pass">Hasło</label>
+                <input id="login-pass" type="password" placeholder="••••••••" class="w-full h-10 px-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-lg text-sm focus:ring-primary focus:border-primary"/>
+            </div>
+            <div id="login-error" class="hidden p-3 bg-red-50 dark:bg-red-900/20 border border-red-200 dark:border-red-800 rounded-lg">
+                <p class="text-xs text-red-600 dark:text-red-400 font-medium">Nieprawidłowy login lub hasło</p>
+            </div>
+            <button type="submit" class="w-full h-10 bg-primary hover:bg-primary/90 text-white text-sm font-semibold rounded-lg shadow-lg shadow-primary/20 transition-all" onclick="document.getElementById('login-error').classList.toggle('hidden')">Zaloguj</button>
+        </form>
+    </div>
+</div>
+
+<!-- =============================== VIEW 2: LISTA TRASA =============================== -->
+<div id="view-2" class="hidden min-h-screen flex flex-col">
+    <!-- AppHeader -->
+    <header class="shrink-0 h-14 px-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm sticky top-0 z-50 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-md">
+                <span class="material-icons-round text-white text-lg">local_shipping</span>
+            </div>
+            <h1 class="text-sm font-bold tracking-tight uppercase shrink-0">Zlecenia Transportowe</h1>
+            <nav class="flex p-1 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0" role="tablist">
+                <button class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 shadow-sm text-primary" role="tab" aria-selected="true">Aktualne</button>
+                <button class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 rounded-md" role="tab">Zrealizowane</button>
+                <button class="px-3 py-1.5 text-xs font-medium text-slate-500 hover:text-slate-700 rounded-md" role="tab">Anulowane</button>
+            </nav>
+            <button class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-100 dark:hover:bg-slate-800 shrink-0">
+                <span class="material-icons-round text-sm text-primary">sync</span>Aktualizuj dane
+            </button>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <div class="text-right border-r border-slate-200 dark:border-slate-700 pr-3">
+                <div class="text-xs font-semibold">Jan Kowalski</div>
+                <div class="text-[10px] text-slate-500 dark:text-slate-400">Admin</div>
+            </div>
+            <button class="px-2 py-1 text-xs font-semibold text-slate-600 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-md border border-slate-300 dark:border-slate-600">Wyloguj</button>
+        </div>
+    </header>
+    <!-- FilterBar -->
+    <div class="shrink-0 px-4 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap items-center gap-2">
+        <select class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2"><option>Rodzaj transportu</option></select>
+        <select class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2"><option>Status</option></select>
+        <input type="text" placeholder="Firma załadunku" class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 w-28"/>
+        <input type="text" placeholder="Firma rozładunku" class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 w-28"/>
+        <input type="text" placeholder="Firma transp." class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 w-24"/>
+        <input type="text" placeholder="Towar" class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 w-20"/>
+        <input type="text" placeholder="Tydzień" class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 w-16"/>
+        <div class="relative">
+            <span class="material-icons-round text-slate-400 text-sm absolute left-2 top-1/2 -translate-y-1/2">search</span>
+            <input type="text" placeholder="Szukaj..." class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded pl-7 pr-2 w-28"/>
+        </div>
+        <button class="h-8 text-xs text-slate-500 hover:text-slate-700 px-2">Wyczyść filtry</button>
+        <div class="ml-auto flex items-center gap-2">
+            <select class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 w-14"><option>50</option><option>100</option><option>200</option></select>
+            <div class="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-600">
+                <button class="px-2 py-1 text-[10px] font-semibold bg-primary text-white">Trasa</button>
+                <button class="px-2 py-1 text-[10px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600 dark:text-slate-300">Kolumny</button>
+            </div>
+            <button class="inline-flex items-center gap-1 h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md shadow">
+                <span class="material-icons-round text-sm">add</span>Nowe zlecenie
+            </button>
+        </div>
+    </div>
+    <!-- Table Trasa -->
+    <div class="flex-1 min-h-0 overflow-auto custom-scrollbar bg-white dark:bg-slate-900">
+        <table id="table-trasa" class="w-full border-collapse text-left" role="table" style="min-width:1280px">
+            <thead class="sticky top-0 z-20 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <th class="py-2 px-4 w-10"></th>
+                    <th class="py-2 px-4 min-w-[110px]">Nr zlecenia</th>
+                    <th class="py-2 px-4 min-w-[100px]">Status</th>
+                    <th class="py-2 px-4 w-12 text-center">Tydz.</th>
+                    <th class="py-2 px-4 min-w-[80px]">Rodzaj</th>
+                    <th class="py-2 px-4 min-w-[220px]">Trasa</th>
+                    <th class="py-2 px-4 min-w-[110px]">Data zał.</th>
+                    <th class="py-2 px-4 min-w-[110px]">Data rozł.</th>
+                    <th class="py-2 px-4 min-w-[160px]">Towar</th>
+                    <th class="py-2 px-4 min-w-[120px]">Komentarz</th>
+                    <th class="py-2 px-4 min-w-[150px]">Firma transp.</th>
+                    <th class="py-2 px-4 min-w-[90px]">Typ auta</th>
+                    <th class="py-2 px-4 w-20">Stawka</th>
+                    <th class="py-2 px-4 min-w-[90px]">Data wysł.</th>
+                    <th class="py-2 px-4 w-12 text-center sticky-column bg-slate-50 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800" id="tbody-trasa"></tbody>
+        </table>
+    </div>
+    <!-- StatusFooter -->
+    <footer class="shrink-0 h-10 px-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between text-[11px] font-medium text-slate-500">
+        <div class="flex items-center gap-4">
+            <span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span>Aktywne: 8</span>
+            <span>Robocze: 2</span><span>Wysłane: 3</span><span>Korekta: 1</span><span>Reklamacja: 2</span>
+        </div>
+        <div class="flex items-center gap-4">
+            <span>System Status: OK</span><span>Ostatnia aktualizacja: 14:32</span>
+        </div>
+    </footer>
+</div>
+
+<!-- =============================== VIEW 3: LISTA KOLUMNY =============================== -->
+<div id="view-3" class="hidden min-h-screen flex flex-col">
+    <header class="shrink-0 h-14 px-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm sticky top-0 z-50 flex items-center justify-between gap-4">
+        <div class="flex items-center gap-4 min-w-0">
+            <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-md"><span class="material-icons-round text-white text-lg">local_shipping</span></div>
+            <h1 class="text-sm font-bold tracking-tight uppercase shrink-0">Zlecenia Transportowe</h1>
+            <nav class="flex p-1 rounded-lg bg-slate-100 dark:bg-slate-800 shrink-0" role="tablist">
+                <button class="px-3 py-1.5 text-xs font-semibold rounded-md bg-white dark:bg-slate-700 shadow-sm text-primary">Aktualne</button>
+                <button class="px-3 py-1.5 text-xs font-medium text-slate-500 rounded-md">Zrealizowane</button>
+                <button class="px-3 py-1.5 text-xs font-medium text-slate-500 rounded-md">Anulowane</button>
+            </nav>
+            <button class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium border border-slate-300 dark:border-slate-600 rounded-md shrink-0"><span class="material-icons-round text-sm text-primary">sync</span>Aktualizuj dane</button>
+        </div>
+        <div class="flex items-center gap-2 shrink-0">
+            <div class="text-right border-r border-slate-200 dark:border-slate-700 pr-3"><div class="text-xs font-semibold">Jan Kowalski</div><div class="text-[10px] text-slate-500">Admin</div></div>
+            <button class="px-2 py-1 text-xs font-semibold text-slate-600 border border-slate-300 rounded-md">Wyloguj</button>
+        </div>
+    </header>
+    <div class="shrink-0 px-4 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap items-center gap-2">
+        <select class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2"><option>Rodzaj transportu</option></select>
+        <select class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2"><option>Status</option></select>
+        <input type="text" placeholder="Szukaj..." class="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded px-2 w-28"/>
+        <button class="h-8 text-xs text-slate-500 px-2">Wyczyść filtry</button>
+        <div class="ml-auto flex items-center gap-2">
+            <div class="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-600">
+                <button class="px-2 py-1 text-[10px] font-semibold bg-slate-100 dark:bg-slate-700 text-slate-600">Trasa</button>
+                <button class="px-2 py-1 text-[10px] font-semibold bg-primary text-white">Kolumny</button>
+            </div>
+            <button class="inline-flex items-center gap-1 h-8 px-3 text-xs font-semibold bg-emerald-600 text-white rounded-md shadow"><span class="material-icons-round text-sm">add</span>Nowe zlecenie</button>
+        </div>
+    </div>
+    <div class="flex-1 min-h-0 overflow-auto custom-scrollbar bg-white dark:bg-slate-900">
+        <table class="w-full border-collapse text-left" role="table" style="min-width:1500px">
+            <thead class="sticky top-0 z-20 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-700">
+                <tr class="text-[11px] font-bold uppercase tracking-wider text-slate-500">
+                    <th class="py-2 px-4 w-10"></th>
+                    <th class="py-2 px-4 min-w-[110px]">Nr zlecenia</th>
+                    <th class="py-2 px-4 min-w-[100px]">Status</th>
+                    <th class="py-2 px-4 w-12 text-center">Tydz.</th>
+                    <th class="py-2 px-4 min-w-[80px]">Rodzaj</th>
+                    <th class="py-2 px-4 min-w-[200px]">Miejsce załadunku</th>
+                    <th class="py-2 px-4 min-w-[110px]">Data zał.</th>
+                    <th class="py-2 px-4 min-w-[200px]">Miejsce rozładunku</th>
+                    <th class="py-2 px-4 min-w-[110px]">Data rozł.</th>
+                    <th class="py-2 px-4 min-w-[160px]">Towar</th>
+                    <th class="py-2 px-4 min-w-[120px]">Komentarz</th>
+                    <th class="py-2 px-4 min-w-[150px]">Firma transp.</th>
+                    <th class="py-2 px-4 min-w-[90px]">Typ auta</th>
+                    <th class="py-2 px-4 w-20">Stawka</th>
+                    <th class="py-2 px-4 min-w-[90px]">Data wysł.</th>
+                    <th class="py-2 px-4 w-12 sticky-column bg-slate-50 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-700"></th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800" id="tbody-kolumny"></tbody>
+        </table>
+    </div>
+    <footer class="shrink-0 h-10 px-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900 flex items-center justify-between text-[11px] font-medium text-slate-500">
+        <div class="flex items-center gap-4"><span class="flex items-center gap-1"><span class="w-2 h-2 rounded-full bg-primary"></span>Aktywne: 8</span></div>
+        <div class="flex items-center gap-4"><span>System Status: OK</span><span>Ostatnia aktualizacja: 14:32</span></div>
+    </footer>
+</div>
+
+<!-- =============================== VIEW 4: DRAWER EDYCJI =============================== -->
+<div id="view-4" class="hidden">
+    <div class="fixed inset-0 bg-slate-200 dark:bg-slate-900 opacity-40 pointer-events-none z-30"></div>
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"></div>
+    <div class="fixed top-0 right-0 h-full w-full max-w-[800px] bg-background-light dark:bg-[#0d151c] z-50 shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800">
+        <header class="shrink-0 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#0d151c]">
+            <div class="flex items-center gap-4">
+                <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500" title="Zamknij (Escape)"><span class="material-icons-round">close</span></button>
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-xl font-bold tracking-tight">Zlecenie #ZT-2026-0042</h1>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">WYSŁANE</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">Utworzono: 11.02.2026 09:15 przez Jan Kowalski</p>
+                </div>
+            </div>
+            <a class="text-sm font-medium text-primary hover:underline flex items-center gap-1" href="#"><span class="material-icons-round text-sm">history</span>Historia zmian</a>
+        </header>
+        <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+            <!-- SEKCJA 1: Trasa -->
+            <section class="space-y-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-primary">route</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 1: Trasa</h2></div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-400">Rodzaj transportu *</label>
+                    <select class="w-full bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm"><option>krajowy</option><option selected>eksport drogowy</option><option>kontener morski</option><option>import</option></select>
+                    <p class="text-xs text-slate-500 italic">Zmiana rodzaju transportu auto-aktualizuje walutę w Sekcji 4</p>
+                </div>
+                <div class="space-y-3 mt-4">
+                    <div class="flex items-center justify-between mb-3"><h3 class="text-xs font-bold uppercase text-slate-400">Punkty trasy (min. 1 załadunek + 1 rozładunek)</h3></div>
+                    <!-- L1 -->
+                    <div class="flex gap-2 items-start">
+                        <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-emerald-500/50 transition-all">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded uppercase">L1: Załadunek</span>
+                                <button class="text-slate-500 hover:text-red-500" title="Usuń punkt"><span class="material-icons-round text-lg">close</span></button>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                                <div class="col-span-2 md:col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">business</span><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="Nord Sp. z o.o." placeholder="Firma"></div>
+                                <div class="col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span><select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2"><option>Gorzyce</option><option>Kraków</option></select></div>
+                                <div class="col-span-1 relative"><input class="w-full text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7" type="text" value="12.02" placeholder="dd.mm"><span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">calendar_today</span></div>
+                                <div class="col-span-1 flex items-center gap-1"><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="time" value="08:00"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><span class="material-icons-round text-sm">home</span><span>ul. Przemysłowa 15, 44-300 Gorzyce, Polska</span></div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="" placeholder="Komentarz do punktu trasy..."></div>
+                        </div>
+                    </div>
+                    <!-- U1 -->
+                    <div class="flex gap-2 items-start">
+                        <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-blue-500/50 transition-all">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded uppercase">U1: Rozładunek</span>
+                                <button class="text-slate-500 hover:text-red-500" title="Usuń punkt"><span class="material-icons-round text-lg">close</span></button>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                                <div class="col-span-2 md:col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">business</span><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="Berlina Logistik GmbH" placeholder="Firma"></div>
+                                <div class="col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span><select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2"><option>Berlin</option><option>Hamburg</option></select></div>
+                                <div class="col-span-1 relative"><input class="w-full text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7" type="text" value="13.02" placeholder="dd.mm"><span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">calendar_today</span></div>
+                                <div class="col-span-1 flex items-center gap-1"><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="time" value="09:00"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><span class="material-icons-round text-sm">home</span><span>Berliner Str. 100, 10115 Berlin, Germany</span></div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="rozładunek od 8:00 do 15:00" placeholder="Komentarz do punktu trasy..."></div>
+                        </div>
+                    </div>
+                    <!-- L2 -->
+                    <div class="flex gap-2 items-start">
+                        <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-emerald-500/50 transition-all">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded uppercase">L2: Załadunek</span>
+                                <button class="text-slate-500 hover:text-red-500" title="Usuń punkt"><span class="material-icons-round text-lg">close</span></button>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                                <div class="col-span-2 md:col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">business</span><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="Metalex Sp. z o.o." placeholder="Firma"></div>
+                                <div class="col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span><select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2"><option>Katowice</option></select></div>
+                                <div class="col-span-1 relative"><input class="w-full text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7" type="text" value="12.02" placeholder="dd.mm"><span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">calendar_today</span></div>
+                                <div class="col-span-1 flex items-center gap-1"><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="time" value="14:00"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><span class="material-icons-round text-sm">home</span><span>ul. Stalowa 22, 40-123 Katowice, Polska</span></div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="wjazd od ul. Stalowej" placeholder="Komentarz do punktu trasy..."></div>
+                        </div>
+                    </div>
+                    <!-- U2 -->
+                    <div class="flex gap-2 items-start">
+                        <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-blue-500/50 transition-all">
+                            <div class="flex items-center justify-between mb-2">
+                                <span class="text-xs font-bold px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded uppercase">U2: Rozładunek</span>
+                                <button class="text-slate-500 hover:text-red-500" title="Usuń punkt"><span class="material-icons-round text-lg">close</span></button>
+                            </div>
+                            <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                                <div class="col-span-2 md:col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">business</span><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="Hamburg Metals GmbH" placeholder="Firma"></div>
+                                <div class="col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span><select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2"><option>Hamburg</option></select></div>
+                                <div class="col-span-1 relative"><input class="w-full text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7" type="text" value="14.02" placeholder="dd.mm"><span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">calendar_today</span></div>
+                                <div class="col-span-1 flex items-center gap-1"><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="time" value="10:30"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><span class="material-icons-round text-sm">home</span><span>Hafenstr. 45, 20097 Hamburg, Germany</span></div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="" placeholder="Komentarz do punktu trasy..."></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 mt-4">
+                        <button class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all"><span class="material-icons-round text-base">add_circle</span>Dodaj punkt załadunku (max 8)</button>
+                        <button class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-blue-500 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 hover:border-blue-500/50 transition-all"><span class="material-icons-round text-base">add_circle</span>Dodaj punkt rozładunku (max 3)</button>
+                    </div>
+                </div>
+            </section>
+            <!-- SEKCJA 2: Towar -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-amber-500">inventory_2</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 2: Towar</h2></div>
+                <div class="space-y-3">
+                    <div class="flex gap-2 items-start">
+                        <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-amber-500/50 transition-all">
+                            <div class="flex items-center justify-between mb-2"><span class="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase">Produkt 1</span><button class="text-slate-500 hover:text-red-500" title="Usuń produkt"><span class="material-icons-round text-lg">close</span></button></div>
+                            <div class="grid grid-cols-12 gap-2">
+                                <div class="col-span-12 md:col-span-6 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">label</span><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="miedź wire rod" placeholder="Nazwa towaru"></div>
+                                <div class="col-span-6 md:col-span-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">scale</span><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="number" value="5" step="0.1" min="0" placeholder="t"></div>
+                                <div class="col-span-6 md:col-span-4 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">widgets</span><select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2"><option>paleta</option><option selected>paleta + BigBag</option><option>luzem</option><option>kosze</option></select></div>
+                            </div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="ładujemy na końcu naczepy" placeholder="Komentarz..."></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 items-start">
+                        <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-amber-500/50 transition-all">
+                            <div class="flex items-center justify-between mb-2"><span class="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase">Produkt 2</span><button class="text-slate-500 hover:text-red-500" title="Usuń produkt"><span class="material-icons-round text-lg">close</span></button></div>
+                            <div class="grid grid-cols-12 gap-2">
+                                <div class="col-span-12 md:col-span-6 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">label</span><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="miedź milbera" placeholder="Nazwa towaru"></div>
+                                <div class="col-span-6 md:col-span-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">scale</span><input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="number" value="10" step="0.1" min="0" placeholder="t"></div>
+                                <div class="col-span-6 md:col-span-4 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">widgets</span><select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2"><option selected>paleta</option><option>paleta + BigBag</option><option>luzem</option><option>kosze</option></select></div>
+                            </div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="ładuje tylko Otwock" placeholder="Komentarz..."></div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-200 dark:border-slate-800"><div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-base">summarize</span><span class="text-sm font-bold text-slate-400">Razem: 15t</span></div></div>
+                </div>
+                <button class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 rounded-lg hover:bg-amber-500/20 hover:border-amber-500/50 transition-all"><span class="material-icons-round text-base">add_circle</span>Dodaj kolejny asortyment</button>
+            </section>
+            <!-- SEKCJA 3: Firma transportowa -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-violet-500">local_shipping</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 3: Firma transportowa</h2></div>
+                <div class="space-y-3 p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">local_shipping</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Nazwa firmy (przewoźnik) *</label><input class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2" type="text" value="Transport Express Sp. z o.o." placeholder="Wpisz nazwę przewoźnika..."></div></div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">badge</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">NIP (auto z firmy)</label><input class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2" type="text" value="PL9876543210" readonly disabled></div></div>
+                    <div class="grid grid-cols-12 gap-3">
+                        <div class="col-span-12 md:col-span-7 flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg shrink-0">directions_car</span><div class="flex-1 min-w-0"><label class="text-xs font-semibold text-slate-400 block mb-1">Typ auta *</label><select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2"><option selected>Firanka</option><option>Hakowiec</option><option>Wywrotka</option><option>Bus</option><option>Hakowiec z HDS</option></select></div></div>
+                        <div class="col-span-12 md:col-span-5 flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg shrink-0">straighten</span><div class="flex-1 min-w-0"><label class="text-xs font-semibold text-slate-400 block mb-1">Objętość w m³ *</label><select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2"><option>10 m³</option><option>20 m³</option><option>30 m³</option><option selected>90 m³</option><option>100 m³</option></select></div></div>
+                    </div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">description</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Wymagane dokumenty</label><select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2"><option selected>WZ, KPO, kwit wagowy</option><option>WZE, Aneks VII, CMR</option></select></div></div>
+                </div>
+            </section>
+            <!-- SEKCJA 4: Finanse -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-yellow-500">payments</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 4: Finanse</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">attach_money</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Stawka *</label><div class="relative"><input class="w-full pr-12 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2" type="number" value="1450" step="0.01" min="0"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">PLN</span></div></div></div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">currency_exchange</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Waluta *</label><select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2"><option selected>PLN</option><option>EUR</option><option>USD</option></select></div></div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">event_available</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Termin płatności</label><div class="relative"><input class="w-full pr-12 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2" type="number" value="21" min="0"><span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">dni</span></div></div></div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">account_balance</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Forma płatności</label><select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2"><option selected>Przelew</option><option>Gotówka</option><option>Karta</option></select></div></div>
+                </div>
+            </section>
+            <!-- SEKCJA 5: Uwagi -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-slate-400">comment</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 5: Uwagi</h2></div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+                    <div class="flex items-start gap-2"><span class="material-icons-round text-slate-500 text-lg mt-1">notes</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Uwagi ogólne do zlecenia</label><textarea class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-2 px-3" rows="4" maxlength="1000" placeholder="Wprowadź uwagi do zlecenia (max 1000 znaków)...">Proszę o kontakt telefoniczny 30 minut przed dotarciem na miejsce załadunku.</textarea><p class="text-xs text-slate-500 text-right mt-1">42 / 1000 znaków</p></div></div>
+                </div>
+            </section>
+            <!-- SEKCJA 6: Zmiana statusu -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-indigo-500">swap_horiz</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 6: Zmiana statusu</h2></div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+                    <div class="flex items-center gap-3"><span class="material-icons-round text-slate-500 text-lg">label</span><div><label class="text-xs font-semibold text-slate-400 block mb-1">Aktualny status</label><span class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">Wysłane</span></div></div>
+                    <div>
+                        <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-slate-500 text-lg">sync_alt</span><label class="text-xs font-semibold text-slate-400">Zmień na:</label></div>
+                        <div class="flex flex-wrap gap-2">
+                            <button class="px-4 py-2 rounded-lg text-sm font-semibold bg-green-500/10 text-green-500 border-2 border-green-500/30 hover:bg-green-500/20 hover:border-green-500/50 transition-all"><div class="flex items-center gap-1.5"><span class="material-icons-round text-base">check_circle</span>Zrealizowane</div></button>
+                            <button class="px-4 py-2 rounded-lg text-sm font-semibold bg-red-500/10 text-red-500 border-2 border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 transition-all"><div class="flex items-center gap-1.5"><span class="material-icons-round text-base">report_problem</span>Reklamacja</div></button>
+                            <button class="px-4 py-2 rounded-lg text-sm font-semibold bg-slate-500/10 text-slate-500 border-2 border-slate-500/30 hover:bg-slate-500/20 hover:border-slate-500/50 transition-all"><div class="flex items-center gap-1.5"><span class="material-icons-round text-base">cancel</span>Anulowane</div></button>
+                        </div>
+                    </div>
+                    <div class="flex items-start gap-2 pt-2 border-t border-slate-200 dark:border-slate-800"><span class="material-icons-round text-slate-500 text-base">info</span><p class="text-xs text-slate-500">Zmiana statusu zostanie zapisana razem z całym formularzem przy kliknięciu "Zapisz" w stopce</p></div>
+                </div>
+            </section>
+        </div>
+        <footer class="shrink-0 p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d151c] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <button class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"><span class="material-icons-round text-lg">picture_as_pdf</span>Generuj PDF</button>
+                <button class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"><span class="material-icons-round text-lg">mail_outline</span>Wyślij maila</button>
+                <a href="#" class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"><span class="material-icons-round text-sm">history</span>Historia zmian</a>
+            </div>
+            <div class="flex items-center gap-3">
+                <button class="px-6 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300">Zamknij</button>
+                <button class="px-8 py-2 text-sm font-bold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-[0.98]">Zapisz</button>
+            </div>
+        </footer>
+    </div>
+</div>
+
+<!-- =============================== VIEW 5: HISTORIA ZMIAN =============================== -->
+<div id="view-5" class="hidden">
+    <div class="fixed inset-0 bg-slate-200 dark:bg-slate-900 opacity-40 pointer-events-none z-30"></div>
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"></div>
+    <aside class="fixed right-0 top-0 h-full w-[450px] bg-background-light dark:bg-[#16202a] shadow-2xl z-50 flex flex-col border-l border-slate-200 dark:border-slate-800">
+        <div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-background-light/80 dark:bg-[#16202a]/80 backdrop-blur-md">
+            <div><h2 class="text-lg font-semibold flex items-center gap-2"><span class="material-icons-round text-primary text-xl">history</span>Historia zmian</h2><p class="text-xs text-slate-500 font-medium">Zlecenie #TRK-88291</p></div>
+            <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-400"><span class="material-icons-round">close</span></button>
+        </div>
+        <div class="flex-1 overflow-y-auto custom-scrollbar px-6 py-4">
+            <!-- Dzisiaj -->
+            <div class="mb-8">
+                <div class="flex items-center gap-4 mb-6"><span class="text-xs font-bold uppercase tracking-wider text-primary/80">Dzisiaj</span><div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div></div>
+                <div class="relative space-y-8">
+                    <div class="absolute left-[17px] top-2 bottom-0 w-[2px] bg-slate-200 dark:bg-slate-800"></div>
+                    <!-- Zmiana pola -->
+                    <div class="relative pl-12">
+                        <div class="absolute left-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10"><span class="text-xs font-bold text-white">MK</span></div>
+                        <div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20"><span class="material-icons-round text-white" style="font-size:10px">edit</span></div>
+                        <div class="flex justify-between items-start"><span class="text-sm font-semibold">Marek Kowalski</span><span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">14:20</span></div>
+                        <p class="text-xs text-slate-500 mt-0.5">Zmiana pola</p>
+                        <div class="mt-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+                            <label class="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Waga ładunku</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-[10px] uppercase font-bold text-slate-400">Było</label><p class="text-sm line-through opacity-50">1200 kg</p></div>
+                                <div><label class="text-[10px] uppercase font-bold text-primary">Jest</label><p class="text-sm font-bold">1500 kg</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Zmiana statusu -->
+                    <div class="relative pl-12">
+                        <div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10"><span class="text-xs font-bold text-slate-600 dark:text-slate-300">AN</span></div>
+                        <div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20"><span class="material-icons-round text-white" style="font-size:10px">sync</span></div>
+                        <div class="flex justify-between items-start"><span class="text-sm font-semibold">Anna Nowak</span><span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">11:05</span></div>
+                        <p class="text-xs text-slate-500 mt-0.5">Zmiana statusu</p>
+                        <div class="mt-3 flex items-center gap-2">
+                            <span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">Robocze</span>
+                            <span class="material-icons-round text-sm text-slate-400">arrow_forward</span>
+                            <span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">Wysłane</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- Wczoraj -->
+            <div class="mb-8">
+                <div class="flex items-center gap-4 mb-6"><span class="text-xs font-bold uppercase tracking-wider text-slate-400">Wczoraj</span><div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div></div>
+                <div class="relative space-y-8">
+                    <div class="absolute left-[17px] top-2 bottom-0 w-[2px] bg-slate-200 dark:bg-slate-800"></div>
+                    <div class="relative pl-12">
+                        <div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10"><span class="text-xs font-bold text-slate-600 dark:text-slate-300">SY</span></div>
+                        <div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20"><span class="material-icons-round text-white" style="font-size:10px">edit</span></div>
+                        <div class="flex justify-between items-start"><span class="text-sm font-semibold">System</span><span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">16:45</span></div>
+                        <p class="text-xs text-slate-500 mt-0.5">Zmiana pola</p>
+                        <div class="mt-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+                            <label class="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Firma transportowa</label>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div><label class="text-[10px] uppercase font-bold text-slate-400">Było</label><p class="text-sm line-through opacity-50 italic text-slate-400">— brak —</p></div>
+                                <div><label class="text-[10px] uppercase font-bold text-primary">Jest</label><p class="text-sm font-bold">DHL Express Sp. z o.o.</p></div>
+                            </div>
+                        </div>
+                    </div>
+                    <!-- Wiele pól -->
+                    <div class="relative pl-12">
+                        <div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10"><span class="text-xs font-bold text-slate-600 dark:text-slate-300">MK</span></div>
+                        <div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20"><span class="material-icons-round text-white" style="font-size:10px">playlist_add_check</span></div>
+                        <div class="flex justify-between items-start"><span class="text-sm font-semibold">Marek Kowalski</span><span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">09:12</span></div>
+                        <p class="text-xs text-slate-500 mt-0.5">Zmiana wielu pól (Rozładunek U1)</p>
+                        <div class="mt-3 space-y-2">
+                            <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800"><label class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Miejscowość</label><div class="flex items-center gap-2"><span class="text-xs line-through opacity-50">Berlin</span><span class="material-icons-round text-[12px] text-slate-400">east</span><span class="text-xs font-bold">Poczdam</span></div></div>
+                            <div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800"><label class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Kod pocztowy</label><div class="flex items-center gap-2"><span class="text-xs line-through opacity-50">10115</span><span class="material-icons-round text-[12px] text-slate-400">east</span><span class="text-xs font-bold">14467</span></div></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <!-- 5 lut 2026 -->
+            <div class="mb-8">
+                <div class="flex items-center gap-4 mb-6"><span class="text-xs font-bold uppercase tracking-wider text-slate-400">5 lut 2026</span><div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div></div>
+                <div class="relative">
+                    <div class="relative pl-12 pb-4">
+                        <div class="absolute left-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10 shadow-lg shadow-primary/20"><span class="material-icons-round text-white text-lg">rocket_launch</span></div>
+                        <div class="flex justify-between items-start"><span class="text-sm font-semibold">System (API)</span><span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">08:00</span></div>
+                        <div class="mt-2 bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-4">
+                            <p class="text-sm font-bold text-primary mb-1">Zlecenie utworzone</p>
+                            <p class="text-xs text-slate-500 leading-relaxed">Zaimportowano zlecenie z systemu ERP. Wygenerowano identyfikator TRK-88291.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+        <div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#101922]">
+            <div class="flex items-center justify-center gap-6 opacity-60">
+                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-primary"></div><span class="text-[10px] font-bold uppercase">Systemowe</span></div>
+                <div class="flex items-center gap-1.5"><div class="w-2 h-2 rounded-full bg-slate-400"></div><span class="text-[10px] font-bold uppercase">Manualne</span></div>
+            </div>
+        </div>
+    </aside>
+</div>
+
+<!-- =============================== VIEW 6: STANY PUSTE =============================== -->
+<div id="view-6" class="hidden min-h-screen flex flex-col">
+    <header class="shrink-0 h-14 px-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center gap-4">
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md"><span class="material-icons-round text-white text-lg">local_shipping</span></div>
+        <h1 class="text-sm font-bold tracking-tight uppercase">Zlecenia Transportowe</h1>
+    </header>
+    <div class="flex-1 p-8 space-y-8">
+        <h2 class="text-lg font-bold text-slate-700 dark:text-slate-300">Stany puste (EmptyState)</h2>
+        <!-- Wariant 1 -->
+        <div class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl py-16 flex flex-col items-center justify-center text-center">
+            <span class="material-icons-round text-6xl text-slate-300 dark:text-slate-600 mb-4">inbox</span>
+            <h3 class="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">Brak zleceń</h3>
+            <p class="text-sm text-slate-500 mb-6">Nie masz jeszcze żadnych zleceń w tej zakładce.</p>
+            <button class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow"><span class="material-icons-round text-base">add</span>Dodaj nowy wiersz</button>
+        </div>
+        <!-- Wariant 2 -->
+        <div class="border-2 border-dashed border-slate-300 dark:border-slate-700 rounded-xl py-16 flex flex-col items-center justify-center text-center">
+            <span class="material-icons-round text-6xl text-slate-300 dark:text-slate-600 mb-4">search_off</span>
+            <h3 class="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">Brak wyników dla zastosowanych filtrów</h3>
+            <p class="text-sm text-slate-500 mb-6">Spróbuj zmienić kryteria wyszukiwania.</p>
+            <button class="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold border border-slate-300 dark:border-slate-600 text-slate-700 dark:text-slate-300 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg"><span class="material-icons-round text-base">filter_alt_off</span>Wyczyść filtry</button>
+        </div>
+    </div>
+</div>
+
+<!-- =============================== VIEW 7: DRAWER READONLY =============================== -->
+<div id="view-7" class="hidden">
+    <div class="fixed inset-0 bg-slate-200 dark:bg-slate-900 opacity-40 pointer-events-none z-30"></div>
+    <div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"></div>
+    <div class="fixed top-0 right-0 h-full w-full max-w-[800px] bg-background-light dark:bg-[#0d151c] z-50 shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800">
+        <header class="shrink-0 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#0d151c]">
+            <div class="flex items-center gap-4">
+                <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500" title="Zamknij (Escape)"><span class="material-icons-round">close</span></button>
+                <div>
+                    <div class="flex items-center gap-3">
+                        <h1 class="text-xl font-bold tracking-tight">Zlecenie #ZT-2026-0042</h1>
+                        <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">WYSŁANE</span>
+                    </div>
+                    <p class="text-xs text-slate-500 mt-0.5">Utworzono: 11.02.2026 09:15 przez Jan Kowalski</p>
+                </div>
+            </div>
+            <a class="text-sm font-medium text-primary hover:underline flex items-center gap-1" href="#"><span class="material-icons-round text-sm">history</span>Historia zmian</a>
+        </header>
+        <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+            <!-- Banner: tryb tylko do odczytu -->
+            <div class="p-3 bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg flex items-center gap-3">
+                <span class="material-icons-round text-amber-500 text-xl">lock</span>
+                <div>
+                    <p class="text-sm font-semibold text-amber-700 dark:text-amber-400">Zlecenie edytowane przez Anna Nowak</p>
+                    <p class="text-xs text-amber-600 dark:text-amber-500">Tryb tylko do odczytu. Zamknij i spróbuj ponownie później.</p>
+                </div>
+            </div>
+            <!-- SEKCJA 1: Trasa (readonly) -->
+            <section class="space-y-4">
+                <div class="flex items-center justify-between mb-2">
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-primary">route</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 1: Trasa</h2></div>
+                </div>
+                <div class="space-y-1.5">
+                    <label class="text-xs font-semibold text-slate-400">Rodzaj transportu</label>
+                    <select disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm cursor-not-allowed opacity-60"><option selected>eksport drogowy</option></select>
+                </div>
+                <div class="space-y-3 mt-4 opacity-70">
+                    <!-- L1 readonly -->
+                    <div class="flex gap-2 items-start">
+                        <span class="w-5 shrink-0 mt-1"></span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
+                            <div class="mb-2"><span class="text-xs font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded uppercase">L1: Załadunek</span></div>
+                            <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                                <div class="col-span-2 md:col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">business</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="Nord Sp. z o.o."></div>
+                                <div class="col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="Gorzyce"></div>
+                                <div class="col-span-1 relative"><input disabled class="w-full text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7 cursor-not-allowed" value="12.02"><span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2">calendar_today</span></div>
+                                <div class="col-span-1 flex items-center gap-1"><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" type="time" value="08:00"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><span class="material-icons-round text-sm">home</span><span>ul. Przemysłowa 15, 44-300 Gorzyce, Polska</span></div>
+                        </div>
+                    </div>
+                    <!-- U1 readonly -->
+                    <div class="flex gap-2 items-start">
+                        <span class="w-5 shrink-0 mt-1"></span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
+                            <div class="mb-2"><span class="text-xs font-bold px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded uppercase">U1: Rozładunek</span></div>
+                            <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                                <div class="col-span-2 md:col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">business</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="Berlina Logistik GmbH"></div>
+                                <div class="col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="Berlin"></div>
+                                <div class="col-span-1 relative"><input disabled class="w-full text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7 cursor-not-allowed" value="13.02"><span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2">calendar_today</span></div>
+                                <div class="col-span-1 flex items-center gap-1"><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" type="time" value="09:00"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><span class="material-icons-round text-sm">home</span><span>Berliner Str. 100, 10115 Berlin, Germany</span></div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input disabled class="flex-1 text-xs bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 cursor-not-allowed" value="rozładunek od 8:00 do 15:00"></div>
+                        </div>
+                    </div>
+                    <!-- L2 readonly -->
+                    <div class="flex gap-2 items-start">
+                        <span class="w-5 shrink-0 mt-1"></span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
+                            <div class="mb-2"><span class="text-xs font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded uppercase">L2: Załadunek</span></div>
+                            <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                                <div class="col-span-2 md:col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">business</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="Metalex Sp. z o.o."></div>
+                                <div class="col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="Katowice"></div>
+                                <div class="col-span-1 relative"><input disabled class="w-full text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7 cursor-not-allowed" value="12.02"><span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2">calendar_today</span></div>
+                                <div class="col-span-1 flex items-center gap-1"><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" type="time" value="14:00"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><span class="material-icons-round text-sm">home</span><span>ul. Stalowa 22, 40-123 Katowice, Polska</span></div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input disabled class="flex-1 text-xs bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 cursor-not-allowed" value="wjazd od ul. Stalowej"></div>
+                        </div>
+                    </div>
+                    <!-- U2 readonly -->
+                    <div class="flex gap-2 items-start">
+                        <span class="w-5 shrink-0 mt-1"></span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
+                            <div class="mb-2"><span class="text-xs font-bold px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded uppercase">U2: Rozładunek</span></div>
+                            <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                                <div class="col-span-2 md:col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">business</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="Hamburg Metals GmbH"></div>
+                                <div class="col-span-1 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="Hamburg"></div>
+                                <div class="col-span-1 relative"><input disabled class="w-full text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7 cursor-not-allowed" value="14.02"><span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2">calendar_today</span></div>
+                                <div class="col-span-1 flex items-center gap-1"><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" type="time" value="10:30"></div>
+                            </div>
+                            <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1"><span class="material-icons-round text-sm">home</span><span>Hafenstr. 45, 20097 Hamburg, Germany</span></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+            <!-- SEKCJA 2: Towar (readonly) -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-amber-500">inventory_2</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 2: Towar</h2></div>
+                <div class="space-y-3 opacity-70">
+                    <div class="flex gap-2 items-start">
+                        <span class="w-5 shrink-0 mt-1"></span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
+                            <div class="mb-2"><span class="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase">Produkt 1</span></div>
+                            <div class="grid grid-cols-12 gap-2">
+                                <div class="col-span-12 md:col-span-6 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">label</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="miedź wire rod"></div>
+                                <div class="col-span-6 md:col-span-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">scale</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="5"></div>
+                                <div class="col-span-6 md:col-span-4 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">widgets</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="paleta + BigBag"></div>
+                            </div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input disabled class="flex-1 text-xs bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 cursor-not-allowed" value="ładujemy na końcu naczepy"></div>
+                        </div>
+                    </div>
+                    <div class="flex gap-2 items-start">
+                        <span class="w-5 shrink-0 mt-1"></span>
+                        <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3">
+                            <div class="mb-2"><span class="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase">Produkt 2</span></div>
+                            <div class="grid grid-cols-12 gap-2">
+                                <div class="col-span-12 md:col-span-6 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">label</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="miedź milbera"></div>
+                                <div class="col-span-6 md:col-span-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">scale</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="10"></div>
+                                <div class="col-span-6 md:col-span-4 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-base shrink-0">widgets</span><input disabled class="flex-1 min-w-0 text-sm bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2 cursor-not-allowed" value="paleta"></div>
+                            </div>
+                            <div class="mt-2 flex items-center gap-1"><span class="material-icons-round text-slate-500 text-sm">comment</span><input disabled class="flex-1 text-xs bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 cursor-not-allowed" value="ładuje tylko Otwock"></div>
+                        </div>
+                    </div>
+                    <div class="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-200 dark:border-slate-800"><div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-base">summarize</span><span class="text-sm font-bold text-slate-400">Razem: 15t</span></div></div>
+                </div>
+            </section>
+            <!-- SEKCJA 3: Firma transportowa (readonly) -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-violet-500">local_shipping</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 3: Firma transportowa</h2></div>
+                <div class="space-y-3 p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800 opacity-70">
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">local_shipping</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Nazwa firmy (przewoźnik)</label><input disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2 cursor-not-allowed" value="Transport Express Sp. z o.o."></div></div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">badge</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">NIP</label><input disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2 cursor-not-allowed" value="PL9876543210"></div></div>
+                    <div class="grid grid-cols-12 gap-3">
+                        <div class="col-span-12 md:col-span-7 flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg shrink-0">directions_car</span><div class="flex-1 min-w-0"><label class="text-xs font-semibold text-slate-400 block mb-1">Typ auta</label><input disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2 cursor-not-allowed" value="Firanka"></div></div>
+                        <div class="col-span-12 md:col-span-5 flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg shrink-0">straighten</span><div class="flex-1 min-w-0"><label class="text-xs font-semibold text-slate-400 block mb-1">Objętość w m³</label><input disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2 cursor-not-allowed" value="90 m³"></div></div>
+                    </div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">description</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Wymagane dokumenty</label><input disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2 cursor-not-allowed" value="WZ, KPO, kwit wagowy"></div></div>
+                </div>
+            </section>
+            <!-- SEKCJA 4: Finanse (readonly) -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-yellow-500">payments</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 4: Finanse</h2></div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800 opacity-70">
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">attach_money</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Stawka</label><input disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2 cursor-not-allowed" value="1450 PLN"></div></div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">event_available</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Termin płatności</label><input disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2 cursor-not-allowed" value="21 dni"></div></div>
+                    <div class="flex items-center gap-2"><span class="material-icons-round text-slate-500 text-lg">account_balance</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Forma płatności</label><input disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-1.5 px-2 cursor-not-allowed" value="Przelew"></div></div>
+                </div>
+            </section>
+            <!-- SEKCJA 5: Uwagi (readonly) -->
+            <section class="space-y-4">
+                <div class="flex items-center gap-2 mb-2"><span class="material-icons-round text-slate-400">comment</span><h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 5: Uwagi</h2></div>
+                <div class="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800 opacity-70">
+                    <div class="flex items-start gap-2"><span class="material-icons-round text-slate-500 text-lg mt-1">notes</span><div class="flex-1"><label class="text-xs font-semibold text-slate-400 block mb-1">Uwagi ogólne do zlecenia</label><textarea disabled class="w-full bg-slate-100 dark:bg-slate-800 border-slate-200 dark:border-slate-700 rounded-lg text-sm py-2 px-3 cursor-not-allowed" rows="4">Proszę o kontakt telefoniczny 30 minut przed dotarciem na miejsce załadunku.</textarea></div></div>
+                </div>
+            </section>
+        </div>
+        <footer class="shrink-0 p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d151c] flex items-center justify-between">
+            <div class="flex items-center gap-2">
+                <button class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"><span class="material-icons-round text-lg">picture_as_pdf</span>Generuj PDF</button>
+                <a href="#" class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"><span class="material-icons-round text-sm">history</span>Historia zmian</a>
+            </div>
+            <button class="px-6 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 border border-slate-200 dark:border-slate-700 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800">Zamknij</button>
+        </footer>
+    </div>
+</div>
+
+<!-- =============================== VIEW 8: MENU KONTEKSTOWE =============================== -->
+<div id="view-8" class="hidden min-h-screen flex flex-col">
+    <header class="shrink-0 h-14 px-4 border-b border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 shadow-sm flex items-center gap-4">
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shadow-md"><span class="material-icons-round text-white text-lg">local_shipping</span></div>
+        <h1 class="text-sm font-bold tracking-tight uppercase">Zlecenia Transportowe</h1>
+        <span class="text-xs text-slate-500 ml-4">Demo: prawy klik na wierszu tabeli</span>
+    </header>
+    <div class="flex-1 p-8 relative">
+        <table class="w-full border-collapse text-left" style="min-width:800px">
+            <thead class="bg-slate-50 dark:bg-slate-800 border-b"><tr class="text-[11px] font-bold uppercase tracking-wider text-slate-500"><th class="py-2 px-4">Nr zlecenia</th><th class="py-2 px-4">Status</th><th class="py-2 px-4">Rodzaj</th><th class="py-2 px-4">Firma transp.</th><th class="py-2 px-4">Stawka</th></tr></thead>
+            <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                <tr class="bg-white dark:bg-slate-900 hover:bg-primary/5 cursor-pointer"><td class="py-2 px-4 text-[12px] font-medium">ZT-2026-0042</td><td class="py-2 px-4"><span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">Wysłane</span></td><td class="py-2 px-4 text-[12px]">eksport</td><td class="py-2 px-4 text-[12px]">Transport Express</td><td class="py-2 px-4 text-[12px] font-semibold">1450 PLN</td></tr>
+                <tr class="bg-white dark:bg-slate-900 hover:bg-primary/5 cursor-pointer"><td class="py-2 px-4 text-[12px] font-medium">ZT-2026-0043</td><td class="py-2 px-4"><span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">Robocze</span></td><td class="py-2 px-4 text-[12px]">kraj</td><td class="py-2 px-4 text-[12px]">Mega Transport</td><td class="py-2 px-4 text-[12px] font-semibold">890 PLN</td></tr>
+                <tr class="bg-primary/5 dark:bg-primary/10 cursor-pointer ring-1 ring-primary/30 rounded"><td class="py-2 px-4 text-[12px] font-medium">ZT-2026-0044</td><td class="py-2 px-4"><span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200">Korekta</span></td><td class="py-2 px-4 text-[12px]">eksport</td><td class="py-2 px-4 text-[12px]">DHL Express</td><td class="py-2 px-4 text-[12px] font-semibold">2100 EUR</td></tr>
+                <tr class="bg-white dark:bg-slate-900 hover:bg-primary/5 cursor-pointer"><td class="py-2 px-4 text-[12px] font-medium">ZT-2026-0045</td><td class="py-2 px-4"><span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">Korekta wysłane</span></td><td class="py-2 px-4 text-[12px]">kraj</td><td class="py-2 px-4 text-[12px]">StalTrans</td><td class="py-2 px-4 text-[12px] font-semibold">1200 PLN</td></tr>
+            </tbody>
+        </table>
+        <!-- Context Menu -->
+        <div class="absolute top-[180px] left-[350px] bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-800 py-1 w-56 z-50">
+            <div class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><span class="material-icons-round text-base text-slate-500">mail_outline</span><span>Wyślij maila</span></div>
+            <div class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><span class="material-icons-round text-base text-slate-500">history</span><span>Historia zmian</span></div>
+            <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+            <div class="relative group">
+                <div class="flex items-center justify-between px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer">
+                    <div class="flex items-center gap-3"><span class="material-icons-round text-base text-slate-500">sync_alt</span><span>Zmień status</span></div>
+                    <span class="material-icons-round text-base text-slate-400">chevron_right</span>
+                </div>
+                <!-- Submenu -->
+                <div class="absolute left-full top-0 bg-white dark:bg-slate-900 rounded-lg shadow-xl border border-slate-200 dark:border-slate-800 py-1 w-48">
+                    <div class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><span class="material-icons-round text-base text-emerald-500">check_circle</span><span>Zrealizowane</span></div>
+                    <div class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><span class="material-icons-round text-base text-red-500">report_problem</span><span>Reklamacja</span></div>
+                    <div class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><span class="material-icons-round text-base text-slate-500">cancel</span><span>Anulowane</span></div>
+                </div>
+            </div>
+            <div class="border-t border-slate-100 dark:border-slate-800 my-1"></div>
+            <div class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-slate-100 dark:hover:bg-slate-800 cursor-pointer"><span class="material-icons-round text-base text-slate-500">content_copy</span><span>Skopiuj zlecenie</span></div>
+            <div class="flex items-center gap-3 px-3 py-2 text-sm hover:bg-red-50 dark:hover:bg-red-900/20 cursor-pointer text-red-500"><span class="material-icons-round text-base">cancel</span><span>Anuluj zlecenie</span></div>
+        </div>
+    </div>
+</div>
+
+<!-- =============================== NAVIGATION PANEL =============================== -->
+<div id="nav-panel" class="fixed bottom-4 left-4 z-[100] bg-white dark:bg-slate-900 rounded-xl shadow-2xl border border-slate-200 dark:border-slate-800 p-3 w-[280px]">
+    <h3 class="text-[10px] font-bold uppercase tracking-wider text-slate-400 mb-2">Przełącz widok</h3>
+    <div class="grid grid-cols-2 gap-1.5" id="nav-buttons">
+        <button onclick="showView(1)" class="nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-left">1. Login</button>
+        <button onclick="showView(2)" class="nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-primary text-white text-left">2. Lista Trasa</button>
+        <button onclick="showView(3)" class="nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-left">3. Lista Kolumny</button>
+        <button onclick="showView(4)" class="nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-left">4. Drawer edycji</button>
+        <button onclick="showView(5)" class="nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-left">5. Historia</button>
+        <button onclick="showView(6)" class="nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-left">6. Stany puste</button>
+        <button onclick="showView(7)" class="nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-left">7. Readonly</button>
+        <button onclick="showView(8)" class="nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-left">8. Menu kontek.</button>
+    </div>
+    <div class="mt-3 pt-3 border-t border-slate-200 dark:border-slate-800 flex items-center justify-between">
+        <span class="text-[10px] text-slate-400">Dark mode</span>
+        <button id="global-theme-toggle" class="px-2 py-1 text-[10px] font-semibold bg-slate-100 dark:bg-slate-800 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700">
+            <span class="dark:hidden">Ciemny</span><span class="hidden dark:inline">Jasny</span>
+        </button>
+    </div>
+</div>
+
+<script>
+// ===== DATA =====
+const orders = [
+    { nr: 'ZT-2026-0042', status: 'Wysłane', statusCls: 'bg-blue-50 text-blue-600 border border-blue-200', rowBg: 'bg-blue-50/30', week: 7, type: 'EXP', route: [{t:'L',n:1,name:'Nord'},{t:'L',n:2,name:'Recykling'},{t:'U',n:1,name:'BER'}], loadDate: '12.02 08:00', unloadDate: '13.02 09:00', products: ['1. miedź wire rod (5t, big bag)','2. miedź milbera (10t, paleta)','Razem: 15t'], comments: ['1. ładujemy na końcu naczepy','2. ładuje tylko Otwock'], carrier: 'Transport Express Sp. z o.o.', vehicle: 'firanka (90m³)', price: '1450 PLN', sent: 'Jan Kowalski\n11.02', locked: false },
+    { nr: 'ZT-2026-0043', status: 'Robocze', statusCls: 'bg-slate-100 text-slate-700', rowBg: 'bg-white dark:bg-slate-900', week: 7, type: 'PL', route: [{t:'L',n:1,name:'StalPol'},{t:'U',n:1,name:'CentralMet'}], loadDate: '—', unloadDate: '—', products: ['blachy stalowe (8t)'], comments: ['Do uzupełnienia'], carrier: '—', vehicle: '—', price: '—', sent: '—', locked: false },
+    { nr: 'ZT-2026-0044', status: 'Korekta', statusCls: 'bg-orange-50 text-orange-600 border border-orange-200', rowBg: 'bg-orange-50/30', week: 7, type: 'EXP', route: [{t:'L',n:1,name:'Gorzyce'},{t:'L',n:2,name:'Katowice'},{t:'U',n:1,name:'Drezno'}], loadDate: '18.02 06:00', unloadDate: '19.02 10:00', products: ['rury stalowe (12t, palety)'], comments: ['Celnik do zgłoszenia'], carrier: 'DHL Express Sp. z o.o.', vehicle: 'firanka (100m³)', price: '2100 EUR', sent: 'Anna Nowak\n14.02', locked: true },
+    { nr: 'ZT-2026-0045', status: 'Korekta wysłane', statusCls: 'bg-amber-50 text-amber-700 border border-amber-200', rowBg: 'bg-amber-50/30', week: 8, type: 'PL', route: [{t:'L',n:1,name:'MetalWay'},{t:'U',n:1,name:'Poznań'}], loadDate: '20.02 07:00', unloadDate: '20.02 16:00', products: ['aluminium (6t)'], comments: [''], carrier: 'StalTrans Sp. z o.o.', vehicle: 'hakowiec (30m³)', price: '1200 PLN', sent: 'Marek K.\n16.02', locked: false },
+    { nr: 'ZT-2026-0046', status: 'Wysłane', statusCls: 'bg-blue-50 text-blue-600 border border-blue-200', rowBg: 'bg-blue-50/30', week: 8, type: 'EXP', route: [{t:'L',n:1,name:'KRK'},{t:'L',n:2,name:'KAT'},{t:'U',n:1,name:'BER'},{t:'U',n:2,name:'HAM'}], loadDate: '21.02 06:00', unloadDate: '23.02 09:00', products: ['miedź (15t, paleta)'], comments: ['max 4 punkty w linii'], carrier: 'Mega Transport Sp. z o.o.', vehicle: 'firanka (100m³)', price: '3200 EUR', sent: 'Jan K.\n18.02', locked: false },
+    { nr: 'ZT-2026-0046A', status: 'Korekta', statusCls: 'bg-orange-50 text-orange-600 border border-orange-200', rowBg: 'bg-orange-50/30', week: 8, type: 'PL', route: [{t:'L',n:1,name:'Nord'},{t:'L',n:2,name:'Recykling'},{t:'L',n:3,name:'MetalWay'},{t:'L',n:4,name:'StalPol'},{t:'L',n:5,name:'PolScrap'},{t:'U',n:1,name:'CentralMet'},{t:'U',n:2,name:'StalHub'},{t:'U',n:3,name:'MetalCenter'}], loadDate: '22.02 05:00', unloadDate: '24.02 18:00', products: ['1. złom stalowy (8t, luzem)','2. aluminium (12t, paleta)','3. miedź (5t, big bag)','Razem: 25t'], comments: ['trasa wielopunktowa','zawijanie po 4 punktach'], carrier: 'TransEuro Sp. z o.o.', vehicle: 'firanka (100m³)', price: '7800 PLN', sent: 'Marek K.\n19.02', locked: false },
+    { nr: 'ZT-2026-0047', status: 'Reklamacja', statusCls: 'bg-red-50 text-red-600 border border-red-200', rowBg: 'bg-red-50/30', week: 7, type: 'PL', route: [{t:'L',n:1,name:'EkoMet'},{t:'U',n:1,name:'Wrocław'}], loadDate: '10.02 08:00', unloadDate: '10.02 17:00', products: ['odpady metali (10t)'], comments: ['Uszkodzenie towaru'], carrier: 'TransPol Sp. z o.o.', vehicle: 'wywrotka (20m³)', price: '950 PLN', sent: 'Anna N.\n09.02', locked: false },
+    { nr: 'ZT-2026-0048', status: 'Wysłane', statusCls: 'bg-blue-50 text-blue-600 border border-blue-200', rowBg: 'bg-blue-50/30', week: 8, type: 'IMP', route: [{t:'L',n:1,name:'Hamburg'},{t:'U',n:1,name:'Gorzyce'}], loadDate: '22.02 07:00', unloadDate: '23.02 14:00', products: ['blachy nierdzewne (15t)'], comments: [''], carrier: 'Schenker Sp. z o.o.', vehicle: 'firanka (90m³)', price: '1800 EUR', sent: 'Marek K.\n17.02', locked: false },
+    { nr: 'ZT-2026-0049', status: 'Reklamacja', statusCls: 'bg-red-50 text-red-600 border border-red-200', rowBg: 'bg-red-50/30', week: 7, type: 'PL', route: [{t:'L',n:1,name:'Recykling'},{t:'L',n:2,name:'PolScrap'},{t:'U',n:1,name:'Sosnowiec'}], loadDate: '11.02 06:00', unloadDate: '12.02 08:00', products: ['złom stalowy (18t)'], comments: ['Opóźnienie 4h'], carrier: 'LogiPol Sp. z o.o.', vehicle: 'hakowiec (30m³)', price: '1100 PLN', sent: 'Jan K.\n10.02', locked: false },
+];
+
+// ===== RENDER HELPERS =====
+function statusBadge(s, cls) {
+    return `<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full ${cls}">${s}</span>`;
+}
+function nodeString(route) {
+    const nodesPerLine = 4;
+    const lines = [];
+
+    for (let i = 0; i < route.length; i += nodesPerLine) {
+        const chunk = route.slice(i, i + nodesPerLine);
+        const lineHtml = chunk.map((n, idx) => {
+            const isL = n.t === 'L';
+            const cls = isL ? 'bg-emerald-100 border border-emerald-500/30 text-emerald-700' : 'bg-primary/10 border border-primary/30 text-primary';
+            const badge = `<span class="${cls} px-1.5 py-0.5 rounded text-[10px] font-bold">${n.t}${n.n}:${n.name}</span>`;
+            const arrow = (i + idx < route.length - 1) ? '<span class="text-slate-300">\u2192</span>' : '';
+            return badge + arrow;
+        }).join('');
+        lines.push(lineHtml);
+    }
+
+    return '<div class="space-y-1">' + lines.map(line =>
+        `<div class="flex items-center space-x-1">${line}</div>`
+    ).join('') + '</div>';
+}
+function locationBadges(route, type) {
+    const pts = route.filter(n => n.t === type);
+    if (!pts.length) return '<span class="text-slate-400 text-[11px]">—</span>';
+    const isL = type === 'L';
+    const bgCls = isL ? 'bg-emerald-100 text-emerald-700' : 'bg-primary/10 text-primary';
+    return pts.map(p => `<div class="space-y-0.5"><div class="flex items-center gap-1.5"><span class="inline-flex items-center justify-center w-5 h-5 rounded-full ${bgCls} text-[10px] font-bold">${p.t}${p.n}</span><span class="font-medium text-[12px]">${p.name} Sp. z o.o.</span></div><div class="text-[11px] text-slate-500 pl-6">oddział ${p.name}</div></div>`).join('');
+}
+function loadDateWithBadge(date) {
+    if (date === '—') return '<span class="text-slate-400 text-[12px]">—</span>';
+    return `<div class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+        <span class="whitespace-nowrap text-[12px]">${date}</span>
+    </div>`;
+}
+function unloadDateWithBadge(date) {
+    if (date === '—') return '<span class="text-slate-400 text-[12px]">—</span>';
+    return `<div class="flex items-center gap-1.5">
+        <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+        <span class="whitespace-nowrap text-[12px]">${date}</span>
+    </div>`;
+}
+
+// ===== RENDER TABLES =====
+function renderTrasaTable() {
+    const tbody = document.getElementById('tbody-trasa');
+    tbody.innerHTML = orders.map(o => `<tr class="${o.rowBg} hover:bg-primary/5 transition-colors group cursor-pointer" role="row">
+        <td class="py-1 px-4 text-center">${o.locked ? '<span class="material-icons-round text-amber-500 text-sm">lock</span>' : ''}</td>
+        <td class="py-1 px-4 text-[12px] font-medium">${o.nr}</td>
+        <td class="py-1 px-4">${statusBadge(o.status, o.statusCls)}</td>
+        <td class="py-1 px-4 text-[12px] text-center">${o.week}</td>
+        <td class="py-1 px-4 text-[12px]">${o.type}</td>
+        <td class="py-1 px-4">${nodeString(o.route)}</td>
+        <td class="py-1 px-4">${loadDateWithBadge(o.loadDate)}</td>
+        <td class="py-1 px-4">${unloadDateWithBadge(o.unloadDate)}</td>
+        <td class="py-1 px-4"><div class="space-y-0.5">${o.products.map(p => `<div class="text-[11px] whitespace-nowrap font-medium">${p}</div>`).join('')}</div></td>
+        <td class="py-1 px-4"><div class="space-y-0.5">${o.comments.map(c => `<div class="text-[11px] whitespace-nowrap text-slate-500">${c}</div>`).join('')}</div></td>
+        <td class="py-1 px-4 text-[12px]">${o.carrier}</td>
+        <td class="py-1 px-4 text-[12px]">${o.vehicle}</td>
+        <td class="py-1 px-4 text-[12px] font-semibold">${o.price}</td>
+        <td class="py-1 px-4 text-[11px] whitespace-pre-line">${o.sent}</td>
+        <td class="py-1 px-4 sticky-column bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 group-hover:bg-primary/5"><button class="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-primary"><span class="material-icons-round text-base">mail_outline</span></button></td>
+    </tr>`).join('');
+}
+function renderKolumnyTable() {
+    const tbody = document.getElementById('tbody-kolumny');
+    tbody.innerHTML = orders.map(o => `<tr class="${o.rowBg} hover:bg-primary/5 transition-colors group cursor-pointer" role="row">
+        <td class="py-1 px-4 text-center">${o.locked ? '<span class="material-icons-round text-amber-500 text-sm">lock</span>' : ''}</td>
+        <td class="py-1 px-4 text-[12px] font-medium">${o.nr}</td>
+        <td class="py-1 px-4">${statusBadge(o.status, o.statusCls)}</td>
+        <td class="py-1 px-4 text-[12px] text-center">${o.week}</td>
+        <td class="py-1 px-4 text-[12px]">${o.type}</td>
+        <td class="py-1 px-4">${locationBadges(o.route, 'L')}</td>
+        <td class="py-1 px-4">${loadDateWithBadge(o.loadDate)}</td>
+        <td class="py-1 px-4">${locationBadges(o.route, 'U')}</td>
+        <td class="py-1 px-4">${unloadDateWithBadge(o.unloadDate)}</td>
+        <td class="py-1 px-4"><div class="space-y-0.5">${o.products.map(p => `<div class="text-[11px] whitespace-nowrap font-medium">${p}</div>`).join('')}</div></td>
+        <td class="py-1 px-4"><div class="space-y-0.5">${o.comments.map(c => `<div class="text-[11px] whitespace-nowrap text-slate-500">${c}</div>`).join('')}</div></td>
+        <td class="py-1 px-4 text-[12px]">${o.carrier}</td>
+        <td class="py-1 px-4 text-[12px]">${o.vehicle}</td>
+        <td class="py-1 px-4 text-[12px] font-semibold">${o.price}</td>
+        <td class="py-1 px-4 text-[11px] whitespace-pre-line">${o.sent}</td>
+        <td class="py-1 px-4 sticky-column bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-700 group-hover:bg-primary/5"><button class="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-primary"><span class="material-icons-round text-base">mail_outline</span></button></td>
+    </tr>`).join('');
+}
+
+// ===== VIEW SWITCHING =====
+let currentView = 2;
+function showView(n) {
+    for (let i = 1; i <= 8; i++) document.getElementById('view-' + i).classList.add('hidden');
+    document.getElementById('view-' + n).classList.remove('hidden');
+    currentView = n;
+    document.querySelectorAll('.nav-btn').forEach((btn, idx) => {
+        if (idx + 1 === n) { btn.className = 'nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-primary text-white text-left'; }
+        else { btn.className = 'nav-btn px-2 py-1.5 text-[11px] font-semibold rounded-md bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 text-left'; }
+    });
+}
+
+// ===== DARK MODE =====
+document.getElementById('global-theme-toggle').addEventListener('click', () => {
+    document.documentElement.classList.toggle('dark');
+    localStorage.setItem('theme', document.documentElement.classList.contains('dark') ? 'dark' : 'light');
+});
+const saved = localStorage.getItem('theme');
+if (saved === 'dark') document.documentElement.classList.add('dark');
+
+// ===== INIT =====
+renderTrasaTable();
+renderKolumnyTable();
+showView(2);
+</script>
+</body>
+</html>

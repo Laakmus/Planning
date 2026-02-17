@@ -165,7 +165,7 @@ Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowan
 
 - Zamiast czterech osobnych kolumn **Miejsce załadunku**, **Data załadunku**, **Miejsce rozładunku** i **Data rozładunku** w widoku „Trasa" stosuje się:
   - jedną kolumnę **Trasa** (node-string): sekwencja punktów załadunku i rozładunku w jednej linii wizualnej, np. L1:KRK → L2:KAT → U1:BER (załadunki np. zielone, rozładunki np. niebieskie),
-  - oraz kolumny **Data załadunku** i **Data rozładunku** (każda osobno — lista dat z godzinami jak w widoku Kolumny).
+  - oraz kolumny **Data załadunku** i **Data rozładunku** (każda osobno — wyświetlana jest **wyłącznie pierwsza data** załadunku z okrągłym badge'em L1 / pierwsza data rozładunku z okrągłym badge'em U1; emerald dla L, primary dla U; format DD.MM.YYYY HH:MM; jeśli brak daty — „—").
 - Pozostałe kolumny (Blokada, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania zlecenia, Akcje) pozostają jak w tabeli powyżej; kolejność może być dostosowana tak, aby kolumna Trasa była w logicznym miejscu (np. po Tydzień i Rodzaj transportu).
 
 **5. Akcje i stany puste**
@@ -398,8 +398,9 @@ Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 
 
 Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
 - Wszystkie pola formularza disabled / grayed out.
-- Brak przycisków: Zapisz, Generuj PDF, Wyślij maila.
-- Aktywne: link „Historia zmian" (tylko odczyt), przycisk „Zamknij".
+- Brak przycisków: Zapisz, Wyślij maila. Sekcja 6 (Zmiana statusu) niewidoczna.
+- Aktywne: **Generuj PDF**, link „Historia zmian" (tylko odczyt), przycisk „Zamknij".
+- Nad formularzem wyświetlany jest bursztynowy (amber) banner informujący o tym, kto aktualnie blokuje zlecenie (np. „Zlecenie edytowane przez Anna Nowak").
 
 **8. Walidacja w drawerze**
 
