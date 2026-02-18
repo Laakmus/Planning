@@ -14,7 +14,7 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   parseJsonBody,
-  requireWriteAccess,
+  requireAdmin,
 } from "../../../../lib/api-helpers";
 import { dictionarySyncSchema } from "../../../../lib/validators/order.validator";
 
@@ -22,8 +22,8 @@ export const POST: APIRoute = async ({ locals, request }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);
   if (authResult instanceof Response) return authResult;
 
-  const writeErr = requireWriteAccess(authResult);
-  if (writeErr) return writeErr;
+  const adminErr = requireAdmin(authResult);
+  if (adminErr) return adminErr;
 
   let body: unknown;
   try {

@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
     const params = parseQueryParams(url);
     const search = typeof params.search === "string" ? params.search : undefined;
     const result = await getCompanies(locals.supabase, search);
-    return jsonResponse(result, 200);
+    return jsonResponse(result, 200, { "Cache-Control": "public, max-age=3600" });
   } catch (err) {
     console.error("[GET /api/v1/companies]", err);
     return errorResponse(500, "Internal Server Error", "Błąd pobierania listy firm.");

@@ -15,6 +15,18 @@ import { getCurrentUser } from "./services/auth.service";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[1-5][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
+/** Security + CORS headers dołączane do każdej odpowiedzi API. */
+const COMMON_HEADERS: Record<string, string> = {
+  "Content-Type": "application/json",
+  "X-Content-Type-Options": "nosniff",
+  "X-Frame-Options": "DENY",
+  "X-XSS-Protection": "1; mode=block",
+  "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
+  "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "*",
+  "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
+};
+
 /**
  * Pobiera i weryfikuje zalogowanego użytkownika (Supabase Auth + user_profiles).
  * Zwraca AuthMeDto lub Response z kodem 401 do natychmiastowego zwrócenia z handlera.
@@ -78,12 +90,10 @@ export function requireAdmin(user: AuthMeDto): Response | null {
  * @param data — body odpowiedzi (będzie zserializowane przez JSON.stringify)
  * @param status — domyślnie 200
  */
-export function jsonResponse(data: unknown, status = 200): Response {
+export function jsonResponse(data: unknown, status = 200, extraHeaders?: Record<string, string>): Response {
   return new Response(JSON.stringify(data), {
     status,
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: { ...COMMON_HEADERS, ...extraHeaders },
   });
 }
 
@@ -111,9 +121,7 @@ export function errorResponse(
   }
   return new Response(JSON.stringify(body), {
     status: statusCode,
-    headers: {
-      "Content-Type": "application/json",
-    },
+    headers: COMMON_HEADERS,
   });
 }
 

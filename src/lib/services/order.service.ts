@@ -161,71 +161,87 @@ export async function listOrders(
   let subQueryOrderIds: string[] | null = null;
 
   if (productId || loadingLocationId || loadingCompanyId || unloadingLocationId || unloadingCompanyId) {
-    const idSets: Set<string>[] = [];
+    // Run all independent filter queries in parallel
+    const filterPromises: Array<Promise<Set<string>>> = [];
 
     if (productId) {
-      const { data: itemRows } = await supabase
-        .from("order_items")
-        .select("order_id")
-        .eq("product_id", productId);
-      idSets.push(new Set((itemRows ?? []).map((r) => r.order_id)));
+      filterPromises.push(
+        Promise.resolve(
+          supabase
+            .from("order_items")
+            .select("order_id")
+            .eq("product_id", productId)
+        ).then(({ data }) => new Set((data ?? []).map((r) => r.order_id)))
+      );
     }
 
     if (loadingLocationId) {
-      const { data: stopRows } = await supabase
-        .from("order_stops")
-        .select("order_id")
-        .eq("location_id", loadingLocationId)
-        .eq("kind", "LOADING");
-      idSets.push(new Set((stopRows ?? []).map((r) => r.order_id)));
+      filterPromises.push(
+        Promise.resolve(
+          supabase
+            .from("order_stops")
+            .select("order_id")
+            .eq("location_id", loadingLocationId)
+            .eq("kind", "LOADING")
+        ).then(({ data }) => new Set((data ?? []).map((r) => r.order_id)))
+      );
     }
 
     if (unloadingLocationId) {
-      const { data: stopRows } = await supabase
-        .from("order_stops")
-        .select("order_id")
-        .eq("location_id", unloadingLocationId)
-        .eq("kind", "UNLOADING");
-      idSets.push(new Set((stopRows ?? []).map((r) => r.order_id)));
+      filterPromises.push(
+        Promise.resolve(
+          supabase
+            .from("order_stops")
+            .select("order_id")
+            .eq("location_id", unloadingLocationId)
+            .eq("kind", "UNLOADING")
+        ).then(({ data }) => new Set((data ?? []).map((r) => r.order_id)))
+      );
     }
 
     if (loadingCompanyId) {
-      const { data: locs } = await supabase
-        .from("locations")
-        .select("id")
-        .eq("company_id", loadingCompanyId);
-      const locIds = (locs ?? []).map((l) => l.id);
-      if (locIds.length > 0) {
-        const { data: stopRows } = await supabase
-          .from("order_stops")
-          .select("order_id")
-          .in("location_id", locIds)
-          .eq("kind", "LOADING");
-        idSets.push(new Set((stopRows ?? []).map((r) => r.order_id)));
-      } else {
-        idSets.push(new Set());
-      }
+      filterPromises.push(
+        Promise.resolve(
+          supabase
+            .from("locations")
+            .select("id")
+            .eq("company_id", loadingCompanyId)
+        ).then(async ({ data: locs }) => {
+            const locIds = (locs ?? []).map((l) => l.id);
+            if (locIds.length === 0) return new Set<string>();
+            const { data: stopRows } = await supabase
+              .from("order_stops")
+              .select("order_id")
+              .in("location_id", locIds)
+              .eq("kind", "LOADING");
+            return new Set((stopRows ?? []).map((r) => r.order_id));
+          })
+      );
     }
 
     if (unloadingCompanyId) {
-      const { data: locs } = await supabase
-        .from("locations")
-        .select("id")
-        .eq("company_id", unloadingCompanyId);
-      const locIds = (locs ?? []).map((l) => l.id);
-      if (locIds.length > 0) {
-        const { data: stopRows } = await supabase
-          .from("order_stops")
-          .select("order_id")
-          .in("location_id", locIds)
-          .eq("kind", "UNLOADING");
-        idSets.push(new Set((stopRows ?? []).map((r) => r.order_id)));
-      } else {
-        idSets.push(new Set());
-      }
+      filterPromises.push(
+        Promise.resolve(
+          supabase
+            .from("locations")
+            .select("id")
+            .eq("company_id", unloadingCompanyId)
+        ).then(async ({ data: locs }) => {
+            const locIds = (locs ?? []).map((l) => l.id);
+            if (locIds.length === 0) return new Set<string>();
+            const { data: stopRows } = await supabase
+              .from("order_stops")
+              .select("order_id")
+              .in("location_id", locIds)
+              .eq("kind", "UNLOADING");
+            return new Set((stopRows ?? []).map((r) => r.order_id));
+          })
+      );
     }
 
-    // Intersect all id sets
+    // Run all filter queries in parallel, then intersect results
+    const idSets = await Promise.all(filterPromises);
+
     if (idSets.length > 0) {
       let result = idSets[0];
       for (let i = 1; i < idSets.length; i++) {
@@ -377,6 +393,7 @@ export async function getOrderDetail(
 ): Promise<OrderDetailResponseDto | null> {
   const { data: orderRow, error: orderError } = await supabase
     .from("transport_orders")
+    // select("*") — kolumny z migracji (payment_term_days, total_load_volume_m3, last_*) nie są w wygenerowanych typach
     .select("*")
     .eq("id", orderId)
     .maybeSingle();
@@ -438,7 +455,7 @@ export async function getOrderDetail(
 
   const { data: stopsRows } = await supabase
     .from("order_stops")
-    .select("*")
+    .select("id, kind, sequence_no, date_local, time_local, location_id, location_name_snapshot, company_name_snapshot, address_snapshot, notes")
     .eq("order_id", orderId)
     .order("sequence_no", { ascending: true });
 
@@ -459,7 +476,7 @@ export async function getOrderDetail(
 
   const { data: itemsRows } = await supabase
     .from("order_items")
-    .select("*")
+    .select("id, product_id, product_name_snapshot, default_loading_method_snapshot, loading_method_code, quantity_tons, notes")
     .eq("order_id", orderId);
 
   const items: OrderDetailResponseDto["items"] = (itemsRows ?? []).map(
@@ -563,6 +580,58 @@ async function buildSnapshotsForItem(
     productNameSnapshot: product?.name ?? null,
     defaultLoadingMethodSnapshot: product?.default_loading_method_code ?? null,
   };
+}
+
+/** Batch: pobiera snapshoty lokalizacji dla wielu locationId naraz (1 query zamiast N). */
+async function batchBuildSnapshotsForLocations(
+  supabase: SupabaseClient<Database>,
+  locationIds: string[]
+): Promise<Map<string, { locationNameSnapshot: string | null; companyNameSnapshot: string | null; addressSnapshot: string | null; country: string | null }>> {
+  const result = new Map<string, { locationNameSnapshot: string | null; companyNameSnapshot: string | null; addressSnapshot: string | null; country: string | null }>();
+  if (locationIds.length === 0) return result;
+
+  const uniqueIds = [...new Set(locationIds)];
+  const { data: locs } = await supabase
+    .from("locations")
+    .select("id, name, city, country, street_and_number, postal_code, company_id, companies(name)")
+    .in("id", uniqueIds);
+
+  for (const loc of locs ?? []) {
+    const companyName = (loc.companies as { name: string } | null)?.name ?? null;
+    const address = [loc.street_and_number, `${loc.postal_code} ${loc.city}`, loc.country]
+      .filter(Boolean)
+      .join(", ");
+    result.set(loc.id, {
+      locationNameSnapshot: loc.name,
+      companyNameSnapshot: companyName,
+      addressSnapshot: address || null,
+      country: loc.country,
+    });
+  }
+  return result;
+}
+
+/** Batch: pobiera snapshoty produktów dla wielu productId naraz (1 query zamiast N). */
+async function batchBuildSnapshotsForItems(
+  supabase: SupabaseClient<Database>,
+  productIds: string[]
+): Promise<Map<string, { productNameSnapshot: string | null; defaultLoadingMethodSnapshot: string | null }>> {
+  const result = new Map<string, { productNameSnapshot: string | null; defaultLoadingMethodSnapshot: string | null }>();
+  if (productIds.length === 0) return result;
+
+  const uniqueIds = [...new Set(productIds)];
+  const { data: products } = await supabase
+    .from("products")
+    .select("id, name, default_loading_method_code")
+    .in("id", uniqueIds);
+
+  for (const p of products ?? []) {
+    result.set(p.id, {
+      productNameSnapshot: p.name ?? null,
+      defaultLoadingMethodSnapshot: p.default_loading_method_code ?? null,
+    });
+  }
+  return result;
 }
 
 /**
@@ -980,44 +1049,42 @@ export async function createOrder(
     receiverSnapshots = await buildSnapshotsForShipperReceiver(supabase, params.receiverLocationId);
   }
 
-  // 6. Snapshoty dla stops (lokalizacja, firma, adres, kraj)
-  const stopsWithSnapshots = await Promise.all(
-    params.stops.map(async (s, i) => {
-      let snap = { locationNameSnapshot: null as string | null, companyNameSnapshot: null as string | null, addressSnapshot: null as string | null, country: null as string | null };
-      if (s.locationId) {
-        snap = await buildSnapshotsForLocation(supabase, s.locationId);
-      }
-      return {
-        kind: s.kind,
-        sequenceNo: i + 1,
-        dateLocal: s.dateLocal ?? null,
-        timeLocal: s.timeLocal ?? null,
-        locationId: s.locationId ?? null,
-        notes: s.notes ?? null,
-        ...snap,
-      };
-    })
-  );
+  // 6. Batch snapshoty dla stops (1 query zamiast N)
+  const stopLocationIds = params.stops.map((s) => s.locationId).filter(Boolean) as string[];
+  const itemProductIds = params.items.map((i) => i.productId).filter(Boolean) as string[];
+  const [locationSnapMap, productSnapMap] = await Promise.all([
+    batchBuildSnapshotsForLocations(supabase, stopLocationIds),
+    batchBuildSnapshotsForItems(supabase, itemProductIds),
+  ]);
 
-  // 7. Snapshoty dla items (produkt, default_loading_method)
-  const itemsWithSnapshots = await Promise.all(
-    params.items.map(async (item) => {
-      let snap = { productNameSnapshot: item.productNameSnapshot, defaultLoadingMethodSnapshot: null as string | null };
-      if (item.productId) {
-        const productSnap = await buildSnapshotsForItem(supabase, item.productId);
-        snap.productNameSnapshot = item.productNameSnapshot ?? productSnap.productNameSnapshot;
-        snap.defaultLoadingMethodSnapshot = productSnap.defaultLoadingMethodSnapshot;
-      }
-      return {
-        productId: item.productId ?? null,
-        productNameSnapshot: snap.productNameSnapshot,
-        defaultLoadingMethodSnapshot: snap.defaultLoadingMethodSnapshot,
-        loadingMethodCode: item.loadingMethodCode ?? null,
-        quantityTons: item.quantityTons ?? null,
-        notes: item.notes ?? null,
-      };
-    })
-  );
+  const stopsWithSnapshots = params.stops.map((s, i) => {
+    const snap = s.locationId ? locationSnapMap.get(s.locationId) ?? null : null;
+    return {
+      kind: s.kind,
+      sequenceNo: i + 1,
+      dateLocal: s.dateLocal ?? null,
+      timeLocal: s.timeLocal ?? null,
+      locationId: s.locationId ?? null,
+      notes: s.notes ?? null,
+      locationNameSnapshot: snap?.locationNameSnapshot ?? null,
+      companyNameSnapshot: snap?.companyNameSnapshot ?? null,
+      addressSnapshot: snap?.addressSnapshot ?? null,
+      country: snap?.country ?? null,
+    };
+  });
+
+  // 7. Snapshoty items z batch mapy
+  const itemsWithSnapshots = params.items.map((item) => {
+    const snap = item.productId ? productSnapMap.get(item.productId) ?? null : null;
+    return {
+      productId: item.productId ?? null,
+      productNameSnapshot: item.productNameSnapshot ?? snap?.productNameSnapshot ?? null,
+      defaultLoadingMethodSnapshot: snap?.defaultLoadingMethodSnapshot ?? null,
+      loadingMethodCode: item.loadingMethodCode ?? null,
+      quantityTons: item.quantityTons ?? null,
+      notes: item.notes ?? null,
+    };
+  });
 
   // 8. Denormalizacja (daty, kraje, summary_route, main_product_name, transport_year)
   const denorm = computeDenormalizedFields(stopsWithSnapshots, itemsWithSnapshots);
@@ -1201,24 +1268,20 @@ export async function updateOrder(
     throw new Error("STOPS_LIMIT");
   }
 
-  // Snapshoty dla stops (lokalizacja, firma, adres, kraj)
-  const stopsWithSnapshots = await Promise.all(
-    activeStops.map(async (s) => {
-      let snap = {
-        locationNameSnapshot: null as string | null,
-        companyNameSnapshot: null as string | null,
-        addressSnapshot: null as string | null,
-        country: null as string | null,
-      };
-      if (s.locationId) {
-        snap = await buildSnapshotsForLocation(supabase, s.locationId);
-      }
-      return {
-        ...s,
-        ...snap,
-      };
-    })
-  );
+  // Batch snapshoty dla stops (1 query zamiast N)
+  const stopLocationIds = activeStops.map((s) => s.locationId).filter(Boolean) as string[];
+  const locationSnapMap = await batchBuildSnapshotsForLocations(supabase, stopLocationIds);
+
+  const stopsWithSnapshots = activeStops.map((s) => {
+    const snap = s.locationId ? locationSnapMap.get(s.locationId) ?? null : null;
+    return {
+      ...s,
+      locationNameSnapshot: snap?.locationNameSnapshot ?? null,
+      companyNameSnapshot: snap?.companyNameSnapshot ?? null,
+      addressSnapshot: snap?.addressSnapshot ?? null,
+      country: snap?.country ?? null,
+    };
+  });
 
   // Snapshoty przewoźnika
   let carrierSnapshots = {
@@ -1240,21 +1303,18 @@ export async function updateOrder(
     receiverSnapshots = await buildSnapshotsForShipperReceiver(supabase, params.receiverLocationId);
   }
 
-  // Snapshoty dla items (produkt, default_loading_method)
-  const itemsWithSnapshots = await Promise.all(
-    activeItems.map(async (item) => {
-      let snap = {
-        productNameSnapshot: item.productNameSnapshot,
-        defaultLoadingMethodSnapshot: null as string | null,
-      };
-      if (item.productId) {
-        const productSnap = await buildSnapshotsForItem(supabase, item.productId);
-        snap.productNameSnapshot = item.productNameSnapshot ?? productSnap.productNameSnapshot;
-        snap.defaultLoadingMethodSnapshot = productSnap.defaultLoadingMethodSnapshot;
-      }
-      return { ...item, ...snap };
-    })
-  );
+  // Batch snapshoty dla items (1 query zamiast N)
+  const itemProductIds = activeItems.map((i) => i.productId).filter(Boolean) as string[];
+  const productSnapMap = await batchBuildSnapshotsForItems(supabase, itemProductIds);
+
+  const itemsWithSnapshots = activeItems.map((item) => {
+    const snap = item.productId ? productSnapMap.get(item.productId) ?? null : null;
+    return {
+      ...item,
+      productNameSnapshot: item.productNameSnapshot ?? snap?.productNameSnapshot ?? null,
+      defaultLoadingMethodSnapshot: snap?.defaultLoadingMethodSnapshot ?? null,
+    };
+  });
 
   // Denormalizacja (daty, kraje, summary_route, main_product_name, transport_year)
   const denorm = computeDenormalizedFields(
