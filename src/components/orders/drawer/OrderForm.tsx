@@ -10,6 +10,11 @@ import { ArrowLeftRight, Banknote, MessageSquare, Package, Route, Truck } from "
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDictionaries } from "@/contexts/DictionaryContext";
 import type { CurrencyCode, OrderFormData, OrderFormItem, OrderFormStop, OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
+
+/** Mapowanie starych kodów transportu na aktualne (dane seed/historyczne). */
+const LEGACY_TRANSPORT_CODE_MAP: Record<string, TransportTypeCode> = {
+  KRAJ: "PL", MIEDZY: "EXP", EKSPRES: "IMP",
+};
 import type { OrderDetailDto, OrderItemDto, OrderStopDto } from "@/types";
 
 import { CargoSection } from "./CargoSection";
@@ -65,7 +70,7 @@ function mapItemsToForm(items: OrderItemDto[]): OrderFormItem[] {
 
 function buildInitialForm(order: OrderDetailDto, stops: OrderStopDto[], items: OrderItemDto[]): OrderFormData {
   return {
-    transportTypeCode: (order.transportTypeCode as TransportTypeCode) ?? "PL",
+    transportTypeCode: (LEGACY_TRANSPORT_CODE_MAP[order.transportTypeCode] ?? order.transportTypeCode as TransportTypeCode) ?? "PL",
     currencyCode: (order.currencyCode as CurrencyCode) ?? "PLN",
     priceAmount: order.priceAmount,
     paymentTermDays: order.paymentTermDays,

@@ -1,8 +1,10 @@
 /**
- * Astro middleware: rate limiting + idempotency-key.
+ * Astro middleware: Supabase client injection + rate limiting + idempotency-key.
  * Dotyczy wyłącznie endpointów /api/*.
  */
 import { defineMiddleware } from "astro:middleware";
+import { createClient } from "@supabase/supabase-js";
+import type { Database } from "./db/database.types";
 
 // ---------------------------------------------------------------------------
 // Rate limiter (in-memory, per userId or IP)
@@ -89,6 +91,17 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return next();
   }
 
+  // Inject Supabase client with user's JWT token (enables RLS)
+  const authHeader = context.request.headers.get("authorization") ?? "";
+  context.locals.supabase = createClient<Database>(
+    import.meta.env.SUPABASE_URL,
+    import.meta.env.SUPABASE_KEY,
+    {
+      global: { headers: { Authorization: authHeader } },
+      auth: { persistSession: false, autoRefreshToken: false },
+    }
+  );
+
   // Allow OPTIONS (CORS preflight) without rate limiting
   if (method === "OPTIONS") {
     return new Response(null, {
@@ -105,7 +118,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   cleanupIfNeeded();
 
   // Rate limiting — identify by Supabase user or fallback to IP
-  const authHeader = context.request.headers.get("authorization") ?? "";
   const clientId = authHeader ? `auth:${authHeader.slice(-16)}` : `ip:${context.clientAddress ?? "unknown"}`;
   const rateKey = `${clientId}:${method === "GET" ? "read" : "write"}`;
   const limit = getRateLimit(method);

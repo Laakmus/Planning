@@ -13,6 +13,7 @@ import { History, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDateFromTimestamp } from "@/lib/format-utils";
@@ -158,13 +159,15 @@ export function OrderDrawer({
           totalLoadTons: formData.totalLoadTons,
           totalLoadVolumeM3: formData.totalLoadVolumeM3,
           carrierCompanyId: formData.carrierCompanyId,
+          shipperLocationId: formData.shipperLocationId ?? null,
+          receiverLocationId: formData.receiverLocationId ?? null,
           vehicleVariantCode: formData.vehicleVariantCode,
           specialRequirements: formData.specialRequirements,
           requiredDocumentsText: formData.requiredDocumentsText,
           generalNotes: formData.generalNotes,
           senderContactName: formData.senderContactName,
           senderContactPhone: formData.senderContactPhone,
-          senderContactEmail: formData.senderContactEmail,
+          senderContactEmail: formData.senderContactEmail?.trim() || null,
           stops: formData.stops.map((s) => ({
             id: s.id,
             kind: s.kind,
@@ -282,6 +285,11 @@ export function OrderDrawer({
             handleCloseRequest();
           }}
         >
+          {/* Ukryty tytuł dla screen readerów (wymóg Radix Dialog) */}
+          <SheetTitle className="sr-only">
+            {detail?.order.orderNo ?? "Zlecenie transportowe"}
+          </SheetTitle>
+
           {/* Custom Header */}
           <header className="shrink-0 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-950">
             <div className="flex items-center gap-4">

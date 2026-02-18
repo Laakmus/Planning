@@ -34,32 +34,35 @@ export async function lockOrder(
   userId: string,
   orderId: string
 ): Promise<LockOrderResponseDto | null> {
-  // 1. Sprawdź czy zlecenie istnieje
+  const now = new Date().toISOString();
+
+  // 1. Pobierz zlecenie z aktualnym stanem blokady
   const { data: order, error: fetchError } = await supabase
     .from("transport_orders")
-    .select("id")
+    .select("id, locked_by_user_id, locked_at")
     .eq("id", orderId)
     .maybeSingle();
 
   if (fetchError) throw fetchError;
   if (!order) return null;
 
-  // 2. Atomowe przejęcie blokady — UPDATE z warunkami w WHERE
-  const now = new Date().toISOString();
-  const expiryThreshold = new Date(Date.now() - LOCK_EXPIRY_MINUTES * 60 * 1000).toISOString();
+  // 2. Sprawdź czy możemy przejąć blokadę
+  const canLock =
+    order.locked_by_user_id == null ||
+    order.locked_by_user_id === userId ||
+    isLockExpired(order.locked_at);
 
-  const { data: updated, error: updateError } = await supabase
-    .from("transport_orders")
-    .update({ locked_by_user_id: userId, locked_at: now })
-    .eq("id", orderId)
-    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId},locked_at.lt.${expiryThreshold}`)
-    .select("id")
-    .maybeSingle();
-
-  if (updateError) throw updateError;
-  if (!updated) {
+  if (!canLock) {
     throw new Error("LOCK_CONFLICT");
   }
+
+  // 3. Ustaw blokadę — prosty UPDATE bez .or() (obejście buga PostgREST v14)
+  const { error: updateError } = await supabase
+    .from("transport_orders")
+    .update({ locked_by_user_id: userId, locked_at: now })
+    .eq("id", orderId);
+
+  if (updateError) throw updateError;
 
   return { id: orderId, lockedByUserId: userId, lockedAt: now };
 }
