@@ -544,10 +544,15 @@ OrdersApp (React island — korzenny komponent)
 - **Opis**: Lista punktów trasy z możliwością dodawania, usuwania i zmiany kolejności (drag-and-drop + przyciski góra/dół).
 - **Główne elementy**: `<div>` z `<RoutePointCard>` × N, przycisk „Dodaj załadunek", przycisk „Dodaj rozładunek". Użycie `@dnd-kit/core` + `@dnd-kit/sortable` dla drag-and-drop.
 - **Obsługiwane interakcje**:
-  - „Dodaj miejsce załadunku" → nowy punkt LOADING (jeśli < 8)
-  - „Dodaj miejsce rozładunku" → nowy punkt UNLOADING (jeśli < 3)
-  - Drag-and-drop / góra/dół → zmiana `sequenceNo`
+  - „Dodaj miejsce załadunku" → nowy punkt LOADING wstawiany za ostatnim istniejącym LOADING (jeśli < 8)
+  - „Dodaj miejsce rozładunku" → nowy punkt UNLOADING wstawiany przed ostatnim istniejącym UNLOADING (jeśli < 3)
+  - Drag-and-drop / góra/dół → zmiana `sequenceNo`; upuszczenie UNLOADING na pozycję pierwszą jest zablokowane (element wraca), upuszczenie LOADING na pozycję ostatnią jest zablokowane
   - „Usuń punkt" → usunięcie (lub `_deleted: true` dla istniejących)
+- **Reguła kolejności przystanków**:
+  - Pierwszy przystanek: zawsze LOADING (załadunek)
+  - Ostatni przystanek: zawsze UNLOADING (rozładunek)
+  - Środkowe przystanki: dowolny mix LOADING/UNLOADING
+  - `renumberAndBuild()` tylko renumeruje `sequenceNo` w miejscu — NIE sortuje przystanków wg rodzaju
 - **Walidacja**:
   - Max 8 punktów LOADING
   - Max 3 punkty UNLOADING

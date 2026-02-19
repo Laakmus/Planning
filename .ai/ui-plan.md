@@ -199,7 +199,7 @@ Formularz w siatce 2–4 kolumn, etykiety nad polami, pola wymagane do wysłania
   - Godzina załadunku/rozładunku (timepicker + ręczne wpisanie).
   - Uwagi do punktu (opcjonalnie).
 - Przyciski „Dodaj załadunek" / „Dodaj rozładunek" (z walidacją limitów: max 8 załadunków, 3 rozładunki).
-- Zmiana kolejności: drag-and-drop + przyciski góra/dół (dostępność klawiaturowa).
+- Zmiana kolejności: drag-and-drop + przyciski góra/dół (dostępność klawiaturowa). Reguła kolejności: pierwszy przystanek zawsze LOADING, ostatni zawsze UNLOADING; środkowe dowolny mix. DnD blokuje: upuszczenie UNLOADING na pozycję pierwszą i upuszczenie LOADING na pozycję ostatnią (element wraca na miejsce). Przycisk „Dodaj załadunek" wstawia po ostatnim istniejącym załadunku; „Dodaj rozładunek" wstawia przed ostatnim istniejącym rozładunkiem.
 - Przycisk „Usuń punkt" przy każdym punkcie (z potwierdzeniem jeśli punkt ma dane).
 - **Osoba kontaktowa po stronie nadawcy** (pola tekstowe na dole sekcji): imię i nazwisko (`senderContactName`), telefon (`senderContactPhone`), e-mail (`senderContactEmail`).
 - Minimalna trasa: 1 załadunek + 1 rozładunek (walidacja biznesowa przy wysyłce maila).

@@ -212,10 +212,16 @@ OrderDrawer (główny kontener)
 | Uwagi do punktu | Input text + ikona (pod grid) | `stop.notes` | Max 500 znaków | Opcjonalne. Ikona Material: `comment`, styl: `text-xs` |
 
 **Przyciski akcji**:
-- **"Dodaj załadunek"**: Dodaje punkt `kind: "LOADING"`, limit: **max 8 załadunków**
-- **"Dodaj rozładunek"**: Dodaje punkt `kind: "UNLOADING"`, limit: **max 3 rozładunki**
-- **Drag-and-drop / przyciski góra-dół**: Zmiana kolejności punktów (aktualizacja `sequenceNo`)
+- **"Dodaj załadunek"**: Dodaje punkt `kind: "LOADING"` wstawiany za ostatnim istniejącym LOADING, limit: **max 8 załadunków**
+- **"Dodaj rozładunek"**: Dodaje punkt `kind: "UNLOADING"` wstawiany przed ostatnim istniejącym UNLOADING, limit: **max 3 rozładunki**
+- **Drag-and-drop / przyciski góra-dół**: Zmiana kolejności punktów (aktualizacja `sequenceNo`); upuszczenie UNLOADING na pierwszą pozycję jest zablokowane (element wraca na poprzednią pozycję), upuszczenie LOADING na ostatnią pozycję jest zablokowane
 - **Usuń punkt**: Oznacza punkt jako `_deleted: true` w payloadzie PUT
+
+**Reguła kolejności przystanków**:
+- Pierwszy przystanek: zawsze LOADING (załadunek)
+- Ostatni przystanek: zawsze UNLOADING (rozładunek)
+- Środkowe przystanki: dowolny mix LOADING/UNLOADING
+- `renumberAndBuild()` tylko renumeruje `sequenceNo` w miejscu — NIE sortuje przystanków wg rodzaju
 
 **Minimalna trasa**: 1 załadunek + 1 rozładunek (walidacja biznesowa przy wysyłce, nie blokuje zapisu draftu)
 

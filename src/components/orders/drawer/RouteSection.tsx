@@ -130,13 +130,11 @@ export function RouteSection({
   /**
    * After reordering active stops, renumber sequenceNo for all active stops
    * and produce the updated full stops array (preserving deleted stops).
+   * Order is preserved as-is (no automatic re-sorting by kind).
+   * Constraint: first stop must be LOADING, last stop must be UNLOADING.
    */
   function renumberAndBuild(newActiveStops: OrderFormStop[]): OrderFormStop[] {
-    const loadings = newActiveStops.filter((s) => s.kind === "LOADING");
-    const unloadings = newActiveStops.filter((s) => s.kind === "UNLOADING");
-    const ordered = [...loadings, ...unloadings];
-
-    const renumbered = ordered.map((s, i) => ({
+    const renumbered = newActiveStops.map((s, i) => ({
       ...s,
       sequenceNo: i + 1,
     }));
@@ -145,7 +143,10 @@ export function RouteSection({
     return [...renumbered, ...deletedStops];
   }
 
-  // Drag end handler
+  // Drag end handler with position constraints:
+  // - position 0 (first): only LOADING stops allowed
+  // - last position: only UNLOADING stops allowed
+  // - middle positions: any kind allowed
   const handleDragEnd = useCallback(
     (event: DragEndEvent) => {
       const { active, over } = event;
@@ -157,6 +158,12 @@ export function RouteSection({
       if (oldActiveIdx === -1 || newActiveIdx === -1) return;
 
       const reordered = arrayMove([...activeStops], oldActiveIdx, newActiveIdx);
+
+      // Enforce: first position must be LOADING
+      if (reordered.length > 0 && reordered[0].kind !== "LOADING") return;
+      // Enforce: last position must be UNLOADING
+      if (reordered.length > 0 && reordered[reordered.length - 1].kind !== "UNLOADING") return;
+
       onChange({ stops: renumberAndBuild(reordered) });
     },
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -194,18 +201,37 @@ export function RouteSection({
       _deleted: false,
     };
 
-    const currentActive = formData.stops.filter((s) => !s._deleted);
+    const currentActive = [...formData.stops.filter((s) => !s._deleted)];
     const deletedStops = formData.stops.filter((s) => s._deleted);
 
     if (kind === "LOADING") {
-      const firstUnloadingIdx = currentActive.findIndex((s) => s.kind === "UNLOADING");
-      if (firstUnloadingIdx === -1) {
-        currentActive.push(newStop);
+      // Insert after the last LOADING stop (before any subsequent stops)
+      let lastLoadingIdx = -1;
+      for (let i = currentActive.length - 1; i >= 0; i--) {
+        if (currentActive[i].kind === "LOADING") {
+          lastLoadingIdx = i;
+          break;
+        }
+      }
+      if (lastLoadingIdx === -1) {
+        currentActive.unshift(newStop);
       } else {
-        currentActive.splice(firstUnloadingIdx, 0, newStop);
+        currentActive.splice(lastLoadingIdx + 1, 0, newStop);
       }
     } else {
-      currentActive.push(newStop);
+      // Insert before the last UNLOADING stop (so last remains UNLOADING)
+      let lastUnloadingIdx = -1;
+      for (let i = currentActive.length - 1; i >= 0; i--) {
+        if (currentActive[i].kind === "UNLOADING") {
+          lastUnloadingIdx = i;
+          break;
+        }
+      }
+      if (lastUnloadingIdx === -1) {
+        currentActive.push(newStop);
+      } else {
+        currentActive.splice(lastUnloadingIdx, 0, newStop);
+      }
     }
 
     const renumbered = currentActive.map((s, i) => ({ ...s, sequenceNo: i + 1 }));

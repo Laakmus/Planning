@@ -321,7 +321,7 @@ Ewentualna linia „Ostatnia zmiana: [imię], [data]" do doprecyzowania w implem
 | 7 | Godzina załadunku/rozładunku | Pole godziny (timepicker + ręczne wpisanie) | Na punkt |
 | — | Przyciski „Dodaj załadunek" / „Dodaj rozładunek" | Przyciski | Dodają kolejny punkt (max 8 załadunków, 3 rozładunki) |
 
-Zmiana kolejności: drag-and-drop + przyciski góra/dół. Przy zmianie firmy w punkcie: zerowanie oddziału, adresu i NIP; użytkownik wybiera oddział z nowej listy. Minimalna trasa: 1 załadunek + 1 rozładunek (walidacja biznesowa — przy wysyłce maila).
+Zmiana kolejności: drag-and-drop + przyciski góra/dół. Reguła kolejności przystanków: pierwszy przystanek musi być zawsze załadunkiem (L1), ostatni musi być zawsze rozładunkiem. Przystanki środkowe mogą być w dowolnej kolejności (załadunek lub rozładunek). Drag-and-drop respektuje tę regułę — nie można upuścić rozładunku na pierwszą pozycję ani załadunku na ostatnią. Dodawanie załadunku wstawia punkt po ostatnim istniejącym załadunku; dodawanie rozładunku wstawia punkt przed ostatnim istniejącym rozładunkiem. Przy zmianie firmy w punkcie: zerowanie oddziału, adresu i NIP; użytkownik wybiera oddział z nowej listy. Minimalna trasa: 1 załadunek + 1 rozładunek (walidacja biznesowa — przy wysyłce maila).
 
 **Sekcja 2 — Towar**
 
@@ -798,15 +798,16 @@ Kryteria akceptacji:
 - Próba dodania kolejnego punktu ponad limit skutkuje komunikatem o osiągnięciu maksymalnej liczby punktów.
 - Wszystkie dodane punkty są prezentowane w logicznej kolejności.
 
-ID: US-032  
-Tytuł: Zmiana kolejności punktów trasy  
-Opis:  
-Jako planista chcę zmieniać kolejność punktów załadunku i rozładunku, aby łatwo korygować plan trasy bez ponownego wpisywania danych.  
+ID: US-032
+Tytuł: Zmiana kolejności punktów trasy
+Opis:
+Jako planista chcę zmieniać kolejność punktów załadunku i rozładunku, aby łatwo korygować plan trasy bez ponownego wpisywania danych.
 Kryteria akceptacji:
 
 - Użytkownik może przeciągnąć punkt załadunku/rozładunku na inne miejsce na liście.
 - Po zmianie kolejności numery/sekwencja punktów aktualizują się automatycznie.
 - Widok skrócony zlecenia odzwierciedla aktualną kolejność punktów.
+- System egzekwuje regułę kolejności: pierwszy przystanek zawsze załadunek, ostatni zawsze rozładunek; drag-and-drop blokuje upuszczenie rozładunku na pierwszą pozycję oraz załadunku na ostatnią pozycję.
 
 ### 5.5 Integracja ze słownikami i podpowiedzi
 
