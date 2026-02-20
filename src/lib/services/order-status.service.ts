@@ -19,7 +19,7 @@ const STATUS_ANULOWANE = "anulowane";
 /** Dozwolone przejścia: newStatusCode → zestaw dozwolonych statusów bieżących. */
 const ALLOWED_TRANSITIONS: Record<string, Set<string>> = {
   zrealizowane: new Set(["robocze", "wysłane", "korekta", "korekta wysłane", "reklamacja"]),
-  reklamacja: new Set(["wysłane", "korekta wysłane"]),
+  reklamacja: new Set(["wysłane", "korekta", "korekta wysłane"]),
   anulowane: new Set(["robocze", "wysłane", "korekta", "korekta wysłane", "reklamacja"]),
 };
 
@@ -51,12 +51,21 @@ export async function cancelOrder(
     throw new Error("FORBIDDEN_TRANSITION");
   }
 
-  const { error: updateError } = await supabase
+  // Atomic UPDATE with status guard — prevents TOCTOU where status changes
+  // between the SELECT above and this UPDATE.
+  const { data: cancelResult, error: updateError } = await supabase
     .from("transport_orders")
     .update({ status_code: STATUS_ANULOWANE })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .eq("status_code", order.status_code)
+    .select("id")
+    .maybeSingle();
 
   if (updateError) throw updateError;
+  if (!cancelResult) {
+    // Status changed between SELECT and UPDATE — concurrent modification
+    throw new Error("FORBIDDEN_TRANSITION");
+  }
 
   const { error: historyError } = await supabase
     .from("order_status_history")
@@ -109,12 +118,21 @@ export async function changeStatus(
     updatePayload.complaint_reason = params.complaintReason.trim();
   }
 
-  const { error: updateError } = await supabase
+  // Atomic UPDATE with current status guard — prevents TOCTOU where status
+  // changes between the SELECT above and this UPDATE.
+  const { data: statusResult, error: updateError } = await supabase
     .from("transport_orders")
     .update(updatePayload)
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .eq("status_code", order.status_code)
+    .select("id")
+    .maybeSingle();
 
   if (updateError) throw updateError;
+  if (!statusResult) {
+    // Status changed between SELECT and UPDATE — concurrent modification
+    throw new Error("FORBIDDEN_TRANSITION");
+  }
 
   const { error: historyError } = await supabase.from("order_status_history").insert({
     order_id: orderId,
@@ -193,12 +211,19 @@ export async function restoreOrder(
     }
   }
 
-  const { error: updateError } = await supabase
+  // Atomic UPDATE with current status guard — prevents TOCTOU
+  const { data: restoreResult, error: updateError } = await supabase
     .from("transport_orders")
     .update({ status_code: STATUS_KOREKTA })
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .eq("status_code", order.status_code)
+    .select("id")
+    .maybeSingle();
 
   if (updateError) throw updateError;
+  if (!restoreResult) {
+    throw new Error("FORBIDDEN_RESTORE");
+  }
 
   const { error: historyError } = await supabase.from("order_status_history").insert({
     order_id: orderId,

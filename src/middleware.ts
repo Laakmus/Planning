@@ -107,7 +107,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return new Response(null, {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "*",
+        "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "http://localhost:4321",
         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
         "Access-Control-Max-Age": "86400",

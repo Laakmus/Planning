@@ -8,6 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/AuthContext";
+import type { PrepareEmailResponseDto } from "@/types";
 import { useOrders } from "@/hooks/useOrders";
 import { DEFAULT_FILTERS } from "@/lib/view-models";
 import type {
@@ -149,7 +150,13 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   const handleSendEmail = useCallback(
     async (orderId: string) => {
       try {
-        await api.post(`/api/v1/orders/${orderId}/prepare-email`, {});
+        const result = await api.post<PrepareEmailResponseDto>(
+          `/api/v1/orders/${orderId}/prepare-email`,
+          {}
+        );
+        if (result.emailOpenUrl) {
+          window.open(result.emailOpenUrl, "_blank", "noopener,noreferrer");
+        }
         toast.success("Email przygotowany — otwórz klienta pocztowego.");
         refetch();
       } catch (err) {

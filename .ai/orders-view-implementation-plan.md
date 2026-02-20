@@ -347,8 +347,8 @@ OrdersApp (React island — korzenny komponent)
   - **Akcje** — sticky right, przycisk/ikona „Wyślij maila" (ikona Material: `mail_outline` lub Lucide `Mail`)
 - **Widok Trasa**: zamiast czterech kolumn (Miejsce załadunku, Data załadunku, Miejsce rozładunku, Data rozładunku) używa:
   - **Kolumna "Trasa"** — `<RouteSummaryCell>` (node-string, np. `L1:Nord → L2:Recykling → U1:BER`; max 4 węzły w linii, kolejne węzły zawijają się do nowej linii w grupach po 4)
-  - **Kolumna "Data załadunku"** — **tylko PIERWSZA** data załadunku (L1) z okrągłym badge'em `L1` (emerald, `w-5 h-5 rounded-full`), format DD.MM.YYYY HH:MM. Jeśli brak daty — `—`.
-  - **Kolumna "Data rozładunku"** — **tylko PIERWSZA** data rozładunku (U1) z okrągłym badge'em `U1` (primary, `w-5 h-5 rounded-full`), format DD.MM.YYYY HH:MM. Jeśli brak daty — `—`.
+  - **Kolumna "Data załadunku"** — **tylko PIERWSZA** data załadunku, format DD.MM HH:MM. Jeśli brak daty — `—`.
+  - **Kolumna "Data rozładunku"** — **tylko PIERWSZA** data rozładunku, format DD.MM HH:MM. Jeśli brak daty — `—`.
   - Pozostałe kolumny (Lock, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania, Akcje) — identyczne jak w widoku Kolumny
 - **Mapowanie tła wiersza wg statusu** (statusCode/statusName z API; w UI pełna nazwa):
   - Robocze: `bg-white`, Wysłane: `bg-blue-50/30`, Korekta: `bg-orange-50/30`, Korekta wysłane: `bg-teal-50/30`, Zrealizowane: `bg-green-50/30`, Anulowane: `bg-gray-50/50`, Reklamacja: `bg-red-50/30`

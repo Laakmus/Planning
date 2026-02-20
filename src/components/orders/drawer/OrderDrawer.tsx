@@ -19,6 +19,7 @@ import { useAuth } from "@/contexts/AuthContext";
 import { formatDateFromTimestamp } from "@/lib/format-utils";
 import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
 import type {
+  CreateOrderResponseDto,
   OrderDetailResponseDto,
   PrepareEmailResponseDto,
 } from "@/types";
@@ -28,6 +29,63 @@ import { StatusBadge } from "../StatusBadge";
 import { DrawerFooter } from "./DrawerFooter";
 import { OrderForm } from "./OrderForm";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
+
+/** Empty defaults for new order creation. */
+function createEmptyDetail(): OrderDetailResponseDto {
+  return {
+    order: {
+      id: crypto.randomUUID(),
+      orderNo: "",
+      statusCode: "robocze",
+      transportTypeCode: "PL",
+      currencyCode: "PLN",
+      priceAmount: null,
+      paymentTermDays: null,
+      paymentMethod: null,
+      totalLoadTons: null,
+      totalLoadVolumeM3: null,
+      summaryRoute: null,
+      firstLoadingDate: null,
+      firstLoadingTime: null,
+      firstUnloadingDate: null,
+      firstUnloadingTime: null,
+      lastLoadingDate: null,
+      lastLoadingTime: null,
+      lastUnloadingDate: null,
+      lastUnloadingTime: null,
+      transportYear: null,
+      firstLoadingCountry: null,
+      firstUnloadingCountry: null,
+      carrierCompanyId: null,
+      carrierNameSnapshot: null,
+      carrierLocationNameSnapshot: null,
+      carrierAddressSnapshot: null,
+      shipperLocationId: null,
+      shipperNameSnapshot: null,
+      shipperAddressSnapshot: null,
+      receiverLocationId: null,
+      receiverNameSnapshot: null,
+      receiverAddressSnapshot: null,
+      vehicleVariantCode: "",
+      mainProductName: null,
+      specialRequirements: null,
+      requiredDocumentsText: null,
+      generalNotes: null,
+      complaintReason: null,
+      senderContactName: null,
+      senderContactPhone: null,
+      senderContactEmail: null,
+      createdAt: new Date().toISOString(),
+      createdByUserId: "",
+      updatedAt: new Date().toISOString(),
+      updatedByUserId: null,
+      lockedByUserId: null,
+      lockedAt: null,
+    },
+    stops: [],
+    items: [],
+  };
+}
 
 interface OrderDrawerProps {
   orderId: string | null;
@@ -88,12 +146,20 @@ export function OrderDrawer({
     }
   }, [api, user]);
 
+  const isNewOrder = isOpen && !orderId;
+
   useEffect(() => {
     if (isOpen && orderId) {
       setDetail(null);
       setIsDirty(false);
       setLockedByUserName(null);
       loadDetail(orderId);
+    } else if (isOpen && !orderId) {
+      // New order mode — empty defaults, no lock
+      setDetail(createEmptyDetail());
+      setIsDirty(false);
+      setLockedByUserName(null);
+      setIsLoading(false);
     }
   }, [isOpen, orderId, loadDetail]);
 
@@ -139,7 +205,7 @@ export function OrderDrawer({
 
   const handleSave = useCallback(
     async (formData: OrderFormData, pendingStatus: OrderStatusCode | null, complaintReason: string | null) => {
-      if (!orderId || !detail) return;
+      if (!detail) return;
 
       // Walidacja: powód reklamacji wymagany
       if (pendingStatus === "reklamacja" && !complaintReason?.trim()) {
@@ -149,67 +215,113 @@ export function OrderDrawer({
 
       setIsSaving(true);
       try {
-        // Zapisz dane zlecenia
-        await api.put(`/api/v1/orders/${orderId}`, {
-          transportTypeCode: formData.transportTypeCode,
-          currencyCode: formData.currencyCode,
-          priceAmount: formData.priceAmount,
-          paymentTermDays: formData.paymentTermDays,
-          paymentMethod: formData.paymentMethod,
-          totalLoadTons: formData.totalLoadTons,
-          totalLoadVolumeM3: formData.totalLoadVolumeM3,
-          carrierCompanyId: formData.carrierCompanyId,
-          shipperLocationId: formData.shipperLocationId ?? null,
-          receiverLocationId: formData.receiverLocationId ?? null,
-          vehicleVariantCode: formData.vehicleVariantCode,
-          specialRequirements: formData.specialRequirements,
-          requiredDocumentsText: formData.requiredDocumentsText,
-          generalNotes: formData.generalNotes,
-          senderContactName: formData.senderContactName,
-          senderContactPhone: formData.senderContactPhone,
-          senderContactEmail: formData.senderContactEmail?.trim() || null,
-          stops: formData.stops.map((s) => ({
-            id: s.id,
-            kind: s.kind,
-            sequenceNo: s.sequenceNo,
-            dateLocal: s.dateLocal,
-            timeLocal: s.timeLocal,
-            locationId: s.locationId,
-            companyNameSnapshot: s.companyNameSnapshot,
-            locationNameSnapshot: s.locationNameSnapshot,
-            addressSnapshot: s.addressSnapshot,
-            notes: s.notes,
-            _deleted: s._deleted,
-          })),
-          items: formData.items.map((it) => ({
-            id: it.id,
-            productId: it.productId,
-            productNameSnapshot: it.productNameSnapshot,
-            loadingMethodCode: it.loadingMethodCode,
-            quantityTons: it.quantityTons,
-            notes: it.notes,
-            _deleted: it._deleted,
-          })),
-        });
-
-        // Zmień status jeśli wybrano
-        if (pendingStatus) {
-          await api.post(`/api/v1/orders/${orderId}/status`, {
-            newStatusCode: pendingStatus,
-            ...(complaintReason ? { complaintReason } : {}),
+        if (!orderId) {
+          // ---- CREATE NEW ORDER (POST) ----
+          const result = await api.post<CreateOrderResponseDto>("/api/v1/orders", {
+            transportTypeCode: formData.transportTypeCode,
+            currencyCode: formData.currencyCode,
+            priceAmount: formData.priceAmount,
+            paymentTermDays: formData.paymentTermDays,
+            paymentMethod: formData.paymentMethod,
+            totalLoadTons: formData.totalLoadTons,
+            totalLoadVolumeM3: formData.totalLoadVolumeM3,
+            carrierCompanyId: formData.carrierCompanyId,
+            shipperLocationId: formData.shipperLocationId ?? null,
+            receiverLocationId: formData.receiverLocationId ?? null,
+            vehicleVariantCode: formData.vehicleVariantCode,
+            specialRequirements: formData.specialRequirements,
+            requiredDocumentsText: formData.requiredDocumentsText,
+            generalNotes: formData.generalNotes,
+            senderContactName: formData.senderContactName,
+            senderContactPhone: formData.senderContactPhone,
+            senderContactEmail: formData.senderContactEmail?.trim() || null,
+            stops: formData.stops
+              .filter((s) => !s._deleted)
+              .map((s) => ({
+                kind: s.kind,
+                dateLocal: s.dateLocal,
+                timeLocal: s.timeLocal,
+                locationId: s.locationId,
+                notes: s.notes,
+              })),
+            items: formData.items
+              .filter((it) => !it._deleted)
+              .map((it) => ({
+                productId: it.productId,
+                productNameSnapshot: it.productNameSnapshot,
+                loadingMethodCode: it.loadingMethodCode,
+                quantityTons: it.quantityTons,
+                notes: it.notes,
+              })),
           });
-        }
 
-        toast.success("Zlecenie zapisane.");
-        onOrderUpdated();
-        await doClose();
+          toast.success(`Zlecenie ${result.orderNo} utworzone.`);
+          setIsDirty(false);
+          onOrderUpdated();
+          onClose();
+        } else {
+          // ---- UPDATE EXISTING ORDER (PUT) ----
+          await api.put(`/api/v1/orders/${orderId}`, {
+            transportTypeCode: formData.transportTypeCode,
+            currencyCode: formData.currencyCode,
+            priceAmount: formData.priceAmount,
+            paymentTermDays: formData.paymentTermDays,
+            paymentMethod: formData.paymentMethod,
+            totalLoadTons: formData.totalLoadTons,
+            totalLoadVolumeM3: formData.totalLoadVolumeM3,
+            carrierCompanyId: formData.carrierCompanyId,
+            shipperLocationId: formData.shipperLocationId ?? null,
+            receiverLocationId: formData.receiverLocationId ?? null,
+            vehicleVariantCode: formData.vehicleVariantCode,
+            specialRequirements: formData.specialRequirements,
+            requiredDocumentsText: formData.requiredDocumentsText,
+            generalNotes: formData.generalNotes,
+            senderContactName: formData.senderContactName,
+            senderContactPhone: formData.senderContactPhone,
+            senderContactEmail: formData.senderContactEmail?.trim() || null,
+            stops: formData.stops.map((s) => ({
+              id: s.id,
+              kind: s.kind,
+              sequenceNo: s.sequenceNo,
+              dateLocal: s.dateLocal,
+              timeLocal: s.timeLocal,
+              locationId: s.locationId,
+              companyNameSnapshot: s.companyNameSnapshot,
+              locationNameSnapshot: s.locationNameSnapshot,
+              addressSnapshot: s.addressSnapshot,
+              notes: s.notes,
+              _deleted: s._deleted,
+            })),
+            items: formData.items.map((it) => ({
+              id: it.id,
+              productId: it.productId,
+              productNameSnapshot: it.productNameSnapshot,
+              loadingMethodCode: it.loadingMethodCode,
+              quantityTons: it.quantityTons,
+              notes: it.notes,
+              _deleted: it._deleted,
+            })),
+          });
+
+          // Zmień status jeśli wybrano
+          if (pendingStatus) {
+            await api.post(`/api/v1/orders/${orderId}/status`, {
+              newStatusCode: pendingStatus,
+              ...(complaintReason ? { complaintReason } : {}),
+            });
+          }
+
+          toast.success("Zlecenie zapisane.");
+          onOrderUpdated();
+          await doClose();
+        }
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Błąd zapisu.");
       } finally {
         setIsSaving(false);
       }
     },
-    [orderId, detail, api, onOrderUpdated, doClose]
+    [orderId, detail, api, onOrderUpdated, doClose, onClose]
   );
 
   // ---------------------------------------------------------------------------
@@ -304,7 +416,7 @@ export function OrderDrawer({
               <div>
                 <div className="flex items-center gap-3">
                   <h1 className="text-xl font-bold tracking-tight">
-                    {detail?.order.orderNo ?? (isLoading ? "Ładowanie…" : "Zlecenie")}
+                    {isNewOrder ? "Nowe zlecenie" : (detail?.order.orderNo ?? (isLoading ? "Ładowanie…" : "Zlecenie"))}
                   </h1>
                   {detail && (
                     <StatusBadge statusCode={detail.order.statusCode} statusName={statusName} />

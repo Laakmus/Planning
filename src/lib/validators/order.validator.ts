@@ -124,7 +124,7 @@ export const updateOrderItemSchema = createOrderItemSchema.extend({
 /** Body PUT /api/v1/orders/{orderId} — pełna aktualizacja zlecenia. */
 export const updateOrderSchema = createOrderSchema.extend({
   vehicleVariantCode: z.string().min(1).nullable(),
-  generalNotes: z.string().max(1000).nullable(),
+  generalNotes: z.string().max(500).nullable(),
   complaintReason: z.string().max(500).nullable().optional(),
   stops: z.array(updateOrderStopSchema),
   items: z.array(updateOrderItemSchema),

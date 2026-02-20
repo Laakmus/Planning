@@ -116,6 +116,9 @@ export const POST: APIRoute = async ({ locals, request }) => {
     if (msg === "STOPS_LIMIT") {
       return errorResponse(400, "Bad Request", "Przekroczono limit punktów trasy (max 8 załadunków, 3 rozładunków).");
     }
+    if (msg === "STOPS_ORDER") {
+      return errorResponse(400, "Bad Request", "Pierwszy punkt trasy musi być załadunkiem, ostatni rozładunkiem.");
+    }
     console.error("[POST /api/v1/orders]", err);
     return errorResponse(
       500,

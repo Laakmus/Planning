@@ -280,7 +280,8 @@ export async function listOrders(
     query = query.eq("carrier_company_id", carrierId);
   }
   if (search !== undefined && search.trim() !== "") {
-    query = query.ilike("search_text", `%${search.trim()}%`);
+    const escaped = search.trim().replace(/[%_\\]/g, "\\$&");
+    query = query.ilike("search_text", `%${escaped}%`);
   }
   if (dateFrom !== undefined) {
     query = query.gte("first_loading_date", dateFrom);
@@ -735,16 +736,13 @@ function autoSetDocumentsAndCurrency(
 
   switch (transportTypeCode) {
     case "PL":
-      requiredDocumentsText = "CMR, WZ";
+      requiredDocumentsText = "WZ, KPO, kwit wagowy";
       if (!userCurrency) currencyCode = "PLN";
       break;
     case "EXP":
     case "EXP_K":
-      requiredDocumentsText = "CMR, WZ, faktura";
-      if (!userCurrency) currencyCode = "EUR";
-      break;
     case "IMP":
-      requiredDocumentsText = "CMR, WZ, faktura";
+      requiredDocumentsText = "WZE, Aneks VII, CMR";
       if (!userCurrency) currencyCode = "EUR";
       break;
   }
@@ -831,25 +829,27 @@ async function validateForeignKeys(
   return Object.keys(errors).length > 0 ? errors : null;
 }
 
-/** Generuje kolejny numer zlecenia w formacie ZT{year}/{seqNo 4 cyfry}. */
+/**
+ * Generuje kolejny numer zlecenia w formacie ZT{year}/{seqNo 4 cyfry}.
+ *
+ * Używa atomowej funkcji RPC (generate_next_order_no) w PostgreSQL,
+ * która stosuje pg_advisory_xact_lock do serializacji równoczesnych wywołań.
+ * Eliminuje race condition, w którym dwa równoczesne POST mogłyby dostać ten sam numer.
+ */
 async function generateOrderNo(
   supabase: SupabaseClient<Database>
 ): Promise<string> {
-  const year = new Date().getFullYear();
-  const prefix = `ZT${year}/`;
-  const { data: rows } = await supabase
-    .from("transport_orders")
-    .select("order_no")
-    .like("order_no", `${prefix}%`)
-    .order("order_no", { ascending: false })
-    .limit(1);
+  // Cast needed: generated Supabase types don't include custom RPC functions.
+  // The RPC is defined in migration 20260220000000_add_atomic_lock_and_order_no.sql.
+  const rpc = supabase.rpc as (fn: string, params?: Record<string, unknown>) => ReturnType<typeof supabase.rpc>;
+  const { data, error } = await rpc("generate_next_order_no");
 
-  let nextSeq = 1;
-  if (rows && rows.length > 0 && rows[0].order_no) {
-    const match = rows[0].order_no.match(/^ZT\d+\/(\d+)$/);
-    if (match) nextSeq = parseInt(match[1], 10) + 1;
+  if (error) throw error;
+  if (!data || typeof data !== "string") {
+    throw new Error("Unexpected result from generate_next_order_no RPC");
   }
-  return `${prefix}${String(nextSeq).padStart(4, "0")}`;
+
+  return data;
 }
 
 const STATUS_ROBOCZE = "robocze";
@@ -1002,6 +1002,16 @@ export async function createOrder(
   }
   if (unloadingCount > MAX_UNLOADING_STOPS) {
     throw new Error("STOPS_LIMIT");
+  }
+
+  // 1a2. Kolejność: pierwszy stop = LOADING, ostatni = UNLOADING
+  if (params.stops.length >= 2) {
+    if (params.stops[0].kind !== "LOADING") {
+      throw new Error("STOPS_ORDER");
+    }
+    if (params.stops[params.stops.length - 1].kind !== "UNLOADING") {
+      throw new Error("STOPS_ORDER");
+    }
   }
 
   // 1b. Walidacja FK
@@ -1246,6 +1256,15 @@ export async function updateOrder(
   const activeStops = params.stops.filter((s) => !s._deleted).sort((a, b) => a.sequenceNo - b.sequenceNo);
   const activeItems = params.items.filter((i) => !i._deleted);
 
+  // vehicleVariantCode is NOT NULL in DB — reject null early (updateOrderSchema allows nullable but DB doesn't)
+  if (!params.vehicleVariantCode) {
+    const err = new Error("FK_VALIDATION");
+    (err as Error & { details: Record<string, string> }).details = {
+      vehicleVariantCode: "Wariant pojazdu jest wymagany.",
+    };
+    throw err;
+  }
+
   const fkErrors = await validateForeignKeys(supabase, {
     vehicleVariantCode: params.vehicleVariantCode,
     transportTypeCode: params.transportTypeCode,
@@ -1266,6 +1285,17 @@ export async function updateOrder(
   }
   if (unloadingCount > MAX_UNLOADING_STOPS) {
     throw new Error("STOPS_LIMIT");
+  }
+
+  // Kolejność: pierwszy stop = LOADING, ostatni = UNLOADING
+  if (activeStops.length >= 2) {
+    const sorted = [...activeStops].sort((a, b) => a.sequenceNo - b.sequenceNo);
+    if (sorted[0].kind !== "LOADING") {
+      throw new Error("STOPS_ORDER");
+    }
+    if (sorted[sorted.length - 1].kind !== "UNLOADING") {
+      throw new Error("STOPS_ORDER");
+    }
   }
 
   // Batch snapshoty dla stops (1 query zamiast N)
@@ -1386,16 +1416,22 @@ export async function updateOrder(
     updated_by_user_id: userId,
   };
 
+  // Atomic UPDATE with lock ownership verification in WHERE clause.
+  // Prevents TOCTOU: even if lock was stolen between the SELECT above and this UPDATE,
+  // the UPDATE will match 0 rows and we detect the conflict.
   type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
   const { data: updated, error: updateError } = await supabase
     .from("transport_orders")
     .update(updatePayload as OrderUpdate)
     .eq("id", orderId)
+    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`)
     .select("updated_at")
-    .single();
+    .maybeSingle();
 
-  if (updateError || !updated) {
-    throw updateError ?? new Error("Update order failed");
+  if (updateError) throw updateError;
+  if (!updated) {
+    // 0 rows matched — lock was taken by another user between SELECT and UPDATE
+    throw new Error("LOCKED");
   }
 
   // Build snapshot lookup for stops by sequenceNo (stopsWithSnapshots contains only active stops)
@@ -1726,8 +1762,9 @@ export async function patchStop(
   }));
   const denorm = computeDenormalizedFields(stopsForDenorm, []);
 
+  // Atomic denormalization UPDATE with lock ownership check to prevent TOCTOU
   type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
-  await supabase
+  const { error: denormErr } = await supabase
     .from("transport_orders")
     .update({
       first_loading_date: denorm.first_loading_date,
@@ -1742,7 +1779,9 @@ export async function patchStop(
       first_unloading_country: denorm.first_unloading_country,
       summary_route: denorm.summary_route,
     } as OrderUpdate)
-    .eq("id", orderId);
+    .eq("id", orderId)
+    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`);
+  if (denormErr) throw denormErr;
 
   const merged = {
     kind: params.kind ?? stop.kind,

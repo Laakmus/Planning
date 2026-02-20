@@ -100,6 +100,13 @@ export const PUT: APIRoute = async ({ params, locals, request }) => {
         "Maksymalnie 8 punktów załadunku i 3 punkty rozładunku."
       );
     }
+    if (msg === "STOPS_ORDER") {
+      return errorResponse(
+        400,
+        "Bad Request",
+        "Pierwszy punkt trasy musi być załadunkiem, ostatni rozładunkiem."
+      );
+    }
     if (msg === "FK_VALIDATION") {
       const details = (err as Error & { details?: Record<string, string> }).details ?? {};
       return errorResponse(400, "Bad Request", "Nieprawidłowe referencje w danych zlecenia.", details);

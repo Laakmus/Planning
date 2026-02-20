@@ -25,6 +25,10 @@ function isLockExpired(lockedAt: string | null): boolean {
  * Ustawia blokadę edycji zlecenia dla bieżącego użytkownika.
  * Zwraca 409 jeśli zablokowane przez innego użytkownika i blokada nie wygasła.
  *
+ * Używa atomowej funkcji RPC (try_lock_order) w PostgreSQL, która wykonuje
+ * UPDATE ... WHERE z warunkami blokady w jednej operacji — eliminuje race condition
+ * między sprawdzeniem stanu a ustawieniem blokady.
+ *
  * @param supabase — klient Supabase
  * @param userId — id użytkownika
  * @param orderId — UUID zlecenia
@@ -34,37 +38,42 @@ export async function lockOrder(
   userId: string,
   orderId: string
 ): Promise<LockOrderResponseDto | null> {
-  const now = new Date().toISOString();
+  // Cast needed: generated Supabase types don't include custom RPC functions.
+  // The RPC is defined in migration 20260220000000_add_atomic_lock_and_order_no.sql.
+  type TryLockResult = {
+    status: string;
+    lockedByUserId?: string;
+    lockedByUserName?: string;
+    lockedAt?: string;
+  };
+  const rpc = supabase.rpc as (fn: string, params: Record<string, unknown>) => ReturnType<typeof supabase.rpc>;
+  const { data, error } = await rpc("try_lock_order", {
+    p_order_id: orderId,
+    p_user_id: userId,
+    p_lock_expiry_minutes: LOCK_EXPIRY_MINUTES,
+  });
 
-  // 1. Pobierz zlecenie z aktualnym stanem blokady
-  const { data: order, error: fetchError } = await supabase
-    .from("transport_orders")
-    .select("id, locked_by_user_id, locked_at")
-    .eq("id", orderId)
-    .maybeSingle();
+  if (error) throw error;
+  if (!data) throw new Error("Unexpected null from try_lock_order RPC");
 
-  if (fetchError) throw fetchError;
-  if (!order) return null;
+  const result = data as unknown as TryLockResult;
 
-  // 2. Sprawdź czy możemy przejąć blokadę
-  const canLock =
-    order.locked_by_user_id == null ||
-    order.locked_by_user_id === userId ||
-    isLockExpired(order.locked_at);
-
-  if (!canLock) {
-    throw new Error("LOCK_CONFLICT");
+  if (result.status === "NOT_FOUND") {
+    return null;
   }
 
-  // 3. Ustaw blokadę — prosty UPDATE bez .or() (obejście buga PostgREST v14)
-  const { error: updateError } = await supabase
-    .from("transport_orders")
-    .update({ locked_by_user_id: userId, locked_at: now })
-    .eq("id", orderId);
+  if (result.status === "CONFLICT") {
+    const err = new Error("LOCK_CONFLICT");
+    (err as Error & { lockedByUserName?: string }).lockedByUserName =
+      result.lockedByUserName ?? undefined;
+    throw err;
+  }
 
-  if (updateError) throw updateError;
-
-  return { id: orderId, lockedByUserId: userId, lockedAt: now };
+  return {
+    id: orderId,
+    lockedByUserId: result.lockedByUserId ?? userId,
+    lockedAt: result.lockedAt ?? new Date().toISOString(),
+  };
 }
 
 /**

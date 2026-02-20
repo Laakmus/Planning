@@ -11,12 +11,16 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   isValidUUID,
+  requireWriteAccess,
 } from "../../../../../lib/api-helpers";
 import { unlockOrder } from "../../../../../lib/services/order-lock.service";
 
 export const POST: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);
   if (authResult instanceof Response) return authResult;
+
+  const writeErr = requireWriteAccess(authResult);
+  if (writeErr) return writeErr;
 
   const orderId = params.orderId;
   if (!orderId || !isValidUUID(orderId)) {

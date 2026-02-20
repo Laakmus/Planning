@@ -109,7 +109,8 @@ export async function getCompanies(
     .eq("is_active", true)
     .order("name");
   if (search?.trim()) {
-    query = query.ilike("name", `%${search.trim()}%`);
+    const escaped = search.trim().replace(/[%_\\]/g, "\\$&");
+    query = query.ilike("name", `%${escaped}%`);
   }
   const { data, error } = await query;
   if (error) throw error;
@@ -129,7 +130,8 @@ export async function getLocations(
     .eq("is_active", true)
     .order("name");
   if (opts?.search?.trim()) {
-    query = query.ilike("name", `%${opts.search.trim()}%`);
+    const escaped = opts.search.trim().replace(/[%_\\]/g, "\\$&");
+    query = query.ilike("name", `%${escaped}%`);
   }
   if (opts?.companyId) {
     query = query.eq("company_id", opts.companyId);
@@ -152,7 +154,8 @@ export async function getProducts(
     .eq("is_active", true)
     .order("name");
   if (search?.trim()) {
-    query = query.ilike("name", `%${search.trim()}%`);
+    const escaped = search.trim().replace(/[%_\\]/g, "\\$&");
+    query = query.ilike("name", `%${escaped}%`);
   }
   const { data, error } = await query;
   if (error) throw error;

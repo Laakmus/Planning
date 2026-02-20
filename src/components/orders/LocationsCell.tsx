@@ -88,24 +88,12 @@ export function DatesCell({ stops, kind }: DatesCellProps) {
     return <span className="text-slate-400 text-[12px]">—</span>;
   }
 
-  const isLoading = kind === "LOADING";
-  const badgeCls = isLoading
-    ? "bg-emerald-100 text-emerald-700"
-    : "bg-blue-100 text-blue-700";
-  const prefix = isLoading ? "L" : "U";
   const date = formatDateLocal(first.dateLocal);
   const time = formatTimeLocal(first.timeLocal);
 
   return (
-    <div className="flex items-center gap-1.5">
-      <span
-        className={`inline-flex items-center justify-center w-5 h-5 rounded-full ${badgeCls} text-[10px] font-bold shrink-0`}
-      >
-        {prefix}1
-      </span>
-      <span className="whitespace-nowrap text-[12px]">
-        {date !== "—" ? `${date}${time ? ` ${time}` : ""}` : "—"}
-      </span>
-    </div>
+    <span className="whitespace-nowrap text-[12px]">
+      {date !== "—" ? `${date}${time ? ` ${time}` : ""}` : "—"}
+    </span>
   );
 }

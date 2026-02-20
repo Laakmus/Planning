@@ -131,16 +131,10 @@ export function OrderRow({
       {/* Data załadunku */}
       <td className="py-1 px-4 min-w-[110px]">
         {viewMode === "route" ? (
-          // Widok Trasa: tylko L1 z badge'em
           firstLoading ? (
-            <div className="flex items-center gap-1.5">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold shrink-0">
-                L1
-              </span>
-              <span className="whitespace-nowrap text-[12px]">
-                {formatDateTimeShort(firstLoading.dateLocal, firstLoading.timeLocal)}
-              </span>
-            </div>
+            <span className="whitespace-nowrap text-[12px]">
+              {formatDateTimeShort(firstLoading.dateLocal, firstLoading.timeLocal)}
+            </span>
           ) : (
             <span className="text-slate-400 text-[12px]">—</span>
           )
@@ -160,14 +154,9 @@ export function OrderRow({
       <td className="py-1 px-4 min-w-[110px]">
         {viewMode === "route" ? (
           firstUnloading ? (
-            <div className="flex items-center gap-1.5">
-              <span className="inline-flex items-center justify-center w-5 h-5 rounded-full bg-blue-100 text-blue-700 text-[10px] font-bold shrink-0">
-                U1
-              </span>
-              <span className="whitespace-nowrap text-[12px]">
-                {formatDateTimeShort(firstUnloading.dateLocal, firstUnloading.timeLocal)}
-              </span>
-            </div>
+            <span className="whitespace-nowrap text-[12px]">
+              {formatDateTimeShort(firstUnloading.dateLocal, firstUnloading.timeLocal)}
+            </span>
           ) : (
             <span className="text-slate-400 text-[12px]">—</span>
           )

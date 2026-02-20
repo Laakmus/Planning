@@ -4,7 +4,34 @@
 BEGIN;
 
 -- ============================================================
--- 1. Profil użytkownika (powiązany z auth user)
+-- 1a. Auth user (Supabase Auth) — admin@test.pl / test1234
+-- ============================================================
+
+INSERT INTO auth.users (
+  id, instance_id, aud, role, email, encrypted_password,
+  email_confirmed_at, confirmed_at, last_sign_in_at,
+  raw_app_meta_data, raw_user_meta_data,
+  is_super_admin, is_sso_user, is_anonymous,
+  created_at, updated_at,
+  confirmation_token, recovery_token, email_change, email_change_token_new,
+  email_change_token_current, phone, phone_change, phone_change_token,
+  reauthentication_token, email_change_confirm_status
+) VALUES (
+  'c94a20d0-16ca-4f9d-873a-05f31be633ff',
+  '00000000-0000-0000-0000-000000000000',
+  'authenticated', 'authenticated',
+  'admin@test.pl',
+  '$2a$06$aOIUYmSR6ANr0jaIvFey2eYBV0uF19yD3wUCsHvx2zfrK4dApGZmC',
+  now(), now(), now(),
+  '{"provider":"email","providers":["email"]}',
+  '{"email_verified":true}',
+  false, false, false,
+  now(), now(),
+  '', '', '', '', '', '', '', '', '', 0
+) ON CONFLICT (id) DO NOTHING;
+
+-- ============================================================
+-- 1b. Profil użytkownika (powiązany z auth user)
 -- ============================================================
 
 INSERT INTO public.user_profiles (id, email, full_name, phone, role) VALUES

@@ -22,7 +22,7 @@ const COMMON_HEADERS: Record<string, string> = {
   "X-Frame-Options": "DENY",
   "X-XSS-Protection": "1; mode=block",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "*",
+  "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "http://localhost:4321",
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
 };

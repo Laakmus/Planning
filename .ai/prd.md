@@ -165,7 +165,7 @@ Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowan
 
 - Zamiast czterech osobnych kolumn **Miejsce załadunku**, **Data załadunku**, **Miejsce rozładunku** i **Data rozładunku** w widoku „Trasa" stosuje się:
   - jedną kolumnę **Trasa** (node-string): sekwencja punktów załadunku i rozładunku w jednej linii wizualnej, np. L1:KRK → L2:KAT → U1:BER (załadunki np. zielone, rozładunki np. niebieskie),
-  - oraz kolumny **Data załadunku** i **Data rozładunku** (każda osobno — wyświetlana jest **wyłącznie pierwsza data** załadunku z okrągłym badge'em L1 / pierwsza data rozładunku z okrągłym badge'em U1; emerald dla L, primary dla U; format DD.MM.YYYY HH:MM; jeśli brak daty — „—").
+  - oraz kolumny **Data załadunku** i **Data rozładunku** (każda osobno — wyświetlana jest **wyłącznie pierwsza data** załadunku / pierwsza data rozładunku; format DD.MM HH:MM; jeśli brak daty — „—").
 - Pozostałe kolumny (Blokada, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania zlecenia, Akcje) pozostają jak w tabeli powyżej; kolejność może być dostosowana tak, aby kolumna Trasa była w logicznym miejscu (np. po Tydzień i Rodzaj transportu).
 
 **5. Akcje i stany puste**
@@ -359,7 +359,7 @@ Przycisk „Usuń pozycję" przy każdej pozycji towarowej.
 
 | Lp. | Pole | Typ pola | Uwagi |
 |-----|------|----------|-------|
-| 1 | Uwagi ogólne do zlecenia | Pole tekstowe wielowierszowe (textarea) | Jedno pole na całe zlecenie; max 1000 znaków |
+| 1 | Uwagi ogólne do zlecenia | Pole tekstowe wielowierszowe (textarea) | Jedno pole na całe zlecenie; max 500 znaków |
 
 Sekcja 5 zawiera tylko jedno pole. „Wymagane dokumenty" znajdują się w Sekcji 3.
 
