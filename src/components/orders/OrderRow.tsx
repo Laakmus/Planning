@@ -4,8 +4,6 @@
  * Owinięty w OrderRowContextMenu dla obsługi prawego kliku.
  */
 
-import { Mail } from "lucide-react";
-
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDate, formatDateTimeShort } from "@/lib/format-utils";
 import type { OrderListItemDto } from "@/types";
@@ -70,8 +68,6 @@ export function OrderRow({
   const isLockedByOther =
     !!order.lockedByUserId && order.lockedByUserId !== user?.id;
   const lockedByName = isLockedByOther ? (order.lockedByUserName ?? "inny użytkownik") : null;
-
-  const canWrite = user?.role !== "READ_ONLY";
 
   // Suma tonażu
   const totalTons = order.items.reduce((sum, it) => sum + (it.quantityTons ?? 0), 0);
@@ -237,21 +233,6 @@ export function OrderRow({
         )}
       </td>
 
-      {/* Akcje — sticky right */}
-      <td
-        className="py-1 px-4 sticky right-0 bg-white dark:bg-slate-900 border-l border-slate-200 dark:border-slate-800 group-hover:bg-primary/5 w-12 text-center"
-        onClick={(e) => e.stopPropagation()}
-      >
-        {canWrite && (
-          <button
-            onClick={() => onSendEmail(order.id)}
-            className="p-1 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-primary transition-colors"
-            title="Wyślij maila"
-          >
-            <Mail className="w-4 h-4" />
-          </button>
-        )}
-      </td>
     </tr>
   );
 

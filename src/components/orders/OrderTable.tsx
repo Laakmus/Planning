@@ -1,7 +1,7 @@
 /**
  * Tabela zleceń transportowych.
  * min-w-[1280px] (Trasa) / min-w-[1500px] (Kolumny).
- * Sticky thead + sticky kolumna Akcje po prawej.
+ * Sticky thead.
  * Styl hover: rgba(primary, 0.04) przez klasę group na <tr>.
  */
 
@@ -182,9 +182,6 @@ export function OrderTable({
             <th className="py-2 px-4 min-w-[90px]">Typ auta</th>
             <th className="py-2 px-4 w-20">Stawka</th>
             <th className="py-2 px-4 min-w-[90px]">Data wysł.</th>
-
-            {/* Sticky prawa kolumna Akcje */}
-            <th className="py-2 px-4 w-12 sticky right-0 bg-slate-50 dark:bg-slate-800 border-l border-slate-200 dark:border-slate-800" />
           </tr>
         </thead>
 
@@ -193,7 +190,7 @@ export function OrderTable({
             // Skeleton loading — 5 wierszy
             Array.from({ length: 5 }).map((_, i) => (
               <tr key={i} className="animate-pulse">
-                {Array.from({ length: viewMode === "columns" ? 16 : 14 }).map((_, j) => (
+                {Array.from({ length: viewMode === "columns" ? 15 : 14 }).map((_, j) => (
                   <td key={j} className="py-2 px-4">
                     <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full" />
                   </td>
@@ -224,10 +221,9 @@ export function OrderTable({
               onClick={onNewRowClick}
             >
               <td className="py-2 px-4" />
-              <td className="py-2 px-4 text-[12px] text-emerald-600 dark:text-emerald-400 font-medium italic" colSpan={viewMode === "columns" ? 14 : 12}>
+              <td className="py-2 px-4 text-[12px] text-emerald-600 dark:text-emerald-400 font-medium italic" colSpan={viewMode === "columns" ? 14 : 13}>
                 Kliknij, aby wypełnić nowe zlecenie...
               </td>
-              <td className="py-2 px-4 sticky right-0 bg-emerald-50/40 dark:bg-emerald-900/10 border-l border-slate-200 dark:border-slate-800" />
             </tr>
           )}
         </tbody>

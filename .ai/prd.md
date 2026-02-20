@@ -99,7 +99,6 @@ Nowy produkt ma przede wszystkim poprawić:
   - **Ładunek:** Towar (pozycje numerowane + „Razem: Xt”), Komentarz (lista ponumerowana, powiązana z pozycjami towaru).
   - **Wykonawca i warunki:** Firma transportowa, Typ auta (rodzaj + objętość wybierane oddzielnie, wyświetlane np. „firanka (90m³)”), Stawka (kwota + waluta).
   - **Wysłanie:** Data wysłania zlecenia (linia 1: imię i nazwisko osoby wysyłającej, linia 2: data bez godziny).
-  - **Akcje** (sticky z prawej).
 
   3.1.2a Szczegółowa specyfikacja widoku głównego (ekran listy zleceń)
 
@@ -136,7 +135,7 @@ Poniższa sekcja definiuje układ, kolejność elementów, zawartość kolumn ta
 
 **4. Tabela zleceń — kolumny i sposób wyświetlania**
 
-Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli oraz kolumna Akcje (z prawej) są sticky. Sortowanie: klik w nagłówek kolumny (np. data załadunku, data rozładunku, numer zlecenia, Firma transportowa). Tło wiersza wg statusu (jaśniejszy odcień koloru statusu).
+Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli jest sticky. Sortowanie: klik w nagłówek kolumny (np. data załadunku, data rozładunku, numer zlecenia, Firma transportowa). Tło wiersza wg statusu (jaśniejszy odcień koloru statusu). Akcja „Wyślij maila" dostępna z menu kontekstowego (prawy klik) oraz z drawer footer.
 
 **4.1. Widok „Kolumny” — kolejność kolumn od lewej do prawej**
 
@@ -157,7 +156,6 @@ Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli oraz kolumna Akcje 
 | 13 | Typ auta | Rodzaj auta + objętość w nawiasie; **rodzaj i objętość wybierane w formularzu oddzielnie**, w tabeli wyświetlane łącznie. | firanka (90m³) |
 | 14 | Stawka | Kwota + waluta, bez separatorów tysięcy lub z separatorem (spójnie w całej aplikacji). | 1450 PLN |
 | 15 | Data wysłania zlecenia | **Linia 1:** imię i nazwisko osoby, która wysłała zlecenie.<br>**Linia 2:** data (bez godziny, format DD.MM.YYYY). | Jan Kowalski<br>11.02.2026 |
-| 16 | Akcje | Przyciski/ikony akcji (np. „Wyślij maila"); kolumna sticky z prawej. | [ikonka maila] |
 
 Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowane; powyższa tabela stanowi wersję referencyjną dla widoku „Kolumny”.
 
