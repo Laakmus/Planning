@@ -24,7 +24,7 @@ export function LockIndicator({ lockedByUserName }: LockIndicatorProps) {
     <TooltipProvider>
       <Tooltip>
         <TooltipTrigger asChild>
-          <span className="inline-flex items-center justify-center text-amber-500 cursor-default">
+          <span className="inline-flex items-center justify-center text-amber-500 dark:text-amber-400 cursor-default">
             <Lock className="w-3.5 h-3.5" />
           </span>
         </TooltipTrigger>

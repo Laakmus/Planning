@@ -344,7 +344,7 @@ export function RouteSection({
 
       {/* Kontakt nadawcy */}
       <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
           Osoba kontaktowa
         </p>
         <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">

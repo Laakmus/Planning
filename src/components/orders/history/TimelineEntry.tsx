@@ -128,13 +128,13 @@ export function TimelineEntry({ entry }: TimelineEntryProps) {
           <span className="text-sm font-semibold text-slate-800 dark:text-slate-100">
             {entry.changedByUserName ?? "System"}
           </span>
-          <span className="ml-1.5 text-xs text-slate-500">
+          <span className="ml-1.5 text-xs text-slate-500 dark:text-slate-400">
             {entry.type === "status_change" && "zmienił(a) status"}
             {entry.type === "field_change" && "zmienił(a) dane"}
             {entry.type === "order_created" && "— zlecenie utworzone"}
           </span>
         </div>
-        <span className="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded shrink-0 ml-2">
+        <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded shrink-0 ml-2">
           {time}
         </span>
       </div>
@@ -150,13 +150,13 @@ export function TimelineEntry({ entry }: TimelineEntryProps) {
 
       {entry.type === "field_change" && entry.fieldName && (
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
-          <p className="text-[9px] uppercase font-bold text-slate-400 mb-1.5 tracking-wide">
+          <p className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1.5 tracking-wide">
             {entry.fieldName}
           </p>
           <div className="grid grid-cols-2 gap-3">
             <div>
-              <p className="text-[10px] uppercase font-bold text-slate-400 mb-0.5">Było</p>
-              <p className="text-xs text-slate-500 line-through opacity-70">
+              <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-0.5">Było</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 line-through opacity-70">
                 {entry.oldValue || "—"}
               </p>
             </div>

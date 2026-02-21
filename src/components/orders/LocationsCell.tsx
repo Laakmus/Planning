@@ -20,13 +20,13 @@ export function LocationsCell({ stops, kind }: LocationsCellProps) {
     .sort((a, b) => a.sequenceNo - b.sequenceNo);
 
   if (!filtered.length) {
-    return <span className="text-slate-400 text-[11px]">—</span>;
+    return <span className="text-slate-400 dark:text-slate-500 text-[11px]">—</span>;
   }
 
   const isLoading = kind === "LOADING";
   const badgeCls = isLoading
-    ? "bg-emerald-100 text-emerald-700"
-    : "bg-blue-100 text-blue-700";
+    ? "bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400"
+    : "bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-400";
   const prefix = isLoading ? "L" : "U";
 
   let counter = 0;
@@ -48,7 +48,7 @@ export function LocationsCell({ stops, kind }: LocationsCellProps) {
               </span>
             </div>
             {stop.locationNameSnapshot && (
-              <div className="text-[11px] text-slate-500 pl-6 leading-tight">
+              <div className="text-[11px] text-slate-500 dark:text-slate-400 pl-6 leading-tight">
                 {stop.locationNameSnapshot}
               </div>
             )}
@@ -85,7 +85,7 @@ export function DatesCell({ stops, kind }: DatesCellProps) {
     .sort((a, b) => a.sequenceNo - b.sequenceNo)[0];
 
   if (!first) {
-    return <span className="text-slate-400 text-[12px]">—</span>;
+    return <span className="text-slate-400 dark:text-slate-500 text-[12px]">—</span>;
   }
 
   const date = formatDateLocal(first.dateLocal);

@@ -8,6 +8,7 @@
  */
 
 import { useState, type FormEvent } from "react";
+import { ThemeProvider } from "next-themes";
 import { Loader2 } from "lucide-react";
 
 import { Button } from "@/components/ui/button";
@@ -129,8 +130,10 @@ export default function LoginCard({
   supabaseAnonKey,
 }: LoginCardProps) {
   return (
-    <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
-      <LoginForm />
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
+        <LoginForm />
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

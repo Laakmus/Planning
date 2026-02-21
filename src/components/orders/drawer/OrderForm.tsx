@@ -222,7 +222,7 @@ export function OrderForm({
 
         {/* Sekcja 5 – Uwagi */}
         <section>
-          <SectionHeader icon={<MessageSquare className="w-4 h-4 text-slate-400" />} title="Sekcja 5: Uwagi" />
+          <SectionHeader icon={<MessageSquare className="w-4 h-4 text-slate-400 dark:text-slate-500" />} title="Sekcja 5: Uwagi" />
           <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
             <NotesSection
               formData={formData}

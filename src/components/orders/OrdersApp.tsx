@@ -19,6 +19,7 @@
  */
 
 import { useEffect, useState } from "react";
+import { ThemeProvider } from "next-themes";
 
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
@@ -67,10 +68,12 @@ function OrdersAppInner() {
 
 export default function OrdersApp() {
   return (
-    <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
-      <DictionaryProvider>
-        <OrdersAppInner />
-      </DictionaryProvider>
-    </AuthProvider>
+    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
+      <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
+        <DictionaryProvider>
+          <OrdersAppInner />
+        </DictionaryProvider>
+      </AuthProvider>
+    </ThemeProvider>
   );
 }

@@ -125,7 +125,7 @@ export function OrderRow({
               {formatDateTimeShort(firstLoading.dateLocal, firstLoading.timeLocal)}
             </span>
           ) : (
-            <span className="text-slate-400 text-[12px]">—</span>
+            <span className="text-slate-400 dark:text-slate-500 text-[12px]">—</span>
           )
         ) : (
           <DatesCell stops={order.stops} kind="LOADING" />
@@ -147,7 +147,7 @@ export function OrderRow({
               {formatDateTimeShort(firstUnloading.dateLocal, firstUnloading.timeLocal)}
             </span>
           ) : (
-            <span className="text-slate-400 text-[12px]">—</span>
+            <span className="text-slate-400 dark:text-slate-500 text-[12px]">—</span>
           )
         ) : (
           <DatesCell stops={order.stops} kind="UNLOADING" />
@@ -168,7 +168,7 @@ export function OrderRow({
                 </div>
               ))}
               {validItems.length > 1 && totalTons > 0 && (
-                <div className="text-[10px] text-slate-500 font-semibold">
+                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
                   Razem: {totalTons}t
                 </div>
               )}
@@ -183,7 +183,7 @@ export function OrderRow({
           {order.items
             .filter((it) => it.notes)
             .map((item, idx) => (
-              <div key={idx} className="text-[11px] text-slate-500 whitespace-nowrap">
+              <div key={idx} className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
                 {idx + 1}. {item.notes}
               </div>
             ))}
@@ -199,7 +199,7 @@ export function OrderRow({
       <td className="py-1 px-4 text-[12px] min-w-[90px]">
         {order.vehicleVariantName}
         {order.vehicleCapacityVolumeM3 != null && (
-          <span className="text-slate-500"> ({order.vehicleCapacityVolumeM3}m³)</span>
+          <span className="text-slate-500 dark:text-slate-400"> ({order.vehicleCapacityVolumeM3}m³)</span>
         )}
       </td>
 
@@ -216,13 +216,13 @@ export function OrderRow({
               <div className="text-[11px]">{order.sentByUserName}</div>
             )}
             {order.sentAt && (
-              <div className="text-[10px] text-slate-500">
+              <div className="text-[10px] text-slate-500 dark:text-slate-400">
                 {formatDate(order.sentAt.substring(0, 10))}
               </div>
             )}
           </div>
         ) : (
-          <span className="text-slate-400 text-[11px]">—</span>
+          <span className="text-slate-400 dark:text-slate-500 text-[11px]">—</span>
         )}
       </td>
 

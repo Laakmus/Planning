@@ -114,7 +114,7 @@ export function HistoryPanel({ orderId, orderNo, isOpen, onClose }: HistoryPanel
                 Historia zmian
               </p>
               {orderNo && (
-                <p className="text-xs text-slate-500">{orderNo}</p>
+                <p className="text-xs text-slate-500 dark:text-slate-400">{orderNo}</p>
               )}
             </div>
           </div>
@@ -139,7 +139,7 @@ export function HistoryPanel({ orderId, orderNo, isOpen, onClose }: HistoryPanel
         {!isLoading && !error && groups.length === 0 && (
           <div className="flex-1 flex flex-col items-center justify-center px-6 text-center gap-2">
             <History className="w-8 h-8 text-slate-300" />
-            <p className="text-sm text-slate-500">Brak historii dla tego zlecenia.</p>
+            <p className="text-sm text-slate-500 dark:text-slate-400">Brak historii dla tego zlecenia.</p>
           </div>
         )}
 
@@ -163,15 +163,15 @@ export function HistoryPanel({ orderId, orderNo, isOpen, onClose }: HistoryPanel
             <div className="flex items-center justify-center gap-6 opacity-60">
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-blue-500" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Status</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Status</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-amber-500" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Dane</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Dane</span>
               </div>
               <div className="flex items-center gap-1.5">
                 <div className="w-2 h-2 rounded-full bg-primary" />
-                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500">Systemowe</span>
+                <span className="text-[10px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">Systemowe</span>
               </div>
             </div>
           </div>

@@ -38,7 +38,7 @@ export function TimelineGroup({ date, entries }: TimelineGroupProps) {
       <div className="flex items-center gap-4 mb-6">
         <span
           className={`text-xs font-bold uppercase tracking-wider ${
-            isToday ? "text-primary/80" : "text-slate-400"
+            isToday ? "text-primary/80" : "text-slate-400 dark:text-slate-500"
           }`}
         >
           {label}

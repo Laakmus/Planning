@@ -127,7 +127,7 @@ export function OrderRowContextMenu({
             {statusCode !== "anulowane" && (
               <ContextMenuItem
                 onClick={() => onCancel(orderId)}
-                className="text-red-600 focus:text-red-600"
+                className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
               >
                 Anuluj zlecenie
               </ContextMenuItem>

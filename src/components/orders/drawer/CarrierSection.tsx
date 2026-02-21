@@ -61,7 +61,7 @@ export function CarrierSection({
       {/* NIP (readonly) */}
       {selectedCarrier?.taxId && (
         <div className="space-y-1">
-          <Label className="text-xs text-slate-500">NIP</Label>
+          <Label className="text-xs text-slate-500 dark:text-slate-400">NIP</Label>
           <p className="text-sm text-slate-700 dark:text-slate-300 pl-1">{selectedCarrier.taxId}</p>
         </div>
       )}

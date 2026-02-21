@@ -281,7 +281,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           >
             Poprzednia
           </button>
-          <span className="text-xs text-slate-500">
+          <span className="text-xs text-slate-500 dark:text-slate-400">
             Strona {page} z {totalPages}
           </span>
           <button

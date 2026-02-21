@@ -101,7 +101,7 @@ export function RoutePointCard({
           <button
             type="button"
             onClick={onRemove}
-            className="text-slate-500 hover:text-red-500 transition-colors"
+            className="text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors"
             title="Usuń punkt"
           >
             <X className="w-4 h-4" />
@@ -175,7 +175,7 @@ export function RoutePointCard({
 
       {/* Komentarz — inline input */}
       <div className="mt-2 flex items-center gap-1">
-        <svg className="w-3.5 h-3.5 text-slate-500 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+        <svg className="w-3.5 h-3.5 text-slate-500 dark:text-slate-400 shrink-0" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
           <path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z" />
         </svg>
         <input

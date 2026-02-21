@@ -48,9 +48,9 @@
 - ROW_BG teraz: tylko `wysłane` i `korekta wysłane` → `bg-emerald-50/30` (zielone). Reszta = białe.
 - Docs (PRD + ui-plan) zaktualizowane.
 
-### C-02. Korekta wysłane: yellow zamiast amber w StatusBadge — do decyzji
-- **Plik:** `src/components/orders/StatusBadge.tsx`
-- **Problem:** Badge "Korekta wysłane" używa `yellow-*` zamiast `amber-*` jak w ui-plan §6.4.
+### ~~C-02. Korekta wysłane: yellow zamiast amber w StatusBadge~~ ✅ NAPRAWIONE (sesja 5)
+- Zmieniono `yellow-*` → `amber-*` w StatusBadge.tsx. Dodatkowo naprawiono zamienione kolory Wysłane↔Zrealizowane (blue↔emerald).
+- Naprawiono 500 na PUT — UNIQUE constraint `(order_id, sequence_no)` w order_stops. Zmieniono na 3-fazowe przetwarzanie (delete → temp offset → update/insert).
 
 ---
 
@@ -201,12 +201,12 @@
 ### D-01. READ_ONLY — weryfikacja ukrycia akcji we wszystkich komponentach
 - Pkt 59 z planu implementacji.
 
-### D-02. Dark mode — implementacja (analiza z sesji 5)
-- **Infrastruktura CSS** — kompletna (zmienne OKLch w global.css dla :root i .dark)
-- **next-themes v0.4.6** — zainstalowane, ale ThemeProvider NIE zintegrowany
-- **Brakuje:** ThemeProvider w layout, ThemeToggle w AppHeader (osobny przycisk)
-- **Komponenty:** 45/54 ma dark: klasy; 7 częściowo; 2 brak — szczegóły w analizie agenta
-- **Pliki zero dark:** LocationsCell, NotesSection, FinanceSection, SyncButton, LockIndicator, LoginCard, OrderRowContextMenu (polegają na shadcn)
+### ~~D-02. Dark mode — infrastruktura~~ ZROBIONE (sesja 6+7+8)
+- [x] Anti-flash script w Layout.astro (inline, przed innymi skryptami)
+- [x] ThemeProvider (next-themes) w OrdersApp.tsx (outermost) i LoginCard.tsx
+- [x] ThemeToggle.tsx (Sun/Moon, mounted pattern) w AppHeader (miedzy SyncButton a UserInfo)
+- [x] Dark mode classes w drawer i history components (sesja 7): NotesSection, CarrierSection, UnsavedChangesDialog, RoutePointCard, CargoSection, RouteSection, StatusSection, OrderForm, TimelineEntry, HistoryPanel, TimelineGroup
+- [x] Dark mode classes w table/list components (sesja 8): LocationsCell, RouteSummaryCell, OrderRow, OrdersPage, OrderRowContextMenu, LockIndicator
 - Pkt 57 z planu implementacji.
 
 ### D-03. PDF endpoint — stub 501 po stronie serwera

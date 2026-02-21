@@ -95,7 +95,7 @@ export function CargoSection({
               className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 p-3 space-y-3 hover:border-amber-500/50 transition-all"
             >
               <div className="flex items-center justify-between">
-                <span className="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase">
+                <span className="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 dark:bg-amber-400/10 dark:text-amber-400 rounded uppercase">
                   Produkt {itemNo}
                 </span>
                 {!isReadOnly && (
@@ -167,7 +167,7 @@ export function CargoSection({
                     </SelectContent>
                   </Select>
                   {item.defaultLoadingMethodSnapshot && (
-                    <p className="text-[10px] text-slate-400">
+                    <p className="text-[10px] text-slate-400 dark:text-slate-500">
                       Domyślnie: {item.defaultLoadingMethodSnapshot}
                     </p>
                   )}
@@ -194,7 +194,7 @@ export function CargoSection({
       {/* Podsumowanie tonażu */}
       {activeItems.length > 0 && (
         <div className="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-200 dark:border-slate-800">
-          <span className="text-sm font-bold text-slate-500">
+          <span className="text-sm font-bold text-slate-500 dark:text-slate-400">
             Razem: {totalTons.toFixed(2)}t
           </span>
         </div>
@@ -214,7 +214,7 @@ export function CargoSection({
 
       {/* Pola globalne */}
       <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
-        <p className="text-xs font-semibold text-slate-500 uppercase tracking-wide">
+        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
           Dane globalne ładunku
         </p>
         <div className="grid grid-cols-2 gap-3">

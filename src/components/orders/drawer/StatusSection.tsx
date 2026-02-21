@@ -85,7 +85,7 @@ export function StatusSection({
       {/* Aktualny status */}
       <div className="flex items-center gap-3">
         <div>
-          <label className="text-xs font-semibold text-slate-400 block mb-1">Aktualny status</label>
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">Aktualny status</label>
           <StatusBadge statusCode={currentStatusCode} statusName={currentStatusName} />
         </div>
       </div>
@@ -93,7 +93,7 @@ export function StatusSection({
       {/* Przyciski wyboru statusu */}
       {allowedTransitions.length > 0 && (
         <div>
-          <label className="text-xs font-semibold text-slate-400 block mb-2">Zmień na:</label>
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-2">Zmień na:</label>
           <div className="flex flex-wrap gap-2">
             {allowedTransitions.map((status) => {
               const style = STATUS_BUTTON_STYLES[status] ?? DEFAULT_BUTTON_STYLE;
@@ -119,7 +119,7 @@ export function StatusSection({
         <div className="flex items-start gap-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
           <AlertTriangle className="w-4 h-4 text-red-500 mt-1 shrink-0" />
           <div className="flex-1">
-            <label className="text-xs font-semibold text-slate-400 block mb-1">
+            <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
               Powód reklamacji{pendingStatusCode === "reklamacja" && <span className="text-red-500 ml-0.5">*</span>}
             </label>
             <Textarea
@@ -139,8 +139,8 @@ export function StatusSection({
 
       {/* Informacja */}
       <div className="flex items-start gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
-        <Info className="w-4 h-4 text-slate-500 shrink-0 mt-0.5" />
-        <p className="text-xs text-slate-500">
+        <Info className="w-4 h-4 text-slate-500 dark:text-slate-400 shrink-0 mt-0.5" />
+        <p className="text-xs text-slate-500 dark:text-slate-400">
           Zmiana statusu zostanie zapisana razem z całym formularzem przy kliknięciu "Zapisz" w stopce
         </p>
       </div>

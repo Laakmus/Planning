@@ -10,6 +10,7 @@ import type { ViewGroup } from "@/lib/view-models";
 
 import OrderTabs from "./OrderTabs";
 import SyncButton from "./SyncButton";
+import ThemeToggle from "./ThemeToggle";
 import UserInfo from "./UserInfo";
 
 interface AppHeaderProps {
@@ -35,9 +36,10 @@ export default function AppHeader({ activeView, onViewChange }: AppHeaderProps) 
         <OrderTabs activeView={activeView} onViewChange={onViewChange} />
       </div>
 
-      {/* Prawa strona: sync + użytkownik */}
+      {/* Prawa strona: sync + motyw + użytkownik */}
       <div className="flex items-center gap-3 shrink-0">
         <SyncButton />
+        <ThemeToggle />
         <UserInfo />
       </div>
     </header>

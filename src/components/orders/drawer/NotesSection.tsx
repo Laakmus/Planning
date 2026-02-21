@@ -21,7 +21,7 @@ export function NotesSection({ formData, isReadOnly, onChange }: NotesSectionPro
     <div className="space-y-2">
       <div className="flex items-center justify-between">
         <Label className="text-xs font-medium">Uwagi ogólne</Label>
-        <span className="text-[10px] text-slate-400">
+        <span className="text-[10px] text-slate-400 dark:text-slate-500">
           {notes.length}/{MAX_NOTES}
         </span>
       </div>

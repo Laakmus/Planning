@@ -18,7 +18,7 @@ const NODES_PER_LINE = 4;
 
 export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
   if (!stops.length) {
-    return <span className="text-slate-400 text-[11px]">—</span>;
+    return <span className="text-slate-400 dark:text-slate-500 text-[11px]">—</span>;
   }
 
   // Sortuj: LOADING zawsze przed UNLOADING, w ramach kind po sequenceNo
@@ -37,8 +37,8 @@ export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
     const prefix = isLoading ? `L${loadingCount}` : `U${unloadingCount}`;
     const name = shortenName(stop.companyNameSnapshot ?? stop.locationNameSnapshot);
     const cls = isLoading
-      ? "bg-emerald-100 border border-emerald-500/30 text-emerald-700"
-      : "bg-blue-100 border border-blue-500/30 text-blue-700";
+      ? "bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-500/30 dark:border-emerald-400/30 text-emerald-700 dark:text-emerald-400"
+      : "bg-blue-100 dark:bg-blue-900/30 border border-blue-500/30 dark:border-blue-400/30 text-blue-700 dark:text-blue-400";
 
     return { prefix, name, cls };
   });
