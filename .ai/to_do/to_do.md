@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-21 (sesja 5)
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesja 5: analiza dark mode + naprawa rozbieznosci UI/docs (HIGH UI-01 do UI-08).
+> Ostatnia aktualizacja: 2026-02-21 (sesja 8)
+> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny).
 
 ---
 
@@ -32,7 +32,7 @@
 - [x] CLEANUP: Usunięto martwy kod `buildSnapshotsForItem()` z order.service.ts (zastąpiony batch wersją)
 - [x] FIX: Dodano `SheetDescription` (sr-only) w OrderDrawer — eliminacja ostrzeżenia Radix `aria-describedby`
 - [x] DOCS: PRD §3.1.7 + api-plan §2.7 — poprawiono opis statusu `reklamacja`: dozwolone przejście z `korekta` (było pominięte w tekście opisowym, choć tabela przejść ręcznych była poprawna)
-- [x] UI-H02: Badge'e unloading bg-blue → bg-primary/10 (RouteSummaryCell, LocationsCell)
+- [x] UI-H02: Badge'e unloading — finalnie blue (bg-blue-100 text-blue-700) po rewercie z primary/10
 - [x] UI-H03: Daty w tabeli — format DD.MM (nie DD.MM.YYYY), tylko pierwsza data
 - [x] UI-H05: "Skopiuj zlecenie" w menu kontekstowym + endpoint POST /duplicate + OrdersPage.handleDuplicate
 - [x] UI-H06: Usunięto legacy transport codes (KRAJ, MIEDZY, EKSPRES) z FilterBar i OrderRow
