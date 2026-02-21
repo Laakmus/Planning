@@ -110,22 +110,25 @@ export function CargoSection({
                 )}
               </div>
 
-              {/* Produkt */}
-              <AutocompleteField
-                label="Nazwa towaru"
-                placeholder="Wybierz towar…"
-                items={products}
-                value={item.productId}
-                displayField="name"
-                searchFields={["name"]}
-                onChange={(id, prod) => handleProductChange(idx, id, prod as ProductDto | null)}
-                disabled={isReadOnly}
-                required
-              />
+              {/* Produkt + Waga + Sposób załadunku — single row grid */}
+              <div className="grid grid-cols-12 gap-3">
+                {/* Nazwa towaru */}
+                <div className="col-span-12 md:col-span-6">
+                  <AutocompleteField
+                    label="Nazwa towaru"
+                    placeholder="Wybierz towar…"
+                    items={products}
+                    value={item.productId}
+                    displayField="name"
+                    searchFields={["name"]}
+                    onChange={(id, prod) => handleProductChange(idx, id, prod as ProductDto | null)}
+                    disabled={isReadOnly}
+                    required
+                  />
+                </div>
 
-              <div className="grid grid-cols-2 gap-3">
                 {/* Waga */}
-                <div className="space-y-1">
+                <div className="col-span-6 md:col-span-2 space-y-1">
                   <Label className="text-xs">
                     Waga (t)<span className="text-red-500 ml-0.5">*</span>
                   </Label>
@@ -146,7 +149,7 @@ export function CargoSection({
                 </div>
 
                 {/* Sposób załadunku */}
-                <div className="space-y-1">
+                <div className="col-span-6 md:col-span-4 space-y-1">
                   <Label className="text-xs">Sposób załadunku</Label>
                   <Select
                     value={item.loadingMethodCode ?? ""}
