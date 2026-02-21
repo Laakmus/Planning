@@ -12,7 +12,7 @@ interface NotesSectionProps {
   onChange: (patch: Partial<OrderFormData>) => void;
 }
 
-const MAX_NOTES = 1000;
+const MAX_NOTES = 500;
 
 export function NotesSection({ formData, isReadOnly, onChange }: NotesSectionProps) {
   const notes = formData.generalNotes ?? "";

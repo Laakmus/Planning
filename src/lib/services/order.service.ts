@@ -566,23 +566,6 @@ async function buildSnapshotsForShipperReceiver(
   };
 }
 
-/** Pobiera snapshot produktu (default_loading_method_code). */
-async function buildSnapshotsForItem(
-  supabase: SupabaseClient<Database>,
-  productId: string
-): Promise<{ productNameSnapshot: string | null; defaultLoadingMethodSnapshot: string | null }> {
-  const { data: product } = await supabase
-    .from("products")
-    .select("name, default_loading_method_code")
-    .eq("id", productId)
-    .maybeSingle();
-
-  return {
-    productNameSnapshot: product?.name ?? null,
-    defaultLoadingMethodSnapshot: product?.default_loading_method_code ?? null,
-  };
-}
-
 /** Batch: pobiera snapshoty lokalizacji dla wielu locationId naraz (1 query zamiast N). */
 async function batchBuildSnapshotsForLocations(
   supabase: SupabaseClient<Database>,
@@ -841,8 +824,8 @@ async function generateOrderNo(
 ): Promise<string> {
   // Cast needed: generated Supabase types don't include custom RPC functions.
   // The RPC is defined in migration 20260220000000_add_atomic_lock_and_order_no.sql.
-  const rpc = supabase.rpc as (fn: string, params?: Record<string, unknown>) => ReturnType<typeof supabase.rpc>;
-  const { data, error } = await rpc("generate_next_order_no");
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("generate_next_order_no");
 
   if (error) throw error;
   if (!data || typeof data !== "string") {
@@ -1419,17 +1402,17 @@ export async function updateOrder(
   // Atomic UPDATE with lock ownership verification in WHERE clause.
   // Prevents TOCTOU: even if lock was stolen between the SELECT above and this UPDATE,
   // the UPDATE will match 0 rows and we detect the conflict.
+  // Note: PostgREST v14 bug — .or() + .select() on UPDATE generates invalid SQL,
+  // so we use { count: "exact" } without .select() to detect row count instead.
   type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
-  const { data: updated, error: updateError } = await supabase
+  const { count: updatedCount, error: updateError } = await supabase
     .from("transport_orders")
-    .update(updatePayload as OrderUpdate)
+    .update(updatePayload as OrderUpdate, { count: "exact" })
     .eq("id", orderId)
-    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`)
-    .select("updated_at")
-    .maybeSingle();
+    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`);
 
   if (updateError) throw updateError;
-  if (!updated) {
+  if (updatedCount === 0) {
     // 0 rows matched — lock was taken by another user between SELECT and UPDATE
     throw new Error("LOCKED");
   }
@@ -1551,7 +1534,7 @@ export async function updateOrder(
     id: orderId,
     orderNo: order.order_no,
     statusCode: newStatusCode,
-    updatedAt: updated.updated_at,
+    updatedAt: new Date().toISOString(),
   };
 }
 

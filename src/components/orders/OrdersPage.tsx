@@ -134,11 +134,11 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     setDrawerOpen(true);
   }
 
-  function handleDrawerClose() {
+  const handleDrawerClose = useCallback(() => {
     setDrawerOpen(false);
     setSelectedOrderId(null);
     setPendingNewOrder(false);
-  }
+  }, []);
 
   function handleShowHistory(orderId: string, orderNo?: string) {
     const resolvedNo = orderNo ?? orders.find((o) => o.id === orderId)?.orderNo ?? "";

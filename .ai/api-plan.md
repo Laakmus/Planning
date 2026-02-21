@@ -409,7 +409,7 @@
     ```
   - **Dozwolone przejścia** (tylko te są akceptowane; brak obejścia w API):
     - **zrealizowane** — tylko z: robocze, wysłane, korekta, korekta wysłane, reklamacja; nie z anulowane.
-    - **reklamacja** — tylko z: wysłane, korekta wysłane; przy tym przejściu pole `complaintReason` jest **wymagane** (niepuste), inaczej `422`.
+    - **reklamacja** — tylko z: wysłane, korekta, korekta wysłane; przy tym przejściu pole `complaintReason` jest **wymagane** (niepuste), inaczej `422`.
     - **anulowane** — tylko z: robocze, wysłane, korekta, korekta wysłane, reklamacja; **nie** z zrealizowane (z zrealizowane należy najpierw wywołać `/restore`, potem zmienić status na anulowane).
   - **Reguły**: Statusy wysłane i korekta wysłane ustawiane wyłącznie automatycznie (prepare-email). Zmiany logowane w `order_status_history` i `order_change_log`.
   - **Body odpowiedzi**:

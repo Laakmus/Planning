@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-20
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH. Ponizej pozostale.
+> Ostatnia aktualizacja: 2026-02-21 (sesja 4)
+> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Ponizej pozostale.
 
 ---
 
@@ -20,6 +20,18 @@
 - [x] HIGH H-08: unlock.ts requireWriteAccess
 - [x] HIGH H-09: dictionary-sync requireWriteAccess (PLANNER moze sync)
 - [x] HIGH H-10: Nowe zlecenie POST na frontendzie (OrderDrawer create mode)
+- [x] FIX: Migracja RPC (try_lock_order + generate_next_order_no) zastosowana do lokalnej bazy — przyczyna 500 na lock i PUT
+- [x] FIX: NotesSection MAX_NOTES zmieniony z 1000 na 500 (zgodnosc z backend max 500)
+- [x] FIX M-16: Lock catch block w OrderDrawer ustawia lockedByUserName przy bledzie — drawer otwiera sie readonly
+- [x] FIX: PUT stops body — usunieto zbedne snapshot pola (companyNameSnapshot, locationNameSnapshot, addressSnapshot) — backend je odbudowuje z DB
+- [x] FIX: handleDrawerClose w OrdersPage opakowany w useCallback — eliminacja cascading re-renders
+- [x] FIX: "Lost this" bug — `supabase.rpc` wyciągany do zmiennej tracił `this` context → TypeError na lock i create order. Zmienione na `(supabase as any).rpc(...)` w order-lock.service.ts i order.service.ts
+- [x] FIX: PostgREST v14 bug — `.or()` + `.select()` na UPDATE generuje nieprawidłowe SQL (`column does not exist`). updateOrder zmieniony na `{ count: "exact" }` bez `.select()` do wykrywania TOCTOU
+- [x] FIX: PostgREST schema cache — restart `supabase_rest_Planning` po dodaniu migracji z RPC functions
+- [x] CLEANUP: Usunięto martwy kod `isLockExpired()` z order-lock.service.ts (logika przeniesiona do RPC)
+- [x] CLEANUP: Usunięto martwy kod `buildSnapshotsForItem()` z order.service.ts (zastąpiony batch wersją)
+- [x] FIX: Dodano `SheetDescription` (sr-only) w OrderDrawer — eliminacja ostrzeżenia Radix `aria-describedby`
+- [x] DOCS: PRD §3.1.7 + api-plan §2.7 — poprawiono opis statusu `reklamacja`: dozwolone przejście z `korekta` (było pominięte w tekście opisowym, choć tabela przejść ręcznych była poprawna)
 
 ---
 
@@ -100,10 +112,8 @@
 - **Problem:** `fetch()` bez `AbortController` — requesty moga wisiec w nieskonczonosc.
 - **Rozwiazanie:** Dodac AbortController z timeout (np. 30s).
 
-### M-16. Brak obslugi 409 Conflict przy lock w drawer
-- **Plik:** `OrderDrawer.tsx:78-82`
-- **Problem:** Blad 409 jest przechwycony ale ignorowany — drawer otwiera sie jako edytowalny mimo braku locka.
-- **Rozwiazanie:** Przy 409 ustawic `lockedByUserName` z odpowiedzi i otworzyc readonly.
+### ~~M-16. Brak obslugi 409 Conflict przy lock w drawer~~ ✅ NAPRAWIONE (2026-02-21)
+- Catch block teraz ustawia `lockedByUserName` → drawer otwiera sie readonly.
 
 ### M-17. OrderDetailDto brak lockedByUserName
 - **Pliki:** `types.ts:238-239`, `order.service.ts:406-454`

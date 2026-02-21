@@ -13,15 +13,6 @@ import type { LockOrderResponseDto, UnlockOrderResponseDto } from "../../types";
 const LOCK_EXPIRY_MINUTES = parseInt(import.meta.env?.LOCK_EXPIRY_MINUTES ?? "15", 10);
 
 /**
- * Sprawdza, czy blokada wygasła (starsza niż LOCK_EXPIRY_MINUTES).
- */
-function isLockExpired(lockedAt: string | null): boolean {
-  if (!lockedAt) return true;
-  const at = new Date(lockedAt).getTime();
-  return Date.now() - at > LOCK_EXPIRY_MINUTES * 60 * 1000;
-}
-
-/**
  * Ustawia blokadę edycji zlecenia dla bieżącego użytkownika.
  * Zwraca 409 jeśli zablokowane przez innego użytkownika i blokada nie wygasła.
  *
@@ -46,8 +37,8 @@ export async function lockOrder(
     lockedByUserName?: string;
     lockedAt?: string;
   };
-  const rpc = supabase.rpc as (fn: string, params: Record<string, unknown>) => ReturnType<typeof supabase.rpc>;
-  const { data, error } = await rpc("try_lock_order", {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  const { data, error } = await (supabase as any).rpc("try_lock_order", {
     p_order_id: orderId,
     p_user_id: userId,
     p_lock_expiry_minutes: LOCK_EXPIRY_MINUTES,

@@ -428,7 +428,7 @@ Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
   - **korekta** — zlecenie było wysłane, ale ma zmiany nieprzesłane ponownie; pojawia się automatycznie w sytuacjach: (1) użytkownik zmodyfikował i zapisał zlecenie w statusie wysłane, (2) użytkownik przywrócił zlecenie z zakładki zrealizowane do głównego ekranu, (3) użytkownik przywrócił zlecenie z zakładki anulowane do głównego ekranu, (4) zlecenie w statusie korekta wysłane zostało zmodyfikowane i zapisane lub przywrócone z widoku zrealizowane/anulowane,
   - **korekta wysłane** — zlecenie skorygowane i ponownie wysłane przewoźnikowi; status ustawiany wyłącznie automatycznie po akcji „Wyślij maila” ze statusu korekta,
   - **zrealizowane** — transport się odbył, bez reklamacji; ustawiane wyłącznie ręcznie; zlecenia zrealizowane widoczne tylko w zakładce zrealizowane (nie na głównym ekranie),
-  - **reklamacja** — transport z reklamacją; ustawiane wyłącznie ręcznie i tylko ze statusu wysłane lub korekta wysłane; zlecenia w statusie reklamacja należą do widoku aktualne (główny ekran),
+  - **reklamacja** — transport z reklamacją; ustawiane wyłącznie ręcznie i tylko ze statusu wysłane, korekta lub korekta wysłane; zlecenia w statusie reklamacja należą do widoku aktualne (główny ekran),
   - **anulowane** — zlecenie anulowane; ustawiane wyłącznie ręcznie z statusu robocze, wysłane, korekta lub korekta wysłane; z widoku zrealizowane nie można bezpośrednio anulować — należy najpierw przywrócić zlecenie do aktualnych (wówczas otrzyma status korekta), a dopiero potem ustawić anulowane; zlecenia anulowane widoczne tylko w zakładce anulowane.
 
 - Przejścia automatyczne:

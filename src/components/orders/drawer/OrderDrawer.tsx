@@ -13,6 +13,7 @@ import { History, X } from "lucide-react";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
@@ -136,7 +137,8 @@ export function OrderDrawer({
         try {
           await api.post(`/api/v1/orders/${id}/lock`, {});
         } catch {
-          // Lock mógł się nie udać jeśli ktoś przejął — ignorujemy, otwieramy readonly
+          // Lock mógł się nie udać (409 conflict lub błąd serwera) — otwieramy readonly
+          setLockedByUserName("inny użytkownik");
         }
       }
     } catch (err) {
@@ -286,9 +288,6 @@ export function OrderDrawer({
               dateLocal: s.dateLocal,
               timeLocal: s.timeLocal,
               locationId: s.locationId,
-              companyNameSnapshot: s.companyNameSnapshot,
-              locationNameSnapshot: s.locationNameSnapshot,
-              addressSnapshot: s.addressSnapshot,
               notes: s.notes,
               _deleted: s._deleted,
             })),
@@ -397,10 +396,13 @@ export function OrderDrawer({
             handleCloseRequest();
           }}
         >
-          {/* Ukryty tytuł dla screen readerów (wymóg Radix Dialog) */}
+          {/* Ukryty tytuł + opis dla screen readerów (wymóg Radix Dialog) */}
           <SheetTitle className="sr-only">
             {detail?.order.orderNo ?? "Zlecenie transportowe"}
           </SheetTitle>
+          <SheetDescription className="sr-only">
+            Szczegóły zlecenia transportowego
+          </SheetDescription>
 
           {/* Custom Header */}
           <header className="shrink-0 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-slate-950">
