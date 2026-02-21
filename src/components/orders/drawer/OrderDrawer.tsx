@@ -472,7 +472,7 @@ export function OrderDrawer({
                 onSendEmail={
                   !isReadOnly &&
                   detail &&
-                  (detail.order.statusCode === "robocze" || detail.order.statusCode === "korekta")
+                  (detail.order.statusCode === "robocze" || detail.order.statusCode === "korekta" || detail.order.statusCode === "wysłane" || detail.order.statusCode === "korekta wysłane")
                     ? handleSendEmailFromDrawer
                     : undefined
                 }

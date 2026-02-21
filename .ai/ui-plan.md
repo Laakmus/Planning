@@ -18,7 +18,7 @@ Aplikacja składa się z dwóch głównych stanów: niezalogowany (ekran logowan
 [Nagłówek aplikacji — sticky, z zakładkami; blok użytkownika: imię i nazwisko + rola (tekst), przycisk Wyloguj; bez avatara]
 [Pasek filtrów + ustawienia listy — sticky; przycisk „Nowe zlecenie" z prawej (tylko zakładka Aktualne, tylko Admin/Planner)]
 [Widok główny — Lista zleceń]
-    ├── Tabela zleceń (sticky nagłówek tabeli, sticky kolumna Akcje; min-width 1280px)
+    ├── Tabela zleceń (sticky nagłówek tabeli; min-width 1280px)
     │   ├── (lewy klik wiersza) → [Drawer edycji zlecenia]
     │   │                              └── (link) → [Panel historii zmian]
     │   └── (prawy klik wiersza) → [Menu kontekstowe]
@@ -77,7 +77,7 @@ Nawigacja między logowaniem a widokiem głównym realizowana jest przez standar
 ### 2.2 Widok główny — Lista zleceń
 
 - **Ścieżka**: `/orders`
-- **Uwaga o statusach:** W UI używane są wyłącznie **pełne nazwy** statusów (bez skrótów): Robocze, Wysłane, Korekta, Korekta wysłane, Zrealizowane, Reklamacja, Anulowane. Kolumna status w tabeli i badge wyświetlają `statusName` (pełna nazwa). **Mapowanie widoków:** zakładka **Aktualne** = Robocze, Wysłane, Korekta, Korekta wysłane, Reklamacja; zakładka **Zrealizowane** = tylko status Zrealizowane; zakładka **Anulowane** = tylko status Anulowane. Zlecenia zrealizowane i anulowane nie pojawiają się na głównym ekranie (tabela Aktualne).
+- **Uwaga o statusach:** W UI używane są wyłącznie **pełne nazwy** statusów (bez skrótów): Robocze, Wysłane, Korekta, Korekta wysłane, Zrealizowane, Reklamacja, Anulowane. Kolumna status w tabeli i badge wyświetlają `statusName` (pełna nazwa). **Wyjątek:** W tabeli status „Korekta wysłane" wyświetlany jest w skróconej formie **„Korekta_w"** ze względu na ograniczone miejsce w kolumnie. **Mapowanie widoków:** zakładka **Aktualne** = Robocze, Wysłane, Korekta, Korekta wysłane, Reklamacja; zakładka **Zrealizowane** = tylko status Zrealizowane; zakładka **Anulowane** = tylko status Anulowane. Zlecenia zrealizowane i anulowane nie pojawiają się na głównym ekranie (tabela Aktualne).
 - **Główny cel**: Prezentacja i zarządzanie listą zleceń transportowych w trzech zakładkach (Aktualne, Zrealizowane, Anulowane) z filtrowaniem, sortowaniem i akcjami.
 - **Powiązane API**: `GET /api/v1/orders` (z parametrami `view`, filtrów, sortowania, `pageSize`), `POST /api/v1/orders` (dodanie wiersza), `DELETE /api/v1/orders/{id}` (szybkie anulowanie), `POST /api/v1/orders/{id}/prepare-email`, `POST /api/v1/orders/{id}/status`, `POST /api/v1/orders/{id}/restore`.
 - **Historyjki użytkownika**: US-010, US-011, US-012, US-013, US-020, US-023, US-024, US-025, US-026, US-027, US-028, US-050, US-051
@@ -85,9 +85,9 @@ Nawigacja między logowaniem a widokiem głównym realizowana jest przez standar
 #### Kluczowe informacje do wyświetlenia
 
 Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zestaw kolumn. Pełna definicja kolumn, kolejności i formatu wyświetlania — **PRD sekcja 3.1.2a**. Skrót:
-- **Widok Kolumny:** Blokada (ikona) | Nr zlecenia | Status | **Tydzień** | Rodzaj transportu | Miejsce załadunku | Data załadunku | Miejsce rozładunku | Data rozładunku | Towar | Komentarz | Firma transportowa | Typ auta (rodzaj + objętość) | Stawka | Data wysłania zlecenia (imię i nazwisko + data) | Akcje. Tydzień — auto-obliczany z daty załadunku (ISO 8601), liczba całkowita, nie edytowalny. Miejsca zał./rozł. — każdy punkt w nowej linii; daty w formacie DD.MM.YYYY (backend zwraca YYYY-MM-DD, frontend formatuje); Data wysłania — linia 1: osoba, linia 2: data (DD.MM.YYYY).
-- **Widok Trasa:** Zamiast czterech kolumn (Miejsce załadunku, Data załadunku, Miejsce rozładunku, Data rozładunku) — jedna kolumna Trasa (node-string L1→L2→U1) oraz dwie osobne kolumny Data załadunku i Data rozładunku (listy dat z godzinami); pozostałe kolumny (Lock, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania, Akcje) analogicznie.
-- Tło wiersza: jaśniejszy odcień koloru statusu; pełne nazwy statusów w UI.
+- **Widok Kolumny:** Blokada (ikona) | Nr zlecenia | Status | **Tydzień** | Rodzaj transportu | Miejsce załadunku | Data załadunku | Miejsce rozładunku | Data rozładunku | Towar | Komentarz | Firma transportowa | Typ auta (rodzaj + objętość) | Stawka | Data wysłania zlecenia (imię i nazwisko + data). Tydzień — auto-obliczany z daty załadunku (ISO 8601), liczba całkowita, nie edytowalny. Miejsca zał./rozł. — każdy punkt w nowej linii; daty w formacie **DD.MM** (backend zwraca YYYY-MM-DD, frontend formatuje); **tylko pierwsza data** załadunku/rozładunku z godziną (format DD.MM HH:MM). Data wysłania — linia 1: osoba, linia 2: data (DD.MM).
+- **Widok Trasa:** Zamiast czterech kolumn (Miejsce załadunku, Data załadunku, Miejsce rozładunku, Data rozładunku) — jedna kolumna Trasa (node-string L1→L2→U1) oraz dwie osobne kolumny Data załadunku i Data rozładunku (**tylko pierwsza data** z godziną, format DD.MM HH:MM); pozostałe kolumny (Lock, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania) analogicznie.
+- Tło wiersza: tylko statusy Wysłane i Korekta wysłane mają zielone tło (`bg-emerald-50/30`), pozostałe wiersze — białe. Pełne nazwy statusów w UI.
 
 #### Kluczowe komponenty widoku
 
@@ -114,9 +114,9 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
 4. **OrderTable** — tabela z listą zleceń.
    - Kontener: `min-w-[1280px]`. Na wąskich ekranach: poziome przewijanie z **widocznym** paskiem przewijania u dołu (użytkownik ma widzieć, że są kolejne kolumny). Na szerokich ekranach scrollbar może być ukryty (`.scrollbar-hide`) — do decyzji implementacyjnej.
    - Sticky nagłówek tabeli: `sticky top-0 bg-slate-50 border-b z-10`, nagłówki `text-[11px] font-bold uppercase tracking-wider`.
-   - Sticky kolumna Akcje z prawej: `sticky right-0` z cieniem `shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]`.
+   - ~~Sticky kolumna Akcje~~ — **usunięta**; akcje dostępne wyłącznie przez menu kontekstowe (prawy klik) i drawer..
    - Kompaktowe wiersze: `py-1 px-4`, tekst `text-[12px]`.
-   - Tło wiersza: jaśniejszy odcień koloru statusu (np. `bg-blue-50/30` dla Wysłane).
+   - Tło wiersza: tylko Wysłane i Korekta wysłane mają zielone tło (`bg-emerald-50/30`), pozostałe białe.
    - Hover: `rgba(19, 127, 236, 0.04)` na całym wierszu.
    - Sortowanie: klik w nagłówek kolumny → zmiana `sortBy`/`sortDirection`. Domyślnie: `FIRST_LOADING_DATETIME ASC`. Sortowalne kolumny: data załadunku, data rozładunku, numer zlecenia, Firma transportowa.
    - Lewy klik na wiersz → otwarcie draweru edycji.
@@ -231,7 +231,7 @@ Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z dan
 - Forma płatności (`paymentMethod`) — select, domyślnie „Przelew".
 
 **Sekcja 5: Uwagi**
-- Uwagi ogólne do zlecenia (`generalNotes`) — textarea, max 1000 znaków, 3–4 wiersze z resize.
+- Uwagi ogólne do zlecenia (`generalNotes`) — textarea, max 500 znaków, 3–4 wiersze z resize.
 - Sekcja 5 zawiera tylko to jedno pole. Wymagane dokumenty dla kierowcy znajdują się w Sekcji 3.
 
 **Sekcja 6: Zmiana statusu**
@@ -494,10 +494,10 @@ Przyciski akcji (sticky na dole draweru):
 │ [Rodzaj] [Status] [Firma zał.] [Firma rozł.] [Firma transport.] [Towar] [Nr tyg.] [Szukaj] [50▼][Trasa|Kolumny] [+ Nowe zlecenie] │
 ├─────────────────────────────────────────────────────────┤
 │ [Tabela — sticky nagłówek, min-w-1280px; scroll tylko wiersze] │
-│ │ 🔒 │ Nr │ Status │ ... (kolumny według PRD 3.1.2a) │ Akcje │
-│ │────│────│────────│───────────────────────────────│───────│
-│ │    │#01 │ Wysłane│ ...                             │ ✉     │
-│ │    │#02 │ Robocze│ ...                             │ ✉     │
+│ │ 🔒 │ Nr │ Status │ ... (kolumny według PRD 3.1.2a)          │
+│ │────│────│────────│─────────────────────────────────────────│
+│ │    │#01 │ Wysłane│ ...                                      │
+│ │    │#02 │ Robocze│ ...                                      │
 │ │                                                       │
 │ [EmptyState jeśli brak wyników: Brak zleceń / Brak wyników dla filtrów] │
 ├─────────────────────────────────────────────────────────┤
@@ -686,7 +686,7 @@ Format węzła: `{L|U}{sequenceNo}:{nazwa_lub_skrót}` — np. `L1:Nord`, `L2:Re
 
 **Kolorystyka węzłów:**
 - **Załadunki (L1, L2, ...):** `bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700`
-- **Rozładunki (U1, U2, ...):** `bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary`
+- **Rozładunki (U1, U2, ...):** `bg-blue-100 border border-blue-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-blue-700`
 - **Strzałki:** `<span class="text-slate-300">→</span>` — między każdymi dwoma węzłami
 - **Container:** `<div class="flex items-center space-x-1 flex-wrap gap-y-1">`
 
@@ -702,9 +702,9 @@ Format węzła: `{L|U}{sequenceNo}:{nazwa_lub_skrót}` — np. `L1:Nord`, `L2:Re
   <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L4:StalPol</span>
   <!-- Linia się zawija tutaj (4 węzły + 3 strzałki) -->
   <span class="text-slate-300">→</span>
-  <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:BER</span>
+  <span class="bg-blue-100 border border-blue-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-blue-700">U1:BER</span>
   <span class="text-slate-300">→</span>
-  <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U2:HAM</span>
+  <span class="bg-blue-100 border border-blue-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-blue-700">U2:HAM</span>
 </div>
 ```
 
@@ -721,7 +721,7 @@ W widoku Kolumny miejsca załadunku i rozładunku prezentowane są z okrągłymi
 - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Kraków")
 
 **Miejsce rozładunku** — analogicznie:
-- Badge: `bg-primary/10 text-primary` z oznaczeniem `U{n}`
+- Badge: `bg-blue-100 text-blue-700` z oznaczeniem `U{n}`
 - Nazwa firmy i oddział jak wyżej
 
 ### 6.3 Tabela zleceń
@@ -729,7 +729,6 @@ W widoku Kolumny miejsca załadunku i rozładunku prezentowane są z okrągłymi
 **Layout:**
 - Kontener: `min-w-[1280px]`
 - Sticky nagłówek: `sticky top-0 bg-slate-50 border-b z-10`
-- Sticky kolumna Akcje (prawa): `sticky right-0` z cieniem `shadow-[-4px_0_10px_-4px_rgba(0,0,0,0.1)]`
 - Kompaktowe wiersze: `py-1 px-4`
 - Brak obramowania między kolumnami w treści — separator poziomy `divide-y divide-slate-100`
 
@@ -740,17 +739,15 @@ tr:hover td {
 }
 ```
 
-**Tło wiersza wg statusu (jaśniejszy odcień):**
+**Tło wiersza wg statusu:**
+
+Tylko dwa statusy mają kolorowe tło wiersza (zielone). Pozostałe wiersze mają domyślne białe tło.
 
 | Status | Tło wiersza |
 |---|---|
-| Robocze | `bg-white` (domyślne) |
-| Wysłane | `bg-blue-50/30` |
-| Korekta | `bg-orange-50/30` |
-| Korekta wysłane | `bg-amber-50/30` |
-| Zrealizowane | `bg-emerald-50/30` |
-| Anulowane | `bg-gray-50/50` |
-| Reklamacja | `bg-red-50/30` |
+| Wysłane | `bg-emerald-50/30` |
+| Korekta wysłane | `bg-emerald-50/30` |
+| Pozostałe | `bg-white` (domyślne) |
 
 **Scrollbar:** Na wąskich ekranach pasek przewijania poziomego **musi być widoczny** (użytkownik ma rozumieć, że są kolejne kolumny). Na szerokich ekranach dopuszczalne ukrycie scrollbara (`.scrollbar-hide`).
 

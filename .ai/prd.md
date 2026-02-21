@@ -88,7 +88,7 @@ Nowy produkt ma przede wszystkim poprawić:
   - status zlecenia (np. robocze, wysłane, korekta, korekta wysłane, zrealizowane, anulowane, reklamacja) — jako kolorowy badge,
   - podstawowe uwagi do zlecenia (skrócone),
   - ikonę „Wyślij maila" jako bezpośrednią akcję.
-- Wiersze mają wyraźne oznaczenia kolorystyczne zależne od statusu zlecenia (jaśniejszy odcień koloru statusu jako tło wiersza).
+- Wiersze statusów Wysłane i Korekta wysłane mają zielone tło (`bg-emerald-50/30`). Pozostałe wiersze mają domyślne białe tło.
 - Na dole widoku wyświetlany jest pasek statystyk z liczbą zleceń w poszczególnych statusach oraz informacją o ostatniej aktualizacji danych.
 - Widok oferuje dwa warianty prezentacji listy (wdrożone):
   - widok trasy: trasa w jednej kolumnie (node-string), daty załadunku i daty rozładunku w osobnych kolumnach,
@@ -135,7 +135,7 @@ Poniższa sekcja definiuje układ, kolejność elementów, zawartość kolumn ta
 
 **4. Tabela zleceń — kolumny i sposób wyświetlania**
 
-Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli jest sticky. Sortowanie: klik w nagłówek kolumny (np. data załadunku, data rozładunku, numer zlecenia, Firma transportowa). Tło wiersza wg statusu (jaśniejszy odcień koloru statusu). Akcja „Wyślij maila" dostępna z menu kontekstowego (prawy klik) oraz z drawer footer.
+Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli jest sticky. Sortowanie: klik w nagłówek kolumny (np. data załadunku, data rozładunku, numer zlecenia, Firma transportowa). Tło wiersza: tylko Wysłane i Korekta wysłane mają zielone tło, pozostałe białe. Akcja „Wyślij maila" dostępna z menu kontekstowego (prawy klik) oraz z drawer footer.
 
 **4.1. Widok „Kolumny” — kolejność kolumn od lewej do prawej**
 
@@ -143,13 +143,13 @@ Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli jest sticky. Sortow
 |----|----------------|----------------------------------|----------|
 | 1 | (bez etykiety) | Ikona blokady (np. kłódka), tylko gdy zlecenie jest zablokowane przez innego użytkownika; brak etykiety w nagłówku. | 🔒 lub puste |
 | 2 | Nr zlecenia | Numer zlecenia (np. generowany przez system). | ZT-2026-0042 |
-| 3 | Status | Pełna nazwa statusu (robocze, wysłane, korekta, korekta wysłane, zrealizowane, reklamacja, anulowane); zalecane jako badge lub wyróżniony tekst. | wysłane |
+| 3 | Status | Nazwa statusu jako badge; wyświetlana jest skrócona nazwa w UI: robocze, wysłane, korekta, **Korekta_w** (dla „korekta wysłane"), zrealizowane, reklamacja, anulowane. | wysłane |
 | 4 | Tydzień | Numer tygodnia ISO 8601 **obliczany automatycznie** z daty pierwszego załadunku; wyświetlany jako liczba całkowita (np. 7); **nie edytowalny** przez użytkownika. | 7 |
 | 5 | Rodzaj transportu | Nazwa rodzaju (kraj, eksport drogowy, kontener morski, import itd.). | kraj |
 | 6 | Miejsce załadunku | Lista wszystkich punktów załadunku; **każdy punkt w nowej linii**. Format: numer/oznaczenie punktu + nazwa firmy + oddział, np. „L1 NazwaFirmy: oddział X". | L1 Nord: oddział Gorzyce<br>L2 Metalex: oddział Katowice |
-| 7 | Data załadunku | Lista dat z godzinami dla każdego punktu załadunku (każda w nowej linii lub czytelny skrót). Format daty: **DD.MM.YYYY** (baza przechowuje YYYY-MM-DD, formatowanie w UI). | 12.02.2026 08:00<br>12.02.2026 14:00 |
+| 7 | Data załadunku | **Tylko pierwsza data** załadunku z godziną. Format daty: **DD.MM** (bez roku; baza przechowuje YYYY-MM-DD, formatowanie w UI). | 12.02 08:00 |
 | 8 | Miejsce rozładunku | Jak wyżej, dla punktów rozładunku; każdy punkt w nowej linii. Format np. „U1 NazwaFirmy: oddział Y". | U1 Berlina: oddział Berlin |
-| 9 | Data rozładunku | Lista dat z godzinami dla każdego punktu rozładunku. Format daty: **DD.MM.YYYY** (baza przechowuje YYYY-MM-DD, formatowanie w UI). | 13.02.2026 09:00 |
+| 9 | Data rozładunku | **Tylko pierwsza data** rozładunku z godziną. Format daty: **DD.MM** (bez roku; baza przechowuje YYYY-MM-DD, formatowanie w UI). | 13.02 09:00 |
 | 10 | Towar | Pozycje towarowe numerowane; dla każdej: nazwa, ilość, jednostka/opakowanie; w ostatniej linii suma: „Razem: Xt". | 1. miedź (5t, big bag)<br>2. miedź milbera (10t, paleta)<br>Razem: 15t |
 | 11 | Komentarz | Lista komentarzy ponumerowana (powiązana z pozycjami towaru lub zleceniem); każdy wpis w nowej linii. | 1. ładujemy na końcu naczepy<br>2. ładuje tylko Otwock |
 | 12 | Firma transportowa | Nazwa firmy przewoźnika (z słownika). | Transport Express Sp. z o.o. |

@@ -26,6 +26,7 @@ interface OrderTableProps {
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
   onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
+  onDuplicate: (orderId: string) => void;
   onCancel: (orderId: string) => void;
   onRestore: (orderId: string) => void;
 }
@@ -105,6 +106,7 @@ export function OrderTable({
   onSendEmail,
   onShowHistory,
   onChangeStatus,
+  onDuplicate,
   onCancel,
   onRestore,
 }: OrderTableProps) {
@@ -208,6 +210,7 @@ export function OrderTable({
                 onSendEmail={onSendEmail}
                 onShowHistory={onShowHistory}
                 onChangeStatus={onChangeStatus}
+                onDuplicate={onDuplicate}
                 onCancel={onCancel}
                 onRestore={onRestore}
               />

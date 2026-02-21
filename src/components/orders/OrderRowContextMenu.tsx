@@ -6,6 +6,8 @@
 
 import { type ReactNode } from "react";
 
+import { Copy } from "lucide-react";
+
 import {
   ContextMenu,
   ContextMenuContent,
@@ -43,6 +45,7 @@ interface OrderRowContextMenuProps {
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
   onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
+  onDuplicate: (orderId: string) => void;
   onCancel: (orderId: string) => void;
   onRestore: (orderId: string) => void;
 }
@@ -56,6 +59,7 @@ export function OrderRowContextMenu({
   onSendEmail,
   onShowHistory,
   onChangeStatus,
+  onDuplicate,
   onCancel,
   onRestore,
 }: OrderRowContextMenuProps) {
@@ -83,7 +87,7 @@ export function OrderRowContextMenu({
             <ContextMenuSeparator />
 
             {/* Wyślij maila */}
-            {(statusCode === "robocze" || statusCode === "korekta") && (
+            {(statusCode === "robocze" || statusCode === "korekta" || statusCode === "wysłane" || statusCode === "korekta wysłane") && (
               <ContextMenuItem onClick={() => onSendEmail(orderId)}>
                 Wyślij maila
               </ContextMenuItem>
@@ -105,6 +109,12 @@ export function OrderRowContextMenu({
                 </ContextMenuSubContent>
               </ContextMenuSub>
             )}
+
+            {/* Skopiuj zlecenie */}
+            <ContextMenuItem onClick={() => onDuplicate(orderId)}>
+              <Copy className="w-4 h-4 mr-2" />
+              Skopiuj zlecenie
+            </ContextMenuItem>
 
             {/* Przywróć do aktualnych */}
             {canRestore && (

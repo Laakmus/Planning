@@ -21,21 +21,12 @@ const TRANSPORT_CODE_DISPLAY: Record<string, string> = {
   EXP: "EXP",
   EXP_K: "EXP_K",
   IMP: "IMP",
-  // Legacy codes z seed data
-  KRAJ: "PL",
-  MIEDZY: "EXP",
-  EKSPRES: "IMP",
 };
 
-/** Tło wiersza wg statusCode — kolory zgodne z StatusBadge (wyraźne tło). */
+/** Tło wiersza wg statusCode — tylko wysłane i korekta wysłane mają kolor (zielony). */
 const ROW_BG: Record<string, string> = {
-  robocze: "bg-slate-100 dark:bg-slate-800/50",
   wysłane: "bg-emerald-100/70 dark:bg-emerald-900/40",
-  korekta: "bg-orange-100/70 dark:bg-orange-900/40",
-  "korekta wysłane": "bg-yellow-100/70 dark:bg-yellow-900/40",
-  zrealizowane: "bg-blue-100/70 dark:bg-blue-900/40",
-  anulowane: "bg-slate-200/70 dark:bg-slate-800/60",
-  reklamacja: "bg-red-100/70 dark:bg-red-900/40",
+  "korekta wysłane": "bg-emerald-100/70 dark:bg-emerald-900/40",
 };
 
 interface OrderRowProps {
@@ -46,6 +37,7 @@ interface OrderRowProps {
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
   onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
+  onDuplicate: (orderId: string) => void;
   onCancel: (orderId: string) => void;
   onRestore: (orderId: string) => void;
 }
@@ -58,6 +50,7 @@ export function OrderRow({
   onSendEmail,
   onShowHistory,
   onChangeStatus,
+  onDuplicate,
   onCancel,
   onRestore,
 }: OrderRowProps) {
@@ -245,6 +238,7 @@ export function OrderRow({
       onSendEmail={onSendEmail}
       onShowHistory={onShowHistory}
       onChangeStatus={onChangeStatus}
+      onDuplicate={onDuplicate}
       onCancel={onCancel}
       onRestore={onRestore}
     >

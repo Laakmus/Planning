@@ -18,13 +18,12 @@ import type { OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
 import { AutocompleteFilter } from "./AutocompleteFilter";
 import { ListSettings } from "./ListSettings";
 
-/** Dozwolone kody rodzajów transportu (PRD §3.1.2a) + legacy mappings. */
-const VALID_TRANSPORT_CODES = new Set(["PL", "EXP", "EXP_K", "IMP", "KRAJ", "MIEDZY", "EKSPRES"]);
+/** Dozwolone kody rodzajów transportu (PRD §3.1.2a). */
+const VALID_TRANSPORT_CODES = new Set(["PL", "EXP", "EXP_K", "IMP"]);
 
 /** Mapowanie na skróty wyświetlane w filtrze. */
 const TRANSPORT_DISPLAY: Record<string, string> = {
   PL: "PL", EXP: "EXP", EXP_K: "EXP_K", IMP: "IMP",
-  KRAJ: "PL", MIEDZY: "EXP", EKSPRES: "IMP",
 };
 
 /** Dozwolone kody statusów (PRD §5). */

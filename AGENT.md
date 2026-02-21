@@ -85,6 +85,17 @@ public/           # Pliki statyczne (favicon, itp.)
 - Eksport drogowy
 - Kontener morski
 
+## Tryb pracy agentów
+
+Główny agent (Claude) pełni rolę **koordynatora i interfejsu użytkownika**:
+
+- **Główny agent** zawsze czeka na komendy od użytkownika i odpowiada na bieżąco
+- **Sub-agenci** (specjalizowani) są tworzeni przez głównego agenta do wykonywania konkretnych zadań (analiza kodu, wyszukiwanie, audyt, implementacja)
+- Sub-agenci pracują w tle równolegle — główny agent zbiera ich wyniki i prezentuje użytkownikowi
+- Główny agent **nigdy nie blokuje się** na długich operacjach — deleguje je do sub-agentów
+- Po otrzymaniu wyników od sub-agentów, główny agent analizuje je, zadaje pytania doprecyzowujące i planuje kolejne kroki z użytkownikiem
+- Implementacja zmian w kodzie odbywa się dopiero po uzgodnieniu planu z użytkownikiem
+
 ## Dokumentacja
 
 Pełna specyfikacja wymagań: `.ai/prd.md`

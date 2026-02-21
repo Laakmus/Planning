@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/AuthContext";
-import type { PrepareEmailResponseDto } from "@/types";
+import type { DuplicateOrderResponseDto, PrepareEmailResponseDto } from "@/types";
 import { useOrders } from "@/hooks/useOrders";
 import { DEFAULT_FILTERS } from "@/lib/view-models";
 import type {
@@ -206,6 +206,22 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     [api, refetch]
   );
 
+  const handleDuplicate = useCallback(
+    async (orderId: string) => {
+      try {
+        const result = await api.post<DuplicateOrderResponseDto>(
+          `/api/v1/orders/${orderId}/duplicate`,
+          { includeStops: true, includeItems: true, resetStatusToDraft: true }
+        );
+        toast.success(`Zlecenie skopiowane jako ${result.orderNo}.`);
+        refetch();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Błąd kopiowania zlecenia.");
+      }
+    },
+    [api, refetch]
+  );
+
   const orders = data?.items ?? [];
   const totalItems = data?.totalItems ?? 0;
   const totalPages = data?.totalPages ?? 1;
@@ -249,6 +265,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           onSendEmail={handleSendEmail}
           onShowHistory={handleShowHistory}
           onChangeStatus={handleChangeStatus}
+          onDuplicate={handleDuplicate}
           onCancel={handleCancel}
           onRestore={handleRestore}
         />

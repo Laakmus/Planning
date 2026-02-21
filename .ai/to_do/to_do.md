@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-21 (sesja 4)
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Ponizej pozostale.
+> Ostatnia aktualizacja: 2026-02-21 (sesja 5)
+> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesja 5: analiza dark mode + naprawa rozbieznosci UI/docs (HIGH UI-01 do UI-08).
 
 ---
 
@@ -32,6 +32,25 @@
 - [x] CLEANUP: Usunięto martwy kod `buildSnapshotsForItem()` z order.service.ts (zastąpiony batch wersją)
 - [x] FIX: Dodano `SheetDescription` (sr-only) w OrderDrawer — eliminacja ostrzeżenia Radix `aria-describedby`
 - [x] DOCS: PRD §3.1.7 + api-plan §2.7 — poprawiono opis statusu `reklamacja`: dozwolone przejście z `korekta` (było pominięte w tekście opisowym, choć tabela przejść ręcznych była poprawna)
+- [x] UI-H02: Badge'e unloading bg-blue → bg-primary/10 (RouteSummaryCell, LocationsCell)
+- [x] UI-H03: Daty w tabeli — format DD.MM (nie DD.MM.YYYY), tylko pierwsza data
+- [x] UI-H05: "Skopiuj zlecenie" w menu kontekstowym + endpoint POST /duplicate + OrdersPage.handleDuplicate
+- [x] UI-H06: Usunięto legacy transport codes (KRAJ, MIEDZY, EKSPRES) z FilterBar i OrderRow
+- [x] UI-H08: "Wyślij maila" dostępne dla statusów wysłane/korekta wysłane (OrderDrawer + OrderRowContextMenu)
+- [x] DOCS: PRD — "Korekta_w" jako skrócona forma "Korekta wysłane" w tabeli, format DD.MM, tylko pierwsza data
+- [x] DOCS: ui-plan.md — usunięto sticky kolumnę Akcje, format DD.MM, "Korekta_w", generalNotes max 500
+
+---
+
+## CRITICAL — kolory statusów (odkryte sesja 5, do decyzji)
+
+### ~~C-01/C-03. Tło wierszy — zmienione wymaganie~~ ✅ NAPRAWIONE (sesja 5)
+- ROW_BG teraz: tylko `wysłane` i `korekta wysłane` → `bg-emerald-50/30` (zielone). Reszta = białe.
+- Docs (PRD + ui-plan) zaktualizowane.
+
+### C-02. Korekta wysłane: yellow zamiast amber w StatusBadge — do decyzji
+- **Plik:** `src/components/orders/StatusBadge.tsx`
+- **Problem:** Badge "Korekta wysłane" używa `yellow-*` zamiast `amber-*` jak w ui-plan §6.4.
 
 ---
 
@@ -120,9 +139,9 @@
 - **Problem:** Backend nie zwraca nazwy blokujacego. Drawer pokazuje "inny uzytkownik".
 - **Rozwiazanie:** JOIN z user_profiles w getOrderDetail, dodac pole do DTO.
 
-### M-18. Endpointy duplicate i PATCH stops nieuzywane przez frontend
-- **Problem:** Backend ma POST /duplicate i PATCH /stops/{stopId}, ale frontend ich nie wywoluje.
-- **Rozwiazanie:** Zaimplementowac w UI (context menu "Duplikuj", inline edit stopu).
+### ~~M-18. Endpointy duplicate i PATCH stops nieuzywane przez frontend~~ CZESCIOWO NAPRAWIONE (2026-02-21)
+- POST /duplicate teraz wywolywany z context menu ("Skopiuj zlecenie") — OrderRowContextMenu + OrdersPage.handleDuplicate.
+- PATCH /stops/{stopId} — nadal nieuzywany przez frontend (inline edit stopu do zaimplementowania).
 
 ### M-19. PDF Accept header ustawiony na application/json
 - **Plik:** `api-client.ts:90-91`
@@ -182,7 +201,12 @@
 ### D-01. READ_ONLY — weryfikacja ukrycia akcji we wszystkich komponentach
 - Pkt 59 z planu implementacji.
 
-### D-02. Dark mode — pelna weryfikacja dark: klas w drawer i history
+### D-02. Dark mode — implementacja (analiza z sesji 5)
+- **Infrastruktura CSS** — kompletna (zmienne OKLch w global.css dla :root i .dark)
+- **next-themes v0.4.6** — zainstalowane, ale ThemeProvider NIE zintegrowany
+- **Brakuje:** ThemeProvider w layout, ThemeToggle w AppHeader (osobny przycisk)
+- **Komponenty:** 45/54 ma dark: klasy; 7 częściowo; 2 brak — szczegóły w analizie agenta
+- **Pliki zero dark:** LocationsCell, NotesSection, FinanceSection, SyncButton, LockIndicator, LoginCard, OrderRowContextMenu (polegają na shadcn)
 - Pkt 57 z planu implementacji.
 
 ### D-03. PDF endpoint — stub 501 po stronie serwera
