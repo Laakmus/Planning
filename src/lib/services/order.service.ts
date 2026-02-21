@@ -1422,15 +1422,33 @@ export async function updateOrder(
     stopsWithSnapshots.map((s) => [s.sequenceNo, s])
   );
 
+  // Phase 1: Delete _deleted stops
   for (const s of params.stops) {
-    // Pomijaj usunięte punkty bez id (nigdy nie zapisane w bazie)
-    if (s._deleted && !s.id) continue;
-
-    const snap = stopSnapshotMap.get(s.sequenceNo);
     if (s._deleted && s.id) {
       const { error: delErr } = await supabase.from("order_stops").delete().eq("id", s.id).eq("order_id", orderId);
       if (delErr) throw delErr;
-    } else if (s.id == null) {
+    }
+  }
+
+  // Phase 2: Temporarily offset existing stops' sequence_no to avoid UNIQUE constraint violations
+  const existingStops = params.stops.filter((s) => !s._deleted && s.id);
+  if (existingStops.length > 0) {
+    for (let i = 0; i < existingStops.length; i++) {
+      const { error: tmpErr } = await supabase
+        .from("order_stops")
+        .update({ sequence_no: 10000 + i })
+        .eq("id", existingStops[i].id!)
+        .eq("order_id", orderId);
+      if (tmpErr) throw tmpErr;
+    }
+  }
+
+  // Phase 3: Update existing stops to final values + insert new stops
+  for (const s of params.stops) {
+    if (s._deleted) continue;
+
+    const snap = stopSnapshotMap.get(s.sequenceNo);
+    if (s.id == null) {
       const { error: insErr } = await supabase.from("order_stops").insert({
         order_id: orderId,
         kind: s.kind,
@@ -1444,7 +1462,7 @@ export async function updateOrder(
         notes: s.notes ?? null,
       });
       if (insErr) throw insErr;
-    } else if (!s._deleted) {
+    } else {
       const { error: updErr } = await supabase
         .from("order_stops")
         .update({
