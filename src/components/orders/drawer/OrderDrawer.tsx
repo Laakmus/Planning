@@ -476,7 +476,6 @@ export function OrderDrawer({
                     ? handleSendEmailFromDrawer
                     : undefined
                 }
-                onShowHistory={historyHandler}
               />
             </>
           )}

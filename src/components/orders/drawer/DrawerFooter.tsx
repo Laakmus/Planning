@@ -1,11 +1,11 @@
 /**
  * Stopka draweru zlecenia.
- * Tryb edycji: lewa = Generuj PDF + Wyślij maila + Historia | prawa = Zamknij + Zapisz.
- * Tryb readonly: lewa = Generuj PDF + Historia | prawa = Zamknij.
+ * Tryb edycji: lewa = Generuj PDF + Wyślij maila | prawa = Zamknij + Zapisz.
+ * Tryb readonly: lewa = Generuj PDF | prawa = Zamknij.
  * Lock banner: gdy zlecenie zablokowane przez innego użytkownika.
  */
 
-import { FileText, History, Loader2, Lock, Mail } from "lucide-react";
+import { FileText, Loader2, Lock, Mail } from "lucide-react";
 
 interface DrawerFooterProps {
   isReadOnly: boolean;
@@ -16,7 +16,6 @@ interface DrawerFooterProps {
   onClose: () => void;
   onGeneratePdf?: () => void;
   onSendEmail?: () => void;
-  onShowHistory?: () => void;
 }
 
 export function DrawerFooter({
@@ -28,7 +27,6 @@ export function DrawerFooter({
   onClose,
   onGeneratePdf,
   onSendEmail,
-  onShowHistory,
 }: DrawerFooterProps) {
   if (lockedByUserName) {
     return (
@@ -49,16 +47,6 @@ export function DrawerFooter({
               >
                 <FileText className="w-4 h-4" />
                 Generuj PDF
-              </button>
-            )}
-            {onShowHistory && (
-              <button
-                type="button"
-                onClick={onShowHistory}
-                className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-              >
-                <History className="w-3.5 h-3.5" />
-                Historia zmian
               </button>
             )}
           </div>
@@ -86,16 +74,6 @@ export function DrawerFooter({
             >
               <FileText className="w-4 h-4" />
               Generuj PDF
-            </button>
-          )}
-          {onShowHistory && (
-            <button
-              type="button"
-              onClick={onShowHistory}
-              className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-            >
-              <History className="w-3.5 h-3.5" />
-              Historia zmian
             </button>
           )}
         </div>
@@ -132,16 +110,6 @@ export function DrawerFooter({
           >
             <Mail className="w-4 h-4" />
             Wyślij maila
-          </button>
-        )}
-        {onShowHistory && (
-          <button
-            type="button"
-            onClick={onShowHistory}
-            className="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors"
-          >
-            <History className="w-3.5 h-3.5" />
-            Historia zmian
           </button>
         )}
       </div>
