@@ -220,12 +220,18 @@ Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z dan
 - Wymagania specjalne (`specialRequirements`) — textarea (np. ADR, chłodnia).
 
 **Sekcja 3: Firma transportowa** *(przewoźnik, pojazd, dokumenty)*
+- **Layout kompaktowy — 2 wiersze:**
+  - **Wiersz 1** (`flex gap-2`): Nazwa firmy 50% + Typ auta 30% + Objętość m³ 20%.
+  - **Wiersz 2**: Wymagane dokumenty — full width.
 - Nazwa firmy (przewoźnik)* — autocomplete z `companies` (typ carrier).
-- NIP — readonly, auto po wyborze firmy przewoźnika.
-- Wariant pojazdu* — select z `vehicle_variants`; wyświetla `name` (typ + objętość, np. „firanka 90m³"). `vehicleVariantCode` przesyłany do API.
+- NIP — wyświetlany jako tekst 11px pod polem autocomplete (nie osobne pole input).
+- Typ auta* — select z unikalnych `vehicleType` z `vehicle_variants`.
+- Objętość m³* — **pole tekstowe** (type=number, wolne wpisywanie). Wpisana wartość jest dopasowywana do istniejącego `vehicleVariantCode` (typ + objętość). Jeśli brak dopasowania — `vehicleVariantCode` pusty.
 - Wymagane dokumenty — select (**2 opcje**): „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR". **Automatyczny wybór** przy zmianie Rodzaju transportu (Sekcja 1): eksport/eksport kontener/import → „WZE, Aneks VII, CMR"; kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić.
+- Brak ikon per pole (usunięte Truck, IdCard, Car, Ruler, FileText).
 
 **Sekcja 4: Finanse**
+- **Layout kompaktowy — 1 wiersz** (`flex gap-2`): Stawka 35% + Waluta 15% + Termin 25% + Forma płatności 25%.
 - Stawka* (`priceAmount`) — pole liczbowe ≥ 0.
 - Waluta* (`currencyCode`) — select (PLN, EUR, USD). **Automatyczny wybór** przy zmianie Rodzaju transportu (Sekcja 1): kraj → PLN; eksport/import → EUR. Użytkownik może ręcznie zmienić.
 - Termin płatności (`paymentTermDays`) — domyślnie 21 dni.
@@ -236,8 +242,9 @@ Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z dan
 - Sekcja 5 zawiera tylko to jedno pole. Wymagane dokumenty dla kierowcy znajdują się w Sekcji 3.
 
 **Sekcja 6: Zmiana statusu**
+- **Layout kompaktowy — 1 wiersz**: Aktualny status (badge) + separator pionowy + przyciski „Zmień na" — w jednej linii.
 - Aktualny status (badge readonly).
-- Wybór nowego statusu — select (tylko dozwolone przejścia ręczne zgodnie z PRD §3.1.7 i `ALLOWED_MANUAL_STATUS_TRANSITIONS`):
+- Wybór nowego statusu — kolorowe przyciski (tylko dozwolone przejścia ręczne zgodnie z PRD §3.1.7 i `ALLOWED_MANUAL_STATUS_TRANSITIONS`):
   - **Robocze** → Zrealizowane, Anulowane. (Reklamacja niedostępna z Robocze.)
   - **Wysłane** → Zrealizowane, Reklamacja, Anulowane.
   - **Korekta** → Zrealizowane, Reklamacja, Anulowane.

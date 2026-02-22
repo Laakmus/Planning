@@ -92,7 +92,7 @@ export function CargoSection({
           return (
             <div
               key={idx}
-              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 p-3 space-y-3 hover:border-amber-500/50 transition-all"
+              className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 p-3 space-y-0 hover:border-amber-500/50 transition-all"
             >
               <div className="flex items-center justify-between">
                 <span className="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 dark:bg-amber-400/10 dark:text-amber-400 rounded uppercase">
@@ -111,7 +111,7 @@ export function CargoSection({
               </div>
 
               {/* Produkt + Waga + Sposób załadunku — single row grid */}
-              <div className="grid grid-cols-12 gap-3">
+              <div className="grid grid-cols-12 gap-2">
                 {/* Nazwa towaru */}
                 <div className="col-span-12 md:col-span-6">
                   <AutocompleteField
