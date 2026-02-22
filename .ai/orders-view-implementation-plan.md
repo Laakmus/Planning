@@ -480,7 +480,7 @@ OrdersApp (React island — korzenny komponent)
 - **Struktura sekcji**:
   - **Sekcja 0 – Nagłówek** *(tylko do odczytu)*: Nr zlecenia (readonly), data wystawienia (`createdAt` readonly), autor (readonly), aktualny badge statusu (readonly), link „Historia zmian".
   - **Sekcja 1 – Trasa**: Rodzaj transportu* (Select u góry sekcji — zmiana auto-aktualizuje dokumenty w Sekcji 3 i walutę w Sekcji 4); następnie punkty L1, U1, L2, U2 (i kolejne) — każdy punkt: data, godzina, firma (autocomplete), oddział (select zależny od firmy), adres (readonly), NIP (readonly), uwagi; uchwyt drag-and-drop; przycisk usuń; przyciski „+ Dodaj załadunek" i „+ Dodaj rozładunek" (limity 8/3); na końcu sekcji: pola Osoba kontaktowa (`senderContactName`, `senderContactPhone`, `senderContactEmail`).
-  - **Sekcja 2 – Towar**: lista pozycji towarowych z polami: nazwa towaru* (autocomplete), waga t* (Input ≥ 0), sposób załadunku (Select PALETA/PALETA_BIGBAG/LUZEM/KOSZE — domyślnie z produktu, nadpisywalny), komentarz (Input); na dole przycisk „+ Dodaj towar"; podsumowanie „Razem: Xt"; pola globalne: `totalLoadTons`, `totalLoadVolumeM3`, `specialRequirements`.
+  - **Sekcja 2 – Towar**: lista pozycji towarowych z polami: nazwa towaru* (autocomplete), waga t* (Input ≥ 0), sposób załadunku (Select PALETA/PALETA_BIGBAG/LUZEM/KOSZE — domyślnie z produktu, nadpisywalny), komentarz (Input); na dole przycisk „+ Dodaj towar"; podsumowanie „Razem: Xt". *(Pola globalne `totalLoadTons`, `totalLoadVolumeM3`, `specialRequirements` istnieją w DB/API, ale usunięte z UI drawera.)*
   - **Sekcja 3 – Firma transportowa**: nazwa firmy (autocomplete carriers), NIP (Input `disabled` — auto), wariant pojazdu* (Select `vehicleVariantCode` — jeden select łączący typ + objętość, np. „firanka 90m³"), wymagane dokumenty (Select 2 opcje: „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR" — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny).
   - **Sekcja 4 – Finanse**: stawka* (Input ≥ 0), waluta* (Select PLN/EUR/USD — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny), termin płatności (Input dni, default 21), forma płatności (Select, default „Przelew").
   - **Sekcja 5 – Uwagi**: `<Textarea generalNotes>` z licznikiem znaków (max 1000). Tylko to jedno pole.
@@ -1134,7 +1134,6 @@ Realizowana na froncie (inline pod polami) i potwierdzana przez API (400):
 | `timeLocal` (stop) | Format HH:MM lub HH:MM:SS (jeśli podane) | RoutePointCard |
 | `generalNotes` | Max 1000 znaków | DocumentsSection |
 | `requiredDocumentsText` | Max 500 znaków | DocumentsSection |
-| `specialRequirements` | Max 1000 znaków | CargoSection |
 | `notes` (stop/item) | Max 500 znaków | RoutePointCard / ItemRow |
 | Punkty trasy | Max 8 LOADING, max 3 UNLOADING | RoutePointList |
 

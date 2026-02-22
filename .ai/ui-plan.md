@@ -215,9 +215,7 @@ Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z dan
   - Komentarz do pozycji (`notes`) — pole tekstowe.
   - Przycisk „Usuń pozycję".
 - Przycisk „Dodaj pozycję".
-- Masa całkowita (`totalLoadTons`) — obliczana lub ręczna.
-- Objętość (`totalLoadVolumeM3`) — opcjonalna.
-- Wymagania specjalne (`specialRequirements`) — textarea (np. ADR, chłodnia).
+- ~~Dane globalne ładunku~~ — **USUNIĘTE z UI** (pola `totalLoadTons`, `totalLoadVolumeM3`, `specialRequirements` istnieją w DB/API, ale nie są wyświetlane w drawerze).
 
 **Sekcja 3: Firma transportowa** *(przewoźnik, pojazd, dokumenty)*
 - **Layout kompaktowy — 2 wiersze:**

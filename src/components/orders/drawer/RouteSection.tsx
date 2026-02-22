@@ -1,6 +1,6 @@
 /**
  * Sekcja 1 – Trasa.
- * Rodzaj transportu + lista punktów załadunku/rozładunku + kontakt nadawcy.
+ * Rodzaj transportu + lista punktów załadunku/rozładunku.
  * Obsługuje drag-and-drop (DndContext + SortableContext) do reorderingu punktów trasy.
  * Drag handle jest NA ZEWNĄTRZ karty — w wrapperze flex.
  */
@@ -24,7 +24,6 @@ import {
 } from "@dnd-kit/sortable";
 import { CSS } from "@dnd-kit/utilities";
 
-import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
   Select,
@@ -342,45 +341,6 @@ export function RouteSection({
         </div>
       )}
 
-      {/* Kontakt nadawcy */}
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
-        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-          Osoba kontaktowa
-        </p>
-        <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Imię i nazwisko</Label>
-            <Input
-              value={formData.senderContactName ?? ""}
-              onChange={(e) => onChange({ senderContactName: e.target.value || null })}
-              disabled={isReadOnly}
-              className="h-8 text-sm"
-              placeholder="Jan Kowalski"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Telefon</Label>
-            <Input
-              value={formData.senderContactPhone ?? ""}
-              onChange={(e) => onChange({ senderContactPhone: e.target.value || null })}
-              disabled={isReadOnly}
-              className="h-8 text-sm"
-              placeholder="+48 000 000 000"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">E-mail</Label>
-            <Input
-              type="email"
-              value={formData.senderContactEmail ?? ""}
-              onChange={(e) => onChange({ senderContactEmail: e.target.value || null })}
-              disabled={isReadOnly}
-              className="h-8 text-sm"
-              placeholder="kontakt@firma.pl"
-            />
-          </div>
-        </div>
-      </div>
     </div>
   );
 }

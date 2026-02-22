@@ -5,7 +5,10 @@
 
 import { useEffect, useRef, useState } from "react";
 
-import { ArrowLeftRight, Banknote, MessageSquare, Package, Route, Truck } from "lucide-react";
+import { ArrowLeftRight, Banknote, MessageSquare, Package, Route, Truck, User } from "lucide-react";
+
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDictionaries } from "@/contexts/DictionaryContext";
@@ -169,6 +172,44 @@ export function OrderForm({
   return (
     <ScrollArea className="flex-1 min-h-0">
       <div className="p-6 space-y-8">
+
+        {/* Osoba kontaktowa */}
+        <section>
+          <SectionHeader icon={<User className="w-4 h-4 text-slate-400 dark:text-slate-500" />} title="Osoba kontaktowa" />
+          <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+            <div className="space-y-1">
+              <Label className="text-xs">Imię i nazwisko</Label>
+              <Input
+                value={formData.senderContactName ?? ""}
+                onChange={(e) => patch({ senderContactName: e.target.value || null })}
+                disabled={isReadOnly}
+                className="h-8 text-sm"
+                placeholder="Jan Kowalski"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Telefon</Label>
+              <Input
+                value={formData.senderContactPhone ?? ""}
+                onChange={(e) => patch({ senderContactPhone: e.target.value || null })}
+                disabled={isReadOnly}
+                className="h-8 text-sm"
+                placeholder="+48 000 000 000"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">E-mail</Label>
+              <Input
+                type="email"
+                value={formData.senderContactEmail ?? ""}
+                onChange={(e) => patch({ senderContactEmail: e.target.value || null })}
+                disabled={isReadOnly}
+                className="h-8 text-sm"
+                placeholder="kontakt@firma.pl"
+              />
+            </div>
+          </div>
+        </section>
 
         {/* Sekcja 1 – Trasa */}
         <section>

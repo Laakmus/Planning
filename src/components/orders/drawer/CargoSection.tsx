@@ -1,6 +1,6 @@
 /**
  * Sekcja 2 – Towar.
- * Lista pozycji towarowych + pola globalne ładunku.
+ * Lista pozycji towarowych.
  */
 
 import { Plus, Trash2 } from "lucide-react";
@@ -14,7 +14,6 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
 import type { ProductDto } from "@/types";
 import type { LoadingMethodCode, OrderFormData, OrderFormItem } from "@/lib/view-models";
 
@@ -215,54 +214,6 @@ export function CargoSection({
         </button>
       )}
 
-      {/* Pola globalne */}
-      <div className="pt-2 border-t border-slate-100 dark:border-slate-800 space-y-3">
-        <p className="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">
-          Dane globalne ładunku
-        </p>
-        <div className="grid grid-cols-2 gap-3">
-          <div className="space-y-1">
-            <Label className="text-xs">Całkowita masa (t)</Label>
-            <Input
-              type="number"
-              min={0}
-              step={0.01}
-              value={formData.totalLoadTons ?? ""}
-              onChange={(e) =>
-                onChange({ totalLoadTons: e.target.value !== "" ? parseFloat(e.target.value) : null })
-              }
-              disabled={isReadOnly}
-              className="h-8 text-sm"
-            />
-          </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Całkowita objętość (m³)</Label>
-            <Input
-              type="number"
-              min={0}
-              step={0.1}
-              value={formData.totalLoadVolumeM3 ?? ""}
-              onChange={(e) =>
-                onChange({ totalLoadVolumeM3: e.target.value !== "" ? parseFloat(e.target.value) : null })
-              }
-              disabled={isReadOnly}
-              className="h-8 text-sm"
-            />
-          </div>
-        </div>
-        <div className="space-y-1">
-          <Label className="text-xs">Wymagania specjalne</Label>
-          <Textarea
-            value={formData.specialRequirements ?? ""}
-            onChange={(e) => onChange({ specialRequirements: e.target.value || null })}
-            disabled={isReadOnly}
-            rows={2}
-            maxLength={1000}
-            className="text-sm resize-none"
-            placeholder="Wymagania dotyczące ładunku…"
-          />
-        </div>
-      </div>
     </div>
   );
 }
