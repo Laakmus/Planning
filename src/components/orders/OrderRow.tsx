@@ -4,6 +4,8 @@
  * Owinięty w OrderRowContextMenu dla obsługi prawego kliku.
  */
 
+import type { CSSProperties } from "react";
+
 import { useAuth } from "@/contexts/AuthContext";
 import { formatDate, formatDateTimeShort } from "@/lib/format-utils";
 import type { OrderListItemDto } from "@/types";
@@ -40,6 +42,7 @@ interface OrderRowProps {
   onDuplicate: (orderId: string) => void;
   onCancel: (orderId: string) => void;
   onRestore: (orderId: string) => void;
+  onSetCarrierColor: (orderId: string, color: string | null) => void;
 }
 
 export function OrderRow({
@@ -53,6 +56,7 @@ export function OrderRow({
   onDuplicate,
   onCancel,
   onRestore,
+  onSetCarrierColor,
 }: OrderRowProps) {
   const { user } = useAuth();
   const rowBg = ROW_BG[order.statusCode] ?? "bg-white dark:bg-slate-900";
@@ -64,6 +68,16 @@ export function OrderRow({
 
   // Suma tonażu
   const totalTons = order.items.reduce((sum, it) => sum + (it.quantityTons ?? 0), 0);
+
+  // Carrier cell color: ukryty gdy wysłane/korekta wysłane (zielone tło wiersza przejmuje)
+  const isGreenRow = order.statusCode === "wysłane" || order.statusCode === "korekta wysłane";
+  const carrierCellStyle: CSSProperties | undefined =
+    !isGreenRow && order.carrierCellColor
+      ? {
+          backgroundColor: order.carrierCellColor,
+          color: order.carrierCellColor === "#25671E" ? "#fff" : undefined,
+        }
+      : undefined;
 
   // Data rozładunku (widok Trasa: tylko U1)
   const firstUnloading = order.stops
@@ -191,7 +205,7 @@ export function OrderRow({
       </td>
 
       {/* Firma transportowa */}
-      <td className="py-1 px-4 text-[12px] min-w-[150px]">
+      <td className="py-1 px-4 text-[12px] min-w-[150px]" style={carrierCellStyle}>
         {order.carrierName ?? "—"}
       </td>
 
@@ -234,6 +248,7 @@ export function OrderRow({
       orderId={order.id}
       statusCode={order.statusCode}
       activeView={activeView}
+      carrierCellColor={order.carrierCellColor}
       onOpen={onRowClick}
       onSendEmail={onSendEmail}
       onShowHistory={onShowHistory}
@@ -241,6 +256,7 @@ export function OrderRow({
       onDuplicate={onDuplicate}
       onCancel={onCancel}
       onRestore={onRestore}
+      onSetCarrierColor={onSetCarrierColor}
     >
       {trRow}
     </OrderRowContextMenu>

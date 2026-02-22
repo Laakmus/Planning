@@ -62,6 +62,7 @@ function mapRowToOrderListItemDto(
     vehicle_capacity_volume_m3?: number | null;
     sent_by_user_name?: string | null;
     sent_at?: string | null;
+    carrier_cell_color?: string | null;
   },
   stops: OrderListStopDto[],
   items: OrderListItemInnerDto[]
@@ -107,6 +108,7 @@ function mapRowToOrderListItemDto(
     updatedAt: row.updated_at,
     updatedByUserId: row.updated_by_user_id,
     updatedByUserName: row.updated_by_user?.full_name ?? null,
+    carrierCellColor: row.carrier_cell_color ?? null,
   };
 }
 
@@ -1802,4 +1804,30 @@ export async function patchStop(
     locationId: merged.locationId,
     notes: merged.notes,
   };
+}
+
+/**
+ * Ustawia kolor komórki "Firma transportowa" na zleceniu.
+ * Prosty UPDATE bez blokady — operacja dekoracyjna (nie zmienia danych biznesowych).
+ *
+ * @param supabase — klient Supabase
+ * @param orderId — UUID zlecenia
+ * @param color — hex color lub null (usunięcie koloru)
+ * @returns { id, carrierCellColor } lub null gdy zlecenie nie istnieje
+ */
+export async function updateCarrierCellColor(
+  supabase: SupabaseClient<Database>,
+  orderId: string,
+  color: string | null
+): Promise<{ id: string; carrierCellColor: string | null } | null> {
+  type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
+  const { error, count } = await supabase
+    .from("transport_orders")
+    .update({ carrier_cell_color: color } as OrderUpdate, { count: "exact" })
+    .eq("id", orderId);
+
+  if (error) throw error;
+  if (!count || count === 0) return null;
+
+  return { id: orderId, carrierCellColor: color };
 }

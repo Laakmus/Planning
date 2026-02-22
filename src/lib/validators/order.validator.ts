@@ -172,3 +172,18 @@ export const dictionarySyncSchema = z.object({
 });
 
 export type DictionarySyncParams = z.infer<typeof dictionarySyncSchema>;
+
+/** Allowed carrier cell colors (hex). */
+export const ALLOWED_CARRIER_CELL_COLORS = [
+  "#48A111",
+  "#25671E",
+  "#FFEF5F",
+  "#EEA727",
+] as const;
+
+/** Body PATCH /api/v1/orders/{orderId}/carrier-color. */
+export const carrierCellColorSchema = z.object({
+  color: z.enum(ALLOWED_CARRIER_CELL_COLORS).nullable(),
+});
+
+export type CarrierCellColorParams = z.infer<typeof carrierCellColorSchema>;

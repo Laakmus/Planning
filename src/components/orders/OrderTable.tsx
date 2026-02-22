@@ -29,6 +29,7 @@ interface OrderTableProps {
   onDuplicate: (orderId: string) => void;
   onCancel: (orderId: string) => void;
   onRestore: (orderId: string) => void;
+  onSetCarrierColor: (orderId: string, color: string | null) => void;
 }
 
 type SortableColumn = { label: string; sortKey: OrderSortBy };
@@ -109,6 +110,7 @@ export function OrderTable({
   onDuplicate,
   onCancel,
   onRestore,
+  onSetCarrierColor,
 }: OrderTableProps) {
   const minWidth = viewMode === "columns" ? "1500px" : "1280px";
 
@@ -213,6 +215,7 @@ export function OrderTable({
                 onDuplicate={onDuplicate}
                 onCancel={onCancel}
                 onRestore={onRestore}
+                onSetCarrierColor={onSetCarrierColor}
               />
             ))
           )}

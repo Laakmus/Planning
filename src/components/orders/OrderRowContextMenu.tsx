@@ -6,7 +6,7 @@
 
 import { type ReactNode } from "react";
 
-import { Copy } from "lucide-react";
+import { Check, Copy } from "lucide-react";
 
 import {
   ContextMenu,
@@ -36,11 +36,20 @@ const STATUS_NAMES: Record<OrderStatusCode, string> = {
   anulowane: "Anulowane",
 };
 
+/** Carrier cell color options. */
+const CARRIER_COLORS = [
+  { hex: "#48A111", label: "Zielony" },
+  { hex: "#25671E", label: "Ciemnozielony" },
+  { hex: "#FFEF5F", label: "Żółty" },
+  { hex: "#EEA727", label: "Pomarańczowy" },
+] as const;
+
 interface OrderRowContextMenuProps {
   children: ReactNode;
   orderId: string;
   statusCode: string;
   activeView: ViewGroup;
+  carrierCellColor: string | null;
   onOpen: (orderId: string) => void;
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
@@ -48,6 +57,7 @@ interface OrderRowContextMenuProps {
   onDuplicate: (orderId: string) => void;
   onCancel: (orderId: string) => void;
   onRestore: (orderId: string) => void;
+  onSetCarrierColor: (orderId: string, color: string | null) => void;
 }
 
 export function OrderRowContextMenu({
@@ -55,6 +65,7 @@ export function OrderRowContextMenu({
   orderId,
   statusCode,
   activeView,
+  carrierCellColor,
   onOpen,
   onSendEmail,
   onShowHistory,
@@ -62,6 +73,7 @@ export function OrderRowContextMenu({
   onDuplicate,
   onCancel,
   onRestore,
+  onSetCarrierColor,
 }: OrderRowContextMenuProps) {
   const { user } = useAuth();
   const canWrite = user?.role !== "READ_ONLY";
@@ -109,6 +121,50 @@ export function OrderRowContextMenu({
                 </ContextMenuSubContent>
               </ContextMenuSub>
             )}
+
+            {/* Oznacz kolorem — podmenu */}
+            <ContextMenuSub>
+              <ContextMenuSubTrigger>
+                <span className="flex items-center gap-1.5">
+                  <span className="flex items-center gap-px">
+                    {CARRIER_COLORS.map(({ hex }) => (
+                      <span
+                        key={hex}
+                        className="inline-block w-2.5 h-2.5 rounded-sm"
+                        style={{ backgroundColor: hex }}
+                      />
+                    ))}
+                  </span>
+                  Kolor
+                </span>
+              </ContextMenuSubTrigger>
+              <ContextMenuSubContent>
+                {CARRIER_COLORS.map(({ hex, label }) => (
+                  <ContextMenuItem
+                    key={hex}
+                    onClick={() => onSetCarrierColor(orderId, hex)}
+                  >
+                    <span className="flex items-center gap-2">
+                      <span
+                        className="inline-block w-4 h-4 rounded-sm border border-slate-300 dark:border-slate-600 shrink-0"
+                        style={{ backgroundColor: hex }}
+                      />
+                      {label}
+                      {carrierCellColor === hex && (
+                        <Check className="w-3.5 h-3.5 ml-auto" />
+                      )}
+                    </span>
+                  </ContextMenuItem>
+                ))}
+                <ContextMenuSeparator />
+                <ContextMenuItem
+                  disabled={!carrierCellColor}
+                  onClick={() => onSetCarrierColor(orderId, null)}
+                >
+                  Usuń kolor
+                </ContextMenuItem>
+              </ContextMenuSubContent>
+            </ContextMenuSub>
 
             {/* Skopiuj zlecenie */}
             <ContextMenuItem onClick={() => onDuplicate(orderId)}>

@@ -90,6 +90,13 @@ export interface OrderListItemDto {
   updatedAt: string;
   updatedByUserId: string | null;
   updatedByUserName: string | null;
+  carrierCellColor: string | null;
+}
+
+/** Odpowiedź PATCH /api/v1/orders/{orderId}/carrier-color. */
+export interface CarrierColorResponseDto {
+  id: string;
+  carrierCellColor: string | null;
 }
 
 /** Odpowiedź GET /api/v1/orders. */

@@ -8,7 +8,7 @@ import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/AuthContext";
-import type { DuplicateOrderResponseDto, PrepareEmailResponseDto } from "@/types";
+import type { CarrierColorResponseDto, DuplicateOrderResponseDto, PrepareEmailResponseDto } from "@/types";
 import { useOrders } from "@/hooks/useOrders";
 import { DEFAULT_FILTERS } from "@/lib/view-models";
 import type {
@@ -206,6 +206,22 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     [api, refetch]
   );
 
+  const handleSetCarrierColor = useCallback(
+    async (orderId: string, color: string | null) => {
+      try {
+        await api.patch<CarrierColorResponseDto>(
+          `/api/v1/orders/${orderId}/carrier-color`,
+          { color }
+        );
+        toast.success(color ? "Kolor ustawiony." : "Kolor usunięty.");
+        refetch();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Błąd ustawiania koloru.");
+      }
+    },
+    [api, refetch]
+  );
+
   const handleDuplicate = useCallback(
     async (orderId: string) => {
       try {
@@ -268,6 +284,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           onDuplicate={handleDuplicate}
           onCancel={handleCancel}
           onRestore={handleRestore}
+          onSetCarrierColor={handleSetCarrierColor}
         />
       )}
 
