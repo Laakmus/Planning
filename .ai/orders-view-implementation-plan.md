@@ -333,7 +333,7 @@ OrdersApp (React island — korzenny komponent)
     </div>
     ```
   - **Komentarz** — lista ponumerowana uwag z `order.items[].notes` (powiązana z pozycjami towaru); jeśli brak — puste pole; styl: `text-[11px] text-slate-500`
-  - **Firma transportowa** — **tylko nazwa firmy** (`carrierName` z API), **bez** osoby kontaktowej i telefonu; styl: `text-[12px]`
+  - **Firma transportowa** — **tylko nazwa firmy** (`carrierName` z API), **bez** osoby kontaktowej i telefonu; styl: `text-[12px]`. Komórka może mieć kolorowe tło (inline style z `carrierCellColor`): `#48A111`, `#25671E` (biały tekst), `#FFEF5F`, `#EEA727`. Kolor ukryty gdy status = wysłane/korekta wysłane (zielone tło wiersza przejmuje).
   - **Typ auta** — `vehicleVariantName` + objętość w nawiasie (`vehicleCapacityVolumeM3`), np. „firanka (90m³)"; styl: `text-[12px]`
   - **Stawka** — `priceAmount` + `currencyCode` (np. "1450 PLN"); styl: `text-[12px] font-medium`
   - **Data wysłania zlecenia** — dwulinijkowa:
@@ -410,11 +410,12 @@ OrdersApp (React island — korzenny komponent)
 - **Główne elementy**: shadcn `<ContextMenu>` (lub `<DropdownMenu>` pozycjonowane programatycznie) z `<ContextMenuItem>` i `<ContextMenuSub>` dla statusu.
 - **Obsługiwane interakcje**:
   - „Wyślij maila" → `POST /orders/{id}/prepare-email`
-  - „Historia zmian" → otwarcie `<HistoryPanel>`
   - „Zmień status" → podmenu z dozwolonymi przejściami (z `ALLOWED_MANUAL_STATUS_TRANSITIONS`)
-  - „Skopiuj zlecenie" → `POST /orders/{id}/duplicate` (etap 2)
-  - „Anuluj zlecenie" → modal potwierdzenia → `DELETE /orders/{id}`
+  - „Kolor" → podmenu z 4 kolorami + „Usuń kolor" → `PATCH /orders/{id}/carrier-color`; trigger z kolorowymi kwadracikami + tekst "Kolor"
+  - „Skopiuj zlecenie" → `POST /orders/{id}/duplicate`
   - „Przywróć do aktualnych" → `POST /orders/{id}/restore` (w zakładkach Zrealizowane/Anulowane; po przywróceniu status = Korekta; z Anulowane tylko gdy &lt; 24 h)
+  - „Anuluj zlecenie" → modal potwierdzenia → `DELETE /orders/{id}`
+  - „Historia zmian" → otwarcie `<HistoryPanel>` (na dole menu, widoczna dla wszystkich)
 - **Walidacja**:
   - Opcje filtrowane na podstawie `statusCode` i dozwolonych przejść (api-plan 2.7)
   - Opcje edycyjne ukryte dla roli READ_ONLY (PRD 3.1.2a)
@@ -435,6 +436,7 @@ OrdersApp (React island — korzenny komponent)
     onDuplicate: (orderId: string) => void;
     onCancel: (orderId: string) => void;
     onRestore: (orderId: string) => void;  // serwer zawsze ustawia status Korekta
+    onSetCarrierColor: (orderId: string, color: string | null) => void;
   }
   ```
 
@@ -1396,3 +1398,4 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 58. **Dodać responsywność** — jeden breakpoint, tabela z `min-w-[1280px]` i scrollbar-hide.
 59. **Dodać ukrywanie akcji dla READ_ONLY** — sprawdzanie roli we wszystkich komponentach z akcjami.
 60. **Testować przepływy end-to-end** — logowanie, CRUD, wysyłka, historia, synchronizacja, blokada, przywracanie.
+61. **Dodać oznaczanie kolorem komórki „Firma transportowa"** — migracja DB (`carrier_cell_color varchar(7)`), endpoint `PATCH /orders/{id}/carrier-color`, podmenu „Kolor" w `OrderRowContextMenu` z 4 kolorami + „Usuń kolor", inline style na `<td>` przewoźnika, ukrywanie koloru dla statusów wysłane/korekta wysłane. (**ZREALIZOWANE**)

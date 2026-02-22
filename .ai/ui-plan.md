@@ -126,8 +126,9 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
    - Wirtualizacja listy (np. `@tanstack/react-virtual`) przy dużej liczbie wierszy.
 
 5. **OrderRowContextMenu** — menu kontekstowe (prawy klik na wierszu; na razie **tylko prawy klik**, bez skrótu klawiaturowego).
-   - Opcje: „Wyślij maila", „Historia zmian", „Zmień status" (podmenu), „Skopiuj zlecenie", „Anuluj zlecenie"; w zakładkach Zrealizowane/Anulowane: „Przywróć do aktualnych".
-   - Opcje zależne od roli: READ_ONLY widzi tylko „Historia zmian".
+   - Opcje: „Wyślij maila", „Zmień status" (podmenu), „Kolor" (podmenu z 4 kolorami + „Usuń kolor"), „Skopiuj zlecenie", „Anuluj zlecenie"; w zakładkach Zrealizowane/Anulowane: „Przywróć do aktualnych"; „Historia zmian" (na dole, widoczna dla wszystkich).
+   - Podmenu „Kolor": trigger z kolorowymi kwadracikami (`w-2.5 h-2.5 rounded-sm`) + tekst "Kolor"; podmenu z 4 pozycjami (hex + label + checkmark przy wybranym) + separator + „Usuń kolor" (disabled gdy brak koloru).
+   - Opcje zależne od roli: READ_ONLY widzi tylko „Otwórz" i „Historia zmian" (brak opcji edycyjnych w tym „Kolor").
    - **Reklamacja:** Przy zmianie statusu na Reklamacja wymagane pole „Powód reklamacji" — zarówno z menu kontekstowego (lista), jak i z draweru. Jeśli użytkownik zamknie okienko/panel bez wpisania powodu, status **nie** zmienia się na Reklamacja (zmiana anulowana).
 
 6. **AddOrderButton** — przycisk „Nowe zlecenie" (lub „Dodaj nowy wiersz"). **Tylko** w zakładce Aktualne, **tylko** dla ról ADMIN i PLANNER, w **jednym miejscu**: w pasie filtrów z prawej strony.
@@ -776,9 +777,23 @@ Kolumna Firma transportowa wyświetla **tylko nazwę firmy** (bez osoby kontakto
 - Format: po prostu tekst z nazwą przewoźnika, np. "Mega Transport", "Transport Express Sp. z o.o."
 - **Bez dodatkowych elementów**: brak imienia osoby kontaktowej, brak numeru telefonu, brak ikony
 
+**Oznaczanie kolorem komórki (carrier cell color):**
+- Użytkownik (ADMIN/PLANNER) może oznaczyć komórkę jednym z 4 kolorów poprzez menu kontekstowe (prawy klik → podmenu "Kolor" z kolorowymi kwadracikami)
+- **Dozwolone kolory**: `#48A111` (zielony), `#25671E` (ciemnozielony), `#FFEF5F` (żółty), `#EEA727` (pomarańczowy)
+- Kolor stosowany jako `backgroundColor` komórki (inline style); `#25671E` wymaga białego tekstu dla kontrastu
+- **Status override**: gdy status = wysłane/korekta wysłane → kolor komórki ukryty (wiersz przejmuje zielone tło `bg-emerald-100/70`)
+- Kolor zapisywany w DB (`carrier_cell_color` na `transport_orders`) i widoczny dla wszystkich użytkowników
+- READ_ONLY widzi kolor, ale nie ma opcji zmiany w menu kontekstowym
+- Kolor NIE jest kopiowany przy duplikacji zlecenia
+- API: `PATCH /api/v1/orders/{orderId}/carrier-color` z body `{ color: "#48A111" | null }`
+
 **Przykład w HTML:**
 ```html
 <td class="py-1 px-4 text-[12px]">Mega Transport</td>
+<!-- z kolorem: -->
+<td class="py-1 px-4 text-[12px]" style="background-color: #48A111">Mega Transport</td>
+<!-- ciemnozielony z białym tekstem: -->
+<td class="py-1 px-4 text-[12px]" style="background-color: #25671E; color: #fff">Mega Transport</td>
 ```
 
 ### 6.6 Kolumna Towaru (ikona + badge)
