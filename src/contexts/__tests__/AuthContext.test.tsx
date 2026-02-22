@@ -300,7 +300,7 @@ describe("AuthProvider — login()", () => {
     });
 
     expect(caughtError).not.toBeNull();
-    expect((caughtError as Error).message).toMatch(/Nieprawidłowy login lub hasło/);
+    expect(caughtError!.message).toMatch(/Nieprawidłowy login lub hasło/);
   });
 
   it("throws when profile fetch returns null (profile not found)", async () => {
@@ -339,7 +339,7 @@ describe("AuthProvider — login()", () => {
     });
 
     expect(caughtError).not.toBeNull();
-    expect((caughtError as Error).message).toMatch(/profilu użytkownika/);
+    expect(caughtError!.message).toMatch(/profilu użytkownika/);
   });
 });
 

@@ -90,7 +90,7 @@ export const createOrderSchema = z.object({
   carrierCompanyId: z.string().uuid().nullable(),
   shipperLocationId: z.string().uuid().nullable(),
   receiverLocationId: z.string().uuid().nullable(),
-  vehicleVariantCode: z.string().min(1),
+  vehicleVariantCode: z.string().min(1).nullable(),
   priceAmount: z.number().nonnegative().nullable(),
   paymentTermDays: z.number().int().nonnegative().nullable(),
   paymentMethod: z.string().max(100).nullable(),

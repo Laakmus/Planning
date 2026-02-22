@@ -741,7 +741,7 @@ function autoSetDocumentsAndCurrency(
 async function validateForeignKeys(
   supabase: SupabaseClient<Database>,
   params: {
-    vehicleVariantCode: string;
+    vehicleVariantCode: string | null;
     transportTypeCode: string;
     carrierCompanyId?: string | null;
     stops: Array<{ locationId: string | null }>;
@@ -751,13 +751,15 @@ async function validateForeignKeys(
   const errors: Record<string, string> = {};
 
   // vehicleVariantCode
-  const { data: vv } = await supabase
-    .from("vehicle_variants")
-    .select("code")
-    .eq("code", params.vehicleVariantCode)
-    .eq("is_active", true)
-    .maybeSingle();
-  if (!vv) errors.vehicleVariantCode = "Wariant pojazdu nie istnieje lub jest nieaktywny.";
+  if (params.vehicleVariantCode) {
+    const { data: vv } = await supabase
+      .from("vehicle_variants")
+      .select("code")
+      .eq("code", params.vehicleVariantCode)
+      .eq("is_active", true)
+      .maybeSingle();
+    if (!vv) errors.vehicleVariantCode = "Wariant pojazdu nie istnieje lub jest nieaktywny.";
+  }
 
   // transportTypeCode
   const { data: tt } = await supabase
@@ -1100,7 +1102,7 @@ export async function createOrder(
     status_code: STATUS_ROBOCZE,
     transport_type_code: params.transportTypeCode,
     currency_code: currencyCode,
-    vehicle_variant_code: params.vehicleVariantCode,
+    vehicle_variant_code: params.vehicleVariantCode ?? null,
     created_by_user_id: userId,
     carrier_company_id: params.carrierCompanyId ?? null,
     carrier_name_snapshot: carrierSnapshots.carrier_name_snapshot,
@@ -1241,15 +1243,6 @@ export async function updateOrder(
   const activeStops = params.stops.filter((s) => !s._deleted).sort((a, b) => a.sequenceNo - b.sequenceNo);
   const activeItems = params.items.filter((i) => !i._deleted);
 
-  // vehicleVariantCode is NOT NULL in DB — reject null early (updateOrderSchema allows nullable but DB doesn't)
-  if (!params.vehicleVariantCode) {
-    const err = new Error("FK_VALIDATION");
-    (err as Error & { details: Record<string, string> }).details = {
-      vehicleVariantCode: "Wariant pojazdu jest wymagany.",
-    };
-    throw err;
-  }
-
   const fkErrors = await validateForeignKeys(supabase, {
     vehicleVariantCode: params.vehicleVariantCode,
     transportTypeCode: params.transportTypeCode,
@@ -1360,7 +1353,7 @@ export async function updateOrder(
   const updatePayload: Record<string, unknown> = {
     transport_type_code: params.transportTypeCode,
     currency_code: params.currencyCode,
-    vehicle_variant_code: params.vehicleVariantCode,
+    vehicle_variant_code: params.vehicleVariantCode ?? null,
     carrier_company_id: params.carrierCompanyId ?? null,
     carrier_name_snapshot: carrierSnapshots.carrier_name_snapshot,
     carrier_address_snapshot: carrierSnapshots.carrier_address_snapshot,

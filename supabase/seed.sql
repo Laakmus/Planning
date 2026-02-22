@@ -9,7 +9,7 @@ BEGIN;
 
 INSERT INTO auth.users (
   id, instance_id, aud, role, email, encrypted_password,
-  email_confirmed_at, confirmed_at, last_sign_in_at,
+  email_confirmed_at, last_sign_in_at,
   raw_app_meta_data, raw_user_meta_data,
   is_super_admin, is_sso_user, is_anonymous,
   created_at, updated_at,
@@ -22,7 +22,7 @@ INSERT INTO auth.users (
   'authenticated', 'authenticated',
   'admin@test.pl',
   '$2a$06$aOIUYmSR6ANr0jaIvFey2eYBV0uF19yD3wUCsHvx2zfrK4dApGZmC',
-  now(), now(), now(),
+  now(), now(),
   '{"provider":"email","providers":["email"]}',
   '{"email_verified":true}',
   false, false, false,

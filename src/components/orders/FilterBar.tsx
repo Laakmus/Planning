@@ -41,6 +41,7 @@ interface FilterBarProps {
   onViewModeChange: (mode: ListViewMode) => void;
   /** Przycisk "Nowe zlecenie" widoczny tylko w Aktualne + Admin/Planner */
   showAddButton: boolean;
+  isAddingOrder?: boolean;
   onAddOrder: () => void;
 }
 
@@ -52,6 +53,7 @@ export function FilterBar({
   onPageSizeChange,
   onViewModeChange,
   showAddButton,
+  isAddingOrder,
   onAddOrder,
 }: FilterBarProps) {
   const { companies, products, transportTypes, orderStatuses } = useDictionaries();
@@ -216,10 +218,23 @@ export function FilterBar({
         {showAddButton && (
           <button
             onClick={onAddOrder}
-            className="inline-flex items-center gap-1 h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md shadow transition-colors"
+            disabled={isAddingOrder}
+            className="inline-flex items-center gap-1 h-8 px-3 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Plus className="w-3.5 h-3.5" />
-            Nowe zlecenie
+            {isAddingOrder ? (
+              <>
+                <svg className="w-3.5 h-3.5 animate-spin" viewBox="0 0 24 24" fill="none">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" />
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z" />
+                </svg>
+                Tworzenie...
+              </>
+            ) : (
+              <>
+                <Plus className="w-3.5 h-3.5" />
+                Nowe zlecenie
+              </>
+            )}
           </button>
         )}
       </div>

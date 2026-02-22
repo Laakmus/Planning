@@ -9,6 +9,7 @@ interface EmptyStateProps {
   hasFilters: boolean;
   /** Widoczny tylko dla CURRENT + Admin/Planner — otwiera formularz nowego zlecenia. */
   showAddButton?: boolean;
+  isAddingOrder?: boolean;
   onAddOrder?: () => void;
   onClearFilters?: () => void;
 }
@@ -16,6 +17,7 @@ interface EmptyStateProps {
 export function EmptyState({
   hasFilters,
   showAddButton,
+  isAddingOrder,
   onAddOrder,
   onClearFilters,
 }: EmptyStateProps) {
@@ -53,9 +55,10 @@ export function EmptyState({
       {showAddButton && onAddOrder && (
         <button
           onClick={onAddOrder}
-          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow transition-colors"
+          disabled={isAddingOrder}
+          className="inline-flex items-center gap-2 px-4 py-2 text-sm font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-lg shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
         >
-          Nowe zlecenie
+          {isAddingOrder ? "Tworzenie..." : "Nowe zlecenie"}
         </button>
       )}
     </div>

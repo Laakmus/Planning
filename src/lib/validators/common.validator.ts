@@ -14,5 +14,5 @@ export const paginationSchema = z.object({
 /** Format YYYY-MM-DD. */
 export const isoDateSchema = z.string().regex(/^\d{4}-\d{2}-\d{2}$/);
 
-/** Format HH:MM:SS. */
-export const isoTimeSchema = z.string().regex(/^\d{2}:\d{2}:\d{2}$/);
+/** Format HH:MM or HH:MM:SS. */
+export const isoTimeSchema = z.string().regex(/^\d{2}:\d{2}(:\d{2})?$/);

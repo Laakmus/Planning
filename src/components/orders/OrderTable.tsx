@@ -5,6 +5,7 @@
  * Styl hover: rgba(primary, 0.04) przez klasę group na <tr>.
  */
 
+import { forwardRef } from "react";
 import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
 
 import type { OrderListItemDto } from "@/types";
@@ -19,10 +20,8 @@ interface OrderTableProps {
   viewMode: ListViewMode;
   isLoading: boolean;
   activeView: ViewGroup;
-  pendingNewOrder?: boolean;
   onSort: (sortBy: OrderSortBy) => void;
   onRowClick: (orderId: string) => void;
-  onNewRowClick?: () => void;
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
   onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
@@ -93,17 +92,15 @@ function SortableTh({
   );
 }
 
-export function OrderTable({
+export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function OrderTable({
   orders,
   sortBy,
   sortDirection,
   viewMode,
   isLoading,
   activeView,
-  pendingNewOrder,
   onSort,
   onRowClick,
-  onNewRowClick,
   onSendEmail,
   onShowHistory,
   onChangeStatus,
@@ -111,11 +108,12 @@ export function OrderTable({
   onCancel,
   onRestore,
   onSetCarrierColor,
-}: OrderTableProps) {
+}, ref) {
   const minWidth = viewMode === "columns" ? "1500px" : "1280px";
 
   return (
     <div
+      ref={ref}
       className="flex-1 min-h-0 overflow-auto bg-white dark:bg-slate-900"
       style={{
         // Cienki, widoczny scrollbar
@@ -220,20 +218,8 @@ export function OrderTable({
             ))
           )}
 
-          {/* Pusty wiersz nowego zlecenia */}
-          {pendingNewOrder && (
-            <tr
-              className="bg-emerald-50/40 dark:bg-emerald-900/10 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 cursor-pointer transition-colors border-2 border-dashed border-emerald-300 dark:border-emerald-700"
-              onClick={onNewRowClick}
-            >
-              <td className="py-2 px-4" />
-              <td className="py-2 px-4 text-[12px] text-emerald-600 dark:text-emerald-400 font-medium italic" colSpan={viewMode === "columns" ? 14 : 13}>
-                Kliknij, aby wypełnić nowe zlecenie...
-              </td>
-            </tr>
-          )}
         </tbody>
       </table>
     </div>
   );
-}
+});

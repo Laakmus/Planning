@@ -14,7 +14,7 @@ export interface UseOrdersResult {
   data: OrderListResponseDto | null;
   isLoading: boolean;
   error: string | null;
-  refetch: () => void;
+  refetch: () => Promise<void>;
 }
 
 /**

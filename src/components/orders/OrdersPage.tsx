@@ -4,11 +4,11 @@
  * Renderuje: FilterBar + OrderTable/EmptyState + paginacja + StatusFooter.
  */
 
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/AuthContext";
-import type { CarrierColorResponseDto, DuplicateOrderResponseDto, PrepareEmailResponseDto } from "@/types";
+import type { CarrierColorResponseDto, CreateOrderResponseDto, DuplicateOrderResponseDto, PrepareEmailResponseDto } from "@/types";
 import { useOrders } from "@/hooks/useOrders";
 import { DEFAULT_FILTERS } from "@/lib/view-models";
 import type {
@@ -45,8 +45,10 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Stan pustego wiersza (nowe zlecenie)
-  const [pendingNewOrder, setPendingNewOrder] = useState(false);
+  // Stan tworzenia nowego zlecenia (blokada przycisku + spinner)
+  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
+  const isCreatingRef = useRef(false);
+  const tableScrollRef = useRef<HTMLDivElement>(null);
 
   // Stan panelu historii
   const [historyOrderId, setHistoryOrderId] = useState<string | null>(null);
@@ -124,20 +126,49 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     setDrawerOpen(true);
   }
 
-  function handleAddOrder() {
-    setPendingNewOrder(true);
-  }
-
-  function handleNewRowClick() {
-    setPendingNewOrder(false);
-    setSelectedOrderId(null);
-    setDrawerOpen(true);
-  }
+  const handleAddOrder = useCallback(async () => {
+    if (isCreatingRef.current) return;
+    isCreatingRef.current = true;
+    setIsCreatingOrder(true);
+    try {
+      const result = await api.post<CreateOrderResponseDto>("/api/v1/orders", {
+        transportTypeCode: "PL",
+        currencyCode: "PLN",
+        carrierCompanyId: null,
+        shipperLocationId: null,
+        receiverLocationId: null,
+        vehicleVariantCode: null,
+        priceAmount: null,
+        paymentTermDays: null,
+        paymentMethod: null,
+        totalLoadTons: null,
+        totalLoadVolumeM3: null,
+        specialRequirements: null,
+        requiredDocumentsText: null,
+        generalNotes: null,
+        senderContactName: null,
+        senderContactPhone: null,
+        senderContactEmail: null,
+        stops: [],
+        items: [],
+      });
+      toast.success(`Utworzono zlecenie ${result.orderNo}.`);
+      await refetch();
+      // Auto-scroll na dół po wyrenderowaniu nowego wiersza
+      requestAnimationFrame(() => {
+        tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Błąd tworzenia zlecenia.");
+    } finally {
+      isCreatingRef.current = false;
+      setIsCreatingOrder(false);
+    }
+  }, [api, refetch]);
 
   const handleDrawerClose = useCallback(() => {
     setDrawerOpen(false);
     setSelectedOrderId(null);
-    setPendingNewOrder(false);
   }, []);
 
   function handleShowHistory(orderId: string, orderNo?: string) {
@@ -242,7 +273,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   const totalItems = data?.totalItems ?? 0;
   const totalPages = data?.totalPages ?? 1;
 
-  const isEmpty = !isLoading && orders.length === 0 && !pendingNewOrder;
+  const isEmpty = !isLoading && orders.length === 0;
 
   return (
     <div className="flex flex-col flex-1 min-h-0">
@@ -255,6 +286,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
         onPageSizeChange={handlePageSizeChange}
         onViewModeChange={setViewMode}
         showAddButton={showAddButton}
+        isAddingOrder={isCreatingOrder}
         onAddOrder={handleAddOrder}
       />
 
@@ -263,21 +295,21 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
         <EmptyState
           hasFilters={hasActiveFilters}
           showAddButton={showAddButton}
+          isAddingOrder={isCreatingOrder}
           onAddOrder={handleAddOrder}
           onClearFilters={handleClearFilters}
         />
       ) : (
         <OrderTable
+          ref={tableScrollRef}
           orders={orders}
           sortBy={filters.sortBy}
           sortDirection={filters.sortDirection}
           viewMode={viewMode}
           isLoading={isLoading}
           activeView={activeView}
-          pendingNewOrder={pendingNewOrder}
           onSort={handleSort}
           onRowClick={handleRowClick}
-          onNewRowClick={handleNewRowClick}
           onSendEmail={handleSendEmail}
           onShowHistory={handleShowHistory}
           onChangeStatus={handleChangeStatus}
