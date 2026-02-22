@@ -238,7 +238,7 @@ export function OrderForm({
         {/* Sekcja 3 – Firma transportowa */}
         <section>
           <SectionHeader icon={<Truck className="w-4 h-4 text-violet-500" />} title="Sekcja 3: Firma transportowa" />
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800">
             <CarrierSection
               formData={formData}
               companies={companies}
@@ -252,7 +252,7 @@ export function OrderForm({
         {/* Sekcja 4 – Finanse */}
         <section>
           <SectionHeader icon={<Banknote className="w-4 h-4 text-yellow-500" />} title="Sekcja 4: Finanse" />
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800">
             <FinanceSection
               formData={formData}
               isReadOnly={isReadOnly}
@@ -264,7 +264,7 @@ export function OrderForm({
         {/* Sekcja 5 – Uwagi */}
         <section>
           <SectionHeader icon={<MessageSquare className="w-4 h-4 text-slate-400 dark:text-slate-500" />} title="Sekcja 5: Uwagi" />
-          <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800">
             <NotesSection
               formData={formData}
               isReadOnly={isReadOnly}
@@ -277,7 +277,7 @@ export function OrderForm({
         {!isReadOnly && (
           <section>
             <SectionHeader icon={<ArrowLeftRight className="w-4 h-4 text-indigo-500" />} title="Sekcja 6: Zmiana statusu" />
-            <div className="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800">
               <StatusSection
                 currentStatusCode={order.statusCode}
                 currentStatusName={statusName}
