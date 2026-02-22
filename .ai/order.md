@@ -122,78 +122,106 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 
 #### Sekcja 6 — Asortyment (tabela towarów)
 
-**Nagłówek tabeli:**
+**Nagłówek tabeli** (526px, `ROW_526`):
 
-| Kolumna | Opis | Szerokość (przybliżona) |
-|---------|------|-------------------------|
-| Lp. + Nazwa towaru | Numer pozycji + nazwa produktu | ~235px |
-| Uwagi do towaru | Komentarz/uwagi per pozycja (textarea) | ~178px (połączone 2 kolumny z mockupu) |
-| Typ opakowania | Select: LUZEM / BIGBAG / PALETA / INNA | ~114px |
+| Kolumna | Opis | Szerokość |
+|---------|------|-----------|
+| ASORTYMENT (etykieta) | Szary label | 98px (shrink-0) |
+| (pusta) | Początek nazwy produktu | 136px |
+| UWAGI | Label kolumny uwag | 178px |
+| LUZEM | Checkbox opakowania | 33px |
+| BIGBAG | Checkbox opakowania | 28px |
+| PALETA | Checkbox opakowania | 29px |
+| INNA | Checkbox opakowania | 24px |
 
-**Wiersze danych:**
+**Wiersze danych** (544px = 526px treści + 18px kolumna gutter):
+
+| Kolumna | Opis | Szerokość |
+|---------|------|-----------|
+| Lp. + Nazwa towaru | Numer + ProductAutocomplete | 234px |
+| Uwagi do towaru | Input tekstowy | 178px |
+| LUZEM | Checkbox (klik = toggle „X") | 33px |
+| BIGBAG | Checkbox | 28px |
+| PALETA | Checkbox | 29px |
+| INNA | Checkbox | 24px |
+| (gutter) | Niewidoczna kolumna — przycisk × na hover | 18px |
+
+**Wyrównanie kolumn**: dzielnik BIGBAG|PALETA (234+178+33+28 = **473px**) wyrównany z dzielnikiem Content|GOD/KRAJ w stop rows.
 
 | Lp. | Pole | Typ pola | Źródło danych (drawer) | Edytowalność |
 |-----|------|----------|------------------------|--------------|
-| 1 | Nazwa towaru | Autocomplete | Sekcja 2 drawera → Nazwa towaru | **Edytowalne** |
+| 1 | Nazwa towaru | Autocomplete (ProductAutocomplete) | Sekcja 2 drawera → Nazwa towaru | **Edytowalne** |
 | 2 | Uwagi do towaru | Input tekstowy (max 500 znaków) | Sekcja 2 drawera → Komentarz (pole „Uwagi do towaru…") | **Edytowalne** |
-| 3 | Typ opakowania | Select (dropdown) | Sekcja 2 drawera → Sposób załadunku | **Edytowalne** |
+| 3 | Typ opakowania | Checkbox (klik na kolumnę = toggle) | Sekcja 2 drawera → Sposób załadunku | **Edytowalne** |
 
 - Każdy wiersz = jedna pozycja towarowa z `items[]` modelu Order.
 - **Pełna edycja**: użytkownik może dodawać i usuwać wiersze bezpośrednio w widoku Order.
+- **Przycisk usuwania** (×): w kolumnie gutter 18px (poza widocznym obramowaniem tabeli), pojawia się na hover wiersza.
 - Dynamiczna ilość wierszy (w mockupie przewidziano 8 slotów wizualnych, ale lista jest dynamiczna).
-- Opcje selecta: LUZEM, BIGBAG, PALETA, INNA (mapowanie na `packagingType` / `loadingMethod`).
-- Kolumna „NR ZAMÓWIENIA" z mockupu zastąpiona jedną kolumną „Uwagi do towaru".
+- Opcje pakowania: LUZEM, BIGBAG, PALETA, INNA (mapowanie na `packagingType`).
 
 ---
 
-#### Sekcja 7 — Trasa: Załadunek
+#### Sekcja 7 — Trasa: Stopy (unified stops[] z drag-and-drop)
 
-| Lp. | Pole | Typ pola | Źródło danych (drawer) | Edytowalność |
-|-----|------|----------|------------------------|--------------|
-| 1 | Data załadunku | Datepicker | Sekcja 1 drawera → pierwszy stop LOADING → data | **Edytowalne** |
-| 2 | Godzina załadunku | Timepicker | Sekcja 1 drawera → pierwszy stop LOADING → godzina | **Edytowalne** |
-| 3 | Miejsce załadunku (firma + adres) | Autocomplete / tekst | Sekcja 1 drawera → pierwszy stop LOADING → firma + oddział + adres | **Edytowalne** |
-| 4 | Kraj | Tekst (2-literowy kod) | Sekcja 1 drawera → pierwszy stop LOADING → kraj | **Edytowalne** |
+Wszystkie stopy (LOADING + UNLOADING) renderowane jako jedna zunifikowana lista z obsługą przeciągania (DnD).
 
-- Tło: standardowe (białe/szare jak nagłówki).
-- Mapowanie: pierwszy stop z `stops[]` o typie LOADING.
+**Model stopu** (`OrderViewStop`):
+
+| Pole | Typ | Opis |
+|------|-----|------|
+| `id` | string | Unikalny ID (generowany) |
+| `kind` | `"LOADING"` \| `"UNLOADING"` | Typ stopu |
+| `sequenceNo` | number | Numer kolejny (auto-renumeracja po DnD) |
+| `date` | string \| null | Data (YYYY-MM-DD) |
+| `time` | string \| null | Godzina (HH:MM) |
+| `companyId` | string \| null | UUID firmy (z CompanyAutocomplete) |
+| `companyName` | string \| null | Snapshot nazwy firmy |
+| `locationId` | string \| null | UUID lokalizacji (z LocationAutocomplete) |
+| `locationName` | string \| null | Snapshot nazwy lokalizacji |
+| `address` | string \| null | Computed: ulica, kod, miasto (po wyborze lokalizacji) |
+| `country` | string | Kod kraju (2-literowy, domyślnie „PL") |
+| `place` | string | Fallback display text |
+
+**Każdy stop = 2 wiersze A4** (526px, `ROW_526`):
+
+| Wiersz | Kolumna etykiety (98px) | Kolumna treści (375px) | Kolumna prawa (53px) |
+|--------|------------------------|------------------------|----------------------|
+| DATA | „DATA ZAŁADUNKU N:" / „DATA ROZŁADUNKU N:" | Data (EditableText) | GOD. + godzina |
+| MIEJSCE | „MIEJSCE ZAŁADUNKU N:" / „MIEJSCE ROZŁADUNKU N:" | Firma (CompanyAutocomplete, 120px) → Adres (LocationAutocomplete, flex-1) | KRAJ + kod |
+
+**Wyrównanie kolumn**: dzielnik Content|GOD/KRAJ na **473px** od lewej = dzielnik BIGBAG|PALETA w items grid.
+
+**Kolory tła zależne od `kind`:**
+
+| Kind | Etykieta (bg) | Wartość (bg) |
+|------|---------------|--------------|
+| LOADING | `#E7E7E7` (szary) | biały |
+| UNLOADING | `#F59444` (pomarańczowy) | `#FAD1A5` (jasnopomarańczowy) |
+
+**Etykiety dynamiczne**: numer pojawia się tylko gdy >1 stop danego kind (np. „DATA ZAŁADUNKU 1:", „DATA ZAŁADUNKU 2:", ale „DATA ZAŁADUNKU:" gdy jest tylko 1).
+
+**Drag-and-drop** (@dnd-kit):
+- `DndContext` + `SortableContext` (verticalListSortingStrategy) owija listę stopów.
+- `SortableStopWrapper` z uchwytem `GripVertical` (8px, pozycja absolute `left: -14px` w marginesie) — ukryty w trybie readOnly.
+- **Reguły kolejności**: pierwszy stop MUSI być LOADING, ostatni MUSI być UNLOADING. Próba przeciągnięcia UNLOADING na pozycję 0 lub LOADING na ostatnią pozycję jest odrzucana.
+- Po każdym drag: auto-renumeracja `sequenceNo` (1, 2, 3...).
+
+**Autocomplete w wierszu MIEJSCE** (tryb edycji):
+- **CompanyAutocomplete** (Popover + Command, 120px fixed, line-clamp-2): wybór firmy z listy, filtrowanie po nazwie.
+- **LocationAutocomplete** (Popover + Command, flex-1): filtrowana po `companyId` wybranej firmy. Po wyborze lokalizacji automatycznie ustawia `address` (ulica + kod + miasto) i `country`.
+- W trybie readOnly: tekst „firma, adres" inline (truncate).
+
+**Dodawanie / usuwanie stopów:**
+- „+ Załadunek" (emerald) — wstawia LOADING po ostatnim istniejącym LOADING. Disabled gdy ≥ 8 LOADING (`MAX_LOADING_STOPS`).
+- „+ Rozładunek" (blue) — wstawia UNLOADING przed ostatnim istniejącym UNLOADING. Disabled gdy ≥ 3 UNLOADING (`MAX_UNLOADING_STOPS`).
+- Przycisk × (na hover stopu, `right: 2px`) — usuwa stop. Widoczny gdy >2 stopy.
+
+**Limity**: max 8 załadunków + max 3 rozładunki (stałe w `constants.ts`).
 
 ---
 
-#### Sekcja 8 — Trasa: Doładunki (dynamiczna ilość)
-
-Dla każdego **środkowego** stopu z `stops[]` (wszystkie stopy pomiędzy pierwszym LOADING a ostatnim UNLOADING):
-
-| Lp. | Pole | Typ pola | Źródło danych (drawer) | Edytowalność |
-|-----|------|----------|------------------------|--------------|
-| 1 | Data doładunku N | Datepicker | Środkowy stop N → data | **Edytowalne** |
-| 2 | Godzina doładunku N | Timepicker | Środkowy stop N → godzina | **Edytowalne** |
-| 3 | Miejsce doładunku N (firma + adres) | Autocomplete / tekst | Środkowy stop N → firma + oddział + adres | **Edytowalne** |
-| 4 | Kraj | Tekst (2-literowy kod) | Środkowy stop N → kraj | **Edytowalne** |
-
-- Tło: jasnoszare (#F8F8F8) — odróżnienie od załadunku i rozładunku.
-- **Dynamiczna ilość**: tyle wierszy doładunku, ile środkowych stopów w `stops[]`. Brak limitu 3 (mockup pokazuje 3 sloty, ale widok obsługuje dowolną liczbę).
-- **Pełna edycja**: można dodawać i usuwać doładunki.
-- Każdy doładunek to 2 wiersze: data+godzina oraz miejsce+kraj.
-- Etykieta: „DATA DOŁADUNKU N:" / „MIEJSCE DOŁADUNKU N:" (N = numer kolejny).
-
----
-
-#### Sekcja 9 — Trasa: Rozładunek
-
-| Lp. | Pole | Typ pola | Źródło danych (drawer) | Edytowalność |
-|-----|------|----------|------------------------|--------------|
-| 1 | Data rozładunku | Datepicker | Sekcja 1 drawera → ostatni stop UNLOADING → data | **Edytowalne** |
-| 2 | Godzina rozładunku | Timepicker | Sekcja 1 drawera → ostatni stop UNLOADING → godzina | **Edytowalne** |
-| 3 | Miejsce rozładunku (firma + adres) | Autocomplete / tekst | Sekcja 1 drawera → ostatni stop UNLOADING → firma + oddział + adres | **Edytowalne** |
-| 4 | Kraj | Tekst (2-literowy kod) | Sekcja 1 drawera → ostatni stop UNLOADING → kraj | **Edytowalne** |
-
-- Tło: **pomarańczowe** — etykiety: #F59444 (bg-orange), pola danych: #FAD1A5 (bg-peach).
-- Mapowanie: ostatni stop z `stops[]` o typie UNLOADING.
-
----
-
-#### Sekcja 10 — Cena za fraht (finanse)
+#### Sekcja 8 — Cena za fraht (finanse)
 
 | Lp. | Pole | Typ pola | Źródło danych (drawer) | Edytowalność |
 |-----|------|----------|------------------------|--------------|
@@ -207,7 +235,7 @@ Dla każdego **środkowego** stopu z `stops[]` (wszystkie stopy pomiędzy pierws
 
 ---
 
-#### Sekcja 11 — Dokumenty dla kierowcy
+#### Sekcja 9 — Dokumenty dla kierowcy
 
 | Lp. | Pole | Typ pola | Źródło danych (drawer) | Edytowalność |
 |-----|------|----------|------------------------|--------------|
@@ -218,7 +246,7 @@ Dla każdego **środkowego** stopu z `stops[]` (wszystkie stopy pomiędzy pierws
 
 ---
 
-#### Sekcja 12 — Uwagi dodatkowe
+#### Sekcja 10 — Uwagi dodatkowe
 
 | Lp. | Pole | Typ pola | Źródło danych (drawer) | Edytowalność |
 |-----|------|----------|------------------------|--------------|
@@ -230,7 +258,7 @@ Dla każdego **środkowego** stopu z `stops[]` (wszystkie stopy pomiędzy pierws
 
 ---
 
-#### Sekcja 13 — Klauzula o zachowaniu poufności
+#### Sekcja 11 — Klauzula o zachowaniu poufności
 
 | Lp. | Pole | Typ pola | Źródło danych | Edytowalność |
 |-----|------|----------|---------------|--------------|
@@ -248,7 +276,7 @@ Dla każdego **środkowego** stopu z `stops[]` (wszystkie stopy pomiędzy pierws
 
 ---
 
-#### Sekcja 14 — Osoba zlecająca
+#### Sekcja 12 — Osoba zlecająca
 
 | Lp. | Pole | Typ pola | Źródło danych | Edytowalność |
 |-----|------|----------|---------------|--------------|
@@ -315,6 +343,8 @@ Widok Order wymaga dodania następujących pól do modelu Order / bazy danych:
 - **API**: wykorzystuje istniejące endpointy (`GET /api/v1/orders/{id}`, `PUT /api/v1/orders/{id}`). Nie wymaga nowych endpointów.
 - **Blokada**: widok Order działa w ramach istniejącej blokady drawera (użytkownik musi mieć aktywny lock na zleceniu).
 - **Walidacja**: taka sama jak w drawerze (techniczna przy „Zapisz", biznesowa przy „Wyślij maila" — ale „Wyślij maila" nie jest dostępny z widoku Order).
+- **@dnd-kit**: biblioteka drag-and-drop do reorderowania stopów (`@dnd-kit/core`, `@dnd-kit/sortable`, `@dnd-kit/utilities`).
+- **Shadcn/ui Popover + Command**: pattern autocomplete dla CompanyAutocomplete, LocationAutocomplete i ProductAutocomplete.
 
 ---
 
@@ -327,11 +357,9 @@ Widok Order wymaga dodania następujących pól do modelu Order / bazy danych:
 | Sek. 4 (Spedycja) | Sekcja 3 drawera | Firma transportowa, NIP |
 | Sek. 5 (Typ auta) | Sekcja 3 drawera | vehicleVariantCode (typ + m³) |
 | Sek. 6 (Asortyment) | Sekcja 2 drawera | items[] (nazwa, uwagi, opakowanie) |
-| Sek. 7 (Załadunek) | Sekcja 1 drawera | stops[0] (pierwszy LOADING) |
-| Sek. 8 (Doładunki) | Sekcja 1 drawera | stops[1..N-1] (środkowe) |
-| Sek. 9 (Rozładunek) | Sekcja 1 drawera | stops[last] (ostatni UNLOADING) |
-| Sek. 10 (Cena za fraht) | Sekcja 4 drawera | Stawka, waluta, termin, forma płatności |
-| Sek. 11 (Dokumenty) | Sekcja 3 drawera | Wymagane dokumenty |
-| Sek. 12 (Uwagi dodatkowe) | Sekcja 5 drawera | generalNotes |
-| Sek. 13 (Klauzula) | — (nowe pole) | confidentialityClause |
-| Sek. 14 (Osoba zlecająca) | — (z sesji) | Zalogowany użytkownik |
+| Sek. 7 (Trasa — unified stops) | Sekcja 1 drawera | stops[] (unified LOADING + UNLOADING z DnD) |
+| Sek. 8 (Cena za fraht) | Sekcja 4 drawera | Stawka, waluta, termin, forma płatności |
+| Sek. 9 (Dokumenty) | Sekcja 3 drawera | Wymagane dokumenty |
+| Sek. 10 (Uwagi dodatkowe) | Sekcja 5 drawera | generalNotes |
+| Sek. 11 (Klauzula) | — (nowe pole) | confidentialityClause |
+| Sek. 12 (Osoba zlecająca) | — (z sesji) | Zalogowany użytkownik |
