@@ -1,9 +1,11 @@
 /**
  * Sekcja 3 – Firma transportowa.
- * Autocomplete firmy, wariant pojazdu, wymagane dokumenty.
+ * Autocomplete firmy, NIP (readonly), typ auta + objętość (2 selecty), wymagane dokumenty.
  */
 
-import { Label } from "@/components/ui/label";
+import { useState, useMemo, useCallback } from "react";
+
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -36,72 +38,152 @@ export function CarrierSection({
   isReadOnly,
   onChange,
 }: CarrierSectionProps) {
-  function handleCarrierChange(_id: string | null, item: CompanyDto | null) {
-    onChange({ carrierCompanyId: item?.id ?? null });
-  }
-
   const selectedCarrier = formData.carrierCompanyId
     ? companies.find((c) => c.id === formData.carrierCompanyId)
     : null;
 
+  // Derive initial vehicleType from current vehicleVariantCode
+  const currentVariant = vehicleVariants.find(
+    (v) => v.code === formData.vehicleVariantCode,
+  );
+
+  const [selectedVehicleType, setSelectedVehicleType] = useState<string>(
+    currentVariant?.vehicleType ?? "",
+  );
+
+  const [volumeInput, setVolumeInput] = useState<string>(
+    currentVariant?.capacityVolumeM3 != null
+      ? String(currentVariant.capacityVolumeM3)
+      : "",
+  );
+
+  const uniqueVehicleTypes = useMemo(() => {
+    const types = new Set(
+      vehicleVariants.filter((v) => v.isActive).map((v) => v.vehicleType),
+    );
+    return Array.from(types);
+  }, [vehicleVariants]);
+
+  const findVariantByVolume = useCallback(
+    (type: string, volume: number) => {
+      return vehicleVariants.find(
+        (v) =>
+          v.isActive &&
+          v.vehicleType === type &&
+          v.capacityVolumeM3 === volume,
+      );
+    },
+    [vehicleVariants],
+  );
+
+  function handleCarrierChange(
+    _id: string | null,
+    item: CompanyDto | null,
+  ) {
+    onChange({ carrierCompanyId: item?.id ?? null });
+  }
+
+  function handleVehicleTypeChange(type: string) {
+    setSelectedVehicleType(type);
+    // Try to match current volume input to new type
+    const vol = parseFloat(volumeInput);
+    if (!isNaN(vol)) {
+      const match = findVariantByVolume(type, vol);
+      onChange({ vehicleVariantCode: match?.code ?? "" });
+    } else {
+      onChange({ vehicleVariantCode: "" });
+    }
+  }
+
+  function handleVolumeInputChange(value: string) {
+    setVolumeInput(value);
+    const vol = parseFloat(value);
+    if (!isNaN(vol) && selectedVehicleType) {
+      const match = findVariantByVolume(selectedVehicleType, vol);
+      onChange({ vehicleVariantCode: match?.code ?? "" });
+    } else {
+      onChange({ vehicleVariantCode: "" });
+    }
+  }
+
   return (
-    <div className="space-y-4">
-      {/* Firma transportowa */}
-      <AutocompleteField
-        label="Firma transportowa"
-        placeholder="Wybierz przewoźnika…"
-        items={companies}
-        value={formData.carrierCompanyId}
-        displayField="name"
-        searchFields={["name"]}
-        onChange={handleCarrierChange}
-        disabled={isReadOnly}
-      />
-
-      {/* NIP (readonly) */}
-      {selectedCarrier?.taxId && (
-        <div className="space-y-1">
-          <Label className="text-xs text-slate-500 dark:text-slate-400">NIP</Label>
-          <p className="text-sm text-slate-700 dark:text-slate-300 pl-1">{selectedCarrier.taxId}</p>
+    <div className="space-y-2">
+      {/* Row 1: Firma 50% + Typ auta 30% + Objętość 20% */}
+      <div className="flex gap-2">
+        {/* Firma transportowa (autocomplete) */}
+        <div className="basis-1/2 min-w-0">
+          <label className="text-xs font-semibold text-slate-400 block mb-1">
+            Nazwa firmy (przewoźnik) *
+          </label>
+          <AutocompleteField
+            compact
+            placeholder="Wpisz nazwę przewoźnika..."
+            items={companies}
+            value={formData.carrierCompanyId}
+            displayField="name"
+            searchFields={["name"]}
+            onChange={handleCarrierChange}
+            disabled={isReadOnly}
+          />
+          {/* NIP as inline text below carrier name */}
+          <p className="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 pl-0.5">
+            NIP: {selectedCarrier?.taxId || "—"}
+          </p>
         </div>
-      )}
 
-      {/* Wariant pojazdu */}
-      <div className="space-y-1">
-        <Label className="text-xs font-medium">
-          Wariant pojazdu<span className="text-red-500 ml-0.5">*</span>
-        </Label>
-        <Select
-          value={formData.vehicleVariantCode}
-          onValueChange={(v) => onChange({ vehicleVariantCode: v })}
-          disabled={isReadOnly}
-        >
-          <SelectTrigger className="h-8 text-sm">
-            <SelectValue placeholder="Wybierz wariant…" />
-          </SelectTrigger>
-          <SelectContent>
-            {vehicleVariants
-              .filter((vv) => vv.isActive)
-              .map((vv) => (
-                <SelectItem key={vv.code} value={vv.code} className="text-sm">
-                  {vv.name}
-                  {vv.capacityVolumeM3 != null && ` (${vv.capacityVolumeM3}m³)`}
+        {/* Typ auta — 30% */}
+        <div className="basis-[30%] min-w-0">
+          <label className="text-xs font-semibold text-slate-400 block mb-1">
+            Typ auta *
+          </label>
+          <Select
+            value={selectedVehicleType}
+            onValueChange={handleVehicleTypeChange}
+            disabled={isReadOnly}
+          >
+            <SelectTrigger className="w-full h-8 text-sm">
+              <SelectValue placeholder="Wybierz typ..." />
+            </SelectTrigger>
+            <SelectContent>
+              {uniqueVehicleTypes.map((type) => (
+                <SelectItem key={type} value={type} className="text-sm">
+                  {type}
                 </SelectItem>
               ))}
-          </SelectContent>
-        </Select>
+            </SelectContent>
+          </Select>
+        </div>
+
+        {/* Objętość m³ — 20% */}
+        <div className="basis-[20%] min-w-0">
+          <label className="text-xs font-semibold text-slate-400 block mb-1">
+            m³ *
+          </label>
+          <Input
+            type="number"
+            min={0}
+            step={1}
+            placeholder="m³"
+            value={volumeInput}
+            onChange={(e) => handleVolumeInputChange(e.target.value)}
+            disabled={isReadOnly || !selectedVehicleType}
+            className="h-8 text-sm"
+          />
+        </div>
       </div>
 
-      {/* Wymagane dokumenty */}
-      <div className="space-y-1">
-        <Label className="text-xs font-medium">Wymagane dokumenty</Label>
+      {/* Row 2: Wymagane dokumenty — full width */}
+      <div>
+        <label className="text-xs font-semibold text-slate-400 block mb-1">
+          Wymagane dokumenty
+        </label>
         <Select
           value={formData.requiredDocumentsText ?? ""}
           onValueChange={(v) => onChange({ requiredDocumentsText: v || null })}
           disabled={isReadOnly}
         >
-          <SelectTrigger className="h-8 text-sm">
-            <SelectValue placeholder="Wybierz dokumenty…" />
+          <SelectTrigger className="w-full h-8 text-sm">
+            <SelectValue placeholder="Wybierz dokumenty..." />
           </SelectTrigger>
           <SelectContent>
             {REQUIRED_DOCS_OPTIONS.map((opt) => (
