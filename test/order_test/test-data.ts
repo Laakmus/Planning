@@ -1,5 +1,10 @@
 import { DEFAULT_CONFIDENTIALITY_CLAUSE } from "./constants";
-import type { OrderViewData, TestProduct } from "./types";
+import type {
+  OrderViewData,
+  TestProduct,
+  TestCompany,
+  TestLocation,
+} from "./types";
 
 /**
  * Test products dictionary (matching seed.sql + extras for scrap metals)
@@ -23,8 +28,128 @@ export const TEST_PRODUCTS: TestProduct[] = [
 ];
 
 /**
+ * Test companies dictionary for stop autocomplete
+ */
+export const TEST_COMPANIES: TestCompany[] = [
+  {
+    id: "c-01",
+    name: "ArcelorMittal Poland S.A.",
+    isActive: true,
+    taxId: "6340003877",
+    type: "PRODUCER",
+  },
+  {
+    id: "c-02",
+    name: "KGHM Polska Miedź S.A.",
+    isActive: true,
+    taxId: "6920000019",
+    type: "PRODUCER",
+  },
+  {
+    id: "c-03",
+    name: "REMONDIS Sp. z o.o.",
+    isActive: true,
+    taxId: "7250028982",
+    type: "RECYCLER",
+  },
+  {
+    id: "c-04",
+    name: 'UAB "VC BALTIC"',
+    isActive: true,
+    taxId: "LT100003721611",
+    type: "RECYCLER",
+  },
+  {
+    id: "c-05",
+    name: "CMC Poland Sp. z o.o.",
+    isActive: true,
+    taxId: "7542786563",
+    type: "PRODUCER",
+  },
+  {
+    id: "c-06",
+    name: "Stena Recycling Sp. z o.o.",
+    isActive: true,
+    taxId: "5261025421",
+    type: "RECYCLER",
+  },
+];
+
+/**
+ * Test locations dictionary for stop autocomplete (linked to companies)
+ */
+export const TEST_LOCATIONS: TestLocation[] = [
+  {
+    id: "l-01",
+    name: "Huta Kraków",
+    companyId: "c-01",
+    companyName: "ArcelorMittal Poland S.A.",
+    city: "Kraków",
+    country: "PL",
+    streetAndNumber: "ul. Tadeusza Sendzimira 1",
+    postalCode: "31-752",
+    isActive: true,
+  },
+  {
+    id: "l-02",
+    name: "Huta Miedzi Głogów",
+    companyId: "c-02",
+    companyName: "KGHM Polska Miedź S.A.",
+    city: "Żukowice",
+    country: "PL",
+    streetAndNumber: "ul. Żukowicka 1",
+    postalCode: "67-231",
+    isActive: true,
+  },
+  {
+    id: "l-03",
+    name: "Oddział Warszawa",
+    companyId: "c-03",
+    companyName: "REMONDIS Sp. z o.o.",
+    city: "Warszawa",
+    country: "PL",
+    streetAndNumber: "ul. Zawodzie 16",
+    postalCode: "02-981",
+    isActive: true,
+  },
+  {
+    id: "l-04",
+    name: "Vilnius HQ",
+    companyId: "c-04",
+    companyName: 'UAB "VC BALTIC"',
+    city: "Vilnius",
+    country: "LT",
+    streetAndNumber: "V. A. Graičiūno 10-3",
+    postalCode: "02241",
+    isActive: true,
+  },
+  {
+    id: "l-05",
+    name: "Oddział Zawiercie",
+    companyId: "c-05",
+    companyName: "CMC Poland Sp. z o.o.",
+    city: "Zawiercie",
+    country: "PL",
+    streetAndNumber: "ul. Piłsudskiego 82",
+    postalCode: "42-400",
+    isActive: true,
+  },
+  {
+    id: "l-06",
+    name: "Oddział Pruszków",
+    companyId: "c-06",
+    companyName: "Stena Recycling Sp. z o.o.",
+    city: "Pruszków",
+    country: "PL",
+    streetAndNumber: "ul. Stefana Batorego 2",
+    postalCode: "05-800",
+    isActive: true,
+  },
+];
+
+/**
  * Extended test data based on order_2.html mockup
- * with additional items and intermediate stops
+ * with unified stops array (2 LOADING + 2 UNLOADING)
  */
 export const TEST_ORDER_DATA: OrderViewData = {
   // Section 1 - Header
@@ -62,41 +187,65 @@ export const TEST_ORDER_DATA: OrderViewData = {
     },
   ],
 
-  // Section 7 - Loading
-  loading: {
-    id: "stop-load",
-    date: "2025-08-11",
-    time: "10:00",
-    place: "ARCELORMITTAL POLAND Kraków 31-752, ul. Tadeusza Sendzimira 1",
-    country: "PL",
-  },
-
-  // Section 8 - Intermediate stops (extended: 2 stops)
-  intermediateStops: [
+  // Section 7-9 - Stops (unified)
+  stops: [
     {
-      id: "stop-mid-1",
+      id: "stop-1",
+      kind: "LOADING",
+      sequenceNo: 1,
+      date: "2025-08-11",
+      time: "10:00",
+      companyId: "c-01",
+      companyName: "ArcelorMittal Poland S.A.",
+      locationId: "l-01",
+      locationName: "Huta Kraków",
+      address: "ul. Tadeusza Sendzimira 1, 31-752 Kraków",
+      country: "PL",
+      place: "ARCELORMITTAL POLAND Kraków 31-752, ul. Tadeusza Sendzimira 1",
+    },
+    {
+      id: "stop-2",
+      kind: "LOADING",
+      sequenceNo: 2,
       date: "2025-08-11",
       time: "14:00",
-      place: "KGHM Huta Miedzi Głogów, ul. Żukowicka 1, 67-231 Żukowice",
+      companyId: "c-02",
+      companyName: "KGHM Polska Miedź S.A.",
+      locationId: "l-02",
+      locationName: "Huta Miedzi Głogów",
+      address: "ul. Żukowicka 1, 67-231 Żukowice",
       country: "PL",
+      place: "KGHM Huta Miedzi Głogów, ul. Żukowicka 1, 67-231 Żukowice",
     },
     {
-      id: "stop-mid-2",
+      id: "stop-3",
+      kind: "UNLOADING",
+      sequenceNo: 3,
       date: "2025-08-12",
       time: "06:00",
-      place: "REMONDIS Sp. z o.o., ul. Zawodzie 16, 02-981 Warszawa",
+      companyId: "c-03",
+      companyName: "REMONDIS Sp. z o.o.",
+      locationId: "l-03",
+      locationName: "Oddział Warszawa",
+      address: "ul. Zawodzie 16, 02-981 Warszawa",
       country: "PL",
+      place: "REMONDIS Sp. z o.o., ul. Zawodzie 16, 02-981 Warszawa",
+    },
+    {
+      id: "stop-4",
+      kind: "UNLOADING",
+      sequenceNo: 4,
+      date: "2025-08-12",
+      time: "08:00",
+      companyId: "c-04",
+      companyName: 'UAB "VC BALTIC"',
+      locationId: "l-04",
+      locationName: "Vilnius HQ",
+      address: "V. A. Graičiūno 10-3, 02241 Vilnius",
+      country: "LT",
+      place: 'UAB "VC BALTIC" V. A GRAICIUNO 10-3, VILNIUS, LIETUVA',
     },
   ],
-
-  // Section 9 - Unloading
-  unloading: {
-    id: "stop-unload",
-    date: "2025-08-12",
-    time: "08:00",
-    place: 'UAB "VC BALTIC" V. A GRAICIUNO 10-3, VILNIUS, LIETUVA',
-    country: "LT",
-  },
 
   // Section 10 - Price
   priceAmount: 1025,

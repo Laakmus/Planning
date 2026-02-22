@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-21 (sesja 8)
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny).
+> Ostatnia aktualizacja: 2026-02-22 (sesja 9)
+> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete.
 
 ---
 
@@ -39,6 +39,7 @@
 - [x] UI-H08: "Wyślij maila" dostępne dla statusów wysłane/korekta wysłane (OrderDrawer + OrderRowContextMenu)
 - [x] DOCS: PRD — "Korekta_w" jako skrócona forma "Korekta wysłane" w tabeli, format DD.MM, tylko pierwsza data
 - [x] DOCS: ui-plan.md — usunięto sticky kolumnę Akcje, format DD.MM, "Korekta_w", generalNotes max 500
+- [x] Order View (A4): Refaktoring stopów — unified stops[] z DnD, CompanyAutocomplete, LocationAutocomplete (sesja 9)
 
 ---
 

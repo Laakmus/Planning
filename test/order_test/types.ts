@@ -2,6 +2,7 @@
 
 export type PackagingType = "LUZEM" | "BIGBAG" | "PALETA" | "INNA";
 export type CurrencyCode = "EUR" | "USD" | "PLN";
+export type StopKind = "LOADING" | "UNLOADING";
 
 export interface OrderViewItem {
   id: string;
@@ -12,10 +13,17 @@ export interface OrderViewItem {
 
 export interface OrderViewStop {
   id: string;
+  kind: StopKind;
+  sequenceNo: number;
   date: string | null; // YYYY-MM-DD
   time: string | null; // HH:MM
-  place: string;
+  companyId: string | null;
+  companyName: string | null;
+  locationId: string | null;
+  locationName: string | null;
+  address: string | null;
   country: string;
+  place: string; // fallback display text
 }
 
 export interface OrderViewData {
@@ -35,14 +43,8 @@ export interface OrderViewData {
   // Section 6 - Items (editable, dynamic rows)
   items: OrderViewItem[];
 
-  // Section 7 - Loading stop (editable)
-  loading: OrderViewStop;
-
-  // Section 8 - Intermediate stops (editable, dynamic)
-  intermediateStops: OrderViewStop[];
-
-  // Section 9 - Unloading stop (editable)
-  unloading: OrderViewStop;
+  // Section 7-9 - Stops (unified: LOADING + UNLOADING with DnD)
+  stops: OrderViewStop[];
 
   // Section 10 - Price (editable)
   priceAmount: number | null;
@@ -70,6 +72,28 @@ export interface TestProduct {
   id: string;
   name: string;
   defaultPackaging: PackagingType | null;
+}
+
+// Test company for stop autocomplete
+export interface TestCompany {
+  id: string;
+  name: string;
+  isActive: boolean;
+  taxId: string | null;
+  type: string | null;
+}
+
+// Test location for stop autocomplete
+export interface TestLocation {
+  id: string;
+  name: string;
+  companyId: string;
+  companyName: string | null;
+  city: string;
+  country: string;
+  streetAndNumber: string;
+  postalCode: string;
+  isActive: boolean;
 }
 
 // Props for the OrderView container
