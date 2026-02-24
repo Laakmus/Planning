@@ -35,7 +35,7 @@ interface OrderFormProps {
   onDirtyChange: (isDirty: boolean) => void;
   onSave: (data: OrderFormData, pendingStatus: OrderStatusCode | null, complaintReason: string | null) => Promise<void>;
   /** Przekazywany przez OrderDrawer aby wywołać submit z zewnątrz */
-  submitRef: React.MutableRefObject<(() => void) | null>;
+  submitRef: React.RefObject<(() => void) | null>;
 }
 
 // ---------------------------------------------------------------------------
@@ -134,22 +134,37 @@ export function OrderForm({
 
   // Śledź isDirty przez porównanie z oryginalnym snapshoten
   const originalRef = useRef(buildInitialForm(order, stops, items));
+  const originalComplaintReasonRef = useRef<string | null>(order.complaintReason);
   const [isDirty, setIsDirty] = useState(false);
 
   // Przebuduj formularz gdy order/stops/items się zmienią (np. po przeładowaniu detali)
   useEffect(() => {
     const initial = buildInitialForm(order, stops, items);
     originalRef.current = initial;
+    originalComplaintReasonRef.current = order.complaintReason;
     setFormData(initial);
     setPendingStatusCode(null);
     setComplaintReason(order.complaintReason);
     setIsDirty(false);
   }, [order.id]); // reset przy zmianie zlecenia
 
+  /** Sprawdza czy formularz ma niezapisane zmiany */
+  function computeDirty(
+    fd: OrderFormData,
+    status: OrderStatusCode | null,
+    cr: string | null,
+  ): boolean {
+    return (
+      JSON.stringify(fd) !== JSON.stringify(originalRef.current)
+      || status !== null
+      || cr !== originalComplaintReasonRef.current
+    );
+  }
+
   function patch(update: Partial<OrderFormData>) {
     setFormData((prev) => {
       const next = { ...prev, ...update };
-      const dirty = JSON.stringify(next) !== JSON.stringify(originalRef.current) || pendingStatusCode !== null;
+      const dirty = computeDirty(next, pendingStatusCode, complaintReason);
       setIsDirty(dirty);
       onDirtyChange(dirty);
       return next;
@@ -285,11 +300,16 @@ export function OrderForm({
                 complaintReason={complaintReason}
                 onStatusChange={(code) => {
                   setPendingStatusCode(code);
-                  const dirty = code !== null || JSON.stringify(formData) !== JSON.stringify(originalRef.current);
+                  const dirty = computeDirty(formData, code, complaintReason);
                   setIsDirty(dirty);
                   onDirtyChange(dirty);
                 }}
-                onComplaintReasonChange={setComplaintReason}
+                onComplaintReasonChange={(reason) => {
+                  setComplaintReason(reason);
+                  const dirty = computeDirty(formData, pendingStatusCode, reason);
+                  setIsDirty(dirty);
+                  onDirtyChange(dirty);
+                }}
               />
             </div>
           </section>

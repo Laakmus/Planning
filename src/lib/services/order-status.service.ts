@@ -55,7 +55,7 @@ export async function cancelOrder(
   // between the SELECT above and this UPDATE.
   const { data: cancelResult, error: updateError } = await supabase
     .from("transport_orders")
-    .update({ status_code: STATUS_ANULOWANE })
+    .update({ status_code: STATUS_ANULOWANE, updated_by_user_id: userId })
     .eq("id", orderId)
     .eq("status_code", order.status_code)
     .select("id")
@@ -214,7 +214,7 @@ export async function restoreOrder(
   // Atomic UPDATE with current status guard — prevents TOCTOU
   const { data: restoreResult, error: updateError } = await supabase
     .from("transport_orders")
-    .update({ status_code: STATUS_KOREKTA })
+    .update({ status_code: STATUS_KOREKTA, updated_by_user_id: userId })
     .eq("id", orderId)
     .eq("status_code", order.status_code)
     .select("id")

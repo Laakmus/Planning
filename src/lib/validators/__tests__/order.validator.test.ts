@@ -143,7 +143,9 @@ describe("createOrderSchema", () => {
     senderContactName: null,
     senderContactPhone: null,
     senderContactEmail: null,
-    stops: [],
+    stops: [
+      { kind: "LOADING", dateLocal: null, timeLocal: null, locationId: null, notes: null },
+    ],
     items: [],
   };
 
@@ -231,6 +233,52 @@ describe("createOrderSchema", () => {
     });
     expect(result.stops).toHaveLength(1);
     expect(result.items).toHaveLength(1);
+  });
+
+  // --- Limity tablic stops/items ---
+
+  it("stops: 0 elementów → ZodError (min 1)", () => {
+    expect(() =>
+      createOrderSchema.parse({ ...validCreateOrder, stops: [] })
+    ).toThrow(ZodError);
+  });
+
+  it("stops: 11 elementów → OK (max 11)", () => {
+    const stop = { kind: "LOADING" as const, dateLocal: null, timeLocal: null, locationId: null, notes: null };
+    const result = createOrderSchema.parse({
+      ...validCreateOrder,
+      stops: Array.from({ length: 11 }, () => ({ ...stop })),
+    });
+    expect(result.stops).toHaveLength(11);
+  });
+
+  it("stops: 12 elementów → ZodError (powyżej max 11)", () => {
+    const stop = { kind: "LOADING" as const, dateLocal: null, timeLocal: null, locationId: null, notes: null };
+    expect(() =>
+      createOrderSchema.parse({
+        ...validCreateOrder,
+        stops: Array.from({ length: 12 }, () => ({ ...stop })),
+      })
+    ).toThrow(ZodError);
+  });
+
+  it("items: 50 elementów → OK (max 50)", () => {
+    const item = { productId: null, productNameSnapshot: null, loadingMethodCode: null, quantityTons: null, notes: null };
+    const result = createOrderSchema.parse({
+      ...validCreateOrder,
+      items: Array.from({ length: 50 }, () => ({ ...item })),
+    });
+    expect(result.items).toHaveLength(50);
+  });
+
+  it("items: 51 elementów → ZodError (powyżej max 50)", () => {
+    const item = { productId: null, productNameSnapshot: null, loadingMethodCode: null, quantityTons: null, notes: null };
+    expect(() =>
+      createOrderSchema.parse({
+        ...validCreateOrder,
+        items: Array.from({ length: 51 }, () => ({ ...item })),
+      })
+    ).toThrow(ZodError);
   });
 });
 
@@ -348,6 +396,93 @@ describe("updateOrderSchema", () => {
       items: [],
     });
     expect(result.stops[0]._deleted).toBe(true);
+  });
+
+  // --- Limity tablic stops/items (updateOrderSchema) ---
+
+  const updateBase = {
+    transportTypeCode: "PL" as const,
+    currencyCode: "PLN" as const,
+    carrierCompanyId: null,
+    shipperLocationId: null,
+    receiverLocationId: null,
+    vehicleVariantCode: null,
+    priceAmount: null,
+    paymentTermDays: null,
+    paymentMethod: null,
+    totalLoadTons: null,
+    totalLoadVolumeM3: null,
+    specialRequirements: null,
+    requiredDocumentsText: null,
+    generalNotes: null,
+    senderContactName: null,
+    senderContactPhone: null,
+    senderContactEmail: null,
+  };
+
+  const updateStop = {
+    id: null,
+    kind: "LOADING" as const,
+    dateLocal: null,
+    timeLocal: null,
+    locationId: null,
+    notes: null,
+    sequenceNo: 1,
+    _deleted: false,
+  };
+
+  const updateItem = {
+    id: null,
+    productId: null,
+    productNameSnapshot: null,
+    loadingMethodCode: null,
+    quantityTons: null,
+    notes: null,
+    _deleted: false,
+  };
+
+  it("stops: 0 elementów → ZodError (min 1)", () => {
+    expect(() =>
+      updateOrderSchema.parse({ ...updateBase, stops: [], items: [] })
+    ).toThrow(ZodError);
+  });
+
+  it("stops: 11 elementów → OK (max 11)", () => {
+    const result = updateOrderSchema.parse({
+      ...updateBase,
+      stops: Array.from({ length: 11 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
+      items: [],
+    });
+    expect(result.stops).toHaveLength(11);
+  });
+
+  it("stops: 12 elementów → ZodError (powyżej max 11)", () => {
+    expect(() =>
+      updateOrderSchema.parse({
+        ...updateBase,
+        stops: Array.from({ length: 12 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
+        items: [],
+      })
+    ).toThrow(ZodError);
+  });
+
+  it("items: 50 elementów → OK (max 50)", () => {
+    const result = updateOrderSchema.parse({
+      ...updateBase,
+      stops: [updateStop],
+      items: Array.from({ length: 50 }, () => ({ ...updateItem })),
+    });
+    expect(result.items).toHaveLength(50);
+  });
+
+  it("items: 51 elementów → ZodError (powyżej max 50)", () => {
+    expect(() =>
+      updateOrderSchema.parse({
+        ...updateBase,
+        stops: [updateStop],
+        items: Array.from({ length: 51 }, () => ({ ...updateItem })),
+      })
+    ).toThrow(ZodError);
   });
 });
 

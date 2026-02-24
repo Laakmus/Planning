@@ -119,6 +119,45 @@ describe("cancelOrder", () => {
     expect(result).not.toBeNull();
   });
 
+  it("ustawia updated_by_user_id w UPDATE", async () => {
+    // Osobny mock z śledzeniem argumentów update
+    const updateFn = vi.fn();
+    const updateChain: Record<string, ReturnType<typeof vi.fn>> = {};
+    updateChain.eq = vi.fn().mockReturnValue(updateChain);
+    updateChain.select = vi.fn().mockReturnValue(updateChain);
+    updateChain.maybeSingle = vi.fn().mockResolvedValue({ data: { id: VALID_ORDER_ID }, error: null });
+    updateFn.mockReturnValue(updateChain);
+
+    const selectChain: Record<string, ReturnType<typeof vi.fn>> = {};
+    selectChain.eq = vi.fn().mockReturnValue(selectChain);
+    selectChain.maybeSingle = vi.fn().mockResolvedValue({
+      data: { id: VALID_ORDER_ID, status_code: "robocze" },
+      error: null,
+    });
+
+    let callCount = 0;
+    const fromFn = vi.fn().mockImplementation((table: string) => {
+      if (table === "transport_orders") {
+        callCount++;
+        // Pierwsze wywołanie = SELECT, drugie = UPDATE
+        if (callCount === 1) return { select: vi.fn().mockReturnValue(selectChain) };
+        return { update: updateFn };
+      }
+      if (table === "order_status_history") {
+        return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
+      }
+      return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    });
+
+    const supabase = { from: fromFn } as unknown as SupabaseClient<Database>;
+    await cancelOrder(supabase, VALID_USER_ID, VALID_ORDER_ID);
+
+    expect(updateFn).toHaveBeenCalledWith({
+      status_code: "anulowane",
+      updated_by_user_id: VALID_USER_ID,
+    });
+  });
+
   it("zlecenie nie istnieje → null", async () => {
     const supabase = buildStatusMock({
       orderSelect: { data: null, error: null },
@@ -314,6 +353,44 @@ describe("restoreOrder", () => {
     await expect(restoreOrder(supabase, VALID_USER_ID, VALID_ORDER_ID)).rejects.toThrow(
       "GONE_24H"
     );
+  });
+
+  it("ustawia updated_by_user_id w UPDATE", async () => {
+    // Osobny mock z śledzeniem argumentów update
+    const updateFn = vi.fn();
+    const updateChain: Record<string, ReturnType<typeof vi.fn>> = {};
+    updateChain.eq = vi.fn().mockReturnValue(updateChain);
+    updateChain.select = vi.fn().mockReturnValue(updateChain);
+    updateChain.maybeSingle = vi.fn().mockResolvedValue({ data: { id: VALID_ORDER_ID }, error: null });
+    updateFn.mockReturnValue(updateChain);
+
+    const selectChain: Record<string, ReturnType<typeof vi.fn>> = {};
+    selectChain.eq = vi.fn().mockReturnValue(selectChain);
+    selectChain.maybeSingle = vi.fn().mockResolvedValue({
+      data: { id: VALID_ORDER_ID, status_code: "zrealizowane" },
+      error: null,
+    });
+
+    let callCount = 0;
+    const fromFn = vi.fn().mockImplementation((table: string) => {
+      if (table === "transport_orders") {
+        callCount++;
+        if (callCount === 1) return { select: vi.fn().mockReturnValue(selectChain) };
+        return { update: updateFn };
+      }
+      if (table === "order_status_history") {
+        return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
+      }
+      return { insert: vi.fn().mockResolvedValue({ data: null, error: null }) };
+    });
+
+    const supabase = { from: fromFn } as unknown as SupabaseClient<Database>;
+    await restoreOrder(supabase, VALID_USER_ID, VALID_ORDER_ID);
+
+    expect(updateFn).toHaveBeenCalledWith({
+      status_code: "korekta",
+      updated_by_user_id: VALID_USER_ID,
+    });
   });
 
   it('z "robocze" → throws "FORBIDDEN_RESTORE"', async () => {

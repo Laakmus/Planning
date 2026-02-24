@@ -102,8 +102,8 @@ export const createOrderSchema = z.object({
   senderContactName: z.string().max(200).nullable(),
   senderContactPhone: z.string().max(100).nullable(),
   senderContactEmail: z.string().max(320).email().nullable(),
-  stops: z.array(createOrderStopSchema),
-  items: z.array(createOrderItemSchema),
+  stops: z.array(createOrderStopSchema).min(1).max(11),
+  items: z.array(createOrderItemSchema).max(50),
 });
 
 export type CreateOrderParams = z.infer<typeof createOrderSchema>;
@@ -126,8 +126,8 @@ export const updateOrderSchema = createOrderSchema.extend({
   vehicleVariantCode: z.string().min(1).nullable(),
   generalNotes: z.string().max(500).nullable(),
   complaintReason: z.string().max(500).nullable().optional(),
-  stops: z.array(updateOrderStopSchema),
-  items: z.array(updateOrderItemSchema),
+  stops: z.array(updateOrderStopSchema).min(1).max(11),
+  items: z.array(updateOrderItemSchema).max(50),
 });
 
 export type UpdateOrderParams = z.infer<typeof updateOrderSchema>;
