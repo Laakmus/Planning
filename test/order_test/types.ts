@@ -81,6 +81,7 @@ export interface TestCompany {
   isActive: boolean;
   taxId: string | null;
   type: string | null;
+  address: string | null;
 }
 
 // Test location for stop autocomplete

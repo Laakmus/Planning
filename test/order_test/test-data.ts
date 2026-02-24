@@ -37,6 +37,7 @@ export const TEST_COMPANIES: TestCompany[] = [
     isActive: true,
     taxId: "6340003877",
     type: "PRODUCER",
+    address: "ul. Tadeusza Sendzimira 1, 31-752 Kraków",
   },
   {
     id: "c-02",
@@ -44,6 +45,7 @@ export const TEST_COMPANIES: TestCompany[] = [
     isActive: true,
     taxId: "6920000019",
     type: "PRODUCER",
+    address: "ul. M. Skłodowskiej-Curie 48, 59-301 Lubin",
   },
   {
     id: "c-03",
@@ -51,6 +53,7 @@ export const TEST_COMPANIES: TestCompany[] = [
     isActive: true,
     taxId: "7250028982",
     type: "RECYCLER",
+    address: "ul. Zawodzie 16, 02-981 Warszawa",
   },
   {
     id: "c-04",
@@ -58,6 +61,7 @@ export const TEST_COMPANIES: TestCompany[] = [
     isActive: true,
     taxId: "LT100003721611",
     type: "RECYCLER",
+    address: "V. A. Graičiūno 10-3, 02241 Vilnius",
   },
   {
     id: "c-05",
@@ -65,6 +69,7 @@ export const TEST_COMPANIES: TestCompany[] = [
     isActive: true,
     taxId: "7542786563",
     type: "PRODUCER",
+    address: "ul. Piłsudskiego 82, 42-400 Zawiercie",
   },
   {
     id: "c-06",
@@ -72,6 +77,15 @@ export const TEST_COMPANIES: TestCompany[] = [
     isActive: true,
     taxId: "5261025421",
     type: "RECYCLER",
+    address: "ul. Stefana Batorego 2, 05-800 Pruszków",
+  },
+  {
+    id: "c-07",
+    name: "MARIUSZ MIERZEJEWSKI",
+    isActive: true,
+    taxId: "7581777477",
+    type: "CARRIER",
+    address: "ul. GEN. AUGUSTA EMILA FIELDORFA, 07-410 Ostrołęka",
   },
 ];
 

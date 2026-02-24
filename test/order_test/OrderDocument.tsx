@@ -376,6 +376,127 @@ function CompanyAutocomplete({
 }
 
 // ---------------------------------------------------------------------------
+// Carrier autocomplete for SPEDYCJA section (fills name + address + NIP)
+// ---------------------------------------------------------------------------
+
+function CarrierAutocomplete({
+  carrierName,
+  carrierAddress,
+  onSelect,
+  onClear,
+}: {
+  carrierName: string;
+  carrierAddress: string;
+  onSelect: (company: TestCompany) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const filtered =
+    query.length < 1
+      ? TEST_COMPANIES.filter((c) => c.isActive)
+      : TEST_COMPANIES.filter(
+          (c) =>
+            c.isActive &&
+            (c.name.toLowerCase().includes(query.toLowerCase()) ||
+              c.taxId?.toLowerCase().includes(query.toLowerCase())),
+        );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-0.5 text-[7px] bg-transparent border-none outline-none cursor-pointer text-left w-full hover:bg-yellow-50/50 rounded-sm px-0.5 -mx-0.5"
+          style={{ color: "#000" }}
+        >
+          <div className="flex flex-col flex-1 min-w-0 leading-[1.4]">
+            <span className="font-bold truncate">
+              {carrierName || "wybierz firmę transportową..."}
+            </span>
+            {carrierAddress && (
+              <span className="truncate text-[6.5px]">{carrierAddress}</span>
+            )}
+          </div>
+          <ChevronsUpDown
+            className="shrink-0 opacity-40"
+            style={{ width: 8, height: 8 }}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-80 p-0"
+        align="start"
+        side="bottom"
+        sideOffset={2}
+      >
+        <Command>
+          <CommandInput
+            placeholder="Szukaj firmy transportowej..."
+            value={query}
+            onValueChange={setQuery}
+            className="text-xs"
+          />
+          <CommandList>
+            <CommandEmpty className="py-2 text-xs text-center text-slate-500">
+              Brak wyników
+            </CommandEmpty>
+            <CommandGroup>
+              {carrierName && (
+                <CommandItem
+                  value="__clear__"
+                  onSelect={() => {
+                    onClear();
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  className="text-xs cursor-pointer text-red-500"
+                >
+                  <X className="mr-1.5 h-3 w-3" />
+                  Wyczyść wybór
+                </CommandItem>
+              )}
+              {filtered.map((company) => (
+                <CommandItem
+                  key={company.id}
+                  value={company.name}
+                  onSelect={() => {
+                    onSelect(company);
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  className="text-xs cursor-pointer"
+                >
+                  <Check
+                    className={`mr-1.5 h-3 w-3 shrink-0 ${
+                      carrierName === company.name ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  <div className="flex flex-col min-w-0">
+                    <span className="truncate">{company.name}</span>
+                    {company.address && (
+                      <span className="text-[10px] text-slate-400 truncate">
+                        {company.address}
+                      </span>
+                    )}
+                  </div>
+                  {company.taxId && (
+                    <span className="ml-auto text-[10px] text-slate-400 shrink-0">
+                      {company.taxId}
+                    </span>
+                  )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Location autocomplete for A4 stop rows (filtered by companyId)
 // ---------------------------------------------------------------------------
 
@@ -1092,30 +1213,39 @@ export default function OrderDocument({
               NAZWA
             </span>
             {disabled ? (
-              <span
-                className="text-[7px] leading-[1.4]"
+              <div
+                className="flex flex-col leading-[1.4] flex-1 min-w-0"
                 style={{ paddingLeft: "19px", letterSpacing: "0.14px" }}
               >
-                {data.carrierName} {data.carrierAddress}
-              </span>
+                <span className="text-[7px] font-bold truncate">
+                  {data.carrierName}
+                </span>
+                <span className="text-[7px] truncate">
+                  {data.carrierAddress}
+                </span>
+              </div>
             ) : (
               <div
-                className="flex flex-col leading-[1.4]"
+                className="flex-1 min-w-0"
                 style={{ paddingLeft: "19px" }}
               >
-                <EditableText
-                  value={data.carrierName}
-                  onChange={(v) => update({ carrierName: v })}
-                  className="text-[7px]"
-                  disabled={false}
-                  style={{ letterSpacing: "0.14px" }}
-                />
-                <EditableText
-                  value={data.carrierAddress}
-                  onChange={(v) => update({ carrierAddress: v })}
-                  className="text-[7px]"
-                  disabled={false}
-                  style={{ letterSpacing: "0.14px" }}
+                <CarrierAutocomplete
+                  carrierName={data.carrierName}
+                  carrierAddress={data.carrierAddress}
+                  onSelect={(company) =>
+                    update({
+                      carrierName: company.name,
+                      carrierAddress: company.address ?? "",
+                      carrierNip: company.taxId ?? "",
+                    })
+                  }
+                  onClear={() =>
+                    update({
+                      carrierName: "",
+                      carrierAddress: "",
+                      carrierNip: "",
+                    })
+                  }
                 />
               </div>
             )}
