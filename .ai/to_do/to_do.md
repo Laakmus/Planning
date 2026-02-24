@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-24 (sesja 10)
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete. Sesja 10: context menu fix (Radix pointerup race), auto-scroll duplicate, AlertDialog cancel, system agentów.
+> Ostatnia aktualizacja: 2026-02-24 (sesja 11)
+> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete. Sesja 10: context menu fix (Radix pointerup race), auto-scroll duplicate, AlertDialog cancel, system agentów. Sesja 11: unit testy — 9 nowych plików testowych + 2 helpery, łącznie 241 testów (z 35 → 241).
 
 ---
 
@@ -46,6 +46,7 @@
 - [x] FIX: Zamiana native confirm() na shadcn AlertDialog w OrdersPage.handleCancel (sesja 10)
 - [x] FIX: Auto-scroll na dół po duplikacji zlecenia + null denormalizowane daty → kopia na końcu listy (sesja 10)
 - [x] INFRA: System custom agents — 7 agentów (.claude/agents/), slash commands (.claude/commands/), pamięć agentów (.claude/agent-memory/), CLAUDE.md orchestrator (sesja 10)
+- [x] TESTS: Unit testy warstwy logiki biznesowej — 9 nowych plików testowych + 2 helpery (fixtures.ts, supabase-mock.ts). Pokrycie: format-utils (29), week-utils (13), common.validator (17), order.validator (42), order-history.service (9), dictionary.service (14), order-lock.service (15), order-status.service (21), order.service (42). Łącznie 241 testów, 0 błędów TS. (sesja 11)
 
 ---
 
