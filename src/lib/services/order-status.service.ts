@@ -78,6 +78,16 @@ export async function cancelOrder(
 
   if (historyError) throw historyError;
 
+  // Wpis do logu zmian pola status_code (spójność z changeStatus)
+  const { error: logError } = await supabase.from("order_change_log").insert({
+    order_id: orderId,
+    field_name: "status_code",
+    old_value: order.status_code,
+    new_value: STATUS_ANULOWANE,
+    changed_by_user_id: userId,
+  });
+  if (logError) throw logError;
+
   return { id: orderId, statusCode: STATUS_ANULOWANE };
 }
 
@@ -234,6 +244,16 @@ export async function restoreOrder(
   });
 
   if (historyError) throw historyError;
+
+  // Wpis do logu zmian pola status_code (spójność z changeStatus)
+  const { error: logError } = await supabase.from("order_change_log").insert({
+    order_id: orderId,
+    field_name: "status_code",
+    old_value: order.status_code,
+    new_value: STATUS_KOREKTA,
+    changed_by_user_id: userId,
+  });
+  if (logError) throw logError;
 
   return { id: orderId, statusCode: STATUS_KOREKTA };
 }

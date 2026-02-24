@@ -1403,7 +1403,8 @@ export async function updateOrder(
     special_requirements: params.specialRequirements ?? null,
     required_documents_text: params.requiredDocumentsText ?? null,
     general_notes: params.generalNotes ?? null,
-    complaint_reason: params.complaintReason ?? null,
+    // Spread warunkowy — nie nadpisuj complaint_reason gdy frontend nie wysyła pola
+    ...(params.complaintReason !== undefined ? { complaint_reason: params.complaintReason } : {}),
     sender_contact_name: params.senderContactName ?? null,
     sender_contact_phone: params.senderContactPhone ?? null,
     sender_contact_email: params.senderContactEmail ?? null,
@@ -1687,6 +1688,16 @@ export async function prepareEmailForOrder(
       changed_by_user_id: userId,
     });
     if (historyErr) throw historyErr;
+
+    // Wpis do logu zmian pola status_code (spójność z changeStatus)
+    const { error: logErr } = await supabase.from("order_change_log").insert({
+      order_id: orderId,
+      field_name: "status_code",
+      old_value: order.statusCode,
+      new_value: newStatusCode,
+      changed_by_user_id: userId,
+    });
+    if (logErr) throw logErr;
   }
 
   const subject = encodeURIComponent(`Zlecenie ${order.orderNo}`);
@@ -1780,6 +1791,40 @@ export async function patchStop(
       .eq("id", stopId)
       .eq("order_id", orderId);
     if (updErr) throw updErr;
+
+    // P-01: Logowanie zmian poszczególnych pól stopu do order_change_log
+    const fieldMap: Array<{ param: keyof PatchStopParams; dbField: string; oldVal: unknown }> = [
+      { param: "dateLocal", dbField: "date_local", oldVal: stop.date_local },
+      { param: "timeLocal", dbField: "time_local", oldVal: stop.time_local },
+      { param: "locationId", dbField: "location_id", oldVal: stop.location_id },
+      { param: "notes", dbField: "notes", oldVal: stop.notes },
+    ];
+    const changeLogRows: Array<{
+      order_id: string;
+      field_name: string;
+      old_value: string | null;
+      new_value: string | null;
+      changed_by_user_id: string;
+    }> = [];
+    for (const { param, dbField, oldVal } of fieldMap) {
+      if (params[param] !== undefined) {
+        const oldStr = oldVal != null ? String(oldVal) : null;
+        const newStr = params[param] != null ? String(params[param]) : null;
+        if (oldStr !== newStr) {
+          changeLogRows.push({
+            order_id: orderId,
+            field_name: `stop.${dbField}`,
+            old_value: oldStr,
+            new_value: newStr,
+            changed_by_user_id: userId,
+          });
+        }
+      }
+    }
+    if (changeLogRows.length > 0) {
+      const { error: logErr } = await supabase.from("order_change_log").insert(changeLogRows);
+      if (logErr) throw logErr;
+    }
   }
 
   const { data: allStops } = await supabase
@@ -1797,27 +1842,46 @@ export async function patchStop(
   }));
   const denorm = computeDenormalizedFields(stopsForDenorm, []);
 
-  // Atomic denormalization UPDATE with lock ownership check to prevent TOCTOU
+  // P-04: Atomic denormalization UPDATE z guardem na READONLY_STATUSES + lock ownership
   type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
-  const { error: denormErr } = await supabase
+  const { error: denormErr, count: denormCount } = await supabase
     .from("transport_orders")
-    .update({
-      first_loading_date: denorm.first_loading_date,
-      first_loading_time: denorm.first_loading_time,
-      first_unloading_date: denorm.first_unloading_date,
-      first_unloading_time: denorm.first_unloading_time,
-      last_loading_date: denorm.last_loading_date,
-      last_loading_time: denorm.last_loading_time,
-      last_unloading_date: denorm.last_unloading_date,
-      last_unloading_time: denorm.last_unloading_time,
-      first_loading_country: denorm.first_loading_country,
-      first_unloading_country: denorm.first_unloading_country,
-      summary_route: denorm.summary_route,
-      ...(shouldAutoKorekta ? { status_code: STATUS_KOREKTA } : {}),
-    } as OrderUpdate)
+    .update(
+      {
+        first_loading_date: denorm.first_loading_date,
+        first_loading_time: denorm.first_loading_time,
+        first_unloading_date: denorm.first_unloading_date,
+        first_unloading_time: denorm.first_unloading_time,
+        last_loading_date: denorm.last_loading_date,
+        last_loading_time: denorm.last_loading_time,
+        last_unloading_date: denorm.last_unloading_date,
+        last_unloading_time: denorm.last_unloading_time,
+        first_loading_country: denorm.first_loading_country,
+        first_unloading_country: denorm.first_unloading_country,
+        summary_route: denorm.summary_route,
+        ...(shouldAutoKorekta ? { status_code: STATUS_KOREKTA } : {}),
+      } as OrderUpdate,
+      { count: "exact" }
+    )
     .eq("id", orderId)
-    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`);
+    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`)
+    .not("status_code", "in", "(zrealizowane,anulowane)");
   if (denormErr) throw denormErr;
+  // Jeśli UPDATE nie trafił żadnego wiersza — zlecenie zostało zrealizowane/anulowane równolegle
+  if (!denormCount || denormCount === 0) {
+    throw new Error("FORBIDDEN_EDIT");
+  }
+
+  // P-02: Wpis do order_status_history przy auto-korekcie
+  if (shouldAutoKorekta) {
+    const { error: histErr } = await supabase.from("order_status_history").insert({
+      order_id: orderId,
+      old_status_code: order.status_code,
+      new_status_code: STATUS_KOREKTA,
+      changed_by_user_id: userId,
+    });
+    if (histErr) throw histErr;
+  }
 
   const merged = {
     kind: params.kind ?? stop.kind,
