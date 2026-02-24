@@ -1401,7 +1401,7 @@ export default function OrderDocument({
   const unloadingCount = data.stops.filter((s) => s.kind === "UNLOADING").length;
 
   return (
-    <div className="w-[210mm] min-h-[297mm] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.2)] overflow-hidden flex items-start justify-center">
+    <div className="order-a4-page-container w-[210mm] min-h-[297mm] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.2)] overflow-hidden flex items-start justify-center">
       {/* Scoped styles to force black text on the A4 document page */}
       <style>{`
         .order-a4-page, .order-a4-page * { color: #000; }
@@ -1409,6 +1409,27 @@ export default function OrderDocument({
         .order-a4-page .ov-gray { color: #9A9A9A !important; }
         .order-a4-page .ov-gray2 { color: #8D8D8D !important; }
         .order-a4-page .ov-orange { color: #F59444 !important; }
+
+        @media print {
+          /* Hide all lucide icons (dropdown arrows, calendar, drag handles, plus, x) */
+          .order-a4-page svg.lucide { display: none !important; }
+
+          /* Hide drag handle containers */
+          .order-a4-page [aria-label="Przeciągnij"] { display: none !important; }
+
+          /* Hide delete buttons for stops and items */
+          .order-a4-page button[title="Usuń stop"],
+          .order-a4-page button[title="Usuń pozycję"] { display: none !important; }
+
+          /* Hide all elements marked with data-no-print */
+          [data-no-print] { display: none !important; }
+
+          /* Remove hover/cursor effects */
+          .order-a4-page button { cursor: default !important; }
+
+          /* Remove shadow from A4 page container */
+          .order-a4-page-container { box-shadow: none !important; }
+        }
       `}</style>
       <div
         className="order-a4-page relative w-[595px] min-h-[842px] p-[32px_34px]"
@@ -1772,6 +1793,7 @@ export default function OrderDocument({
                     type="button"
                     onClick={addItem}
                     className="text-[7px] ov-gray hover:text-black cursor-pointer bg-transparent border-none"
+                    data-no-print
                   >
                     + dodaj pozycję
                   </button>
@@ -1894,7 +1916,7 @@ export default function OrderDocument({
 
         {/* Add stop buttons */}
         {!disabled && (
-          <div className={`${ROW_526} h-[18px] justify-center gap-4`}>
+          <div className={`${ROW_526} h-[18px] justify-center gap-4`} data-no-print>
             <button
               type="button"
               onClick={() => addStop("LOADING")}

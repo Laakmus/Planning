@@ -88,9 +88,9 @@ export default function OrderView({
   return (
     <>
       {/* Full-screen overlay container */}
-      <div className="fixed inset-0 z-50 flex flex-col bg-gray-200 dark:bg-gray-900">
+      <div className="fixed inset-0 z-50 flex flex-col bg-gray-200 dark:bg-gray-900 print:bg-white">
         {/* Toolbar */}
-        <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm">
+        <div className="flex items-center justify-between px-6 py-3 bg-white dark:bg-gray-800 border-b border-gray-200 dark:border-gray-700 shadow-sm print:hidden">
           {/* Left side: title + dirty indicator */}
           <div className="flex items-center gap-3">
             <h2 className="text-base font-semibold text-gray-900 dark:text-gray-100">
@@ -137,7 +137,7 @@ export default function OrderView({
 
       {/* Unsaved changes confirmation dialog */}
       {showConfirmDialog && (
-        <div className="fixed inset-0 z-[60] flex items-center justify-center">
+        <div className="fixed inset-0 z-[60] flex items-center justify-center print:hidden">
           {/* Backdrop */}
           <div
             className="absolute inset-0 bg-black/50"
