@@ -18,8 +18,9 @@ interface TimelineEntryProps {
 
 /** Inicjały z imienia i nazwiska lub userId */
 function getInitials(name: string | null, userId: string): string {
-  if (!name) return userId.substring(0, 2).toUpperCase();
-  const parts = name.trim().split(/\s+/);
+  const trimmed = name?.trim();
+  if (!trimmed) return userId.substring(0, 2).toUpperCase();
+  const parts = trimmed.split(/\s+/);
   if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase();
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }

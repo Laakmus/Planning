@@ -101,7 +101,10 @@ export const createOrderSchema = z.object({
   generalNotes: z.string().max(500).nullable(),
   senderContactName: z.string().max(200).nullable(),
   senderContactPhone: z.string().max(100).nullable(),
-  senderContactEmail: z.string().max(320).email().nullable(),
+  senderContactEmail: z.preprocess(
+    (v) => (v === "" ? null : v),
+    z.string().max(320).email().nullable()
+  ),
   stops: z.array(createOrderStopSchema).min(1).max(11),
   items: z.array(createOrderItemSchema).max(50),
 });

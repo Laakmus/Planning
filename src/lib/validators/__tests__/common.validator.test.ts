@@ -78,6 +78,14 @@ describe("isoDateSchema", () => {
   it('"abc" → ZodError', () => {
     expect(() => isoDateSchema.parse("abc")).toThrow(ZodError);
   });
+
+  it('"2026-13-01" → ZodError (miesiąc poza zakresem 1-12)', () => {
+    expect(() => isoDateSchema.parse("2026-13-01")).toThrow(ZodError);
+  });
+
+  it('"2026-02-30" → ZodError (luty nie ma 30 dni)', () => {
+    expect(() => isoDateSchema.parse("2026-02-30")).toThrow(ZodError);
+  });
 });
 
 // ---------------------------------------------------------------------------
@@ -97,8 +105,11 @@ describe("isoTimeSchema", () => {
     expect(() => isoTimeSchema.parse("2:32")).toThrow(ZodError);
   });
 
-  it('"25:00" → OK (regex nie waliduje zakresu godzin)', () => {
-    // Regex: /^\d{2}:\d{2}(:\d{2})?$/ — dopuszcza 25:00
-    expect(isoTimeSchema.parse("25:00")).toBe("25:00");
+  it('"25:00" → ZodError (godzina poza zakresem 0-23)', () => {
+    expect(() => isoTimeSchema.parse("25:00")).toThrow(ZodError);
+  });
+
+  it('"12:60" → ZodError (minuty poza zakresem 0-59)', () => {
+    expect(() => isoTimeSchema.parse("12:60")).toThrow(ZodError);
   });
 });
