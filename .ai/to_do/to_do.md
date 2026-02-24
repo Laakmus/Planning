@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
 > Ostatnia aktualizacja: 2026-02-24 (sesja 13)
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete. Sesja 10: context menu fix (Radix pointerup race), auto-scroll duplicate, AlertDialog cancel, system agentów. Sesja 11: unit testy — 9 nowych plików testowych + 2 helpery, łącznie 241 testów (z 35 → 241). Sesja 12: pełny audyt projektu (5 agentów równolegle) — weryfikacja TODO vs kod, spójność docs↔kod (~95%), Faza 1 + Faza 2 = 11 fixów, testy 241→253. Sesja 13: Faza 3 (Data Integrity) — 6 fixów (M-06, M-08, M-14, M-15, M-17, M-19).
+> Kontekst: Sesje 3-12: audyt API (37 problemów), naprawa 3 CRITICAL + 10 HIGH + liczne MEDIUM/LOW. Sesja 13: Faza 3 (M-06, M-08, M-14, M-15, M-17, M-19) + pełny re-audyt (8 agentów: PRD↔kod, api-plan↔kod, ui-plan↔kod, db-plan↔kod, nowe bugi). Wynik: 5 naruszeń PRD, 8 rozbieżności api-plan, 12 nowych problemów.
 
 ---
 
@@ -86,66 +86,142 @@
 
 ---
 
+## HIGH — naruszenia PRD / krytyczne rozbieżności
+
+### P-01. patchStop brak logowania zmian w order_change_log
+- **Plik:** `order.service.ts:1718-1840`
+- **PRD §3.1.8:** "logować zmiany kluczowych danych (daty, miejsca załadunku/rozładunku)"
+- **Problem:** patchStop edytuje stopy i denormalizację, ale NIE wstawia do `order_change_log`.
+- **Rozwiązanie:** INSERT do `order_change_log` dla każdego zmienionego pola stopu.
+
+### P-02. patchStop auto-korekta brak wpisu w order_status_history
+- **Plik:** `order.service.ts:1816`
+- **PRD §3.1.7:** Automatyczne przejście wysłane→korekta powinno być śledzone.
+- **Problem:** Ustawia `status_code='korekta'` ale NIE tworzy wpisu w `order_status_history`.
+- **Rozwiązanie:** Dodać INSERT `order_status_history` gdy `shouldAutoKorekta=true`.
+
+### P-03. complaintReason nadpisane null w updateOrder (awans z L-05)
+- **Plik:** `order.service.ts:1406`
+- **PRD §3.1.7:** complaintReason obowiązkowe przy statusie reklamacja.
+- **Problem:** `complaint_reason: params.complaintReason ?? null` — gdy frontend nie wysyła pola (undefined), powód reklamacji znika.
+- **Rozwiązanie:** Nie ustawiać pola w payload gdy `params.complaintReason === undefined`.
+
+### P-04. patchStop race condition na READONLY_STATUSES
+- **Plik:** `order.service.ts:1738-1802`
+- **Problem:** Między SELECT (sprawdzenie statusu) a UPDATE brak guardu na status. Równoległa zmiana na "zrealizowane" nie jest blokowana.
+- **Rozwiązanie:** Dodać `.not("status_code", "in", "(zrealizowane,anulowane)")` do UPDATE.
+
 ## MEDIUM — do zrobienia
 
 ### M-01. Brak transakcji w operacjach wielokrokowych
 - **Pliki:** `order.service.ts` (createOrder, updateOrder, duplicateOrder)
-- **Problem:** INSERT transport_orders + INSERT stops + INSERT items to 3 osobne zapytania. Jesli jedno padnie, dane sa niespojne.
-- **Rozwiazanie:** Uzyc RPC (stored procedure) lub Supabase Edge Function z transakcja.
+- **Problem:** INSERT transport_orders + INSERT stops + INSERT items to 3 osobne zapytania. Jeśli jedno padnie, dane są niespójne.
+- **Rozwiązanie:** Użyć RPC (stored procedure) lub Supabase Edge Function z transakcją.
 
-### M-02. Brak logu zmian pol biznesowych (order_change_log) w updateOrder
+### M-02. Brak logu zmian pól biznesowych (order_change_log) w updateOrder
 - **Plik:** `order.service.ts:1495-1512`
-- **Problem:** PRD §3.1.8 wymaga logowania zmian: daty, miejsca, ilosci, przewoznik, cena. Obecnie logowane sa tylko zmiany statusu.
-- **Rozwiazanie:** Porownac stary i nowy stan pol, wstawic roznice do `order_change_log`.
+- **Problem:** PRD §3.1.8 wymaga logowania zmian: daty, miejsca, ilości, przewoźnik, cena. Obecnie logowane są tylko zmiany statusu.
+- **Rozwiązanie:** Porównać stary i nowy stan pól, wstawić różnice do `order_change_log`.
 
 ### M-03. Brak logowania do order_change_log w cancel, restore, prepare-email
 - **Pliki:** `order-status.service.ts` (cancelOrder, restoreOrder), `order.service.ts` (prepareEmailForOrder)
-- **Problem:** Te operacje loguja do `order_status_history`, ale NIE do `order_change_log`.
-- **Rozwiazanie:** Dodac INSERT do `order_change_log` z field_name="status_code".
+- **Problem:** Te operacje logują do `order_status_history`, ale NIE do `order_change_log`. `changeStatus()` robi oba — niespójność.
+- **Rozwiązanie:** Dodać INSERT do `order_change_log` z field_name="status_code".
 
-### M-07. Sortowanie po order_no (tekst) — problem po >9999 zlecen
+### M-07. Sortowanie po order_no (tekst) — problem po >9999 zleceń
 - **Plik:** `order.service.ts:47`
 - **Problem:** `ZT2026/10000` < `ZT2026/9999` w sortowaniu tekstowym.
-- **Rozwiazanie:** Sortowac po extracted numeric part lub dodac kolumne `order_seq_no INT`.
+- **Rozwiązanie:** Sortować po extracted numeric part lub dodać kolumnę `order_seq_no INT`.
 
 ### M-09. dateFrom/dateTo filtruje tylko first_loading_date
 - **Plik:** `order.service.ts:285-289`
-- **Problem:** api-plan mowi "zakres dat zaladunku/rozladunku" — sugeruje filtrowanie po obu.
-- **Rozwiazanie:** Dodac OR z first_unloading_date lub zmienic spec.
+- **Problem:** PRD mówi "zakres dat (np. data załadunku, data rozładunku)" — sugeruje filtrowanie po obu.
+- **Rozwiązanie:** Dodać OR z first_unloading_date lub zmienić spec.
+
+### M-20. JOIN FK syntax niespójny między listOrders a getOrderDetail
+- **Plik:** `order.service.ts:265-267 vs 405-409`
+- **Problem:** listOrders używa jawnych constraint names (`!transport_orders_created_by_user_id_fkey`), getOrderDetail używa krótszej formy (`!created_by_user_id`). Może crashnąć na niektórych wersjach PostgREST.
+- **Rozwiązanie:** Ujednolicić do jednej składni (preferowana: constraint name).
+
+### M-21. Brak sent_by JOIN w listOrders
+- **Plik:** `order.service.ts:260-268`
+- **Problem:** `sentByUserName` w liście zleceń zawsze = null, bo brak JOINu (a w getOrderDetail jest).
+- **Rozwiązanie:** Dodać `sent_by_user:user_profiles!transport_orders_sent_by_user_id_fkey(full_name)` do listOrders SELECT.
+
+### M-22. statusName brak w CreateOrderResponseDto i DuplicateOrderResponseDto (awans z L-07)
+- **Pliki:** `types.ts`, `order.service.ts:991, 1218`
+- **Problem:** api-plan §2.4 i §2.9 wymagają `statusName` w odpowiedzi. Kod go nie zwraca.
+- **Rozwiązanie:** Dodać `statusName: string` do obu DTO + zwracać w serwisie.
+
+### M-23. FK_VALIDATION type casting niespójny
+- **Plik:** `order.service.ts:890, 1045, 1286`
+- **Problem:** duplicateOrder używa `as any`, createOrder/updateOrder używa `as Error & { details }`.
+- **Rozwiązanie:** Ujednolicić do jednej formy.
+
+### M-24. isoDateSchema/isoTimeSchema bez walidacji zakresu (awans z L-03)
+- **Plik:** `common.validator.ts:15-18`
+- **PRD §3.1.9:** ISO 8601. Regex akceptuje `2026-13-45`, `25:99`.
+- **Rozwiązanie:** Dodać `.refine()` z walidacją zakresu lub użyć `z.coerce.date()`.
 
 ---
 
 ## LOW — nice to have
 
-### L-01. Lock mozliwy na anulowanych/zrealizowanych
+### L-01. Lock możliwy na anulowanych/zrealizowanych
 - **Plik:** `order-lock.service.ts`
-- Niespojnosc logiki — nie stanowi zagrożenia.
+- Niespójność logiki — nie stanowi zagrożenia.
 
-### L-02. Brak paginacji w endpointach slownikowych
+### L-02. Brak paginacji w endpointach słownikowych
 - **Pliki:** companies, locations, products
-- Przy duzych zbiorach moze byc problemem wydajnosciowym.
-
-### L-03. isoDateSchema/isoTimeSchema bez walidacji zakresu
-- Regex akceptuje `9999-99-99` i `99:99:99`.
+- Przy dużych zbiorach może być problemem wydajnościowym.
 
 ### L-04. buildSnapshotsForCarrier nie pobiera address/location name
 - **Plik:** `order.service.ts:502-521`
-- Snapshoty adresu i lokalizacji przewoznika sa zawsze null.
-
-### L-05. complaintReason moze zostac nadpisane null w updateOrder
-- **Plik:** `order.service.ts:1367`
-- Edycja zlecenia "reklamacja" bez complaintReason zeruje pole.
-
-### L-07. statusName brak w CreateOrderResponseDto
-- **Plik:** CreateOrderResponseDto
-- api-plan wymienia statusName, ale nie jest zwracany w create response. OrderDetailDto już zawiera statusName (M-06).
+- Snapshoty adresu i lokalizacji przewoźnika są zawsze null.
 
 ### L-10. unsafe type casts w api-client.ts
 - `undefined as T`, `JSON.parse(text) as T`, `response as unknown as T`.
 - Standardowe w TS, ale brak runtime walidacji.
 
-### L-11. week-utils.ts regex falszywie akceptuje format
-- Regex `[W-]?` jest opcjonalny, wiec `"202607"` matchuje.
+### L-11. week-utils.ts regex fałszywie akceptuje format
+- Regex `[W-]?` jest opcjonalny, więc `"202607"` matchuje.
+
+### L-12. formatDateShort crash na niepełnej dacie
+- **Plik:** `format-utils.ts:19-21`
+- `"2026-02".split("-")` → `parts[2]` = undefined → wyświetli `"undefined.02"`.
+- **Rozwiązanie:** Dodać `if (parts.length !== 3) return date;`.
+
+### L-13. getInitials() crash na pustym imieniu
+- **Plik:** `TimelineEntry.tsx:23-24`
+- `"".split(/\s+/)` → `[""]` → `[0][0]` = undefined.
+- **Rozwiązanie:** Dodać guard na pusty string.
+
+### L-14. senderContactEmail empty string vs null w walidatorze
+- **Plik:** `order.validator.ts:104`
+- Pusty string (`""`) failuje `.email()` zamiast być traktowany jak null.
+- **Rozwiązanie:** `.transform(v => v === "" ? null : v)` przed `.email()`.
+
+### L-15. Brak testów: postRaw Accept header + AbortController timeout
+- **Plik:** `api-client.test.ts`
+- Dwie nowe ścieżki kodu bez pokrycia testami.
+
+### L-16. listOrders 5 filtrów niezaimplementowanych
+- **Plik:** `order.service.ts:118-119`
+- productId, loadingLocationId, loadingCompanyId, unloadingLocationId, unloadingCompanyId — walidowane ale ignorowane.
+- Komentarz w kodzie: "na razie nie stosowane".
+
+---
+
+## DOCS — dokumentacja do aktualizacji
+
+### DOC-01. api-plan.md §2.3 — brakuje 5 nowych pól OrderDetailDto
+- statusName, weekNumber, createdByUserName, updatedByUserName, lockedByUserName
+
+### DOC-02. api-plan.md §4 — brak przejścia korekta→reklamacja w ALLOWED_TRANSITIONS
+
+### DOC-03. api-plan.md — brak dokumentacji PATCH /orders/{id}/carrier-color
+
+### DOC-04. api-plan.md — uściślić politykę order_change_log (kiedy logować)
 
 ---
 
@@ -157,8 +233,8 @@
 ### D-03. PDF endpoint — stub 501 po stronie serwera
 - Wymaga generatora PDF (np. Puppeteer, jsPDF, Reportlab).
 
-### D-04. history/UserAvatar.tsx — inicjaly inline w TimelineEntry
+### D-04. history/UserAvatar.tsx — inicjały inline w TimelineEntry
 - Komponent nie wyekstrahowany.
 
 ### D-05. hooks/useOrderDetail.ts — logika wbudowana w OrderDrawer
-- Hook nie wydzielony — OrderDrawer robi fetch + lock + unlock wewnetrznie.
+- Hook nie wydzielony — OrderDrawer robi fetch + lock + unlock wewnętrznie.
