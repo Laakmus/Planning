@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-24 (sesja 14)
-> Kontekst: Sesja 14: Faza 4 (P-01–P-04, M-03) + Faza 5 (M-20–M-23) + Faza 6 (M-24, L-13, L-14) + Faza 7 (DOC-01–DOC-04).
+> Ostatnia aktualizacja: 2026-02-24 (sesja 15)
+> Kontekst: Sesja 15: M-01 (compensating cleanup) + M-02 (logowanie zmian pól biznesowych).
 
 ---
 
@@ -87,6 +87,10 @@
 ### MEDIUM (sesja 14)
 - [x] M-03: order_change_log w cancelOrder, restoreOrder, prepareEmailForOrder — spójność z changeStatus() (sesja 14)
 
+### MEDIUM — transakcje + logowanie (sesja 15)
+- [x] M-01: Compensating cleanup w createOrder/duplicateOrder — try/catch + DELETE osierconego nagłówka (sesja 15)
+- [x] M-02: Logowanie zmian 18 pól biznesowych w updateOrder do order_change_log (PRD §3.1.8) (sesja 15)
+
 ### MEDIUM + LOW — Faza 6 walidatory + defensive (sesja 14)
 - [x] M-24: isoDateSchema/isoTimeSchema — .refine() z walidacją zakresu + 3 nowe testy (sesja 14)
 - [x] L-12: formatDateShort — guard `parts.length !== 3` (już istniał w kodzie, nie wymagał zmian)
@@ -114,16 +118,6 @@
 ---
 
 ## MEDIUM — do zrobienia
-
-### M-01. Brak transakcji w operacjach wielokrokowych
-- **Pliki:** `order.service.ts` (createOrder, updateOrder, duplicateOrder)
-- **Problem:** INSERT transport_orders + INSERT stops + INSERT items to 3 osobne zapytania. Jeśli jedno padnie, dane są niespójne.
-- **Rozwiązanie:** Użyć RPC (stored procedure) lub Supabase Edge Function z transakcją.
-
-### M-02. Brak logu zmian pól biznesowych (order_change_log) w updateOrder
-- **Plik:** `order.service.ts:1495-1512`
-- **Problem:** PRD §3.1.8 wymaga logowania zmian: daty, miejsca, ilości, przewoźnik, cena. Obecnie logowane są tylko zmiany statusu.
-- **Rozwiązanie:** Porównać stary i nowy stan pól, wstawić różnice do `order_change_log`.
 
 ### M-07. Sortowanie po order_no (tekst) — problem po >9999 zleceń
 - **Plik:** `order.service.ts:47`
