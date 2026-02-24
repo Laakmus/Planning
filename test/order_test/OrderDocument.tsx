@@ -1000,8 +1000,8 @@ function StopRows({
               onChange={(e) =>
                 onUpdate({ time: e.target.value ? `${e.target.value}` : null })
               }
-              className="bg-transparent border-none outline-none text-[7px] font-bold"
-              style={{ letterSpacing: "0.21px", marginLeft: "2px", width: "36px" }}
+              className="bg-transparent border-none outline-none text-[7px] font-bold [&::-webkit-calendar-picker-indicator]:hidden [&::-webkit-inner-spin-button]:hidden"
+              style={{ letterSpacing: "0.21px", marginLeft: "2px", width: "36px", appearance: "none", MozAppearance: "textfield" }}
             />
           )}
         </div>
