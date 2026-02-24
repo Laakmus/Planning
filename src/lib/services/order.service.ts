@@ -34,6 +34,7 @@ type TransportOrderRow = Database["public"]["Tables"]["transport_orders"]["Row"]
   vehicle_variants: { name: string } | null;
   created_by_user: { full_name: string | null } | null;
   updated_by_user: { full_name: string | null } | null;
+  sent_by_user: { full_name: string | null } | null;
   locked_by_user: { full_name: string | null } | null;
 };
 
@@ -60,7 +61,6 @@ function mapRowToOrderListItemDto(
     last_unloading_time?: string | null;
     week_number?: number | null;
     vehicle_capacity_volume_m3?: number | null;
-    sent_by_user_name?: string | null;
     sent_at?: string | null;
     carrier_cell_color?: string | null;
   },
@@ -97,7 +97,7 @@ function mapRowToOrderListItemDto(
     vehicleCapacityVolumeM3: row.vehicle_capacity_volume_m3 ?? null,
     requiredDocumentsText: row.required_documents_text,
     generalNotes: row.general_notes,
-    sentByUserName: row.sent_by_user_name ?? null,
+    sentByUserName: row.sent_by_user?.full_name ?? null,
     sentAt: row.sent_at ?? null,
     lockedByUserId: row.locked_by_user_id,
     lockedByUserName: row.locked_by_user?.full_name ?? null,
@@ -264,6 +264,7 @@ export async function listOrders(
     vehicle_variants(name),
     created_by_user:user_profiles!transport_orders_created_by_user_id_fkey(full_name),
     updated_by_user:user_profiles!transport_orders_updated_by_user_id_fkey(full_name),
+    sent_by_user:user_profiles!transport_orders_sent_by_user_id_fkey(full_name),
     locked_by_user:user_profiles!transport_orders_locked_by_user_id_fkey(full_name)
   `.replace(/\s+/g, " ");
 
@@ -403,10 +404,10 @@ export async function getOrderDetail(
     .select(`
       *,
       order_statuses!status_code ( name ),
-      created_by:user_profiles!created_by_user_id ( full_name ),
-      updated_by:user_profiles!updated_by_user_id ( full_name ),
-      sent_by:user_profiles!sent_by_user_id ( full_name ),
-      locked_by:user_profiles!locked_by_user_id ( full_name )
+      created_by:user_profiles!transport_orders_created_by_user_id_fkey ( full_name ),
+      updated_by:user_profiles!transport_orders_updated_by_user_id_fkey ( full_name ),
+      sent_by:user_profiles!transport_orders_sent_by_user_id_fkey ( full_name ),
+      locked_by:user_profiles!transport_orders_locked_by_user_id_fkey ( full_name )
     `)
     .eq("id", orderId)
     .maybeSingle();
@@ -887,7 +888,7 @@ export async function duplicateOrder(
   });
   if (fkErrors) {
     const err = new Error("FK_VALIDATION");
-    (err as any).details = fkErrors;
+    (err as Error & { details: Record<string, string> }).details = fkErrors;
     throw err;
   }
 
@@ -988,10 +989,24 @@ export async function duplicateOrder(
     if (itemsErr) throw itemsErr;
   }
 
+  // Nazwa statusu — z oryginału lub z bazy gdy reset do robocze (api-plan §2.9)
+  let statusName: string;
+  if (!params.resetStatusToDraft) {
+    statusName = detail.order.statusName;
+  } else {
+    const { data: statusRow } = await supabase
+      .from("order_statuses")
+      .select("name")
+      .eq("code", STATUS_ROBOCZE)
+      .single();
+    statusName = statusRow?.name ?? STATUS_ROBOCZE;
+  }
+
   return {
     id: newOrderId,
     orderNo,
     statusCode: newStatus,
+    statusName,
     createdAt: newOrder.created_at,
   };
 }
@@ -1215,10 +1230,18 @@ export async function createOrder(
     if (itemsError) throw itemsError;
   }
 
+  // Pobierz nazwę statusu dla odpowiedzi DTO (api-plan §2.4)
+  const { data: statusRow } = await supabase
+    .from("order_statuses")
+    .select("name")
+    .eq("code", STATUS_ROBOCZE)
+    .single();
+
   return {
     id: orderId,
     orderNo,
     statusCode: STATUS_ROBOCZE,
+    statusName: statusRow?.name ?? STATUS_ROBOCZE,
     createdAt: order.created_at,
   };
 }

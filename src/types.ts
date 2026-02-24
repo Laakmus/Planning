@@ -304,6 +304,7 @@ export interface CreateOrderResponseDto {
   id: string;
   orderNo: string;
   statusCode: string;
+  statusName: string;
   createdAt: string;
 }
 
@@ -354,6 +355,7 @@ export interface DuplicateOrderResponseDto {
   id: string;
   orderNo: string;
   statusCode: string;
+  statusName: string;
   createdAt: string;
 }
 
