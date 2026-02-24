@@ -49,6 +49,7 @@ import {
   MAX_LOADING_STOPS,
   MAX_UNLOADING_STOPS,
   PAYMENT_METHODS,
+  VEHICLE_OPTIONS,
 } from "./constants";
 import { TEST_PRODUCTS, TEST_COMPANIES, TEST_LOCATIONS } from "./test-data";
 
@@ -486,6 +487,108 @@ function CarrierAutocomplete({
                       {company.taxId}
                     </span>
                   )}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Vehicle type autocomplete for TYP AUTA section
+// ---------------------------------------------------------------------------
+
+function VehicleTypeAutocomplete({
+  value,
+  onSelect,
+  onClear,
+}: {
+  value: string;
+  onSelect: (option: (typeof VEHICLE_OPTIONS)[number]) => void;
+  onClear: () => void;
+}) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  const filtered =
+    query.length < 1
+      ? VEHICLE_OPTIONS
+      : VEHICLE_OPTIONS.filter((v) =>
+          v.name.toLowerCase().includes(query.toLowerCase()),
+        );
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-0.5 text-[7px] bg-transparent border-none outline-none cursor-pointer text-left w-full hover:bg-yellow-50/50 rounded-sm px-0.5 -mx-0.5"
+          style={{ color: "#000" }}
+        >
+          <span className="truncate flex-1 font-bold">
+            {value || "wybierz typ auta..."}
+          </span>
+          <ChevronsUpDown
+            className="shrink-0 opacity-40"
+            style={{ width: 8, height: 8 }}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-56 p-0"
+        align="start"
+        side="bottom"
+        sideOffset={2}
+      >
+        <Command>
+          <CommandInput
+            placeholder="Szukaj typu auta..."
+            value={query}
+            onValueChange={setQuery}
+            className="text-xs"
+          />
+          <CommandList>
+            <CommandEmpty className="py-2 text-xs text-center text-slate-500">
+              Brak wyników
+            </CommandEmpty>
+            <CommandGroup>
+              {value && (
+                <CommandItem
+                  value="__clear__"
+                  onSelect={() => {
+                    onClear();
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  className="text-xs cursor-pointer text-red-500"
+                >
+                  <X className="mr-1.5 h-3 w-3" />
+                  Wyczyść wybór
+                </CommandItem>
+              )}
+              {filtered.map((opt) => (
+                <CommandItem
+                  key={opt.code}
+                  value={opt.name}
+                  onSelect={() => {
+                    onSelect(opt);
+                    setOpen(false);
+                    setQuery("");
+                  }}
+                  className="text-xs cursor-pointer"
+                >
+                  <Check
+                    className={`mr-1.5 h-3 w-3 ${
+                      value === opt.name ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  <span>{opt.name}</span>
+                  <span className="ml-auto text-[10px] text-slate-400">
+                    {opt.volumeM3} m³
+                  </span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -1288,14 +1391,21 @@ export default function OrderDocument({
             >
               OPIS
             </span>
-            <div style={{ paddingLeft: "25px", flex: 1 }}>
-              <EditableText
-                value={data.vehicleType}
-                onChange={(v) => update({ vehicleType: v })}
-                className="text-[7px]"
-                disabled={disabled}
-                style={{ letterSpacing: "0.14px" }}
-              />
+            <div style={{ paddingLeft: "25px", flex: 1, minWidth: 0 }}>
+              {disabled ? (
+                <span
+                  className="text-[7px] font-bold"
+                  style={{ letterSpacing: "0.14px" }}
+                >
+                  {data.vehicleType}
+                </span>
+              ) : (
+                <VehicleTypeAutocomplete
+                  value={data.vehicleType}
+                  onSelect={(opt) => update({ vehicleType: opt.name })}
+                  onClear={() => update({ vehicleType: "" })}
+                />
+              )}
             </div>
           </div>
           <div
@@ -1615,36 +1725,36 @@ export default function OrderDocument({
               />
             </div>
 
-            {/* Currency selector */}
+            {/* Currency selector — radio cells with X (like packaging) */}
             <div
-              className="flex items-center gap-[3px]"
+              className="flex items-center"
               style={{ marginLeft: "26px" }}
             >
               {CURRENCIES.map((cur) => {
                 const isSelected = data.currencyCode === cur;
                 return (
-                  <div
-                    key={cur}
-                    className={`flex items-center ${!disabled ? "cursor-pointer" : ""}`}
-                    onClick={() => {
-                      if (!disabled) update({ currencyCode: cur });
-                    }}
-                  >
+                  <div key={cur} className="flex items-center">
                     <span
                       className="text-[5px] font-bold ov-gray"
                       style={{
-                        padding: "0 10px",
+                        padding: "0 4px",
                         letterSpacing: "0.2px",
                       }}
                     >
                       {cur}
                     </span>
-                    <span
-                      className={`text-[7px] font-bold ${isSelected ? "text-black" : "text-transparent"}`}
-                      style={{ letterSpacing: "0.28px" }}
+                    <div
+                      className={`flex items-center justify-center w-[14px] h-[14px] border-[0.5px] border-dashed border-black ${
+                        !disabled ? "cursor-pointer hover:bg-gray-50" : ""
+                      }`}
+                      onClick={() => {
+                        if (!disabled) update({ currencyCode: cur });
+                      }}
                     >
-                      X
-                    </span>
+                      {isSelected && (
+                        <span className="text-[8px] font-bold">X</span>
+                      )}
+                    </div>
                   </div>
                 );
               })}
