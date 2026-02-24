@@ -244,6 +244,14 @@ export interface OrderDetailDto {
   updatedByUserId: string | null;
   lockedByUserId: string | null;
   lockedAt: string | null;
+  // Pola dodatkowe z JOINów (api-plan §2.3)
+  statusName: string;
+  weekNumber: number | null;
+  sentAt: string | null;
+  sentByUserName: string | null;
+  createdByUserName: string | null;
+  updatedByUserName: string | null;
+  lockedByUserName: string | null;
 }
 
 /** Punkt trasy w widoku szczegółowym zlecenia. */

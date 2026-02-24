@@ -87,7 +87,7 @@ export function createApiClient(config: ApiClientConfig) {
     }
 
     const headers: Record<string, string> = {
-      Accept: "application/json",
+      Accept: options?.raw ? "*/*" : "application/json",
     };
 
     const token = getToken();
@@ -103,15 +103,23 @@ export function createApiClient(config: ApiClientConfig) {
     }
 
     let response: Response;
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 30_000);
     try {
       response = await fetch(url.toString(), {
         method,
         headers,
         body: bodyStr,
+        signal: controller.signal,
       });
-    } catch {
+    } catch (err) {
+      clearTimeout(timeoutId);
+      if (err instanceof DOMException && err.name === "AbortError") {
+        throw new Error("Przekroczono limit czasu żądania (30s). Sprawdź połączenie sieciowe.");
+      }
       throw new Error("Brak połączenia z serwerem. Sprawdź połączenie sieciowe.");
     }
+    clearTimeout(timeoutId);
 
     // 401 → interceptor wylogowania
     if (response.status === 401) {

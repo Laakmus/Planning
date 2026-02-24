@@ -272,6 +272,10 @@ describe("duplicateOrder", () => {
           select: { data: [makeItemRow()], error: null },
           insert: { data: null, error: null },
         },
+        // FK validation (M-14) — validateForeignKeys wywołane w duplicateOrder
+        transport_types: { select: { data: { code: "PL" }, error: null } },
+        locations: { select: { data: [{ id: VALID_LOCATION_ID }], error: null } },
+        products: { select: { data: [{ id: VALID_PRODUCT_ID }], error: null } },
       },
       {
         generate_next_order_no: { data: "ZT2026/0002", error: null },

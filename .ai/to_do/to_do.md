@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-24 (sesja 12)
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete. Sesja 10: context menu fix (Radix pointerup race), auto-scroll duplicate, AlertDialog cancel, system agentów. Sesja 11: unit testy — 9 nowych plików testowych + 2 helpery, łącznie 241 testów (z 35 → 241). Sesja 12: pełny audyt projektu (5 agentów równolegle) — weryfikacja TODO vs kod, spójność docs↔kod (~95%), Faza 1 + Faza 2 = 11 fixów, testy 241→253.
+> Ostatnia aktualizacja: 2026-02-24 (sesja 13)
+> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete. Sesja 10: context menu fix (Radix pointerup race), auto-scroll duplicate, AlertDialog cancel, system agentów. Sesja 11: unit testy — 9 nowych plików testowych + 2 helpery, łącznie 241 testów (z 35 → 241). Sesja 12: pełny audyt projektu (5 agentów równolegle) — weryfikacja TODO vs kod, spójność docs↔kod (~95%), Faza 1 + Faza 2 = 11 fixów, testy 241→253. Sesja 13: Faza 3 (Data Integrity) — 6 fixów (M-06, M-08, M-14, M-15, M-17, M-19).
 
 ---
 
@@ -28,15 +28,21 @@
 - [x] NEW-01: isDirty nie śledził zmian complaintReason — dodano `computeDirty()` z `originalComplaintReasonRef` w OrderForm.tsx (sesja 12)
 - [x] NEW-02: Zamiana deprecated `React.MutableRefObject` na `React.RefObject` w OrderForm.tsx (sesja 12)
 
-### MEDIUM (sesje 3-12)
+### MEDIUM (sesje 3-13)
 - [x] M-04: patchStop — dodano guard READONLY_STATUSES (zrealizowane/anulowane) (sesja 12)
 - [x] M-05: patchStop — dodano auto-korekta gdy edycja stopu w zleceniu wysłanym (sesja 12)
+- [x] M-06: OrderDetailDto — dodano 7 pól (statusName, weekNumber, sentAt, sentByUserName, createdByUserName, updatedByUserName, lockedByUserName) + JOINy z order_statuses i user_profiles w getOrderDetail (sesja 13)
+- [x] M-08: autoSetDocumentsAndCurrency — usunięto martwy kod `if (!userCurrency)` (sesja 13)
 - [x] M-10: Dodano MAX_CACHE_SIZE (10k) na idempotency cache z FIFO eviction + MAX_RATE_BUCKETS (50k) na rate limiter (sesja 12)
 - [x] M-11: Rate limiting — identyfikacja klienta po JWT sub claim zamiast slice(-16) tokena, fallback na IP (sesja 12)
 - [x] M-12: Dodano `.min(1).max(11)` na stops i `.max(50)` na items w Zod walidatorach + 10 nowych testów (sesja 12)
 - [x] M-13: Usunięto X-XSS-Protection, dodano CSP (`default-src 'none'; frame-ancestors 'none'`) i Referrer-Policy (sesja 12)
+- [x] M-14: duplicateOrder — dodano walidację FK (vehicle_variants, transport_types, companies, locations, products) + fix testów (sesja 13)
+- [x] M-15: AbortController z timeout 30s na fetch() w api-client.ts (sesja 13)
 - [x] M-16: Lock catch block w OrderDrawer ustawia lockedByUserName przy bledzie — drawer otwiera sie readonly (sesja 4)
+- [x] M-17: lockedByUserName — JOIN z user_profiles w getOrderDetail + pole w OrderDetailDto (sesja 13)
 - [x] M-18 (częściowo): POST /duplicate teraz wywolywany z context menu. PATCH /stops/{stopId} — nadal nieuzywany (sesja 5)
+- [x] M-19: Accept header — `raw: true` → `Accept: */*` zamiast `application/json` w api-client.ts (sesja 13)
 
 ### LOW (sesja 12)
 - [x] L-06: Dodano `updated_by_user_id` do `cancelOrder()`, `restoreOrder()` i `changeStatus()` + 2 nowe testy (sesja 12)
@@ -97,45 +103,15 @@
 - **Problem:** Te operacje loguja do `order_status_history`, ale NIE do `order_change_log`.
 - **Rozwiazanie:** Dodac INSERT do `order_change_log` z field_name="status_code".
 
-### M-06. OrderDetailDto brakuje pol z api-plan.md
-- **Pliki:** `types.ts` (OrderDetailDto), `order.service.ts` (getOrderDetail)
-- **Problem:** Brak: `statusName`, `weekNumber`, `vehicleCapacityVolumeM3`, `createdByUserName`, `updatedByUserName`, `sentByUserName`, `sentAt`.
-- **Rozwiazanie:** Dodac pola do DTO, zrobic JOINy w getOrderDetail z user_profiles i order_statuses.
-
 ### M-07. Sortowanie po order_no (tekst) — problem po >9999 zlecen
 - **Plik:** `order.service.ts:47`
 - **Problem:** `ZT2026/10000` < `ZT2026/9999` w sortowaniu tekstowym.
 - **Rozwiazanie:** Sortowac po extracted numeric part lub dodac kolumne `order_seq_no INT`.
 
-### M-08. autoSetDocumentsAndCurrency — waluta auto-set nigdy nie dziala
-- **Plik:** `order.service.ts:739,744`
-- **Problem:** `if (!userCurrency)` — ale currencyCode jest wymagany w Zod (enum), wiec zawsze truthy.
-- **Rozwiazanie:** Usunac dead code lub zmienic logike (np. ustawiac walute tylko jesli frontend nie wysle).
-
 ### M-09. dateFrom/dateTo filtruje tylko first_loading_date
 - **Plik:** `order.service.ts:285-289`
 - **Problem:** api-plan mowi "zakres dat zaladunku/rozladunku" — sugeruje filtrowanie po obu.
 - **Rozwiazanie:** Dodac OR z first_unloading_date lub zmienic spec.
-
-### M-14. duplicateOrder nie waliduje FK ani limitow stops
-- **Plik:** `order.service.ts:866-979`
-- **Problem:** Kopia zlecenia moze zawierac nieaktywne referencje (locations, products).
-- **Rozwiazanie:** Dodac walidacje FK jak w createOrder.
-
-### M-15. Brak timeout/abort na zapytaniach HTTP (frontend)
-- **Plik:** `api-client.ts`
-- **Problem:** `fetch()` bez `AbortController` — requesty moga wisiec w nieskonczonosc.
-- **Rozwiazanie:** Dodac AbortController z timeout (np. 30s).
-
-### M-17. OrderDetailDto brak lockedByUserName
-- **Pliki:** `types.ts:238-239`, `order.service.ts:406-454`
-- **Problem:** Backend nie zwraca nazwy blokujacego. Drawer pokazuje "inny uzytkownik".
-- **Rozwiazanie:** JOIN z user_profiles w getOrderDetail, dodac pole do DTO.
-
-### M-19. PDF Accept header ustawiony na application/json
-- **Plik:** `api-client.ts:90-91`
-- **Problem:** `postRaw` uzywa `Accept: application/json` zamiast `application/pdf`.
-- **Rozwiazanie:** Przy `raw: true` ustawic `Accept: */*` lub `application/pdf`.
 
 ---
 
@@ -160,9 +136,9 @@
 - **Plik:** `order.service.ts:1367`
 - Edycja zlecenia "reklamacja" bez complaintReason zeruje pole.
 
-### L-07. statusName brak w odpowiedziach API
-- **Pliki:** OrderDetailDto, CreateOrderResponseDto
-- api-plan wymienia statusName, ale nie jest zwracany. Frontend mapuje sam.
+### L-07. statusName brak w CreateOrderResponseDto
+- **Plik:** CreateOrderResponseDto
+- api-plan wymienia statusName, ale nie jest zwracany w create response. OrderDetailDto już zawiera statusName (M-06).
 
 ### L-10. unsafe type casts w api-client.ts
 - `undefined as T`, `JSON.parse(text) as T`, `response as unknown as T`.

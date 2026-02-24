@@ -381,6 +381,9 @@ type TransportOrderRowExtended = Database["public"]["Tables"]["transport_orders"
   last_loading_time?: string | null;
   last_unloading_date?: string | null;
   last_unloading_time?: string | null;
+  week_number?: number | null;
+  sent_at?: string | null;
+  sent_by_user_id?: string | null;
 };
 
 /**
@@ -396,8 +399,15 @@ export async function getOrderDetail(
 ): Promise<OrderDetailResponseDto | null> {
   const { data: orderRow, error: orderError } = await supabase
     .from("transport_orders")
-    // select("*") — kolumny z migracji (payment_term_days, total_load_volume_m3, last_*) nie są w wygenerowanych typach
-    .select("*")
+    // select z JOINami — kolumny z migracji + powiązane tabele (api-plan §2.3)
+    .select(`
+      *,
+      order_statuses!status_code ( name ),
+      created_by:user_profiles!created_by_user_id ( full_name ),
+      updated_by:user_profiles!updated_by_user_id ( full_name ),
+      sent_by:user_profiles!sent_by_user_id ( full_name ),
+      locked_by:user_profiles!locked_by_user_id ( full_name )
+    `)
     .eq("id", orderId)
     .maybeSingle();
 
@@ -454,6 +464,14 @@ export async function getOrderDetail(
     updatedByUserId: row.updated_by_user_id,
     lockedByUserId: row.locked_by_user_id,
     lockedAt: row.locked_at,
+    // Pola z JOINów (api-plan §2.3)
+    statusName: (row as any).order_statuses?.name ?? row.status_code,
+    weekNumber: row.week_number ?? null,
+    sentAt: row.sent_at ?? null,
+    sentByUserName: (row as any).sent_by?.full_name ?? null,
+    createdByUserName: (row as any).created_by?.full_name ?? null,
+    updatedByUserName: (row as any).updated_by?.full_name ?? null,
+    lockedByUserName: (row as any).locked_by?.full_name ?? null,
   };
 
   const { data: stopsRows } = await supabase
@@ -715,23 +733,20 @@ function buildSearchText(
 function autoSetDocumentsAndCurrency(
   transportTypeCode: string,
   userCurrency: string
-): { requiredDocumentsText: string | null; currencyCode: string } {
-  let requiredDocumentsText: string | null = null;
-  let currencyCode = userCurrency;
+): { requiredDocumentsText: string; currencyCode: string } {
+  let requiredDocumentsText = "";
 
   switch (transportTypeCode) {
     case "PL":
       requiredDocumentsText = "WZ, KPO, kwit wagowy";
-      if (!userCurrency) currencyCode = "PLN";
       break;
     case "EXP":
     case "EXP_K":
     case "IMP":
       requiredDocumentsText = "WZE, Aneks VII, CMR";
-      if (!userCurrency) currencyCode = "EUR";
       break;
   }
-  return { requiredDocumentsText, currencyCode };
+  return { requiredDocumentsText, currencyCode: userCurrency };
 }
 
 /**
@@ -861,6 +876,20 @@ export async function duplicateOrder(
 
   const orderNo = await generateOrderNo(supabase);
   const newStatus = params.resetStatusToDraft ? STATUS_ROBOCZE : detail.order.statusCode;
+
+  // Walidacja FK — kopia może zawierać nieaktywne referencje
+  const fkErrors = await validateForeignKeys(supabase, {
+    vehicleVariantCode: detail.order.vehicleVariantCode,
+    transportTypeCode: detail.order.transportTypeCode,
+    carrierCompanyId: detail.order.carrierCompanyId,
+    stops: params.includeStops ? detail.stops.map((s) => ({ locationId: s.locationId })) : [],
+    items: params.includeItems ? detail.items.map((i) => ({ productId: i.productId })) : [],
+  });
+  if (fkErrors) {
+    const err = new Error("FK_VALIDATION");
+    (err as any).details = fkErrors;
+    throw err;
+  }
 
   const insertPayload: Record<string, unknown> = {
     order_no: orderNo,
