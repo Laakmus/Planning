@@ -498,6 +498,71 @@ function CarrierAutocomplete({
 }
 
 // ---------------------------------------------------------------------------
+// Documents autocomplete for DOKUMENTY DLA KIEROWCY section
+// ---------------------------------------------------------------------------
+
+function DocumentsAutocomplete({
+  value,
+  onSelect,
+}: {
+  value: string;
+  onSelect: (doc: string) => void;
+}) {
+  const [open, setOpen] = useState(false);
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          type="button"
+          className="flex items-center gap-0.5 text-[7px] font-bold bg-transparent border-none outline-none cursor-pointer text-left w-full hover:bg-yellow-50/50 rounded-sm px-0.5 -mx-0.5"
+          style={{ color: "#000" }}
+        >
+          <span className="truncate flex-1">
+            {value || "wybierz dokumenty..."}
+          </span>
+          <ChevronsUpDown
+            className="shrink-0 opacity-40"
+            style={{ width: 8, height: 8 }}
+          />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-56 p-0"
+        align="start"
+        side="bottom"
+        sideOffset={2}
+      >
+        <Command>
+          <CommandList>
+            <CommandGroup>
+              {DOCUMENTS_OPTIONS.map((opt) => (
+                <CommandItem
+                  key={opt}
+                  value={opt}
+                  onSelect={() => {
+                    onSelect(opt);
+                    setOpen(false);
+                  }}
+                  className="text-xs cursor-pointer"
+                >
+                  <Check
+                    className={`mr-1.5 h-3 w-3 ${
+                      value === opt ? "opacity-100" : "opacity-0"
+                    }`}
+                  />
+                  <span>{opt}</span>
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
 // Vehicle type autocomplete for TYP AUTA section
 // ---------------------------------------------------------------------------
 
@@ -1151,8 +1216,7 @@ export default function OrderDocument({
 
   // -- Documents select state -----------------------------------------------
 
-  const [docsOpen, setDocsOpen] = useState(false);
-  const docsRef = useRef<HTMLDivElement>(null);
+  // docsOpen/docsRef removed — replaced by DocumentsAutocomplete Popover
 
   // -- Payment method select state ------------------------------------------
 
@@ -1867,39 +1931,16 @@ export default function OrderDocument({
             Dokumenty dla kierowcy:
           </div>
           <div
-            className={`${CELL} w-[427px] border-t-[0.5px] border-solid border-black text-[7px] font-bold items-start relative`}
+            className={`${CELL} w-[427px] border-t-[0.5px] border-solid border-black text-[7px] font-bold items-start`}
             style={{ padding: "3px 2px" }}
-            ref={docsRef}
           >
             {disabled ? (
               <span>{data.documentsText}</span>
             ) : (
-              <span
-                className="cursor-pointer hover:underline"
-                onClick={() => setDocsOpen(!docsOpen)}
-              >
-                {data.documentsText || "---"}
-              </span>
-            )}
-            {docsOpen && !disabled && (
-              <div className="absolute top-full left-0 z-50 bg-white border border-gray-300 shadow-md rounded text-[7px]">
-                {DOCUMENTS_OPTIONS.map((opt) => (
-                  <div
-                    key={opt}
-                    className={`px-2 py-1 cursor-pointer hover:bg-gray-100 whitespace-nowrap ${
-                      data.documentsText === opt
-                        ? "font-bold bg-gray-50"
-                        : ""
-                    }`}
-                    onClick={() => {
-                      update({ documentsText: opt });
-                      setDocsOpen(false);
-                    }}
-                  >
-                    {opt}
-                  </div>
-                ))}
-              </div>
+              <DocumentsAutocomplete
+                value={data.documentsText}
+                onSelect={(doc) => update({ documentsText: doc })}
+              />
             )}
           </div>
         </div>
