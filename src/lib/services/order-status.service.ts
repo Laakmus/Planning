@@ -111,8 +111,9 @@ export async function changeStatus(
     throw new Error("FORBIDDEN_TRANSITION");
   }
 
-  const updatePayload: { status_code: string; complaint_reason?: string | null } = {
+  const updatePayload: { status_code: string; complaint_reason?: string | null; updated_by_user_id: string } = {
     status_code: params.newStatusCode,
+    updated_by_user_id: userId,
   };
   if (params.newStatusCode === "reklamacja" && params.complaintReason != null) {
     updatePayload.complaint_reason = params.complaintReason.trim();

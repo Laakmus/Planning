@@ -16,6 +16,7 @@ interface RateBucket {
 }
 
 const rateBuckets = new Map<string, RateBucket>();
+const MAX_RATE_BUCKETS = 50_000;
 
 const RATE_WINDOW_MS = 60_000; // 1 minute
 const RATE_LIMIT_WRITE = 100; // POST/PUT/PATCH/DELETE per minute
@@ -30,6 +31,11 @@ function checkRateLimit(key: string, limit: number): { allowed: boolean; remaini
   let bucket = rateBuckets.get(key);
 
   if (!bucket || bucket.resetAt <= now) {
+    // Ewikacja najstarszego wpisu gdy mapa osiągnęła limit
+    if (!rateBuckets.has(key) && rateBuckets.size >= MAX_RATE_BUCKETS) {
+      const oldestKey = rateBuckets.keys().next().value;
+      if (oldestKey !== undefined) rateBuckets.delete(oldestKey);
+    }
     bucket = { count: 0, resetAt: now + RATE_WINDOW_MS };
     rateBuckets.set(key, bucket);
   }
@@ -55,6 +61,7 @@ interface CachedResponse {
 }
 
 const idempotencyCache = new Map<string, CachedResponse>();
+const MAX_CACHE_SIZE = 10_000;
 
 const IDEMPOTENCY_TTL_MS = 24 * 60 * 60 * 1000; // 24h
 
@@ -75,6 +82,23 @@ function cleanupIfNeeded(): void {
   }
   for (const [key, cached] of idempotencyCache) {
     if (cached.expiresAt <= now) idempotencyCache.delete(key);
+  }
+}
+
+// ---------------------------------------------------------------------------
+// JWT helper
+// ---------------------------------------------------------------------------
+
+/** Wyciąga user ID (sub claim) z JWT bez walidacji podpisu. */
+function extractSubFromJwt(authHeader: string): string | null {
+  try {
+    const token = authHeader.replace(/^Bearer\s+/i, "");
+    const parts = token.split(".");
+    if (parts.length !== 3) return null;
+    const payload = JSON.parse(atob(parts[1]));
+    return typeof payload.sub === "string" ? payload.sub : null;
+  } catch {
+    return null;
   }
 }
 
@@ -117,8 +141,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
 
   cleanupIfNeeded();
 
-  // Rate limiting — identify by Supabase user or fallback to IP
-  const clientId = authHeader ? `auth:${authHeader.slice(-16)}` : `ip:${context.clientAddress ?? "unknown"}`;
+  // Rate limiting — identyfikacja po user ID z JWT lub fallback na IP
+  const jwtSub = authHeader ? extractSubFromJwt(authHeader) : null;
+  const clientId = jwtSub ? `user:${jwtSub}` : `ip:${context.clientAddress ?? "unknown"}`;
   const rateKey = `${clientId}:${method === "GET" ? "read" : "write"}`;
   const limit = getRateLimit(method);
   const rate = checkRateLimit(rateKey, limit);
@@ -161,6 +186,12 @@ export const onRequest = defineMiddleware(async (context, next) => {
       const responseBody = await response.text();
       const responseHeaders: Record<string, string> = {};
       response.headers.forEach((v, k) => { responseHeaders[k] = v; });
+
+      // Ewikacja najstarszego wpisu gdy cache osiągnął limit
+      if (idempotencyCache.size >= MAX_CACHE_SIZE) {
+        const oldestKey = idempotencyCache.keys().next().value;
+        if (oldestKey !== undefined) idempotencyCache.delete(oldestKey);
+      }
 
       idempotencyCache.set(cacheKey, {
         status: response.status,

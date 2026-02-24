@@ -1695,7 +1695,7 @@ export async function patchStop(
 ): Promise<PatchStopResponseDto | null> {
   const { data: order, error: orderErr } = await supabase
     .from("transport_orders")
-    .select("id, locked_by_user_id")
+    .select("id, locked_by_user_id, status_code")
     .eq("id", orderId)
     .maybeSingle();
 
@@ -1705,6 +1705,14 @@ export async function patchStop(
   if (order.locked_by_user_id != null && order.locked_by_user_id !== userId) {
     throw new Error("LOCKED");
   }
+
+  // Blokuj edycję stopów w zleceniach readonly (zrealizowane/anulowane)
+  if (READONLY_STATUSES.has(order.status_code)) {
+    throw new Error("READONLY");
+  }
+
+  // Auto-korekta: edycja stopu w zleceniu wysłanym zmienia status na "korekta"
+  const shouldAutoKorekta = AUTO_KOREKTA_FROM.has(order.status_code);
 
   const { data: stop, error: stopErr } = await supabase
     .from("order_stops")
@@ -1776,6 +1784,7 @@ export async function patchStop(
       first_loading_country: denorm.first_loading_country,
       first_unloading_country: denorm.first_unloading_country,
       summary_route: denorm.summary_route,
+      ...(shouldAutoKorekta ? { status_code: STATUS_KOREKTA } : {}),
     } as OrderUpdate)
     .eq("id", orderId)
     .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`);
