@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-24 (sesja 13)
-> Kontekst: Sesje 3-12: audyt API (37 problemów), naprawa 3 CRITICAL + 10 HIGH + liczne MEDIUM/LOW. Sesja 13: Faza 3 (M-06, M-08, M-14, M-15, M-17, M-19) + pełny re-audyt (8 agentów: PRD↔kod, api-plan↔kod, ui-plan↔kod, db-plan↔kod, nowe bugi). Wynik: 5 naruszeń PRD, 8 rozbieżności api-plan, 12 nowych problemów.
+> Ostatnia aktualizacja: 2026-02-24 (sesja 14)
+> Kontekst: Sesje 3-13: audyt API + re-audyt (PRD/api-plan/ui-plan/db-plan). Sesja 14: Faza 4 — naprawiono 4 naruszenia PRD (P-01–P-04) + M-03 (order_change_log w cancel/restore/email).
 
 ---
 
@@ -78,6 +78,15 @@
 - [x] PRD — "Korekta_w", format DD.MM, tylko pierwsza data
 - [x] ui-plan.md — usunięto sticky kolumnę Akcje, format DD.MM, generalNotes max 500
 
+### HIGH — naruszenia PRD (sesja 14)
+- [x] P-01: patchStop — logowanie zmian do order_change_log (daty, lokalizacje, notatki) (sesja 14)
+- [x] P-02: patchStop auto-korekta — wpis do order_status_history gdy shouldAutoKorekta=true (sesja 14)
+- [x] P-03: complaintReason — spread warunkowy zamiast `?? null`, nie nadpisuje undefined (sesja 14)
+- [x] P-04: patchStop — race condition guard `.not("status_code", "in", "(zrealizowane,anulowane)")` na UPDATE (sesja 14)
+
+### MEDIUM (sesja 14)
+- [x] M-03: order_change_log w cancelOrder, restoreOrder, prepareEmailForOrder — spójność z changeStatus() (sesja 14)
+
 ### INFRA (sesje 10-12)
 - [x] System custom agents — 7 agentów (.claude/agents/), slash commands, pamięć agentów, CLAUDE.md orchestrator (sesja 10)
 - [x] Unit testy — 9 nowych plików testowych + 2 helpery. Łącznie 253 testów (z 35→241→253), 0 błędów TS (sesje 11-12)
@@ -85,31 +94,6 @@
 - [x] Dark mode — kompletny: anti-flash script, ThemeProvider, ThemeToggle, 40 komponentów z `dark:` klasami (sesje 6-8)
 
 ---
-
-## HIGH — naruszenia PRD / krytyczne rozbieżności
-
-### P-01. patchStop brak logowania zmian w order_change_log
-- **Plik:** `order.service.ts:1718-1840`
-- **PRD §3.1.8:** "logować zmiany kluczowych danych (daty, miejsca załadunku/rozładunku)"
-- **Problem:** patchStop edytuje stopy i denormalizację, ale NIE wstawia do `order_change_log`.
-- **Rozwiązanie:** INSERT do `order_change_log` dla każdego zmienionego pola stopu.
-
-### P-02. patchStop auto-korekta brak wpisu w order_status_history
-- **Plik:** `order.service.ts:1816`
-- **PRD §3.1.7:** Automatyczne przejście wysłane→korekta powinno być śledzone.
-- **Problem:** Ustawia `status_code='korekta'` ale NIE tworzy wpisu w `order_status_history`.
-- **Rozwiązanie:** Dodać INSERT `order_status_history` gdy `shouldAutoKorekta=true`.
-
-### P-03. complaintReason nadpisane null w updateOrder (awans z L-05)
-- **Plik:** `order.service.ts:1406`
-- **PRD §3.1.7:** complaintReason obowiązkowe przy statusie reklamacja.
-- **Problem:** `complaint_reason: params.complaintReason ?? null` — gdy frontend nie wysyła pola (undefined), powód reklamacji znika.
-- **Rozwiązanie:** Nie ustawiać pola w payload gdy `params.complaintReason === undefined`.
-
-### P-04. patchStop race condition na READONLY_STATUSES
-- **Plik:** `order.service.ts:1738-1802`
-- **Problem:** Między SELECT (sprawdzenie statusu) a UPDATE brak guardu na status. Równoległa zmiana na "zrealizowane" nie jest blokowana.
-- **Rozwiązanie:** Dodać `.not("status_code", "in", "(zrealizowane,anulowane)")` do UPDATE.
 
 ## MEDIUM — do zrobienia
 
@@ -122,11 +106,6 @@
 - **Plik:** `order.service.ts:1495-1512`
 - **Problem:** PRD §3.1.8 wymaga logowania zmian: daty, miejsca, ilości, przewoźnik, cena. Obecnie logowane są tylko zmiany statusu.
 - **Rozwiązanie:** Porównać stary i nowy stan pól, wstawić różnice do `order_change_log`.
-
-### M-03. Brak logowania do order_change_log w cancel, restore, prepare-email
-- **Pliki:** `order-status.service.ts` (cancelOrder, restoreOrder), `order.service.ts` (prepareEmailForOrder)
-- **Problem:** Te operacje logują do `order_status_history`, ale NIE do `order_change_log`. `changeStatus()` robi oba — niespójność.
-- **Rozwiązanie:** Dodać INSERT do `order_change_log` z field_name="status_code".
 
 ### M-07. Sortowanie po order_no (tekst) — problem po >9999 zleceń
 - **Plik:** `order.service.ts:47`
