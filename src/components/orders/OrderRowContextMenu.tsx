@@ -4,7 +4,7 @@
  * Opcje filtrowane wg statusu zlecenia i roli użytkownika.
  */
 
-import { type ReactNode } from "react";
+import { type ReactNode, useRef } from "react";
 
 import { Check, Copy } from "lucide-react";
 
@@ -78,6 +78,13 @@ export function OrderRowContextMenu({
   const { user } = useAuth();
   const canWrite = user?.role !== "READ_ONLY";
 
+  // Ochrona przed wyścigiem zdarzeń Radix: pointerup z prawego kliknięcia
+  // (button=2) może trafić w pozycję menu zanim użytkownik poruszy kursorem.
+  // Radix MenuItem interpretuje pointerup bez wcześniejszego pointerdown
+  // jako kliknięcie → przypadkowe triggerowanie akcji (np. "Skopiuj zlecenie").
+  // Fix: blokujemy pointerup w oknie 300ms od otwarcia menu.
+  const openedAtRef = useRef(0);
+
   const allowedTransitions =
     ALLOWED_MANUAL_STATUS_TRANSITIONS[statusCode as OrderStatusCode] ?? [];
 
@@ -86,9 +93,17 @@ export function OrderRowContextMenu({
   const canRestore = isCompleted || isCancelled;
 
   return (
-    <ContextMenu>
+    <ContextMenu onOpenChange={(open) => { if (open) openedAtRef.current = Date.now(); }}>
       <ContextMenuTrigger asChild>{children}</ContextMenuTrigger>
-      <ContextMenuContent className="w-52">
+      <ContextMenuContent
+        className="w-52"
+        onPointerUpCapture={(e) => {
+          if (Date.now() - openedAtRef.current < 300) {
+            e.preventDefault();
+            e.stopPropagation();
+          }
+        }}
+      >
         {/* Otwórz */}
         <ContextMenuItem onClick={() => onOpen(orderId)}>
           Otwórz

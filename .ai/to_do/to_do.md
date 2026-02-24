@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-22 (sesja 9)
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete.
+> Ostatnia aktualizacja: 2026-02-24 (sesja 10)
+> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete. Sesja 10: context menu fix (Radix pointerup race), auto-scroll duplicate, AlertDialog cancel, system agentów.
 
 ---
 
@@ -40,6 +40,12 @@
 - [x] DOCS: PRD — "Korekta_w" jako skrócona forma "Korekta wysłane" w tabeli, format DD.MM, tylko pierwsza data
 - [x] DOCS: ui-plan.md — usunięto sticky kolumnę Akcje, format DD.MM, "Korekta_w", generalNotes max 500
 - [x] Order View (A4): Refaktoring stopów — unified stops[] z DnD, CompanyAutocomplete, LocationAutocomplete (sesja 9)
+- [x] FIX: Context menu Radix pointerup race condition — menu na dolnych wierszach przypadkowo triggerowało akcje (np. "Skopiuj zlecenie"). Fix: time-based guard (300ms) w OrderRowContextMenu (sesja 10)
+- [x] FIX: ContextMenuSubContent bez Portal — submenu przycinane w overflow-auto kontenerach. Dodano Portal wrapper (sesja 10)
+- [x] FIX: collisionPadding={8} w ContextMenuContent — lepsze pozycjonowanie menu przy krawędziach ekranu (sesja 10)
+- [x] FIX: Zamiana native confirm() na shadcn AlertDialog w OrdersPage.handleCancel (sesja 10)
+- [x] FIX: Auto-scroll na dół po duplikacji zlecenia + null denormalizowane daty → kopia na końcu listy (sesja 10)
+- [x] INFRA: System custom agents — 7 agentów (.claude/agents/), slash commands (.claude/commands/), pamięć agentów (.claude/agent-memory/), CLAUDE.md orchestrator (sesja 10)
 
 ---
 

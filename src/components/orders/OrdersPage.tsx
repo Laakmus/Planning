@@ -7,6 +7,16 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
 import type { CarrierColorResponseDto, CreateOrderResponseDto, DuplicateOrderResponseDto, PrepareEmailResponseDto } from "@/types";
 import { useOrders } from "@/hooks/useOrders";
@@ -49,6 +59,9 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const isCreatingRef = useRef(false);
   const tableScrollRef = useRef<HTMLDivElement>(null);
+
+  // Stan dialogu potwierdzenia anulowania
+  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
 
   // Stan panelu historii
   const [historyOrderId, setHistoryOrderId] = useState<string | null>(null);
@@ -210,19 +223,22 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     [api, refetch]
   );
 
-  const handleCancel = useCallback(
-    async (orderId: string) => {
-      if (!confirm("Czy na pewno chcesz anulować to zlecenie?")) return;
-      try {
-        await api.delete(`/api/v1/orders/${orderId}`);
-        toast.success("Zlecenie anulowane.");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd anulowania zlecenia.");
-      }
-    },
-    [api, refetch]
-  );
+  const handleCancelRequest = useCallback((orderId: string) => {
+    setCancelOrderId(orderId);
+  }, []);
+
+  const handleCancelConfirm = useCallback(async () => {
+    if (!cancelOrderId) return;
+    const orderId = cancelOrderId;
+    setCancelOrderId(null);
+    try {
+      await api.delete(`/api/v1/orders/${orderId}`);
+      toast.success("Zlecenie anulowane.");
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Błąd anulowania zlecenia.");
+    }
+  }, [api, cancelOrderId, refetch]);
 
   const handleRestore = useCallback(
     async (orderId: string) => {
@@ -261,7 +277,11 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           { includeStops: true, includeItems: true, resetStatusToDraft: true }
         );
         toast.success(`Zlecenie skopiowane jako ${result.orderNo}.`);
-        refetch();
+        await refetch();
+        // Auto-scroll na dół — kopia trafia na koniec listy (null dates, ASC nulls last)
+        requestAnimationFrame(() => {
+          tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
+        });
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Błąd kopiowania zlecenia.");
       }
@@ -314,7 +334,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           onShowHistory={handleShowHistory}
           onChangeStatus={handleChangeStatus}
           onDuplicate={handleDuplicate}
-          onCancel={handleCancel}
+          onCancel={handleCancelRequest}
           onRestore={handleRestore}
           onSetCarrierColor={handleSetCarrierColor}
         />
@@ -370,6 +390,24 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           setHistoryOrderNo("");
         }}
       />
+
+      {/* Dialog potwierdzenia anulowania zlecenia */}
+      <AlertDialog open={!!cancelOrderId} onOpenChange={(open) => { if (!open) setCancelOrderId(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Anuluj zlecenie</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz anulować to zlecenie? Tej operacji nie można cofnąć.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Nie</AlertDialogCancel>
+            <AlertDialogAction variant="destructive" onClick={handleCancelConfirm}>
+              Tak, anuluj
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
   );
 }

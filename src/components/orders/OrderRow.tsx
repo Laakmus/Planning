@@ -91,6 +91,7 @@ export function OrderRow({
 
   const trRow = (
     <tr
+      data-order-id={order.id}
       className={`${rowBg} hover:bg-primary/5 transition-colors group cursor-pointer`}
       role="row"
       onClick={() => onRowClick(order.id)}
