@@ -958,35 +958,42 @@ export async function duplicateOrder(
   if (orderError || !newOrder) throw orderError ?? new Error("Duplicate order insert failed");
   const newOrderId = newOrder.id;
 
-  if (params.includeStops && detail.stops.length > 0) {
-    const stopsInsert = detail.stops.map((s, i) => ({
-      order_id: newOrderId,
-      kind: s.kind,
-      sequence_no: s.sequenceNo ?? i + 1,
-      date_local: s.dateLocal ?? null,
-      time_local: s.timeLocal ?? null,
-      location_id: s.locationId ?? null,
-      location_name_snapshot: s.locationNameSnapshot ?? null,
-      company_name_snapshot: s.companyNameSnapshot ?? null,
-      address_snapshot: s.addressSnapshot ?? null,
-      notes: s.notes ?? null,
-    }));
-    const { error: stopsErr } = await supabase.from("order_stops").insert(stopsInsert);
-    if (stopsErr) throw stopsErr;
-  }
+  // INSERT stops + items z kompensującym cleanup (M-01)
+  try {
+    if (params.includeStops && detail.stops.length > 0) {
+      const stopsInsert = detail.stops.map((s, i) => ({
+        order_id: newOrderId,
+        kind: s.kind,
+        sequence_no: s.sequenceNo ?? i + 1,
+        date_local: s.dateLocal ?? null,
+        time_local: s.timeLocal ?? null,
+        location_id: s.locationId ?? null,
+        location_name_snapshot: s.locationNameSnapshot ?? null,
+        company_name_snapshot: s.companyNameSnapshot ?? null,
+        address_snapshot: s.addressSnapshot ?? null,
+        notes: s.notes ?? null,
+      }));
+      const { error: stopsErr } = await supabase.from("order_stops").insert(stopsInsert);
+      if (stopsErr) throw stopsErr;
+    }
 
-  if (params.includeItems && detail.items.length > 0) {
-    const itemsInsert = detail.items.map((i) => ({
-      order_id: newOrderId,
-      product_id: i.productId ?? null,
-      product_name_snapshot: i.productNameSnapshot ?? null,
-      default_loading_method_snapshot: i.defaultLoadingMethodSnapshot ?? null,
-      loading_method_code: i.loadingMethodCode ?? null,
-      quantity_tons: i.quantityTons ?? null,
-      notes: i.notes ?? null,
-    }));
-    const { error: itemsErr } = await supabase.from("order_items").insert(itemsInsert);
-    if (itemsErr) throw itemsErr;
+    if (params.includeItems && detail.items.length > 0) {
+      const itemsInsert = detail.items.map((i) => ({
+        order_id: newOrderId,
+        product_id: i.productId ?? null,
+        product_name_snapshot: i.productNameSnapshot ?? null,
+        default_loading_method_snapshot: i.defaultLoadingMethodSnapshot ?? null,
+        loading_method_code: i.loadingMethodCode ?? null,
+        quantity_tons: i.quantityTons ?? null,
+        notes: i.notes ?? null,
+      }));
+      const { error: itemsErr } = await supabase.from("order_items").insert(itemsInsert);
+      if (itemsErr) throw itemsErr;
+    }
+  } catch (err) {
+    // Kompensujący cleanup — usuń osierocony duplikat zlecenia
+    await supabase.from("transport_orders").delete().eq("id", newOrderId);
+    throw err;
   }
 
   // Nazwa statusu — z oryginału lub z bazy gdy reset do robocze (api-plan §2.9)
@@ -1197,37 +1204,42 @@ export async function createOrder(
 
   const orderId = order.id;
 
-  // 11. INSERT order_stops z snapshotami
-  if (stopsWithSnapshots.length > 0) {
-    const stopsInsert = stopsWithSnapshots.map((s) => ({
-      order_id: orderId,
-      kind: s.kind,
-      sequence_no: s.sequenceNo,
-      date_local: s.dateLocal,
-      time_local: s.timeLocal,
-      location_id: s.locationId,
-      location_name_snapshot: s.locationNameSnapshot,
-      company_name_snapshot: s.companyNameSnapshot,
-      address_snapshot: s.addressSnapshot,
-      notes: s.notes,
-    }));
-    const { error: stopsError } = await supabase.from("order_stops").insert(stopsInsert);
-    if (stopsError) throw stopsError;
-  }
+  // 11-12. INSERT order_stops + order_items z kompensującym cleanup (M-01)
+  try {
+    if (stopsWithSnapshots.length > 0) {
+      const stopsInsert = stopsWithSnapshots.map((s) => ({
+        order_id: orderId,
+        kind: s.kind,
+        sequence_no: s.sequenceNo,
+        date_local: s.dateLocal,
+        time_local: s.timeLocal,
+        location_id: s.locationId,
+        location_name_snapshot: s.locationNameSnapshot,
+        company_name_snapshot: s.companyNameSnapshot,
+        address_snapshot: s.addressSnapshot,
+        notes: s.notes,
+      }));
+      const { error: stopsError } = await supabase.from("order_stops").insert(stopsInsert);
+      if (stopsError) throw stopsError;
+    }
 
-  // 12. INSERT order_items z snapshotami
-  if (itemsWithSnapshots.length > 0) {
-    const itemsInsert = itemsWithSnapshots.map((i) => ({
-      order_id: orderId,
-      product_id: i.productId,
-      product_name_snapshot: i.productNameSnapshot,
-      default_loading_method_snapshot: i.defaultLoadingMethodSnapshot,
-      loading_method_code: i.loadingMethodCode,
-      quantity_tons: i.quantityTons,
-      notes: i.notes,
-    }));
-    const { error: itemsError } = await supabase.from("order_items").insert(itemsInsert);
-    if (itemsError) throw itemsError;
+    if (itemsWithSnapshots.length > 0) {
+      const itemsInsert = itemsWithSnapshots.map((i) => ({
+        order_id: orderId,
+        product_id: i.productId,
+        product_name_snapshot: i.productNameSnapshot,
+        default_loading_method_snapshot: i.defaultLoadingMethodSnapshot,
+        loading_method_code: i.loadingMethodCode,
+        quantity_tons: i.quantityTons,
+        notes: i.notes,
+      }));
+      const { error: itemsError } = await supabase.from("order_items").insert(itemsInsert);
+      if (itemsError) throw itemsError;
+    }
+  } catch (err) {
+    // Kompensujący cleanup — usuń osierocony nagłówek zlecenia
+    await supabase.from("transport_orders").delete().eq("id", orderId);
+    throw err;
   }
 
   // Pobierz nazwę statusu dla odpowiedzi DTO (api-plan §2.4)
@@ -1276,11 +1288,34 @@ export async function updateOrder(
   orderId: string,
   params: UpdateOrderParams
 ): Promise<UpdateOrderResponseDto | null> {
-  const { data: order, error: fetchError } = await supabase
+  // Rozszerzony SELECT o pola biznesowe do logowania zmian (M-02).
+  // Kolumny payment_term_days, payment_method, total_load_volume_m3, special_requirements
+  // istnieją w DB (migracja 20260208) ale brakuje ich w wygenerowanych typach — stąd cast.
+  const { data: order, error: fetchError } = await (supabase
     .from("transport_orders")
-    .select("id, order_no, status_code, locked_by_user_id")
+    .select(`id, order_no, status_code, locked_by_user_id,
+      transport_type_code, carrier_company_id, vehicle_variant_code,
+      price_amount, currency_code, payment_term_days, payment_method,
+      general_notes, complaint_reason, required_documents_text,
+      special_requirements, total_load_tons, total_load_volume_m3,
+      shipper_location_id, receiver_location_id,
+      sender_contact_name, sender_contact_phone, sender_contact_email`)
     .eq("id", orderId)
-    .maybeSingle();
+    .maybeSingle() as unknown as Promise<{
+      data: {
+        id: string; order_no: string; status_code: string; locked_by_user_id: string | null;
+        transport_type_code: string; carrier_company_id: string | null; vehicle_variant_code: string;
+        price_amount: number | null; currency_code: string;
+        payment_term_days: number | null; payment_method: string | null;
+        general_notes: string | null; complaint_reason: string | null;
+        required_documents_text: string | null; special_requirements: string | null;
+        total_load_tons: number | null; total_load_volume_m3: number | null;
+        shipper_location_id: string | null; receiver_location_id: string | null;
+        sender_contact_name: string | null; sender_contact_phone: string | null;
+        sender_contact_email: string | null;
+      } | null;
+      error: import("@supabase/supabase-js").AuthError | null;
+    }>);
 
   if (fetchError) throw fetchError;
   if (!order) return null;
@@ -1596,6 +1631,59 @@ export async function updateOrder(
       changed_by_user_id: userId,
     });
     if (logErr) throw logErr;
+  }
+
+  // M-02: Logowanie zmian pól biznesowych (PRD §3.1.8)
+  const businessFieldMap: Array<{ key: keyof UpdateOrderParams; dbField: string }> = [
+    { key: "transportTypeCode", dbField: "transport_type_code" },
+    { key: "carrierCompanyId", dbField: "carrier_company_id" },
+    { key: "vehicleVariantCode", dbField: "vehicle_variant_code" },
+    { key: "priceAmount", dbField: "price_amount" },
+    { key: "currencyCode", dbField: "currency_code" },
+    { key: "paymentTermDays", dbField: "payment_term_days" },
+    { key: "paymentMethod", dbField: "payment_method" },
+    { key: "generalNotes", dbField: "general_notes" },
+    { key: "complaintReason", dbField: "complaint_reason" },
+    { key: "requiredDocumentsText", dbField: "required_documents_text" },
+    { key: "shipperLocationId", dbField: "shipper_location_id" },
+    { key: "receiverLocationId", dbField: "receiver_location_id" },
+    { key: "senderContactName", dbField: "sender_contact_name" },
+    { key: "senderContactPhone", dbField: "sender_contact_phone" },
+    { key: "senderContactEmail", dbField: "sender_contact_email" },
+    { key: "totalLoadTons", dbField: "total_load_tons" },
+    { key: "totalLoadVolumeM3", dbField: "total_load_volume_m3" },
+    { key: "specialRequirements", dbField: "special_requirements" },
+  ];
+
+  const changeLogRows: Array<{
+    order_id: string;
+    field_name: string;
+    old_value: string | null;
+    new_value: string | null;
+    changed_by_user_id: string;
+  }> = [];
+
+  for (const { key, dbField } of businessFieldMap) {
+    const newVal = params[key];
+    if (newVal !== undefined) {
+      const oldVal = (order as Record<string, unknown>)[dbField];
+      const oldStr = oldVal != null ? String(oldVal) : null;
+      const newStr = newVal != null ? String(newVal) : null;
+      if (oldStr !== newStr) {
+        changeLogRows.push({
+          order_id: orderId,
+          field_name: dbField,
+          old_value: oldStr,
+          new_value: newStr,
+          changed_by_user_id: userId,
+        });
+      }
+    }
+  }
+
+  if (changeLogRows.length > 0) {
+    const { error: bizLogErr } = await supabase.from("order_change_log").insert(changeLogRows);
+    if (bizLogErr) throw bizLogErr;
   }
 
   return {
