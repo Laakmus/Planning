@@ -48,6 +48,11 @@
 - [x] INFRA: System custom agents — 7 agentów (.claude/agents/), slash commands (.claude/commands/), pamięć agentów (.claude/agent-memory/), CLAUDE.md orchestrator (sesja 10)
 - [x] TESTS: Unit testy warstwy logiki biznesowej — 9 nowych plików testowych + 2 helpery (fixtures.ts, supabase-mock.ts). Pokrycie: format-utils (29), week-utils (13), common.validator (17), order.validator (42), order-history.service (9), dictionary.service (14), order-lock.service (15), order-status.service (21), order.service (42). Łącznie 241 testów, 0 błędów TS. (sesja 11)
 - [x] AUDIT: Pełny audyt projektu z 5 agentami równolegle (sesja 12): weryfikacja TODO MEDIUM (16/19 nadal istnieje, M-16 fixed, M-18 partial), TODO LOW (11/11 potwierdzone), spójność docs↔kod (~95%), 0 błędów TS, 241 testów OK, build OK. Znaleziono 1 nowy bug (NEW-01: isDirty + complaintReason) + 1 deprecation (NEW-02: MutableRefObject).
+- [x] FIX NEW-01: isDirty nie śledził zmian complaintReason — dodano `computeDirty()` z `originalComplaintReasonRef` w OrderForm.tsx (sesja 12)
+- [x] FIX NEW-02: Zamiana deprecated `React.MutableRefObject` na `React.RefObject` w OrderForm.tsx (sesja 12)
+- [x] FIX M-12: Dodano `.min(1).max(11)` na stops i `.max(50)` na items w Zod walidatorach + 10 nowych testów (sesja 12)
+- [x] FIX L-06: Dodano `updated_by_user_id` do `cancelOrder()` i `restoreOrder()` w order-status.service.ts + 2 nowe testy (sesja 12)
+- [x] CLEANUP L-08/L-09: Usunięto martwy kod `src/lib/utils/format.ts` (183 linii, 0 importów) (sesja 12)
 
 ---
 
@@ -65,16 +70,11 @@
 
 ## HIGH — nowe bugi (odkryte sesja 12)
 
-### NEW-01. isDirty nie śledzi zmian complaintReason — utrata danych
-- **Plik:** `src/components/orders/drawer/OrderForm.tsx:149-157`
-- **Problem:** Funkcja `patch()` liczy `isDirty` jako `formData !== original || pendingStatusCode !== null`. Ale `complaintReason` zmienia się niezależnie (osobny `useState`). Gdy użytkownik zmieni TYLKO `complaintReason` (bez zmiany statusu i bez zmiany formData), `isDirty` pozostaje `false` → `UnsavedChangesDialog` się nie pojawi → utrata danych.
-- **Scenariusz:** Otwórz drawer → zmień complaintReason → zamknij drawer → brak ostrzeżenia o niezapisanych zmianach.
-- **Rozwiązanie:** Uwzględnić `complaintReason !== originalComplaintReason` w kalkulacji `isDirty` (zarówno w `patch()` jak i w `onComplaintReasonChange`).
+### ~~NEW-01. isDirty nie śledzi zmian complaintReason — utrata danych~~ ✅ NAPRAWIONE (sesja 12)
+- Dodano `computeDirty()` z `originalComplaintReasonRef` — centralna logika dirty check uwzględniająca formData + pendingStatusCode + complaintReason.
 
-### NEW-02. MutableRefObject deprecated (TS hint)
-- **Plik:** `src/components/orders/drawer/OrderForm.tsx:38`
-- **Problem:** `React.MutableRefObject` jest deprecated w React 19. TS hint 6385.
-- **Rozwiązanie:** Zmienić na `React.RefObject<(() => void) | null>`.
+### ~~NEW-02. MutableRefObject deprecated (TS hint)~~ ✅ NAPRAWIONE (sesja 12)
+- Zmieniono `React.MutableRefObject` → `React.RefObject` w OrderForm.tsx.
 
 ---
 
@@ -135,10 +135,8 @@
 - **Problem:** Bazuje na ostatnich 16 znakach tokena. Mozna obejsc roznymi tokenami.
 - **Rozwiazanie:** Uzyc user ID z zwalidowanego tokena lub IP + fingerprint.
 
-### M-12. Brak limitu tablicy stops/items w Zod
-- **Plik:** `order.validator.ts:105-106`
-- **Problem:** `z.array(...)` bez `.max()` — mozna wyslac tysiace elementow.
-- **Rozwiazanie:** Dodac `.max(11)` dla stops (8+3) i `.max(50)` dla items.
+### ~~M-12. Brak limitu tablicy stops/items w Zod~~ ✅ NAPRAWIONE (sesja 12)
+- Dodano `.min(1).max(11)` na stops i `.max(50)` na items w createOrderSchema i updateOrderSchema + 10 nowych testów.
 
 ### M-13. Deprecjonowany X-XSS-Protection + brak CSP
 - **Plik:** `api-helpers.ts:23`
@@ -195,21 +193,19 @@
 - **Plik:** `order.service.ts:1367`
 - Edycja zlecenia "reklamacja" bez complaintReason zeruje pole.
 
-### L-06. restoreOrder nie ustawia updated_by_user_id
-- **Plik:** `order-status.service.ts:196-200`
-- Trigger aktualizuje updated_at, ale nie widac kto przywrocil.
+### ~~L-06. restoreOrder nie ustawia updated_by_user_id~~ ✅ NAPRAWIONE (sesja 12)
+- Dodano `updated_by_user_id: userId` do `restoreOrder()` i `cancelOrder()` + 2 nowe testy.
+- **UWAGA:** `changeStatus()` w tym samym pliku ma identyczny problem — do naprawy osobno.
 
 ### L-07. statusName brak w odpowiedziach API
 - **Pliki:** OrderDetailDto, CreateOrderResponseDto
 - api-plan wymienia statusName, ale nie jest zwracany. Frontend mapuje sam.
 
-### L-08. Duplikacja format-utils (martwy kod)
-- `src/lib/utils/format.ts` — 0 importow, identyczny z `src/lib/format-utils.ts`.
-- Usunac `utils/format.ts`.
+### ~~L-08. Duplikacja format-utils (martwy kod)~~ ✅ NAPRAWIONE (sesja 12)
+- Usunięto `src/lib/utils/format.ts` (183 linii, 0 importów) + pusty katalog `utils/`.
 
-### L-09. Duplikacja week-utils (martwy kod getWeekDateRange)
-- `src/lib/utils/format.ts:getWeekDateRange` — 0 importow.
-- Usunac razem z L-08.
+### ~~L-09. Duplikacja week-utils (martwy kod getWeekDateRange)~~ ✅ NAPRAWIONE (sesja 12)
+- Usunięte razem z L-08.
 
 ### L-10. unsafe type casts w api-client.ts
 - `undefined as T`, `JSON.parse(text) as T`, `response as unknown as T`.
