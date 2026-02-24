@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-24 (sesja 11)
-> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete. Sesja 10: context menu fix (Radix pointerup race), auto-scroll duplicate, AlertDialog cancel, system agentów. Sesja 11: unit testy — 9 nowych plików testowych + 2 helpery, łącznie 241 testów (z 35 → 241).
+> Ostatnia aktualizacja: 2026-02-24 (sesja 12)
+> Kontekst: Audyt API wykazal 37 problemow. Naprawiono 3 CRITICAL + 10 HIGH + 7 dodatkowych fixow. Sesje 5-8: naprawa rozbieznosci UI/docs, kolory statusow (C-01/C-02/C-03), dark mode (kompletny). Sesja 9: refaktoring stopow w Order View (A4) — unified stops[] z DnD i autocomplete. Sesja 10: context menu fix (Radix pointerup race), auto-scroll duplicate, AlertDialog cancel, system agentów. Sesja 11: unit testy — 9 nowych plików testowych + 2 helpery, łącznie 241 testów (z 35 → 241). Sesja 12: pełny audyt projektu (5 agentów równolegle) — weryfikacja TODO vs kod, spójność docs↔kod (~95%), znaleziono 1 nowy bug (isDirty + complaintReason).
 
 ---
 
@@ -47,6 +47,7 @@
 - [x] FIX: Auto-scroll na dół po duplikacji zlecenia + null denormalizowane daty → kopia na końcu listy (sesja 10)
 - [x] INFRA: System custom agents — 7 agentów (.claude/agents/), slash commands (.claude/commands/), pamięć agentów (.claude/agent-memory/), CLAUDE.md orchestrator (sesja 10)
 - [x] TESTS: Unit testy warstwy logiki biznesowej — 9 nowych plików testowych + 2 helpery (fixtures.ts, supabase-mock.ts). Pokrycie: format-utils (29), week-utils (13), common.validator (17), order.validator (42), order-history.service (9), dictionary.service (14), order-lock.service (15), order-status.service (21), order.service (42). Łącznie 241 testów, 0 błędów TS. (sesja 11)
+- [x] AUDIT: Pełny audyt projektu z 5 agentami równolegle (sesja 12): weryfikacja TODO MEDIUM (16/19 nadal istnieje, M-16 fixed, M-18 partial), TODO LOW (11/11 potwierdzone), spójność docs↔kod (~95%), 0 błędów TS, 241 testów OK, build OK. Znaleziono 1 nowy bug (NEW-01: isDirty + complaintReason) + 1 deprecation (NEW-02: MutableRefObject).
 
 ---
 
@@ -59,6 +60,21 @@
 ### ~~C-02. Korekta wysłane: yellow zamiast amber w StatusBadge~~ ✅ NAPRAWIONE (sesja 5)
 - Zmieniono `yellow-*` → `amber-*` w StatusBadge.tsx. Dodatkowo naprawiono zamienione kolory Wysłane↔Zrealizowane (blue↔emerald).
 - Naprawiono 500 na PUT — UNIQUE constraint `(order_id, sequence_no)` w order_stops. Zmieniono na 3-fazowe przetwarzanie (delete → temp offset → update/insert).
+
+---
+
+## HIGH — nowe bugi (odkryte sesja 12)
+
+### NEW-01. isDirty nie śledzi zmian complaintReason — utrata danych
+- **Plik:** `src/components/orders/drawer/OrderForm.tsx:149-157`
+- **Problem:** Funkcja `patch()` liczy `isDirty` jako `formData !== original || pendingStatusCode !== null`. Ale `complaintReason` zmienia się niezależnie (osobny `useState`). Gdy użytkownik zmieni TYLKO `complaintReason` (bez zmiany statusu i bez zmiany formData), `isDirty` pozostaje `false` → `UnsavedChangesDialog` się nie pojawi → utrata danych.
+- **Scenariusz:** Otwórz drawer → zmień complaintReason → zamknij drawer → brak ostrzeżenia o niezapisanych zmianach.
+- **Rozwiązanie:** Uwzględnić `complaintReason !== originalComplaintReason` w kalkulacji `isDirty` (zarówno w `patch()` jak i w `onComplaintReasonChange`).
+
+### NEW-02. MutableRefObject deprecated (TS hint)
+- **Plik:** `src/components/orders/drawer/OrderForm.tsx:38`
+- **Problem:** `React.MutableRefObject` jest deprecated w React 19. TS hint 6385.
+- **Rozwiązanie:** Zmienić na `React.RefObject<(() => void) | null>`.
 
 ---
 
