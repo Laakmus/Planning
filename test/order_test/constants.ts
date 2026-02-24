@@ -14,11 +14,11 @@ export const DOCUMENTS_OPTIONS = [
   "WZE, Aneks VII, CMR",
 ] as const;
 
-export const VEHICLE_OPTIONS = [
-  { code: "MEGA_24T", name: "Mega 24t", volumeM3: 100 },
-  { code: "STAND_24T", name: "Standard 24t", volumeM3: 90 },
-  { code: "SOLO_12T", name: "Solo 12t", volumeM3: 40 },
-  { code: "BUS_3T", name: "Bus 3.5t", volumeM3: 15 },
+export const VEHICLE_TYPE_OPTIONS = [
+  "Naczepa mega",
+  "Naczepa standard",
+  "Samochód solo",
+  "Bus",
 ] as const;
 
 export const PAYMENT_METHODS = ["PRZELEW", "GOTÓWKA", "KOMPENSATA"] as const;

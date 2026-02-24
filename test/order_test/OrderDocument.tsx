@@ -49,7 +49,7 @@ import {
   MAX_LOADING_STOPS,
   MAX_UNLOADING_STOPS,
   PAYMENT_METHODS,
-  VEHICLE_OPTIONS,
+  VEHICLE_TYPE_OPTIONS,
 } from "./constants";
 import { TEST_PRODUCTS, TEST_COMPANIES, TEST_LOCATIONS } from "./test-data";
 
@@ -507,7 +507,7 @@ function VehicleTypeAutocomplete({
   onClear,
 }: {
   value: string;
-  onSelect: (option: (typeof VEHICLE_OPTIONS)[number]) => void;
+  onSelect: (type: string) => void;
   onClear: () => void;
 }) {
   const [open, setOpen] = useState(false);
@@ -515,9 +515,9 @@ function VehicleTypeAutocomplete({
 
   const filtered =
     query.length < 1
-      ? VEHICLE_OPTIONS
-      : VEHICLE_OPTIONS.filter((v) =>
-          v.name.toLowerCase().includes(query.toLowerCase()),
+      ? VEHICLE_TYPE_OPTIONS
+      : VEHICLE_TYPE_OPTIONS.filter((t) =>
+          t.toLowerCase().includes(query.toLowerCase()),
         );
 
   return (
@@ -538,7 +538,7 @@ function VehicleTypeAutocomplete({
         </button>
       </PopoverTrigger>
       <PopoverContent
-        className="w-56 p-0"
+        className="w-48 p-0"
         align="start"
         side="bottom"
         sideOffset={2}
@@ -569,12 +569,12 @@ function VehicleTypeAutocomplete({
                   Wyczyść wybór
                 </CommandItem>
               )}
-              {filtered.map((opt) => (
+              {filtered.map((type) => (
                 <CommandItem
-                  key={opt.code}
-                  value={opt.name}
+                  key={type}
+                  value={type}
                   onSelect={() => {
-                    onSelect(opt);
+                    onSelect(type);
                     setOpen(false);
                     setQuery("");
                   }}
@@ -582,13 +582,10 @@ function VehicleTypeAutocomplete({
                 >
                   <Check
                     className={`mr-1.5 h-3 w-3 ${
-                      value === opt.name ? "opacity-100" : "opacity-0"
+                      value === type ? "opacity-100" : "opacity-0"
                     }`}
                   />
-                  <span>{opt.name}</span>
-                  <span className="ml-auto text-[10px] text-slate-400">
-                    {opt.volumeM3} m³
-                  </span>
+                  <span>{type}</span>
                 </CommandItem>
               ))}
             </CommandGroup>
@@ -1402,7 +1399,7 @@ export default function OrderDocument({
               ) : (
                 <VehicleTypeAutocomplete
                   value={data.vehicleType}
-                  onSelect={(opt) => update({ vehicleType: opt.name })}
+                  onSelect={(type) => update({ vehicleType: type })}
                   onClear={() => update({ vehicleType: "" })}
                 />
               )}
@@ -1744,7 +1741,7 @@ export default function OrderDocument({
                       {cur}
                     </span>
                     <div
-                      className={`flex items-center justify-center w-[14px] h-[14px] border-[0.5px] border-dashed border-black ${
+                      className={`flex items-center justify-center w-[14px] h-[14px] ${
                         !disabled ? "cursor-pointer hover:bg-gray-50" : ""
                       }`}
                       onClick={() => {
