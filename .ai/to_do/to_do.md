@@ -53,6 +53,12 @@
 - [x] FIX M-12: Dodano `.min(1).max(11)` na stops i `.max(50)` na items w Zod walidatorach + 10 nowych testów (sesja 12)
 - [x] FIX L-06: Dodano `updated_by_user_id` do `cancelOrder()` i `restoreOrder()` w order-status.service.ts + 2 nowe testy (sesja 12)
 - [x] CLEANUP L-08/L-09: Usunięto martwy kod `src/lib/utils/format.ts` (183 linii, 0 importów) (sesja 12)
+- [x] FIX M-10: Dodano MAX_CACHE_SIZE (10k) na idempotency cache z FIFO eviction + MAX_RATE_BUCKETS (50k) na rate limiter (sesja 12)
+- [x] FIX M-11: Rate limiting — identyfikacja klienta po JWT sub claim zamiast slice(-16) tokena, fallback na IP (sesja 12)
+- [x] FIX M-13: Usunięto deprecated X-XSS-Protection, dodano Content-Security-Policy i Referrer-Policy (sesja 12)
+- [x] FIX M-04: patchStop — dodano guard READONLY_STATUSES (zrealizowane/anulowane) (sesja 12)
+- [x] FIX M-05: patchStop — dodano auto-korekta gdy edycja stopu w zleceniu wysłanym (sesja 12)
+- [x] FIX L-06 ext: changeStatus() — dodano brakujące updated_by_user_id w updatePayload (sesja 12)
 
 ---
 
@@ -95,15 +101,11 @@
 - **Problem:** Te operacje loguja do `order_status_history`, ale NIE do `order_change_log`.
 - **Rozwiazanie:** Dodac INSERT do `order_change_log` z field_name="status_code".
 
-### M-04. patchStop nie sprawdza statusu zlecenia (readonly)
-- **Plik:** `order.service.ts:1655-1765`
-- **Problem:** Mozna zmodyfikowac stop zlecenia "zrealizowane" lub "anulowane".
-- **Rozwiazanie:** Dodac check `if (order.status_code === "zrealizowane" || "anulowane") throw`.
+### ~~M-04. patchStop nie sprawdza statusu zlecenia (readonly)~~ ✅ NAPRAWIONE (sesja 12)
+- Dodano guard `READONLY_STATUSES.has(order.status_code)` → throw Error("READONLY") w patchStop.
 
-### M-05. patchStop nie triggeruje auto-korekta
-- **Plik:** `order.service.ts:1655-1765`
-- **Problem:** Zmiana stop w zleceniu "wyslane" nie zmienia statusu na "korekta".
-- **Rozwiazanie:** Dodac logike auto-korekta jak w updateOrder.
+### ~~M-05. patchStop nie triggeruje auto-korekta~~ ✅ NAPRAWIONE (sesja 12)
+- Dodano `shouldAutoKorekta` + zmiana status_code na "korekta" w denormalization UPDATE.
 
 ### M-06. OrderDetailDto brakuje pol z api-plan.md
 - **Pliki:** `types.ts` (OrderDetailDto), `order.service.ts` (getOrderDetail)
@@ -125,23 +127,17 @@
 - **Problem:** api-plan mowi "zakres dat zaladunku/rozladunku" — sugeruje filtrowanie po obu.
 - **Rozwiazanie:** Dodac OR z first_unloading_date lub zmienic spec.
 
-### M-10. Idempotency cache bez limitu wielkosci (memory DoS)
-- **Plik:** `middleware.ts:57-59`
-- **Problem:** In-memory Map bez max size, TTL 24h. Atakujacy moze wyczerpac pamiec.
-- **Rozwiazanie:** Dodac maxSize (np. 10000 entries) z LRU eviction.
+### ~~M-10. Idempotency cache bez limitu wielkosci (memory DoS)~~ ✅ NAPRAWIONE (sesja 12)
+- MAX_CACHE_SIZE=10k z FIFO eviction + MAX_RATE_BUCKETS=50k.
 
-### M-11. Rate limiting — slaba identyfikacja klienta
-- **Plik:** `middleware.ts:121`
-- **Problem:** Bazuje na ostatnich 16 znakach tokena. Mozna obejsc roznymi tokenami.
-- **Rozwiazanie:** Uzyc user ID z zwalidowanego tokena lub IP + fingerprint.
+### ~~M-11. Rate limiting — slaba identyfikacja klienta~~ ✅ NAPRAWIONE (sesja 12)
+- Identyfikacja po JWT sub claim (extractSubFromJwt), fallback na IP.
 
 ### ~~M-12. Brak limitu tablicy stops/items w Zod~~ ✅ NAPRAWIONE (sesja 12)
 - Dodano `.min(1).max(11)` na stops i `.max(50)` na items w createOrderSchema i updateOrderSchema + 10 nowych testów.
 
-### M-13. Deprecjonowany X-XSS-Protection + brak CSP
-- **Plik:** `api-helpers.ts:23`
-- **Problem:** `X-XSS-Protection: 1; mode=block` jest przestarzaly. Brak CSP, Referrer-Policy.
-- **Rozwiazanie:** Usunac X-XSS-Protection, dodac `Content-Security-Policy: default-src 'none'`, `Referrer-Policy: strict-origin-when-cross-origin`.
+### ~~M-13. Deprecjonowany X-XSS-Protection + brak CSP~~ ✅ NAPRAWIONE (sesja 12)
+- Usunięto X-XSS-Protection, dodano CSP (`default-src 'none'; frame-ancestors 'none'`) i Referrer-Policy.
 
 ### M-14. duplicateOrder nie waliduje FK ani limitow stops
 - **Plik:** `order.service.ts:866-979`
