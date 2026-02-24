@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
 > Ostatnia aktualizacja: 2026-02-24 (sesja 14)
-> Kontekst: Sesje 3-13: audyt API + re-audyt (PRD/api-plan/ui-plan/db-plan). Sesja 14: Faza 4 — naprawiono 4 naruszenia PRD (P-01–P-04) + M-03 (order_change_log w cancel/restore/email).
+> Kontekst: Sesja 14: Faza 4 (P-01–P-04, M-03) + Faza 5 (M-20–M-23) + Faza 6 (M-24, L-13, L-14) + Faza 7 (DOC-01–DOC-04).
 
 ---
 
@@ -87,6 +87,24 @@
 ### MEDIUM (sesja 14)
 - [x] M-03: order_change_log w cancelOrder, restoreOrder, prepareEmailForOrder — spójność z changeStatus() (sesja 14)
 
+### MEDIUM + LOW — Faza 6 walidatory + defensive (sesja 14)
+- [x] M-24: isoDateSchema/isoTimeSchema — .refine() z walidacją zakresu + 3 nowe testy (sesja 14)
+- [x] L-12: formatDateShort — guard `parts.length !== 3` (już istniał w kodzie, nie wymagał zmian)
+- [x] L-13: getInitials() — guard na whitespace-only string via `name?.trim()` (sesja 14)
+- [x] L-14: senderContactEmail — `z.preprocess(v => v === "" ? null : v, ...)` (sesja 14)
+
+### DOCS — Faza 7 dokumentacja (sesja 14)
+- [x] DOC-01: api-plan.md §2.3 — dodano `lockedByUserName` do OrderDetailDto (sesja 14)
+- [x] DOC-02: api-plan.md §4 — dodano przejście korekta→reklamacja w opisie ALLOWED_TRANSITIONS (sesja 14)
+- [x] DOC-03: api-plan.md §2.10a — dodano dokumentację PATCH /orders/{id}/carrier-color (sesja 14)
+- [x] DOC-04: api-plan.md §4 — uściślono politykę logowania order_change_log i order_status_history (sesja 14)
+
+### MEDIUM — API consistency (sesja 14)
+- [x] M-20: Ujednolicenie JOIN FK syntax — getOrderDetail na pełne constraint names (sesja 14)
+- [x] M-21: Dodano sent_by_user JOIN w listOrders + fix mappera (sesja 14)
+- [x] M-22: statusName w CreateOrderResponseDto i DuplicateOrderResponseDto + query order_statuses (sesja 14)
+- [x] M-23: FK_VALIDATION casting — ujednolicenie `as Error & { details }` w duplicateOrder (sesja 14)
+
 ### INFRA (sesje 10-12)
 - [x] System custom agents — 7 agentów (.claude/agents/), slash commands, pamięć agentów, CLAUDE.md orchestrator (sesja 10)
 - [x] Unit testy — 9 nowych plików testowych + 2 helpery. Łącznie 253 testów (z 35→241→253), 0 błędów TS (sesje 11-12)
@@ -117,31 +135,6 @@
 - **Problem:** PRD mówi "zakres dat (np. data załadunku, data rozładunku)" — sugeruje filtrowanie po obu.
 - **Rozwiązanie:** Dodać OR z first_unloading_date lub zmienić spec.
 
-### M-20. JOIN FK syntax niespójny między listOrders a getOrderDetail
-- **Plik:** `order.service.ts:265-267 vs 405-409`
-- **Problem:** listOrders używa jawnych constraint names (`!transport_orders_created_by_user_id_fkey`), getOrderDetail używa krótszej formy (`!created_by_user_id`). Może crashnąć na niektórych wersjach PostgREST.
-- **Rozwiązanie:** Ujednolicić do jednej składni (preferowana: constraint name).
-
-### M-21. Brak sent_by JOIN w listOrders
-- **Plik:** `order.service.ts:260-268`
-- **Problem:** `sentByUserName` w liście zleceń zawsze = null, bo brak JOINu (a w getOrderDetail jest).
-- **Rozwiązanie:** Dodać `sent_by_user:user_profiles!transport_orders_sent_by_user_id_fkey(full_name)` do listOrders SELECT.
-
-### M-22. statusName brak w CreateOrderResponseDto i DuplicateOrderResponseDto (awans z L-07)
-- **Pliki:** `types.ts`, `order.service.ts:991, 1218`
-- **Problem:** api-plan §2.4 i §2.9 wymagają `statusName` w odpowiedzi. Kod go nie zwraca.
-- **Rozwiązanie:** Dodać `statusName: string` do obu DTO + zwracać w serwisie.
-
-### M-23. FK_VALIDATION type casting niespójny
-- **Plik:** `order.service.ts:890, 1045, 1286`
-- **Problem:** duplicateOrder używa `as any`, createOrder/updateOrder używa `as Error & { details }`.
-- **Rozwiązanie:** Ujednolicić do jednej formy.
-
-### M-24. isoDateSchema/isoTimeSchema bez walidacji zakresu (awans z L-03)
-- **Plik:** `common.validator.ts:15-18`
-- **PRD §3.1.9:** ISO 8601. Regex akceptuje `2026-13-45`, `25:99`.
-- **Rozwiązanie:** Dodać `.refine()` z walidacją zakresu lub użyć `z.coerce.date()`.
-
 ---
 
 ## LOW — nice to have
@@ -165,20 +158,6 @@
 ### L-11. week-utils.ts regex fałszywie akceptuje format
 - Regex `[W-]?` jest opcjonalny, więc `"202607"` matchuje.
 
-### L-12. formatDateShort crash na niepełnej dacie
-- **Plik:** `format-utils.ts:19-21`
-- `"2026-02".split("-")` → `parts[2]` = undefined → wyświetli `"undefined.02"`.
-- **Rozwiązanie:** Dodać `if (parts.length !== 3) return date;`.
-
-### L-13. getInitials() crash na pustym imieniu
-- **Plik:** `TimelineEntry.tsx:23-24`
-- `"".split(/\s+/)` → `[""]` → `[0][0]` = undefined.
-- **Rozwiązanie:** Dodać guard na pusty string.
-
-### L-14. senderContactEmail empty string vs null w walidatorze
-- **Plik:** `order.validator.ts:104`
-- Pusty string (`""`) failuje `.email()` zamiast być traktowany jak null.
-- **Rozwiązanie:** `.transform(v => v === "" ? null : v)` przed `.email()`.
 
 ### L-15. Brak testów: postRaw Accept header + AbortController timeout
 - **Plik:** `api-client.test.ts`
@@ -190,17 +169,6 @@
 - Komentarz w kodzie: "na razie nie stosowane".
 
 ---
-
-## DOCS — dokumentacja do aktualizacji
-
-### DOC-01. api-plan.md §2.3 — brakuje 5 nowych pól OrderDetailDto
-- statusName, weekNumber, createdByUserName, updatedByUserName, lockedByUserName
-
-### DOC-02. api-plan.md §4 — brak przejścia korekta→reklamacja w ALLOWED_TRANSITIONS
-
-### DOC-03. api-plan.md — brak dokumentacji PATCH /orders/{id}/carrier-color
-
-### DOC-04. api-plan.md — uściślić politykę order_change_log (kiedy logować)
 
 ---
 

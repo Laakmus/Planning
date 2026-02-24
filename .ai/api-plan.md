@@ -210,6 +210,7 @@
         "updatedByUserId": "uuid | null",
         "updatedByUserName": "string | null",
         "lockedByUserId": "uuid | null",
+        "lockedByUserName": "string | null",
         "lockedAt": "timestamp | null"
       },
       "stops": [
@@ -491,6 +492,28 @@
 
 ---
 
+### 2.10a Zlecenia – kolor komórki przewoźnika
+
+- **PATCH** `/api/v1/orders/{orderId}/carrier-color`
+  - **Opis**: Ustawia kolor tła komórki przewoźnika w widoku listy. Używany do wizualnego oznaczania zleceń.
+  - **Body żądania**:
+    ```json
+    {
+      "color": "#48A111 | #25671E | #FFEF5F | #EEA727 | null"
+    }
+    ```
+  - **Body odpowiedzi**:
+    ```json
+    {
+      "id": "uuid",
+      "carrierCellColor": "string | null"
+    }
+    ```
+  - **Sukces**: `200 OK`
+  - **Błędy**: `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`
+
+---
+
 ### 2.11 Historia zlecenia
 
 - **GET** `/api/v1/orders/{orderId}/history/status`
@@ -632,7 +655,7 @@ Wszystkie te endpointy używają standardowego formatu:
 - **Cykl życia statusów** (pełne nazwy: robocze, wysłane, korekta, korekta wysłane, zrealizowane, reklamacja, anulowane; reguły egzekwowane w API, brak obejścia):
   - automatyczne przejścia: robocze → wysłane oraz korekta → korekta wysłane (tylko przez `prepare-email`),
   - automatyczne przejście wysłane / korekta wysłane → korekta przy zapisie zmian biznesowych w `PUT /orders/{id}`; przywrócenie z zrealizowane lub anulowane → korekta (endpoint `/restore`),
-  - ręczne przejścia przez `/status`: zrealizowane (z robocze, wysłane, korekta, korekta wysłane, reklamacja), reklamacja (tylko z wysłane, korekta wysłane; wymagane `complaintReason`), anulowane (z robocze, wysłane, korekta, korekta wysłane, reklamacja; nie z zrealizowane),
+  - ręczne przejścia przez `/status`: zrealizowane (z robocze, wysłane, korekta, korekta wysłane, reklamacja), reklamacja (z wysłane, korekta, korekta wysłane; wymagane `complaintReason`), anulowane (z robocze, wysłane, korekta, korekta wysłane, reklamacja; nie z zrealizowane),
   - przywracanie przez `/restore`: zawsze ustawia status korekta; z anulowane dozwolone tylko w ciągu 24 h; z zrealizowane bez limitu; po 24 h zlecenia anulowane są fizycznie usuwane z bazy (job w tle).
 - **Punkty trasy**:
   - `kind ∈ {'LOADING','UNLOADING'}`,
@@ -643,8 +666,8 @@ Wszystkie te endpointy używają standardowego formatu:
   - wygasanie blokady po ustalonym czasie,
   - próba zapisu przy cudzej blokadzie → `409 Conflict`.
 - **Audyt**:
-  - `order_status_history` – zmiany statusu,
-  - `order_change_log` – zmiany kluczowych pól,
+  - `order_status_history` – zmiany statusu (tworzony przy: changeStatus, cancelOrder, restoreOrder, prepareEmail, auto-korekta w patchStop),
+  - `order_change_log` – zmiany kluczowych pól. Polityka logowania: każda zmiana statusu (field_name=`status_code`), zmiany pól stopu w patchStop (field_name=`stop.{column}`). Logowanie realizowane we wszystkich operacjach zmieniających status: changeStatus, cancelOrder, restoreOrder, prepareEmail.
   - odczyt realizowany przez `/history/*`.
 
 ---
