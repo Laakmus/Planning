@@ -24,6 +24,12 @@
 > Wszystkie ścieżki są zagnieżdżone pod prefiksem `/api/v1`.
 > Wszystkie odpowiedzi są w formacie JSON, chyba że zaznaczono inaczej (PDF).
 
+**Uwaga o statusach zleceń:** W systemie używane są pełne nazwy statusów (bez skrótów): robocze, wysłane, korekta, korekta wysłane, zrealizowane, reklamacja, anulowane. W odpowiedziach API pole `statusName` zwraca pełną nazwę (do prezentacji w UI); pole `statusCode` może zawierać kod techniczny (np. w bazie) i jest mapowany na pełną nazwę. Reguły przejść statusów są egzekwowane po stronie serwera — nie ma możliwości obejścia ich przez API.
+
+**Uwaga o formatach dat:** API **zawsze** używa formatu ISO 8601 (`YYYY-MM-DD`) dla dat i (`HH:MM:SS`) dla godzin (bez stref czasowych, dane lokalne). Frontend odpowiada za formatowanie dat do polskiego formatu wizualnego (`DD.MM.YYYY`) przy wyświetlaniu w UI. Backend nigdy nie zwraca ani nie przyjmuje dat w formacie DD.MM.YYYY.
+
+**Uwaga o polu weekNumber:** Pole `weekNumber` jest **obliczane automatycznie** przez trigger w bazie danych na podstawie `firstLoadingDate`. API zwraca to pole w odpowiedziach GET, ale **nie przyjmuje go w żądaniach PUT/POST** — wszelkie próby ustawienia `weekNumber` w żądaniu będą zignorowane. Filtrowanie po numerze tygodnia odbywa się po stronie frontendu poprzez mapowanie numeru tygodnia na zakres dat (`dateFrom`/`dateTo`).
+
 ### 2.1 Uwierzytelnianie / sesja
 
 - **GET** `/api/v1/auth/me`
@@ -49,20 +55,24 @@
 
 - **GET** `/api/v1/orders`
   - **Opis**: Zwraca listę zleceń do widoku planistycznego (zakładki „Aktualne", „Zrealizowane", „Anulowane") z filtrami, sortowaniem i paginacją.
+  - **Mapowanie widoków** (parametr `view` / `order_statuses.view_group`): **CURRENT** (aktualne) = robocze, wysłane, korekta, korekta wysłane, reklamacja; **COMPLETED** (zrealizowane) = zrealizowane; **CANCELLED** (anulowane) = anulowane. Zlecenia zrealizowane i anulowane nie występują w widoku CURRENT.
   - **Parametry zapytania**:
-    - `view` (opcjonalny): `CURRENT | COMPLETED | CANCELLED` (domyślnie `CURRENT`, mapowane na `order_statuses.view_group`)
-    - `status` (opcjonalny, wielokrotny): np. `ROB`, `WYS`, `KOR`, `KOR_WYS`, `ZRE`, `ANL`, `REK`
+    - `view` (opcjonalny): `CURRENT | COMPLETED | CANCELLED` (domyślnie `CURRENT`)
+    - `status` (opcjonalny, wielokrotny): filtry po statusie (kody techniczne zgodne z `order_statuses.code`); API przyjmuje tablicę, UI w MVP wysyła co najwyżej jeden
     - `transportType` (opcjonalny): kod typu transportu (`transport_types.code`)
-    - `carrierId` (opcjonalny, UUID)
-    - `productId` (opcjonalny, UUID)
-    - `loadingLocationId` (opcjonalny, UUID)
-    - `unloadingLocationId` (opcjonalny, UUID)
+    - `carrierId` (opcjonalny, UUID): filtr po przewoźniku (`carrier_company_id`)
+    - `productId` (opcjonalny, UUID): filtr po towarze (zlecenia posiadające pozycję z danym `product_id`)
+    - `loadingLocationId` (opcjonalny, UUID): filtr po lokalizacji załadunku — zwraca zlecenia, gdzie podana lokalizacja występuje w **dowolnym** punkcie załadunku (L1…L8)
+    - `loadingCompanyId` (opcjonalny, UUID): filtr po firmie załadunku — zwraca zlecenia, gdzie **dowolna** lokalizacja danej firmy występuje w punkcie załadunku; stosowany gdy użytkownik wybierze firmę zamiast konkretnej lokalizacji
+    - `unloadingLocationId` (opcjonalny, UUID): analogicznie dla rozładunku (U1…U3)
+    - `unloadingCompanyId` (opcjonalny, UUID): filtr po firmie rozładunku
     - `search` (opcjonalny, string): wyszukiwanie po `search_text`
-    - `dateFrom` / `dateTo` (opcjonalne, ISO date): zakres dat załadunku/rozładunku
+    - `dateFrom` / `dateTo` (opcjonalne, ISO date): zakres dat pierwszego załadunku (`first_loading_date`); używane wewnętrznie przez filtr tygodniowy (weekNumber → dateFrom/dateTo)
     - `sortBy` (opcjonalny): `FIRST_LOADING_DATETIME | FIRST_UNLOADING_DATETIME | ORDER_NO | CARRIER_NAME`
     - `sortDirection` (opcjonalny): `ASC | DESC`
     - `page` (opcjonalny): numer strony (domyślnie `1`)
     - `pageSize` (opcjonalny): rozmiar strony (domyślnie `50`, maks. `200`)
+  - **Uwaga o filtrze „numer tygodnia"**: Filtr numeru tygodnia z UI (np. „07" lub „2026-07") jest mapowany na zakres dat `dateFrom`/`dateTo` **po stronie frontendu** (ISO week → poniedziałek–niedziela). API nie posiada dedykowanego parametru `weekNumber`.
   - **Struktura odpowiedzi**:
     ```json
     {
@@ -70,12 +80,22 @@
         {
           "id": "uuid",
           "orderNo": "string",
-          "statusCode": "ROB | WYS | KOR | KOR_WYS | ZRE | ANL | REK",
-          "statusName": "string",
+          "statusCode": "string (kod techniczny = pełna nazwa małymi literami)",
+          "statusName": "string (pełna nazwa z wielką literą: Robocze | Wysłane | Korekta | Korekta wysłane | Zrealizowane | Reklamacja | Anulowane)",
           "viewGroup": "CURRENT | COMPLETED | CANCELLED",
           "transportTypeCode": "PL | EXP | EXP_K | IMP",
           "transportTypeName": "string",
-          "summaryRoute": "string",
+          "summaryRoute": "string (skrótowy opis trasy, np. PL: Kęty → DE: Hamburg)",
+          "stops": [
+            {
+              "kind": "LOADING | UNLOADING",
+              "sequenceNo": 1,
+              "companyNameSnapshot": "string | null",
+              "locationNameSnapshot": "string | null",
+              "dateLocal": "YYYY-MM-DD | null",
+              "timeLocal": "HH:MM:SS | null"
+            }
+          ],
           "firstLoadingDate": "YYYY-MM-DD | null",
           "firstLoadingTime": "HH:MM:SS | null",
           "firstUnloadingDate": "YYYY-MM-DD | null",
@@ -84,15 +104,27 @@
           "lastLoadingTime": "HH:MM:SS | null",
           "lastUnloadingDate": "YYYY-MM-DD | null",
           "lastUnloadingTime": "HH:MM:SS | null",
+          "weekNumber": "integer | null (numer tygodnia ISO 8601 wyliczony automatycznie z firstLoadingDate)",
           "carrierCompanyId": "uuid | null",
           "carrierName": "string | null",
           "mainProductName": "string | null",
+          "items": [
+            {
+              "productNameSnapshot": "string | null",
+              "quantityTons": "number | null",
+              "loadingMethodCode": "string | null",
+              "notes": "string | null"
+            }
+          ],
           "priceAmount": "number | null",
           "currencyCode": "PLN | EUR | USD",
           "vehicleVariantCode": "string",
           "vehicleVariantName": "string",
+          "vehicleCapacityVolumeM3": "number | null",
           "requiredDocumentsText": "string | null",
           "generalNotes": "string | null",
+          "sentByUserName": "string | null",
+          "sentAt": "timestamp | null",
           "lockedByUserId": "uuid | null",
           "lockedByUserName": "string | null",
           "lockedAt": "timestamp | null",
@@ -110,6 +142,7 @@
       "totalPages": 3
     }
     ```
+  - **Uwaga o wydajności**: Tablice `stops` i `items` w odpowiedzi listy są **uproszczone** (brak `id`, `locationId`, `productId`, `addressSnapshot`). Zawierają tylko dane potrzebne do renderowania tabeli. Pełne dane dostępne przez `GET /orders/{id}`.
   - **Sukces**: `200 OK`
   - **Błędy**: `400 Bad Request`, `401 Unauthorized`
 
@@ -126,7 +159,8 @@
       "order": {
         "id": "uuid",
         "orderNo": "string",
-        "statusCode": "ROB | WYS | KOR | KOR_WYS | ZRE | ANL | REK",
+        "statusCode": "string (kod techniczny)",
+        "statusName": "string (pełna nazwa statusu)",
         "transportTypeCode": "PL | EXP | EXP_K | IMP",
         "currencyCode": "PLN | EUR | USD",
         "priceAmount": "number | null",
@@ -143,6 +177,7 @@
         "lastLoadingTime": "HH:MM:SS | null",
         "lastUnloadingDate": "YYYY-MM-DD | null",
         "lastUnloadingTime": "HH:MM:SS | null",
+        "weekNumber": "integer | null (numer tygodnia ISO 8601 wyliczony automatycznie z firstLoadingDate)",
         "transportYear": 2026,
         "firstLoadingCountry": "string | null",
         "firstUnloadingCountry": "string | null",
@@ -157,6 +192,7 @@
         "receiverNameSnapshot": "string | null",
         "receiverAddressSnapshot": "string | null",
         "vehicleVariantCode": "string",
+        "vehicleCapacityVolumeM3": "number | null",
         "specialRequirements": "string | null",
         "requiredDocumentsText": "string | null",
         "generalNotes": "string | null",
@@ -164,11 +200,17 @@
         "senderContactName": "string | null",
         "senderContactPhone": "string | null",
         "senderContactEmail": "string | null",
+        "sentByUserId": "uuid | null",
+        "sentByUserName": "string | null",
+        "sentAt": "timestamp | null",
         "createdAt": "timestamp",
         "createdByUserId": "uuid",
+        "createdByUserName": "string | null",
         "updatedAt": "timestamp",
         "updatedByUserId": "uuid | null",
+        "updatedByUserName": "string | null",
         "lockedByUserId": "uuid | null",
+        "lockedByUserName": "string | null",
         "lockedAt": "timestamp | null"
       },
       "stops": [
@@ -191,6 +233,7 @@
           "productId": "uuid | null",
           "productNameSnapshot": "string | null",
           "defaultLoadingMethodSnapshot": "string | null",
+          "loadingMethodCode": "string | null",
           "quantityTons": "number | null",
           "notes": "string | null"
         }
@@ -205,7 +248,7 @@
 ### 2.4 Zlecenia – tworzenie (wersja robocza)
 
 - **POST** `/api/v1/orders`
-  - **Opis**: Tworzy nowe zlecenie w statusie roboczym (`ROB`). Zlecenie może być niekompletne – pełna walidacja biznesowa następuje dopiero przy próbie wysyłki maila.
+  - **Opis**: Tworzy nowe zlecenie w statusie **robocze**. Zlecenie może być niekompletne – pełna walidacja biznesowa następuje dopiero przy próbie wysyłki maila.
   - **Body żądania** (nagłówek + prosty agregat):
     ```json
     {
@@ -239,6 +282,7 @@
         {
           "productId": "uuid | null",
           "productNameSnapshot": "string | null",
+          "loadingMethodCode": "string | null",
           "quantityTons": "number | null",
           "notes": "string | null"
         }
@@ -250,7 +294,8 @@
     {
       "id": "uuid",
       "orderNo": "string",
-      "statusCode": "ROB",
+      "statusCode": "string",
+      "statusName": "robocze",
       "createdAt": "timestamp"
     }
     ```
@@ -258,7 +303,8 @@
     - `transportTypeCode`, `currencyCode`, `vehicleVariantCode` – wymagane.
     - `currencyCode ∈ {PLN, EUR, USD}`.
     - `quantityTons` `NULL` lub `>= 0`.
-    - `statusCode` ustawiany po stronie serwera (`ROB`).
+    - Pole `weekNumber` **nie jest przyjmowane** — jest obliczane automatycznie przez trigger bazodanowy po zapisie na podstawie `firstLoadingDate`.
+    - Status ustawiany po stronie serwera na robocze.
     - `orderNo` generowany na serwerze, później niezmienny.
   - **Sukces**: `201 Created`
   - **Błędy**: `400 Bad Request`, `401 Unauthorized`, `409 Conflict`
@@ -268,7 +314,7 @@
 ### 2.5 Zlecenia – pełna aktualizacja
 
 - **PUT** `/api/v1/orders/{orderId}`
-  - **Opis**: Zapis zmian z formularza szczegółowego (nagłówek, punkty, pozycje). Dopuszcza wersje robocze niekompletne. **Status zlecenia nie jest modyfikowany przez ten endpoint.** Automatyczne przejście `WYS`/`KOR_WYS` → `KOR` następuje po stronie serwera, gdy wykryje zmianę pól biznesowych w zleceniu wysłanym. Ręczne zmiany statusów realizowane są wyłącznie przez `/status`, `/restore` i `/prepare-email`.
+  - **Opis**: Zapis zmian z formularza szczegółowego (nagłówek, punkty, pozycje). Dopuszcza wersje robocze niekompletne. **Status zlecenia nie jest modyfikowany przez ten endpoint.** Automatyczne przejście wysłane / korekta wysłane → korekta następuje po stronie serwera, gdy wykryje zmianę pól biznesowych w zleceniu wysłanym. Ręczne zmiany statusów realizowane są wyłącznie przez `/status`, `/restore` i `/prepare-email`.
   - **Parametry ścieżki**: `orderId` (UUID)
   - **Body żądania**:
     ```json
@@ -308,6 +354,7 @@
           "id": "uuid | null",
           "productId": "uuid | null",
           "productNameSnapshot": "string | null",
+          "loadingMethodCode": "string | null",
           "quantityTons": "number | null",
           "notes": "string | null",
           "_deleted": false
@@ -324,8 +371,9 @@
     }
     ```
   - **Reguły biznesowe**:
-    - Jeśli zlecenie ma status `WYS` lub `KOR_WYS` i zapis zmienia pola biznesowe, serwer automatycznie ustawia status na `KOR`.
-    - Statusy nieedytowalne (np. `ZRE`, `ANL`) – triggery blokują modyfikację pól biznesowych poza dozwolonymi przypadkami (np. przywrócenie).
+    - Pole `weekNumber` **nie jest przyjmowane** w żądaniu PUT — jest obliczane automatycznie przez trigger bazodanowy i ignorowane, jeśli zostanie przesłane. Frontend nie powinien wysyłać tego pola.
+    - Jeśli zlecenie ma status wysłane lub korekta wysłane i zapis zmienia pola biznesowe, serwer automatycznie ustawia status na korekta.
+    - Statusy zrealizowane i anulowane – triggery blokują modyfikację pól biznesowych poza dozwolonymi przypadkami (przywrócenie ustawia status na korekta). Nie ma możliwości obejścia reguł przez API.
     - `_deleted = true` → usunięcie wiersza; `id = null` → tworzenie nowego.
     - Limity: maks. 8 punktów `LOADING` i 3 `UNLOADING`.
   - **Sukces**: `200 OK`
@@ -336,30 +384,35 @@
 ### 2.6 Zlecenia – anulowanie
 
 - **DELETE** `/api/v1/orders/{orderId}`
-  - **Opis**: Ustawia status `ANL` (anulowane). Fizyczne usunięcie po 24h realizuje job w tle. Działanie jest aliasem `POST /orders/{orderId}/status` z `newStatusCode: "ANL"` – DELETE służy jako szybka akcja z widoku listy, `/status` jako pełna zmiana statusu z formularza.
+  - **Opis**: Ustawia status anulowane. Zlecenie znika z głównego widoku i jest widoczne tylko w zakładce anulowane. **Fizyczne usunięcie z bazy** następuje po 24 godzinach (job w tle); zlecenia nieprzywrócone w ciągu 24 h są usuwane i nie są wykorzystywane w raportach. Działanie jest aliasem `POST /orders/{orderId}/status` z nowym statusem anulowane – DELETE służy jako szybka akcja z widoku listy.
   - **Parametry ścieżki**: `orderId` (UUID)
   - **Body odpowiedzi**:
     ```json
-    { "id": "uuid", "statusCode": "ANL" }
+    { "id": "uuid", "statusCode": "anulowane" }
     ```
   - **Reguły**:
-    - Dostępne dla `ADMIN` i `PLANNER`.
+    - Dozwolone tylko gdy aktualny status to robocze, wysłane, korekta, korekta wysłane lub reklamacja (nie z zrealizowane). Dostępne dla `ADMIN` i `PLANNER`.
   - **Sukces**: `200 OK`
-  - **Błędy**: `401 Unauthorized`, `403 Forbidden`, `404 Not Found`
+  - **Błędy**: `400 Bad Request` (niedozwolone przejście), `401 Unauthorized`, `403 Forbidden`, `404 Not Found`
 
 ---
 
 ### 2.7 Zlecenia – zmiana statusu i przywracanie
 
 - **POST** `/api/v1/orders/{orderId}/status`
-  - **Opis**: Ręczna zmiana statusu (np. `ZRE`, `REK`, `ANL`, `ROB`).
+  - **Opis**: Ręczna zmiana statusu. Serwer **weryfikuje dozwolone przejścia**; niedozwolone przejście zwraca `400` lub `422`.
   - **Body żądania**:
     ```json
     {
-      "newStatusCode": "ROB | ZRE | REK | ANL",
+      "newStatusCode": "zrealizowane | reklamacja | anulowane",
       "complaintReason": "string | null"
     }
     ```
+  - **Dozwolone przejścia** (tylko te są akceptowane; brak obejścia w API):
+    - **zrealizowane** — tylko z: robocze, wysłane, korekta, korekta wysłane, reklamacja; nie z anulowane.
+    - **reklamacja** — tylko z: wysłane, korekta, korekta wysłane; przy tym przejściu pole `complaintReason` jest **wymagane** (niepuste), inaczej `422`.
+    - **anulowane** — tylko z: robocze, wysłane, korekta, korekta wysłane, reklamacja; **nie** z zrealizowane (z zrealizowane należy najpierw wywołać `/restore`, potem zmienić status na anulowane).
+  - **Reguły**: Statusy wysłane i korekta wysłane ustawiane wyłącznie automatycznie (prepare-email). Zmiany logowane w `order_status_history` i `order_change_log`.
   - **Body odpowiedzi**:
     ```json
     {
@@ -368,19 +421,15 @@
       "newStatusCode": "string"
     }
     ```
-  - **Reguły biznesowe**:
-    - Statusy `WYS`, `KOR`, `KOR_WYS` ustawiane tylko automatycznie przy wysyłce.
-    - Przy `REK` wymagane `complaintReason`.
-    - Zmiany logowane w `order_status_history` i `order_change_log`.
+  - **Błędy**: `400` / `422` przy niedozwolonym przejściu lub braku `complaintReason` przy reklamacja.
 
 - **POST** `/api/v1/orders/{orderId}/restore`
-  - **Opis**: Przywraca zlecenie z zakładek „Zrealizowane" lub „Anulowane" do „Aktualnych".
-  - **Body żądania**:
-    ```json
-    { "targetStatusCode": "ROB | WYS" }
-    ```
+  - **Opis**: Przywraca zlecenie z zakładki „Zrealizowane" lub „Anulowane" do widoku „Aktualne". Serwer **zawsze ustawia status na korekta** (nie przywraca do robocze ani wysłane).
+  - **Body żądania**: brak (opcjonalnie puste `{}`) — wynik przywrócenia jest zawsze status korekta.
   - **Reguły**:
-    - Z `ANL` – tylko jeśli minęło < 24h od anulowania.
+    - Z **zrealizowane** — przywrócenie dozwolone **bez limitu czasowego**; status → korekta.
+    - Z **anulowane** — przywrócenie dozwolone **tylko w ciągu 24 h** od anulowania; po 24 h zlecenie może być już usunięte z bazy → `400` lub `410 Gone`.
+  - **Błędy**: `400` / `410` gdy zlecenie anulowane i minęło ≥ 24 h.
 
 ---
 
@@ -422,7 +471,7 @@
     ```
   - **Odpowiedź**:
     ```json
-    { "id": "uuid", "orderNo": "string", "statusCode": "ROB" }
+    { "id": "uuid", "orderNo": "string", "statusCode": "string", "statusName": "robocze" }
     ```
 
 ---
@@ -440,6 +489,28 @@
       "notes": "string"
     }
     ```
+
+---
+
+### 2.10a Zlecenia – kolor komórki przewoźnika
+
+- **PATCH** `/api/v1/orders/{orderId}/carrier-color`
+  - **Opis**: Ustawia kolor tła komórki przewoźnika w widoku listy. Używany do wizualnego oznaczania zleceń.
+  - **Body żądania**:
+    ```json
+    {
+      "color": "#48A111 | #25671E | #FFEF5F | #EEA727 | null"
+    }
+    ```
+  - **Body odpowiedzi**:
+    ```json
+    {
+      "id": "uuid",
+      "carrierCellColor": "string | null"
+    }
+    ```
+  - **Sukces**: `200 OK`
+  - **Błędy**: `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`
 
 ---
 
@@ -469,6 +540,19 @@ Wszystkie te endpointy używają standardowego formatu:
   "items": [
     { /* obiekt słownikowy */ }
   ]
+}
+```
+
+**Struktura `VehicleVariantDto`** (zwracana przez `/vehicle-variants`):
+```json
+{
+  "code": "FIRANKA_90M3",
+  "name": "firanka 90m³",
+  "vehicleType": "FIRANKA",
+  "capacityTons": 24.0,
+  "capacityVolumeM3": 90.0,
+  "description": "string | null",
+  "isActive": true
 }
 ```
 
@@ -513,7 +597,7 @@ Wszystkie te endpointy używają standardowego formatu:
 ### 2.15 Wspomaganie wysyłki maila
 
 - **POST** `/api/v1/orders/{orderId}/prepare-email`
-  - **Opis**: Sprawdza kompletność danych wymaganych do wysyłki zlecenia, generuje/odświeża PDF i zwraca dane potrzebne do otwarcia Outlooka. Ustawia status `WYS` lub `KOR_WYS`.
+  - **Opis**: Sprawdza kompletność danych wymaganych do wysyłki zlecenia, generuje/odświeża PDF i zwraca dane potrzebne do otwarcia Outlooka. Ustawia status **wysłane** (gdy poprzedni status to robocze) lub **korekta wysłane** (gdy poprzedni status to korekta).
   - **Body żądania**:
     ```json
     { "forceRegeneratePdf": false }
@@ -524,12 +608,16 @@ Wszystkie te endpointy używają standardowego formatu:
     - ≥ 1 punkt załadunku i ≥ 1 rozładunku z datą i godziną,
     - cena (jeśli wymagana przed wysyłką),
     - `paymentTermDays`, `paymentMethod` — opcjonalne (nie wymagane do wysyłki).
+  - **Efekty uboczne (przy sukcesie)**:
+    - Ustawienie `sent_by_user_id` na bieżącego użytkownika i `sent_at` na `now()` (nadpisywane przy każdej wysyłce, w tym ponownej).
+    - Zmiana statusu: robocze → wysłane, korekta → korekta wysłane.
+    - Aktualizacja `main_product_name` (jeśli jeszcze puste).
   - **Sukces (przykład)**:
     ```json
     {
       "orderId": "uuid",
-      "statusBefore": "ROB | WYS | KOR",
-      "statusAfter": "WYS | KOR_WYS",
+      "statusBefore": "robocze | korekta",
+      "statusAfter": "wysłane | korekta wysłane",
       "emailOpenUrl": "string",
       "pdfFileName": "ZT2026-0001.pdf"
     }
@@ -564,11 +652,11 @@ Wszystkie te endpointy używają standardowego formatu:
 - **Walidacja biznesowa**:
   - przy zwykłym zapisie (`POST/PUT`) – dopuszcza braki (zlecenie robocze),
   - przy wysyłce maila – pełna walidacja wymienionych wyżej warunków.
-- **Cykl życia statusów**:
-  - automatyczne przejścia (`ROB` → `WYS`, `KOR` → `KOR_WYS`) powiązane z `prepare-email`,
-  - automatyczne przejście `WYS`/`KOR_WYS` → `KOR` przy zapisie zmian biznesowych w `PUT /orders/{id}`,
-  - ręczne przejścia do `ZRE`, `REK`, `ANL` przez endpoint `/status`,
-  - przywracanie z `ZRE` / `ANL` przez `/restore` z regułą 24h dla anulowanych.
+- **Cykl życia statusów** (pełne nazwy: robocze, wysłane, korekta, korekta wysłane, zrealizowane, reklamacja, anulowane; reguły egzekwowane w API, brak obejścia):
+  - automatyczne przejścia: robocze → wysłane oraz korekta → korekta wysłane (tylko przez `prepare-email`),
+  - automatyczne przejście wysłane / korekta wysłane → korekta przy zapisie zmian biznesowych w `PUT /orders/{id}`; przywrócenie z zrealizowane lub anulowane → korekta (endpoint `/restore`),
+  - ręczne przejścia przez `/status`: zrealizowane (z robocze, wysłane, korekta, korekta wysłane, reklamacja), reklamacja (z wysłane, korekta, korekta wysłane; wymagane `complaintReason`), anulowane (z robocze, wysłane, korekta, korekta wysłane, reklamacja; nie z zrealizowane),
+  - przywracanie przez `/restore`: zawsze ustawia status korekta; z anulowane dozwolone tylko w ciągu 24 h; z zrealizowane bez limitu; po 24 h zlecenia anulowane są fizycznie usuwane z bazy (job w tle).
 - **Punkty trasy**:
   - `kind ∈ {'LOADING','UNLOADING'}`,
   - unikalność `(order_id, sequence_no)`,
@@ -578,8 +666,8 @@ Wszystkie te endpointy używają standardowego formatu:
   - wygasanie blokady po ustalonym czasie,
   - próba zapisu przy cudzej blokadzie → `409 Conflict`.
 - **Audyt**:
-  - `order_status_history` – zmiany statusu,
-  - `order_change_log` – zmiany kluczowych pól,
+  - `order_status_history` – zmiany statusu (tworzony przy: changeStatus, cancelOrder, restoreOrder, prepareEmail, auto-korekta w patchStop),
+  - `order_change_log` – zmiany kluczowych pól. Polityka logowania: każda zmiana statusu (field_name=`status_code`), zmiany pól stopu w patchStop (field_name=`stop.{column}`). Logowanie realizowane we wszystkich operacjach zmieniających status: changeStatus, cancelOrder, restoreOrder, prepareEmail.
   - odczyt realizowany przez `/history/*`.
 
 ---

@@ -1,0 +1,618 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet"/>
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: { "display": ["Inter", "sans-serif"] },
+                    borderRadius: { "DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px" },
+                },
+            },
+        }
+    </script>
+    <title>20 wariantów wiersza — Lista zleceń (podgląd)</title>
+    <style type="text/css">
+        .custom-scrollbar::-webkit-scrollbar { width: 8px; height: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #f1f5f9; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+        .sticky-column { position: sticky; right: 0; z-index: 10; }
+        .dense-table td, .dense-table th { padding: 0.625rem 0.75rem; font-size: 0.75rem; }
+    </style>
+</head>
+<body class="font-display bg-slate-50 text-slate-800 min-h-screen flex flex-col">
+
+<!-- Nagłówek aplikacji (sticky) — jak w orders-view-preview -->
+<header class="shrink-0 h-14 px-4 border-b border-slate-200 bg-white shadow-sm sticky top-0 z-50 flex items-center justify-between gap-4">
+    <div class="flex items-center gap-4 min-w-0">
+        <div class="w-8 h-8 rounded-lg bg-primary flex items-center justify-center shrink-0 shadow-md">
+            <span class="material-icons-round text-white text-lg">local_shipping</span>
+        </div>
+        <h1 class="text-sm font-bold tracking-tight text-slate-900 dark:text-white uppercase shrink-0">Zlecenia Transportowe</h1>
+        <nav class="flex p-1 rounded-lg bg-slate-200 dark:bg-slate-700 shrink-0" role="tablist">
+            <button type="button" class="px-3 py-1.5 text-xs font-semibold rounded-md bg-primary text-white shadow-md" role="tab" aria-selected="true">Aktualne</button>
+            <button type="button" class="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white rounded-md transition-colors" role="tab" aria-selected="false">Zrealizowane</button>
+            <button type="button" class="px-3 py-1.5 text-xs font-medium text-slate-600 dark:text-slate-300 hover:bg-slate-300 dark:hover:bg-slate-600 hover:text-slate-900 dark:hover:text-white rounded-md transition-colors" role="tab" aria-selected="false">Anulowane</button>
+        </nav>
+        <button type="button" class="inline-flex items-center gap-1.5 px-2 py-1 text-xs font-medium border-2 border-slate-300 dark:border-slate-600 rounded-md hover:bg-slate-200 dark:hover:bg-slate-700 text-slate-700 dark:text-slate-200 transition-colors shrink-0" title="Aktualizuj dane">
+            <span class="material-icons-round text-sm text-primary">sync</span>
+            Aktualizuj dane
+        </button>
+    </div>
+    <div class="flex items-center gap-2 shrink-0">
+        <button id="theme-toggle" class="p-1.5 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md text-slate-600 dark:text-slate-300 transition-colors" title="Przełącz tryb jasny/ciemny">
+            <span class="material-icons-round text-lg dark:hidden">dark_mode</span>
+            <span class="material-icons-round text-lg hidden dark:inline">light_mode</span>
+        </button>
+        <div class="text-right border-r-2 border-slate-300 dark:border-slate-600 pr-3">
+            <div class="text-xs font-semibold text-slate-900 dark:text-white">Jan Kowalski</div>
+            <div class="text-[10px] text-slate-600 dark:text-slate-400 font-medium">Admin</div>
+        </div>
+        <button type="button" class="px-2 py-1 text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-md transition-colors border border-slate-300 dark:border-slate-600">Wyloguj</button>
+    </div>
+</header>
+
+<!-- Pasek filtrów (sticky) — jak w orders-view-preview -->
+<div class="shrink-0 px-4 py-3 border-b border-slate-200 bg-slate-50 flex flex-wrap items-center gap-2">
+    <select class="text-xs font-medium bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 rounded-md py-1.5 px-2 min-w-[100px] text-slate-800 dark:text-slate-100" title="Rodzaj transportu">
+        <option>Rodzaj transportu</option>
+        <option>kraj</option>
+        <option>eksport drogowy</option>
+    </select>
+    <select class="text-xs font-medium bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 rounded-md py-1.5 px-2 min-w-[100px] text-slate-800 dark:text-slate-100" title="Status">
+        <option>Status</option>
+        <option>wysłane</option>
+        <option>robocze</option>
+    </select>
+    <input type="text" placeholder="Wyszukiwanie..." class="text-xs font-medium bg-white dark:bg-slate-700 border-2 border-slate-300 dark:border-slate-600 rounded-md py-1.5 px-2 w-36 placeholder:text-slate-500 dark:placeholder:text-slate-400 text-slate-800 dark:text-slate-100"/>
+    <button type="button" class="text-xs font-semibold text-slate-700 dark:text-slate-200 hover:bg-slate-300 dark:hover:bg-slate-600 px-2 py-1 rounded-md transition-colors">Wyczyść filtry</button>
+    <div class="ml-auto flex items-center gap-3">
+        <div class="flex gap-2 rounded-lg overflow-hidden border-2 border-slate-300 dark:border-slate-600">
+            <button type="button" class="px-2 py-1 text-[10px] font-semibold bg-slate-300 dark:bg-slate-600 text-slate-700 dark:text-slate-200">Trasa</button>
+            <button type="button" class="px-2 py-1 text-[10px] font-semibold bg-primary text-white">Kolumny</button>
+        </div>
+        <button type="button" class="inline-flex items-center gap-1 px-2 py-1 text-xs font-semibold bg-emerald-600 hover:bg-emerald-700 text-white rounded-md shadow-md transition-colors border-2 border-emerald-700 dark:border-emerald-500">
+            <span class="material-icons-round text-sm">add</span>
+            Nowe zlecenie
+        </button>
+    </div>
+</div>
+
+<!-- Tabela zleceń (styl jak stitch) -->
+<div class="flex-1 min-h-0 flex flex-col bg-white">
+    <div class="flex-1 min-h-0 overflow-auto custom-scrollbar">
+        <table class="orders-table w-full border-collapse dense-table text-left relative" role="table" style="min-width: 1900px;">
+            <thead class="sticky top-0 z-20 bg-slate-50 border-b border-slate-200">
+                <tr class="text-slate-500 font-bold uppercase tracking-wider text-[10px]">
+                    <th class="w-12"> </th>
+                    <th class="min-w-[130px] cursor-pointer hover:text-primary">Nr zlecenia</th>
+                    <th class="min-w-[100px] cursor-pointer hover:text-primary">Status</th>
+                    <th class="min-w-[130px]">Rodzaj transportu</th>
+                    <th class="min-w-[280px]">Miejsce załadunku</th>
+                    <th class="min-w-[260px]">Miejsce rozładunku</th>
+                    <th class="min-w-[130px] cursor-pointer hover:text-primary">Data załadunku</th>
+                    <th class="min-w-[120px]">Data rozładunku</th>
+                    <th class="min-w-[280px]">Towar</th>
+                    <th class="min-w-[160px]">Komentarz</th>
+                    <th class="min-w-[180px] cursor-pointer hover:text-primary">Firma transportowa</th>
+                    <th class="min-w-[110px]">Typ auta</th>
+                    <th class="min-w-[100px]">Stawka</th>
+                    <th class="min-w-[120px]">Data wysłania</th>
+                    <th class="w-14 text-center sticky-column bg-slate-50 border-l border-slate-200"> </th>
+                </tr>
+            </thead>
+            <tbody class="divide-y divide-slate-200">
+            <!-- Wiersz 1: robocze -->
+            <tr class="bg-amber-50/60 hover:bg-amber-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0038</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">robocze</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Transpol: oddział Poznań</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">—</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">—</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">blachy stalowe (8t)</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-500 dark:text-slate-400">Do uzupełnienia</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-500 dark:text-slate-400">—</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-amber-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-amber-200 dark:hover:bg-amber-800 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 2: robocze -->
+            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0039</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">robocze</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">eksport drogowy</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Gorzyce
+L2 Wrocław</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Drezno: magazyn</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">18.02.2026 06:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">19.02.2026 12:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">rury (12t, palety)</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">Celnik do zgłoszenia</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">naczepa uniwersalna</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">2200 EUR</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-500 dark:text-slate-400">—</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-slate-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 3: wysłane -->
+            <tr class="bg-blue-50/60 hover:bg-blue-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0040</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-primary border border-blue-200">wysłane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-blue-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-blue-300 dark:hover:bg-blue-700 text-primary hover:text-blue-800 dark:hover:text-blue-100 transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 4: w realizacji -->
+            <tr class="bg-emerald-50/50 hover:bg-emerald-100/70 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0041</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">w realizacji</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">L1 Stalexport: Mysłowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">U1 Klient: Łódź</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">14.02.2026 07:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">14.02.2026 15:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">konstrukcje stalowe (22t)</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">Dostawa bramą 2</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Logistics Pro Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">naczepa niskopodwoziowa</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1890 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Anna Nowak
+13.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-emerald-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-emerald-300 dark:hover:bg-emerald-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 5: zrealizowane -->
+            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0042</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">zrealizowane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">L1 Kopalnia: Bytom</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">U1 Huta: Kraków</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">10.02.2026 06:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">10.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">węgiel (24t)</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">Zrealizowano bez uwag</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Trans-Bud Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">wywrotka (40t)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">2100 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+09.02.2026</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-slate-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 6: wysłane -->
+            <tr class="bg-blue-50/60 hover:bg-blue-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0043</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-primary border border-blue-200">wysłane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-blue-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-blue-300 dark:hover:bg-blue-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 7: robocze -->
+            <tr class="bg-amber-50/60 hover:bg-amber-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0044</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">robocze</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">L1 Cargo: Gliwice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">U1 Magazyn: Gdańsk</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">drewno (16t)</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-500 dark:text-slate-400">Termin do potwierdzenia</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-500 dark:text-slate-400">—</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-500 dark:text-slate-400">—</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-amber-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-amber-200 dark:hover:bg-amber-800 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 8: w realizacji -->
+            <tr class="bg-emerald-50/50 hover:bg-emerald-100/70 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0045</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">w realizacji</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">eksport drogowy</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">L1 Port: Gdańsk</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">U1 Hamburg: terminal</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">15.02.2026 10:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">17.02.2026 08:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">stal (18t, kontener)</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">TIR z dokumentami ATA</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">EuroTrans Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kontener 40'</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">3200 EUR</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Piotr Wiśniewski
+12.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-emerald-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-emerald-300 dark:hover:bg-emerald-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <!-- Wiersz 9: wysłane -->
+            <tr class="bg-blue-50/60 hover:bg-blue-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0046</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-primary border border-blue-200">wysłane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">L1 Hutmen: Wrocław</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">U1 Klient: Szczecin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">16.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">16.02.2026 18:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-800 dark:text-slate-200 font-medium">aluminium (7t)</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">Palety euro</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Speed Cargo Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (82m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">980 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Anna Nowak
+14.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-blue-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-blue-300 dark:hover:bg-blue-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0048</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">zrealizowane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-slate-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-blue-50/60 hover:bg-blue-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0049</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-primary border border-blue-200">wysłane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-blue-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-blue-300 dark:hover:bg-blue-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0050</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">zrealizowane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-slate-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-blue-50/60 hover:bg-blue-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0052</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-blue-100 text-primary border border-blue-200">wysłane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-blue-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-blue-300 dark:hover:bg-blue-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0053</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-slate-100 text-slate-600 border border-slate-200">zrealizowane</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-slate-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-blue-50/60 hover:bg-blue-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0055</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-amber-50 text-amber-600 border border-amber-200">robocze</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-blue-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-blue-300 dark:hover:bg-blue-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0056</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">w realizacji</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-slate-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-blue-50/60 hover:bg-blue-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0056</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">w realizacji</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-blue-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-blue-300 dark:hover:bg-blue-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0056</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">w realizacji</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-slate-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-blue-50/60 hover:bg-blue-100/80 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0056</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">w realizacji</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white/90 backdrop-blur-sm border-l border-slate-200 group-hover:bg-blue-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-blue-300 dark:hover:bg-blue-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            <tr class="bg-slate-50/50 hover:bg-slate-100 transition-colors group cursor-pointer" role="row">
+                <td class="py-2.5 px-4 text-center"></td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-800 dark:text-slate-100">ZT-2026-0056</td>
+                <td class="py-2.5 px-4"><span class="inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold bg-emerald-100 text-emerald-700 border border-emerald-200">w realizacji</span></td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">kraj</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">L1 Nord: oddział Gorzyce
+L2 Metalex: oddział Katowice</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">U1 Berlina: oddział Berlin</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">12.02.2026 08:00
+12.02.2026 14:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight text-slate-700 dark:text-slate-200">13.02.2026 09:00</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-800 dark:text-slate-200 font-medium">1. miedź (5t, big bag)
+2. miedź milbera (10t, paleta)
+Razem: 15t</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">1. ładujemy na końcu naczepy
+2. ładuje tylko Otwock</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-800 dark:text-slate-100">Transport Express Sp. z o.o.</td>
+                <td class="py-2.5 px-4 text-xs font-medium text-slate-700 dark:text-slate-200">firanka (90m³)</td>
+                <td class="py-2.5 px-4 text-xs font-semibold text-slate-900 dark:text-slate-100">1450 PLN</td>
+                <td class="py-2.5 px-4 text-[11px] leading-tight whitespace-pre-line text-slate-700 dark:text-slate-200">Jan Kowalski
+11.02.2026</td>
+                <td class="sticky-column bg-white border-l border-slate-200 group-hover:bg-slate-50 py-2.5 px-4">
+                    <button type="button" class="p-1 rounded-md hover:bg-slate-300 dark:hover:bg-slate-700 text-primary transition-colors" title="Wyślij maila"><span class="material-icons-round text-base">mail_outline</span></button>
+                </td>
+            </tr>
+            </tbody>
+        </table>
+    </div>
+</div>
+
+<!-- Stopka
+<footer class="shrink-0 h-10 px-4 border-t border-slate-200 bg-white flex items-center justify-between text-[11px] font-medium text-slate-600">
+    <div class="flex items-center gap-4"><span>Aktywne: 20 (podgląd wariantów)</span></div>
+    <div class="flex items-center gap-4">
+        <span>System Status: OK</span>
+        <span>Ostatnia aktualizacja: 14:32</span>
+    </div>
+</footer>
+
+
+<script>
+    const themeToggle = document.getElementById('theme-toggle');
+    const htmlElement = document.documentElement;
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            htmlElement.classList.toggle('dark');
+            localStorage.setItem('theme', htmlElement.classList.contains('dark') ? 'dark' : 'light');
+        });
+    }
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') htmlElement.classList.remove('dark');
+    else if (savedTheme === 'dark') htmlElement.classList.add('dark');
+</script>
+</body>
+</html>

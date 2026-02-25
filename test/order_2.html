@@ -1,0 +1,475 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Zlecenie ZT2025/1311</title>
+<style>
+  @page {
+    size: A4;
+    margin: 0;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: Arial, Helvetica, sans-serif;
+    background: #e0e0e0;
+    color: #000;
+    display: flex;
+    justify-content: center;
+    padding: 20px 0;
+  }
+  @media print {
+    body { background: #fff; padding: 0; }
+    .page-wrapper { box-shadow: none !important; }
+  }
+  .page-wrapper {
+    width: 210mm;
+    height: 297mm;
+    background: #fff;
+    box-shadow: 0 2px 10px rgba(0,0,0,0.2);
+    overflow: hidden;
+    display: flex;
+    align-items: flex-start;
+    justify-content: center;
+  }
+  .page {
+    position: relative;
+    width: 595px;
+    min-height: 842px;
+    padding: 32px 34px;
+    transform: scale(1.3345);
+    transform-origin: top center;
+  }
+
+  /* Row container */
+  .row { display: flex; width: 526px; }
+  .row.w449 { width: 449px; }
+  .cell {
+    display: flex;
+    align-items: center;
+    padding: 0 4px;
+    overflow: hidden;
+  }
+
+  /* Borders — thin (0.5px solid, 0.5px dashed) matching Figma */
+  .bt { border-top: 0.5px solid #000; }
+  .bb { border-bottom: 0.5px solid #000; }
+  .bl { border-left: 0.5px solid #000; }
+  .br { border-right: 0.5px solid #000; }
+  .bb-dash { border-bottom: 0.5px dashed #000; }
+  .br-dash { border-right: 0.5px dashed #000; }
+  .bl-dash { border-left: 0.5px dashed #000; }
+
+  /* Colors */
+  .bg-e9 { background: #E9E9E9; }
+  .bg-e7 { background: #E7E7E7; }
+  .bg-orange { background: #F59444; }
+  .bg-peach { background: #FAD1A5; }
+  .bg-f8 { background: #F8F8F8; }
+
+  /* Text */
+  .f5 { font-size: 5px; }
+  .f55 { font-size: 5.5px; }
+  .f6 { font-size: 6px; }
+  .f65 { font-size: 6.5px; }
+  .f7 { font-size: 7px; }
+  .f75 { font-size: 7.5px; }
+  .f8 { font-size: 8px; }
+  .f85 { font-size: 8.5px; }
+  .f9 { font-size: 9px; }
+  .f95 { font-size: 9.5px; }
+  .f10 { font-size: 10px; }
+  .f105 { font-size: 10.5px; }
+  .f12 { font-size: 12px; }
+  .bold { font-weight: bold; }
+  .italic { font-style: italic; }
+  .gray { color: #9A9A9A; }
+  .gray2 { color: #8D8D8D; }
+  .orange-text { color: #F59444; }
+  .center { justify-content: center; text-align: center; }
+  .lh14 { line-height: 1.4; }
+  .lh15 { line-height: 1.5; }
+  .vtop { align-items: flex-start; padding-top: 3px; }
+
+  /* Fixed widths matching Figma coords */
+  .w98  { width: 98px; flex-shrink: 0; }
+  .w40  { width: 40px; flex-shrink: 0; }
+  .w24  { width: 24px; flex-shrink: 0; }
+  .w28  { width: 28px; flex-shrink: 0; }
+  .w29  { width: 29px; flex-shrink: 0; }
+  .w33  { width: 33px; flex-shrink: 0; }
+  .w36  { width: 36px; flex-shrink: 0; }
+  .w50  { width: 50px; flex-shrink: 0; }
+  .w63  { width: 63px; flex-shrink: 0; }
+  .w74  { width: 74px; flex-shrink: 0; }
+  .w80  { width: 80px; flex-shrink: 0; }
+  .w88  { width: 88px; flex-shrink: 0; }
+  .w90  { width: 90px; flex-shrink: 0; }
+  .w97  { width: 97px; flex-shrink: 0; }
+  .w113 { width: 113px; flex-shrink: 0; }
+  .w114 { width: 114px; flex-shrink: 0; }
+  .w191 { width: 191px; flex-shrink: 0; }
+  .w217 { width: 217px; flex-shrink: 0; }
+  .w235 { width: 235px; flex-shrink: 0; }
+  .w314 { width: 314px; flex-shrink: 0; }
+  .w315 { width: 315px; flex-shrink: 0; }
+  .w23  { width: 23px; flex-shrink: 0; }
+  .w149 { width: 149px; flex-shrink: 0; }
+  .w427 { width: 427px; flex-shrink: 0; }
+  .flex1 { flex: 1; }
+
+  /* Heights */
+  .h17 { height: 17px; }
+  .h23 { height: 23px; }
+  .h24 { height: 24px; }
+  .h26 { height: 26px; }
+  .h30 { height: 30px; }
+
+  /* Logo */
+  .logo {
+    position: absolute;
+    left: 501px;
+    top: 33px;
+    width: 57px;
+    height: 55px;
+    border-radius: 27.4px;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .logo img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+  }
+
+  /* OSOBA ZLECAJĄCA block */
+  .osoba { width: 191px; margin-left: 335px; margin-top: 0; }
+  .osoba .orow-header {
+    display: flex;
+    flex-direction: column;
+    padding: 6px 7px;
+    gap: 4px;
+    border-left: 0.5px solid #000;
+    height: 31px;
+  }
+  .osoba .orow {
+    display: flex;
+    padding: 3px 7px;
+    font-size: 7px;
+  }
+  .osoba .orow.email-row {
+    height: 15px;
+    border-top: 0.5px dashed #000;
+  }
+  .osoba .orow.phone-row {
+    height: 12px;
+    border-top: 0.5px dashed #000;
+    border-bottom: 0.5px solid #000;
+  }
+  .osoba .orow .olabel { width: 40px; flex-shrink: 0; font-size: 6px; color: #8D8D8D; }
+  .osoba .orow .oval { flex: 1; border-left: 0.5px dashed #000; padding-left: 7px; }
+</style>
+</head>
+<body>
+<div class="page-wrapper">
+<div class="page">
+
+  <!-- ===== LOGO (x501, y33, 57x55) ===== -->
+  <div class="logo">
+    <img src="data:image/png;base64,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" alt="Logo">
+  </div>
+
+  <!-- ===== ROW 1: ZLECENIE NR (y33-56) ===== -->
+  <div class="row w449" style="height:23px;">
+    <div class="cell w98 bg-e9 bl bt br-dash f8 bold" style="padding:4px 2px;">ZLECENIE NR:</div>
+    <div class="cell" style="width:235px; border-top:0.5px solid #000; border-left:0.5px solid #000;">
+      <span class="f5 gray" style="padding:0 10px; letter-spacing:0.2px;">NUMER</span>
+      <span class="f9 bold" style="letter-spacing:0.36px;">ZT2025/1311</span>
+    </div>
+    <div class="cell" style="width:116px; border-top:0.5px solid #000; border-left:0.5px dashed #000;">
+      <span class="f5 gray lh14" style="padding:0 7px; letter-spacing:0.2px;">DATA<br>WYST</span>
+      <span class="f7" style="letter-spacing:0.21px;">2025-08-08</span>
+    </div>
+  </div>
+
+  <!-- ===== ROW 2: ZLECAJĄCY (y56-79) ===== -->
+  <div class="row w449" style="height:23px;">
+    <div class="cell w98 bg-e9 bb-dash br-dash f7 bold" style="padding:0 2px;">ZLECAJĄCY:</div>
+    <div class="cell" style="width:351px; border-bottom:0.5px dashed #000; border-left:0.5px solid #000;">
+      <span class="f5 gray lh14" style="padding:0 10px; letter-spacing:0.2px;">PEŁNA<br>NAZWA</span>
+      <span class="f7" style="letter-spacing:0.28px;">ODYLION Sp. z o.o. Sp. k., ul. Syta 114z/1, 02-987 Warszawa PL 9512370578</span>
+    </div>
+  </div>
+
+  <!-- ===== ORANGE HEADER (y79-105) ===== -->
+  <div class="row w449" style="height:26px;">
+    <div class="cell flex1 bt" style="padding:9px 10px;">
+      <span class="f95 bold orange-text" style="letter-spacing:0.14px;">ZLECAMY PAŃSTWU TRANSPORT NA NASTĘPUJĄCYCH WARUNKACH:</span>
+    </div>
+  </div>
+
+  <!-- ===== SPEDYCJA (y105-129) ===== -->
+  <div class="row" style="height:24px;">
+    <div class="cell w98 bg-e9 bt f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end;">SPEDYCJA:</div>
+    <div class="cell w314 bt" style="border-left:0.5px solid #000;">
+      <span class="f5 gray lh14" style="padding:0 2px; letter-spacing:0.35px;">PEŁNA<br>NAZWA</span>
+      <span class="f7 lh14" style="padding-left:19px; letter-spacing:0.14px;">MARIUSZ MIERZEJEWSKI ul.GEN. AUGUSTA EMILA<br>FIELDORFA, 07-410 Ostrołęka</span>
+    </div>
+    <div class="cell w113 bt" style="border-left:0.5px dashed #000;">
+      <span class="f5 gray" style="padding:0 2px; letter-spacing:0.2px;">NIP</span>
+      <span class="f7" style="padding-left:18px; letter-spacing:0.21px;">7581777477</span>
+    </div>
+  </div>
+
+  <!-- ===== TYP AUTA (y129-153) ===== -->
+  <div class="row" style="height:24px;">
+    <div class="cell w98 bg-e9 bt f7 bold" style="border-right:0.5px solid #000; padding:5px 1px; align-items:flex-end;">TYP AUTA:</div>
+    <div class="cell w314 bt" style="border-left:0.5px solid #000;">
+      <span class="f5 gray" style="padding:0 2px; letter-spacing:0.35px;">OPIS</span>
+      <span class="f7" style="padding-left:25px; letter-spacing:0.14px;">ruchoma podłoga</span>
+    </div>
+    <div class="cell w113 bt" style="border-left:0.5px dashed #000;">
+      <span class="f5 gray" style="padding:0 4px; letter-spacing:0.2px;">m3</span>
+      <span class="f7" style="padding-left:11px; letter-spacing:0.21px;">90</span>
+    </div>
+  </div>
+
+  <!-- ===== ASORTYMENT HEADER (y153-171) ===== -->
+  <div class="row" style="height:17px;">
+    <div class="cell w98 bg-e9 bt f7 bold" style="padding:4px 1px; align-items:flex-end;">ASORTYMENT:</div>
+    <div class="cell w314 bt" style="border-left:0.5px solid #000; justify-content:flex-end; padding-right:34px;">
+      <span class="f6 gray2" style="padding:0 6px; letter-spacing:0.12px;">NR ZAMÓWIENIA</span>
+    </div>
+    <div class="cell w33 bt" style="border-left:0.5px dashed #000;">
+      <span class="f6 gray2" style="letter-spacing:-0.3px;">LUZEM</span>
+    </div>
+    <div class="cell w28 bt" style="border-left:0.5px dashed #000;">
+      <span class="f6 gray2" style="letter-spacing:-0.3px;">BIGBAG</span>
+    </div>
+    <div class="cell w29 bt" style="border-left:0.5px dashed #000;">
+      <span class="f6 gray2" style="letter-spacing:-0.3px;">PALETA</span>
+    </div>
+    <div class="cell w24 bt" style="border-left:0.5px dashed #000;">
+      <span class="f6 gray2" style="letter-spacing:-0.3px;">INNA</span>
+    </div>
+  </div>
+
+  <!-- ===== ITEMS GRID (y171-411, 8 rows x 30px) ===== -->
+  <!-- Row 1 with data -->
+  <div class="row" style="height:30px;">
+    <div class="cell w235 bb-dash f7 bold" style="padding:7px 6px; align-items:flex-end; border-right:0.5px dashed #000;">1&nbsp;&nbsp;złom kable Al/Pb</div>
+    <div class="cell w90 bb-dash" style="border-right:0.5px dashed #000;"></div>
+    <div class="cell w88 bb-dash" style="border-right:0.5px dashed #000;"></div>
+    <div class="cell w33 bb-dash" style="border-right:0.5px dashed #000;"></div>
+    <div class="cell w28 bb-dash" style="border-right:0.5px dashed #000;"></div>
+    <div class="cell w29 bb-dash" style="border-right:0.5px dashed #000;"></div>
+    <div class="cell w24 bb-dash"></div>
+  </div>
+  <!-- Empty rows 2-7 -->
+  <div class="row" style="height:30px;"><div class="cell w235 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w90 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w88 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w33 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w28 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w29 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w24 bb-dash"></div></div>
+  <div class="row" style="height:30px;"><div class="cell w235 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w90 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w88 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w33 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w28 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w29 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w24 bb-dash"></div></div>
+  <div class="row" style="height:30px;"><div class="cell w235 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w90 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w88 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w33 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w28 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w29 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w24 bb-dash"></div></div>
+  <div class="row" style="height:30px;"><div class="cell w235 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w90 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w88 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w33 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w28 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w29 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w24 bb-dash"></div></div>
+  <div class="row" style="height:30px;"><div class="cell w235 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w90 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w88 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w33 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w28 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w29 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w24 bb-dash"></div></div>
+  <div class="row" style="height:30px;"><div class="cell w235 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w90 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w88 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w33 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w28 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w29 bb-dash" style="border-right:0.5px dashed #000;"></div><div class="cell w24 bb-dash"></div></div>
+  <!-- Row 8 (last, solid bottom) -->
+  <div class="row" style="height:30px;"><div class="cell w235 bb" style="border-right:0.5px dashed #000;"></div><div class="cell w90 bb" style="border-right:0.5px dashed #000;"></div><div class="cell w88 bb" style="border-right:0.5px dashed #000;"></div><div class="cell w33 bb" style="border-right:0.5px dashed #000;"></div><div class="cell w28 bb" style="border-right:0.5px dashed #000;"></div><div class="cell w29 bb" style="border-right:0.5px dashed #000;"></div><div class="cell w24 bb"></div></div>
+
+  <!-- ===== TRANSPORT: DATA ZAŁADUNKU (y411-428) ===== -->
+  <div class="row h17">
+    <div class="cell w98 bg-e7 bt f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end;">DATA ZAŁADUNKU</div>
+    <div class="cell w314 bt" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">2025-08-11</span>
+    </div>
+    <div class="cell w113 bt" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">GODZINA</span>
+      <span class="f7 bold" style="letter-spacing:0.21px;">10:00</span>
+    </div>
+  </div>
+  <!-- MIEJSCE ZAŁADUNKU (y428-445) -->
+  <div class="row h17">
+    <div class="cell w98 bg-e7 bb-dash f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end;">MIEJSCE ZAŁADUNKU</div>
+    <div class="cell w314 bb-dash" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">ARCELORMITTAL POLAND Kraków 31-752, ul. Tadeusza Sendzimira 1</span>
+    </div>
+    <div class="cell w113 bb-dash" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">KRAJ</span>
+      <span class="f7 bold" style="padding-left:15px; letter-spacing:0.21px;">PL</span>
+    </div>
+  </div>
+
+  <!-- DOŁADUNEK 1 (y445-479, 2 rows with bg-f8) -->
+  <div class="row h17" style="background:#F8F8F8;">
+    <div class="cell w98 bt f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end; background:inherit;">DATA DOŁADUNKU 1:</div>
+    <div class="cell w314 bt" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">&nbsp;</span>
+    </div>
+    <div class="cell w113 bt" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">GODZINA</span>
+      <span class="f7 bold" style="letter-spacing:0.21px;">&nbsp;</span>
+    </div>
+  </div>
+  <div class="row h17" style="background:#F8F8F8;">
+    <div class="cell w98 bb-dash f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end; background:inherit;">MIEJSCE DOŁADUNKU 1:</div>
+    <div class="cell w314 bb-dash" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">&nbsp;</span>
+    </div>
+    <div class="cell w113 bb-dash" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">KRAJ</span>
+      <span class="f7 bold" style="padding-left:15px; letter-spacing:0.21px;">PL</span>
+    </div>
+  </div>
+
+  <!-- DOŁADUNEK 2 (y479-513, bg-f8) -->
+  <div class="row h17" style="background:#F8F8F8;">
+    <div class="cell w98 bt f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end; background:inherit;">DATA DOŁADUNKU 2:</div>
+    <div class="cell w314 bt" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">&nbsp;</span>
+    </div>
+    <div class="cell w113 bt" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">GODZINA</span>
+      <span class="f7 bold" style="letter-spacing:0.21px;">&nbsp;</span>
+    </div>
+  </div>
+  <div class="row h17" style="background:#F8F8F8;">
+    <div class="cell w98 bb-dash f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end; background:inherit;">MIEJSCE DOŁADUNKU 2:</div>
+    <div class="cell w314 bb-dash" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">&nbsp;</span>
+    </div>
+    <div class="cell w113 bb-dash" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">KRAJ</span>
+      <span class="f7 bold" style="padding-left:15px; letter-spacing:0.21px;">PL</span>
+    </div>
+  </div>
+
+  <!-- DOŁADUNEK 3 (y513-547, bg-f8) -->
+  <div class="row h17" style="background:#F8F8F8;">
+    <div class="cell w98 bt f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end; background:inherit;">DATA DOŁADUNKU 3:</div>
+    <div class="cell w314 bt" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">&nbsp;</span>
+    </div>
+    <div class="cell w113 bt" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">GODZINA</span>
+      <span class="f7 bold" style="letter-spacing:0.21px;">&nbsp;</span>
+    </div>
+  </div>
+  <div class="row h17" style="background:#F8F8F8;">
+    <div class="cell w98 bb-dash f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end; background:inherit;">MIEJSCE DOŁADUNKU 3:</div>
+    <div class="cell w314 bb-dash" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">&nbsp;</span>
+    </div>
+    <div class="cell w113 bb-dash" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">KRAJ</span>
+      <span class="f7 bold" style="padding-left:15px; letter-spacing:0.21px;">PL</span>
+    </div>
+  </div>
+
+  <!-- DATA ROZŁADUNKU (y547-564, orange) -->
+  <div class="row h17">
+    <div class="cell w98 bg-orange bt f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end;">DATA ROZŁADUNKU:</div>
+    <div class="cell w314 bg-peach bt" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">2025-08-12</span>
+    </div>
+    <div class="cell w114 bg-peach bt" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">GODZINA</span>
+      <span class="f7 bold" style="letter-spacing:0.21px;">08:00</span>
+    </div>
+  </div>
+  <!-- MIEJSCE ROZŁADUNKU (y564-581, orange) -->
+  <div class="row h17">
+    <div class="cell w98 bg-orange bb-dash f7 bold" style="border-right:0.5px solid #000; padding:5px 2px; align-items:flex-end;">MIEJSCE ROZŁADUNKU:</div>
+    <div class="cell w314 bg-peach bb-dash" style="border-left:0.5px solid #000; padding-left:12px;">
+      <span class="f7 bold" style="letter-spacing:0.14px;">UAB "VC BALTIC" V. A GRAICIUNO 10-3, VILNIUS, LIETUVA</span>
+    </div>
+    <div class="cell w114 bg-peach bb-dash" style="border-left:0.5px dashed #000;">
+      <span class="f55 bold gray" style="padding:0 4px; letter-spacing:0.22px;">KRAJ</span>
+      <span class="f7 bold" style="padding-left:15px; letter-spacing:0.21px;">LT</span>
+    </div>
+  </div>
+
+  <!-- GAP 8px (y581-589) -->
+  <div style="height:8px;"></div>
+
+  <!-- CENA ZA FRAHT (y589-613) -->
+  <div class="row" style="height:24px;">
+    <div class="cell w98 bg-e9 bt bb f7 bold" style="border-right:0.5px solid #000; padding:0 2px;">CENA ZA FRAHT:</div>
+    <div style="display:flex; flex:1; border-top:0.5px solid #000; border-bottom:0.5px solid #000; align-items:center;">
+      <div style="display:flex; align-items:center; gap:0;">
+        <div style="display:flex; flex-direction:column; align-items:center; padding:4px 10px;">
+          <span class="f5 bold gray" style="letter-spacing:0.2px;">KWOTA</span>
+          <span class="f7 bold" style="letter-spacing:0.28px;">1025</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; gap:3px; margin-left:26px;">
+        <div style="display:flex; align-items:center;">
+          <span class="f5 bold gray" style="padding:0 10px; letter-spacing:0.2px;">EUR</span>
+          <span class="f7 bold" style="letter-spacing:0.28px;">X</span>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <span class="f5 bold gray" style="padding:0 10px; letter-spacing:0.2px;">USD</span>
+          <span class="f7 bold" style="letter-spacing:0.28px;">X</span>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <span class="f5 bold gray" style="padding:0 10px; letter-spacing:0.2px;">PLN</span>
+          <span class="f7 bold" style="letter-spacing:0.28px;">X</span>
+        </div>
+      </div>
+      <div style="display:flex; align-items:center; margin-left:13px; gap:23px;">
+        <div style="display:flex; align-items:center;">
+          <div style="display:flex; flex-direction:column; padding:0 4px;">
+            <span class="f5 bold gray" style="line-height:5px; letter-spacing:0.2px;">TERMIN</span>
+            <span class="f5 bold gray" style="line-height:5px; letter-spacing:0.2px;">PŁATNOŚCI</span>
+          </div>
+          <span class="f7 bold" style="letter-spacing:0.28px;">21 DNI</span>
+        </div>
+        <div style="display:flex; align-items:center;">
+          <span class="f5 bold gray" style="padding:0 10px; line-height:6px; letter-spacing:0.2px;">FORMA<br>PŁATNOŚCI</span>
+          <span class="f7 bold" style="letter-spacing:0.28px;">PRZELEW</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- DOKUMENTY DLA KIEROWCY (y613-633) -->
+  <div class="row" style="height:20px;">
+    <div class="cell w98 bt f7 bold" style="border-right:0.5px solid #000; padding:0 2px;">Dokumenty dla kierowcy:</div>
+    <div class="cell w427 bt f7 bold" style="padding:3px 2px; align-items:flex-start;">WZE, annex VIII, CMR</div>
+  </div>
+
+  <!-- GAP 8px (y633-641) -->
+  <div style="height:8px;"></div>
+
+  <!-- UWAGI DODATKOWE (y641-687) -->
+  <div class="row" style="height:46px;">
+    <div class="cell w98 bt bb f7 bold vtop" style="border-right:0.5px solid #000; padding:7px 2px;">Uwagi dodatkowe:</div>
+    <div class="cell w427 bt bb f7 vtop" style="display:block; padding:3px 2px;">Dot. frachtu w EUR: prosimy o wystawianie faktur za transport w PLN, po kursie z dnia poprzedzającego rozładunek.<br>Faktury wystawione w EUR nie będą akceptowane.<br>Dopuszczalna różnica wagowa 40 kg.<br>Wymagane pozwolenie na transport odpadów.</div>
+  </div>
+
+  <!-- KLAUZULA O ZACHOWANIU POUFNOŚCI (y687-751) -->
+  <div class="row" style="height:64px;">
+    <div class="cell w98 bt bb f7 bold vtop" style="border-right:0.5px solid #000; padding:7px 2px;">Klauzula o zachowaniu<br>poufności</div>
+    <div class="cell w427 bt bb f65 vtop" style="display:block; padding:3px 2px; line-height:8px;">Wszelkie informacje przekazane przez ODYLION Sp. z o.o. Sp. k. z siedzibą w Warszawie, KRS nr 0000474035, NIP: 9512370578<br>(dalej „ODYLION") dla celów realizacji niniejszego zlecenia transportowego, stanowią, w rozumieniu właściwych przepisów prawa,<br>informacje poufne oraz tajemnicę handlową przedsiębiorstwa ODYLION, i jako takie mogą być wykorzystywane jedynie dla celów<br>wykonania niniejszego zlecenia transportowego oraz jedynie przez podmioty wykonujące to zlecenie, w szczególności nie mogą zostać<br>bez wyraźnej zgody ODYLION, w jakikolwiek sposób ujawnione innym podmiotom aniżeli wykonującym niniejsze zlecenie transportowe.<br>Naruszenie powyższych obowiązków każdorazowo skutkować będzie odpowiedzialnością odszkodowawczą osób w sposób<br>nieuprawniony ujawniających informacje poufne i handlowe ODYLION.</div>
+  </div>
+
+  <!-- OSOBA ZLECAJĄCA (y751-809, x335-526) -->
+  <div class="osoba">
+    <div class="orow-header">
+      <div class="f7 bold">OSOBA ZLECAJĄCA:</div>
+      <div class="f7">Yaraslau Urbanovich</div>
+    </div>
+    <div class="orow email-row">
+      <div class="olabel">E-MAIL</div>
+      <div class="oval">&nbsp;</div>
+    </div>
+    <div class="orow phone-row">
+      <div class="olabel">TELEFON</div>
+      <div class="oval">&nbsp;</div>
+    </div>
+  </div>
+
+</div>
+</div>
+</body>
+</html>

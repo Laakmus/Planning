@@ -1,0 +1,613 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Widoki Tabeli — Trasa i Kolumny</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#137fec',
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+
+        /* Hover effect on table rows */
+        tr:hover td {
+            background-color: rgba(19, 127, 236, 0.04) !important;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 p-8">
+
+    <div class="max-w-[1600px] mx-auto space-y-12">
+
+        <!-- Header -->
+        <div class="mb-8">
+            <h1 class="text-3xl font-bold text-slate-800 mb-2">Widoki Tabeli Zleceń</h1>
+            <p class="text-slate-600">Dwie tabele z wybranymi stylami: Widok TRASA i Widok KOLUMNY</p>
+        </div>
+
+        <!-- ============================================ -->
+        <!-- WIDOK TRASA -->
+        <!-- ============================================ -->
+        <section>
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-slate-800">Widok: TRASA</h2>
+                <p class="text-sm text-slate-600">Kolumna Trasa z kompaktowymi węzłami (max 4 w linii, automatyczne zawijanie)</p>
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded-lg border border-slate-200">
+                <table class="w-full border-collapse text-left min-w-[1280px]">
+                    <thead class="sticky top-0 bg-slate-50 border-b z-10">
+                        <tr>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Nr zlecenia</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Status</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Rodzaj</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Trasa</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Data załadunku</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Data rozładunku</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Towar</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Firma transportowa</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Typ auta</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Stawka</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <!-- Wiersz 1: Robocze, krótka trasa (3 węzły) -->
+                        <tr class="bg-white">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0042</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                                    Robocze
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">PL</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:Nord</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L2:Recykling</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:BER</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">18.02 08:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">20.02 10:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Złom stalowy (8t, luzem)</div>
+                                    <div class="text-[11px] whitespace-nowrap">2. Aluminium (12t, paleta)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 20t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">Mega Transport</td>
+                            <td class="py-1 px-4 text-[12px]">firanka (100m³)</td>
+                            <td class="py-1 px-4 text-[12px] font-medium">3 500 PLN</td>
+                        </tr>
+
+                        <!-- Wiersz 2: Wysłane, średnia trasa (4 węzły) -->
+                        <tr class="bg-blue-50/30">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0043</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                                    Wysłane
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">EXP</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:KRK</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L2:KAT</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L3:GZE</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:HAM</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">19.02 09:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">21.02 08:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Miedź (5t, big bag)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 5t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">Express Logistic</td>
+                            <td class="py-1 px-4 text-[12px]">kontener (85m³)</td>
+                            <td class="py-1 px-4 text-[12px] font-medium">4 200 EUR</td>
+                        </tr>
+
+                        <!-- Wiersz 3: Korekta, długa trasa (11 węzłów z zawijaniem) -->
+                        <tr class="bg-orange-50/30">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0156</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                                    Korekta
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">PL</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:Nord</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L2:Recykling</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L3:MetalWay</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L4:StalPol</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L5:PolScrap</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L6:EkoMet</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L7:Metalex</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L8:RecyPol</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:CentralMet</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U2:StalHub</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U3:MetalCenter</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">18.02 08:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">20.02 10:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Złom stalowy (8t, luzem)</div>
+                                    <div class="text-[11px] whitespace-nowrap">2. Aluminium (12t, paleta)</div>
+                                    <div class="text-[11px] whitespace-nowrap">3. Miedź (5t, big bag)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 25t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">TransEuro Sp. z o.o.</td>
+                            <td class="py-1 px-4 text-[12px]">firanka (100m³)</td>
+                            <td class="py-1 px-4 text-[12px] font-medium">7 800 PLN</td>
+                        </tr>
+
+                        <!-- Wiersz 4: Korekta wysłane -->
+                        <tr class="bg-amber-50/30">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0044</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-amber-50 text-amber-700 border border-amber-200">
+                                    Korekta wysłane
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">IMP</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:MUC</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:WAW</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U2:POZ</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">22.02 06:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">23.02 14:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Stal nierdzewna (15t, paleta)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 15t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">Inter Cargo</td>
+                            <td class="py-1 px-4 text-[12px]">chłodnia (76m³)</td>
+                            <td class="py-1 px-4 text-[12px] font-medium">2 900 EUR</td>
+                        </tr>
+
+                        <!-- Wiersz 5: Zrealizowane -->
+                        <tr class="bg-emerald-50/30">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0041</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Zrealizowane
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">PL</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center space-x-1 flex-wrap gap-y-1">
+                                    <span class="bg-emerald-100 border border-emerald-500/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-emerald-700">L1:GDA</span>
+                                    <span class="text-slate-300">→</span>
+                                    <span class="bg-primary/10 border border-primary/30 px-1.5 py-0.5 rounded text-[10px] font-bold text-primary">U1:SZC</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">17.02 07:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">17.02 15:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Złom mieszany (22t, luzem)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 22t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">Fast Trans</td>
+                            <td class="py-1 px-4 text-[12px]">wywrotka (60m³)</td>
+                            <td class="py-1 px-4 text-[12px] font-medium">2 100 PLN</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- ============================================ -->
+        <!-- WIDOK KOLUMNY -->
+        <!-- ============================================ -->
+        <section>
+            <div class="mb-4">
+                <h2 class="text-2xl font-bold text-slate-800">Widok: KOLUMNY</h2>
+                <p class="text-sm text-slate-600">Osobne kolumny dla miejsc załadunku i rozładunku z okrągłymi badge'ami</p>
+            </div>
+
+            <div class="overflow-x-auto bg-white rounded-lg border border-slate-200">
+                <table class="w-full border-collapse text-left min-w-[1400px]">
+                    <thead class="sticky top-0 bg-slate-50 border-b z-10">
+                        <tr>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Nr zlecenia</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Status</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Rodzaj</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Miejsce załadunku</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Data załadunku</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Miejsce rozładunku</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Data rozładunku</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Towar</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Firma transportowa</th>
+                            <th class="py-2 px-4 text-[11px] font-bold uppercase tracking-wider text-slate-500">Typ auta</th>
+                        </tr>
+                    </thead>
+                    <tbody class="divide-y divide-slate-100">
+                        <!-- Wiersz 1: Robocze -->
+                        <tr class="bg-white">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0042</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                                    Robocze
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">PL</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-2">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                            <span class="font-medium">Nord Metals Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Kraków</div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L2</span>
+                                            <span class="font-medium">Recykling Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Katowice</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">18.02 08:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-2">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                            <span class="font-medium">MetalHub GmbH</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Berlin</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">20.02 10:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Złom stalowy (8t, luzem)</div>
+                                    <div class="text-[11px] whitespace-nowrap">2. Aluminium (12t, paleta)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 20t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">Mega Transport</td>
+                            <td class="py-1 px-4 text-[12px]">firanka (100m³)</td>
+                        </tr>
+
+                        <!-- Wiersz 2: Wysłane -->
+                        <tr class="bg-blue-50/30">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0043</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200">
+                                    Wysłane
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">EXP</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-2">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                            <span class="font-medium">StalPol Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Kraków</div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L2</span>
+                                            <span class="font-medium">MetalWay Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Katowice</div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L3</span>
+                                            <span class="font-medium">Recykling Plus Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Gliwice</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">19.02 09:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-2">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                            <span class="font-medium">SteelCentral GmbH</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Hamburg</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">21.02 08:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Miedź (5t, big bag)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 5t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">Express Logistic</td>
+                            <td class="py-1 px-4 text-[12px]">kontener (85m³)</td>
+                        </tr>
+
+                        <!-- Wiersz 3: Korekta (wiele punktów) -->
+                        <tr class="bg-orange-50/30">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0156</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-orange-50 text-orange-600 border border-orange-200">
+                                    Korekta
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">PL</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-2">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                            <span class="font-medium">Nord Metals Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Kraków</div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L2</span>
+                                            <span class="font-medium">Recykling Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Katowice</div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L3</span>
+                                            <span class="font-medium">MetalWay Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Sosnowiec</div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L4</span>
+                                            <span class="font-medium">StalPol Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Gliwice</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">18.02 08:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-2">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                            <span class="font-medium">CentralMet GmbH</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Berlin</div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U2</span>
+                                            <span class="font-medium">StalHub AG</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Hamburg</div>
+                                    </div>
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U3</span>
+                                            <span class="font-medium">MetalCenter GmbH</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział München</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">20.02 10:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Złom stalowy (8t, luzem)</div>
+                                    <div class="text-[11px] whitespace-nowrap">2. Aluminium (12t, paleta)</div>
+                                    <div class="text-[11px] whitespace-nowrap">3. Miedź (5t, big bag)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 25t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">TransEuro Sp. z o.o.</td>
+                            <td class="py-1 px-4 text-[12px]">firanka (100m³)</td>
+                        </tr>
+
+                        <!-- Wiersz 4: Zrealizowane -->
+                        <tr class="bg-emerald-50/30">
+                            <td class="py-1 px-4 text-[12px] font-medium">ZT-2026-0041</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <span class="inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full bg-emerald-50 text-emerald-700 border border-emerald-200">
+                                    Zrealizowane
+                                </span>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">PL</td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-2">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                            <span class="font-medium">PortMetal Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Gdańsk</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-emerald-100 text-emerald-700 text-[10px] font-bold">L1</span>
+                                    <span class="whitespace-nowrap">17.02 07:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-2">
+                                    <div class="space-y-1">
+                                        <div class="flex items-center gap-1.5">
+                                            <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                            <span class="font-medium">RecyHub Sp. z o.o.</span>
+                                        </div>
+                                        <div class="text-[11px] text-slate-500 pl-6">oddział Szczecin</div>
+                                    </div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="flex items-center gap-1.5">
+                                    <span class="inline-flex items-center justify-center w-5 h-5 rounded-full bg-primary/10 text-primary text-[10px] font-bold">U1</span>
+                                    <span class="whitespace-nowrap">17.02 15:00</span>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">
+                                <div class="space-y-0.5">
+                                    <div class="text-[11px] whitespace-nowrap">1. Złom mieszany (22t, luzem)</div>
+                                    <div class="text-[10px] text-slate-500 font-semibold">Razem: 22t</div>
+                                </div>
+                            </td>
+                            <td class="py-1 px-4 text-[12px]">Fast Trans</td>
+                            <td class="py-1 px-4 text-[12px]">wywrotka (60m³)</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </section>
+
+        <!-- Footer info -->
+        <div class="mt-8 p-4 bg-slate-100 border border-slate-300 rounded-lg">
+            <h3 class="text-sm font-semibold text-slate-700 mb-2">ℹ️ Kluczowe cechy stylów:</h3>
+            <ul class="text-[12px] text-slate-600 space-y-1">
+                <li><strong>Widok TRASA:</strong> Max 4 węzły w linii, automatyczne zawijanie z <code>flex-wrap gap-y-1</code></li>
+                <li><strong>Widok KOLUMNY:</strong> Okrągłe badge (w-5 h-5) z numerem + nazwa firmy + oddział z wcięciem pl-6</li>
+                <li><strong>Statusy:</strong> Bez animacji pulse, z borderami (oprócz Robocze)</li>
+                <li><strong>Firma transportowa:</strong> Tylko nazwa firmy (bez osoby kontaktowej)</li>
+                <li><strong>Kolory:</strong> Emerald dla załadunków (L), Primary/blue dla rozładunków (U)</li>
+                <li><strong>Tło wierszy:</strong> Jaśniejszy odcień koloru statusu (bg-{color}-50/30)</li>
+            </ul>
+        </div>
+
+    </div>
+
+</body>
+</html>

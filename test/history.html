@@ -1,0 +1,317 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Order Change History Timeline</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/icon?family=Material+Icons" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                },
+            },
+        }
+    </script>
+<style>
+        body {
+            font-family: 'Inter', sans-serif;
+        }
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: rgba(19, 127, 236, 0.2);
+            border-radius: 10px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: rgba(19, 127, 236, 0.4);
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 min-h-screen overflow-hidden">
+<!-- Mock Background App Content (Simulating the order edit drawer) -->
+<div class="fixed inset-0 p-8 flex flex-col gap-6 opacity-40 select-none pointer-events-none">
+<header class="flex justify-between items-center border-b border-slate-200 dark:border-slate-800 pb-4">
+<h1 class="text-2xl font-bold">Zlecenie #TRK-88291</h1>
+<div class="flex gap-2">
+<div class="h-10 w-32 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+<div class="h-10 w-10 bg-slate-200 dark:bg-slate-800 rounded-lg"></div>
+</div>
+</header>
+<div class="grid grid-cols-3 gap-6">
+<div class="h-48 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+<div class="h-48 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+<div class="h-48 bg-slate-200 dark:bg-slate-800 rounded-xl"></div>
+</div>
+<div class="h-96 bg-slate-200 dark:bg-slate-800 rounded-xl w-full"></div>
+</div>
+<!-- Dark Backdrop for Side Sheet -->
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"></div>
+<!-- Change History Side Sheet (~450px wide) -->
+<aside class="fixed right-0 top-0 h-full w-[450px] bg-background-light dark:bg-[#16202a] shadow-2xl z-50 flex flex-col border-l border-slate-200 dark:border-slate-800">
+<!-- Header -->
+<div class="p-5 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between sticky top-0 bg-background-light/80 dark:bg-[#16202a]/80 backdrop-blur-md z-10">
+<div>
+<h2 class="text-lg font-semibold flex items-center gap-2">
+<span class="material-icons text-primary text-xl">history</span>
+                    Historia zmian
+                </h2>
+<p class="text-xs text-slate-500 dark:text-slate-400 font-medium">Zlecenie #TRK-88291</p>
+</div>
+<button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors text-slate-400">
+<span class="material-icons">close</span>
+</button>
+</div>
+<!-- Scrollable Timeline Content -->
+<div class="flex-1 overflow-y-auto custom-scrollbar px-6 py-4">
+
+<!-- ===== Date Group: Dzisiaj ===== -->
+<div class="mb-8">
+<div class="flex items-center gap-4 mb-6">
+<span class="text-xs font-bold uppercase tracking-wider text-primary/80">Dzisiaj</span>
+<div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div>
+</div>
+<div class="relative space-y-8">
+<!-- Vertical Line -->
+<div class="absolute left-[17px] top-2 bottom-0 w-[2px] bg-slate-200 dark:bg-slate-800"></div>
+
+<!-- Entry 1: Field Change (single field — edit icon badge) -->
+<div class="relative pl-12">
+<!-- Avatar on timeline -->
+<div class="absolute left-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
+<span class="text-xs font-bold text-white">MK</span>
+</div>
+<!-- Icon badge (edit) — positioned bottom-right of avatar -->
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">edit</span>
+</div>
+<div class="flex justify-between items-start">
+<span class="text-sm font-semibold">Marek Kowalski</span>
+<span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">14:20</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana pola</p>
+<div class="mt-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+<label class="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Waga ładunku</label>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-[10px] uppercase font-bold text-slate-400">Było</label>
+<p class="text-sm line-through opacity-50">1200 kg</p>
+</div>
+<div>
+<label class="text-[10px] uppercase font-bold text-primary">Jest</label>
+<p class="text-sm font-bold">1500 kg</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Entry 2: Status Change (sync icon badge) -->
+<div class="relative pl-12">
+<!-- Avatar on timeline -->
+<div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
+<span class="text-xs font-bold text-slate-600 dark:text-slate-300">AN</span>
+</div>
+<!-- Icon badge (sync) -->
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">sync</span>
+</div>
+<div class="flex justify-between items-start">
+<span class="text-sm font-semibold">Anna Nowak</span>
+<span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">11:05</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana statusu</p>
+<!-- Status badges: old → new (using StatusBadge styles from ui-plan 6.4) -->
+<div class="mt-3 flex items-center gap-2">
+<!-- Robocze badge (no border per spec) -->
+<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-100 text-slate-700 dark:bg-slate-800 dark:text-slate-300">Robocze</span>
+<span class="material-icons text-sm text-slate-400">arrow_forward</span>
+<!-- Wysłane badge (blue with border per spec) -->
+<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">Wysłane</span>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ===== Date Group: Wczoraj ===== -->
+<div class="mb-8">
+<div class="flex items-center gap-4 mb-6">
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">Wczoraj</span>
+<div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div>
+</div>
+<div class="relative space-y-8">
+<!-- Vertical Line -->
+<div class="absolute left-[17px] top-2 bottom-0 w-[2px] bg-slate-200 dark:bg-slate-800"></div>
+
+<!-- Entry 3: Field Change — carrier assignment (edit icon badge) -->
+<div class="relative pl-12">
+<div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
+<span class="text-xs font-bold text-slate-600 dark:text-slate-300">SY</span>
+</div>
+<!-- Icon badge (edit) -->
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-amber-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">edit</span>
+</div>
+<div class="flex justify-between items-start">
+<span class="text-sm font-semibold">System</span>
+<span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">16:45</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana pola</p>
+<div class="mt-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
+<label class="text-[9px] uppercase font-bold text-slate-400 block mb-1.5">Firma transportowa</label>
+<div class="grid grid-cols-2 gap-4">
+<div>
+<label class="text-[10px] uppercase font-bold text-slate-400">Było</label>
+<p class="text-sm line-through opacity-50 italic text-slate-400">— brak —</p>
+</div>
+<div>
+<label class="text-[10px] uppercase font-bold text-primary">Jest</label>
+<p class="text-sm font-bold">DHL Express Sp. z o.o.</p>
+</div>
+</div>
+</div>
+</div>
+
+<!-- Entry 4: Multiple Fields Change (playlist_add_check icon badge) -->
+<div class="relative pl-12">
+<div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
+<span class="text-xs font-bold text-slate-600 dark:text-slate-300">MK</span>
+</div>
+<!-- Icon badge (playlist_add_check — multi-field) -->
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-violet-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">playlist_add_check</span>
+</div>
+<div class="flex justify-between items-start">
+<span class="text-sm font-semibold">Marek Kowalski</span>
+<span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">09:12</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana wielu pól (Rozładunek U1)</p>
+<!-- List of old→new field values -->
+<div class="mt-3 space-y-2">
+<div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800">
+<label class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Miejscowość</label>
+<div class="flex items-center gap-2">
+<span class="text-xs line-through opacity-50">Berlin</span>
+<span class="material-icons text-[12px] text-slate-400">east</span>
+<span class="text-xs font-bold">Poczdam</span>
+</div>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800">
+<label class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Kod pocztowy</label>
+<div class="flex items-center gap-2">
+<span class="text-xs line-through opacity-50">10115</span>
+<span class="material-icons text-[12px] text-slate-400">east</span>
+<span class="text-xs font-bold">14467</span>
+</div>
+</div>
+<div class="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-2.5 border border-slate-100 dark:border-slate-800">
+<label class="text-[9px] uppercase font-bold text-slate-400 block mb-1">Adres</label>
+<div class="flex items-center gap-2">
+<span class="text-xs line-through opacity-50">Alexanderplatz 1</span>
+<span class="material-icons text-[12px] text-slate-400">east</span>
+<span class="text-xs font-bold">Am Neuen Palais 10</span>
+</div>
+</div>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ===== Date Group: 8 lut 2026 ===== -->
+<div class="mb-8">
+<div class="flex items-center gap-4 mb-6">
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">8 lut 2026</span>
+<div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div>
+</div>
+<div class="relative space-y-8">
+
+<!-- Entry 5: Status Change — Reklamacja (sync badge, red status) -->
+<div class="relative pl-12">
+<div class="absolute left-0 w-9 h-9 rounded-full bg-slate-200 dark:bg-slate-800 flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10">
+<span class="text-xs font-bold text-slate-600 dark:text-slate-300">AN</span>
+</div>
+<div class="absolute left-6 top-5 w-4 h-4 rounded-full bg-blue-500 flex items-center justify-center ring-2 ring-background-light dark:ring-[#16202a] z-20">
+<span class="material-icons text-white" style="font-size:10px">sync</span>
+</div>
+<div class="flex justify-between items-start">
+<span class="text-sm font-semibold">Anna Nowak</span>
+<span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">10:30</span>
+</div>
+<p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5">Zmiana statusu</p>
+<div class="mt-3 flex items-center gap-2">
+<!-- Wysłane badge -->
+<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-blue-50 text-blue-600 border border-blue-200 dark:bg-blue-900/30 dark:text-blue-400 dark:border-blue-800">Wysłane</span>
+<span class="material-icons text-sm text-slate-400">arrow_forward</span>
+<!-- Reklamacja badge -->
+<span class="inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full bg-red-50 text-red-600 border border-red-200 dark:bg-red-900/30 dark:text-red-400 dark:border-red-800">Reklamacja</span>
+</div>
+</div>
+
+</div>
+</div>
+
+<!-- ===== Date Group: 5 lut 2026 (Order Creation) ===== -->
+<div class="mb-8">
+<div class="flex items-center gap-4 mb-6">
+<span class="text-xs font-bold uppercase tracking-wider text-slate-400">5 lut 2026</span>
+<div class="h-[1px] flex-1 bg-slate-200 dark:bg-slate-800"></div>
+</div>
+<div class="relative space-y-8">
+
+<!-- Entry 6: Order Creation (rocket_launch icon — special entry) -->
+<div class="relative pl-12 pb-4">
+<div class="absolute left-0 w-9 h-9 rounded-full bg-primary flex items-center justify-center ring-4 ring-background-light dark:ring-[#16202a] z-10 shadow-lg shadow-primary/20">
+<span class="material-icons text-white text-lg">rocket_launch</span>
+</div>
+<div class="flex justify-between items-start">
+<span class="text-sm font-semibold">System (API)</span>
+<span class="text-[11px] font-mono text-slate-500 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded">08:00</span>
+</div>
+<div class="mt-2 bg-primary/5 dark:bg-primary/10 border border-primary/20 rounded-xl p-4">
+<p class="text-sm font-bold text-primary mb-1">Zlecenie utworzone</p>
+<p class="text-xs text-slate-500 dark:text-slate-400 leading-relaxed">Zaimportowano zlecenie z systemu ERP. Wygenerowano identyfikator TRK-88291.</p>
+</div>
+</div>
+
+</div>
+</div>
+
+</div>
+<!-- Footer / Legend -->
+<div class="p-4 border-t border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-[#101922]">
+<div class="flex items-center justify-center gap-6 opacity-60">
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-primary"></div>
+<span class="text-[10px] font-bold uppercase">Systemowe</span>
+</div>
+<div class="flex items-center gap-1.5">
+<div class="w-2 h-2 rounded-full bg-slate-400"></div>
+<span class="text-[10px] font-bold uppercase">Manualne</span>
+</div>
+</div>
+</div>
+</aside>
+</body></html>

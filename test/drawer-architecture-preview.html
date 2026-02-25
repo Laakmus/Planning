@@ -1,0 +1,735 @@
+<!DOCTYPE html>
+<html class="" lang="pl">
+<head>
+    <meta charset="utf-8">
+    <meta content="width=device-width, initial-scale=1.0" name="viewport">
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#137fec",
+                        "background-light": "#f6f7f8",
+                        "background-dark": "#101922",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    gridTemplateColumns: {
+                        "route": "11fr 6fr 3fr 3fr"
+                    },
+                },
+            },
+        }
+    </script>
+    <title>Drawer Edycji Zlecenia - Architektura UI</title>
+</head>
+<body class="font-display bg-background-light dark:bg-background-dark text-slate-900 dark:text-slate-100 min-h-screen overflow-hidden">
+
+<!-- Dashboard Background (Dimmed) -->
+<div class="fixed inset-0 grid grid-cols-12 gap-6 p-6 opacity-40 pointer-events-none">
+    <div class="col-span-3 space-y-4">
+        <div class="h-10 bg-primary/10 rounded-lg"></div>
+        <div class="h-64 bg-slate-800/50 rounded-lg border border-slate-700"></div>
+        <div class="h-64 bg-slate-800/50 rounded-lg border border-slate-700"></div>
+    </div>
+    <div class="col-span-9 space-y-4">
+        <div class="h-20 bg-slate-800/50 rounded-lg border border-slate-700 flex items-center px-4 gap-4">
+            <div class="w-12 h-12 rounded-full bg-slate-700"></div>
+            <div class="h-4 w-48 bg-slate-700 rounded"></div>
+        </div>
+        <div class="h-[calc(100vh-140px)] bg-slate-800/50 rounded-lg border border-slate-700 p-4">
+            <div class="space-y-4">
+                <div class="h-10 bg-slate-700/50 rounded w-full"></div>
+                <div class="h-10 bg-slate-700/50 rounded w-full"></div>
+                <div class="h-10 bg-slate-700/50 rounded w-full"></div>
+                <div class="h-10 bg-slate-700/50 rounded w-full"></div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- Backdrop Overlay -->
+<div class="fixed inset-0 bg-black/60 backdrop-blur-sm z-40"></div>
+
+<!-- Drawer (Sheet) -->
+<div class="fixed top-0 right-0 h-full w-full max-w-[800px] bg-background-light dark:bg-[#0d151c] z-50 shadow-2xl flex flex-col border-l border-slate-200 dark:border-slate-800">
+
+    <!-- Header (Sticky) -->
+    <header class="shrink-0 px-6 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white dark:bg-[#0d151c]">
+        <div class="flex items-center gap-4">
+            <button class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500" title="Zamknij (Escape)">
+                <span class="material-icons-round">close</span>
+            </button>
+            <div>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-xl font-bold tracking-tight">Zlecenie #ZT-2026-0042</h1>
+                    <span class="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                        WYSŁANE
+                    </span>
+                </div>
+                <p class="text-xs text-slate-500 mt-0.5">Utworzono: 11.02.2026 09:15 przez Jan Kowalski</p>
+            </div>
+        </div>
+        <div class="flex items-center gap-4">
+            <button id="theme-toggle" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500 dark:text-slate-400 transition-colors" title="Przełącz tryb jasny/ciemny">
+                <span class="material-icons-round dark:hidden">dark_mode</span>
+                <span class="material-icons-round hidden dark:inline">light_mode</span>
+            </button>
+            <a class="text-sm font-medium text-primary hover:underline flex items-center gap-1" href="#">
+                <span class="material-icons-round text-sm">history</span>
+                Historia zmian
+            </a>
+        </div>
+    </header>
+
+    <!-- Scrollable Content -->
+    <div class="flex-1 overflow-y-auto p-6 space-y-8 custom-scrollbar">
+
+        <!-- SEKCJA 2: Trasa -->
+        <section class="space-y-4">
+            <div class="flex items-center justify-between mb-2">
+                <div class="flex items-center gap-2">
+                    <span class="material-icons-round text-primary">route</span>
+                    <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 1: Trasa</h2>
+                </div>
+            </div>
+
+            <!-- Rodzaj transportu -->
+            <div class="space-y-1.5">
+                <label class="text-xs font-semibold text-slate-400">Rodzaj transportu *</label>
+                <select class="w-full bg-white dark:bg-slate-900/50 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm">
+                    <option>krajowy</option>
+                    <option selected>eksport drogowy</option>
+                    <option>kontener morski</option>
+                    <option>import</option>
+                </select>
+                <p class="text-xs text-slate-500 italic">Zmiana rodzaju transportu auto-aktualizuje walutę w Sekcji 4</p>
+            </div>
+
+            <!-- Punkty trasy -->
+            <div class="space-y-3 mt-4">
+                <div class="flex items-center justify-between mb-3">
+                    <h3 class="text-xs font-bold uppercase text-slate-400">Punkty trasy (min. 1 załadunek + 1 rozładunek)</h3>
+                </div>
+
+                <!-- Załadunek L1 -->
+                <div class="flex gap-2 items-start">
+                    <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                    <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-emerald-500/50 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded uppercase">L1: Załadunek</span>
+                            <button class="text-slate-500 hover:text-red-500" title="Usuń punkt">
+                                <span class="material-icons-round text-lg">close</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                            <div class="col-span-2 md:col-span-1 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">business</span>
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="Nord Sp. z o.o." placeholder="Firma">
+                            </div>
+                            <div class="col-span-1 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span>
+                                <select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2">
+                                    <option>Gorzyce</option>
+                                    <option>Kraków</option>
+                                </select>
+                            </div>
+                            <div class="col-span-1 relative">
+                                <input class="w-full text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7" type="text" value="12.02" placeholder="dd.mm">
+                                <span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">calendar_today</span>
+                            </div>
+                            <div class="col-span-1 flex items-center gap-1">
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="time" value="08:00">
+                            </div>
+                        </div>
+                        <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <span class="material-icons-round text-sm">home</span>
+                            <span>ul. Przemysłowa 15, 44-300 Gorzyce, Polska</span>
+                        </div>
+                        <div class="mt-2 flex items-center gap-1">
+                            <span class="material-icons-round text-slate-500 text-sm">comment</span>
+                            <input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="" placeholder="Komentarz do punktu trasy...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rozładunek U1 -->
+                <div class="flex gap-2 items-start">
+                    <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                    <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-blue-500/50 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded uppercase">U1: Rozładunek</span>
+                            <button class="text-slate-500 hover:text-red-500" title="Usuń punkt">
+                                <span class="material-icons-round text-lg">close</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                            <div class="col-span-2 md:col-span-1 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">business</span>
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="Berlina Logistik GmbH" placeholder="Firma">
+                            </div>
+                            <div class="col-span-1 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span>
+                                <select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2">
+                                    <option>Berlin</option>
+                                    <option>Hamburg</option>
+                                </select>
+                            </div>
+                            <div class="col-span-1 relative">
+                                <input class="w-full text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7" type="text" value="13.02" placeholder="dd.mm">
+                                <span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">calendar_today</span>
+                            </div>
+                            <div class="col-span-1 flex items-center gap-1">
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="time" value="09:00">
+                            </div>
+                        </div>
+                        <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <span class="material-icons-round text-sm">home</span>
+                            <span>Berliner Str. 100, 10115 Berlin, Germany</span>
+                        </div>
+                        <div class="mt-2 flex items-center gap-1">
+                            <span class="material-icons-round text-slate-500 text-sm">comment</span>
+                            <input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="rozładunek od 8:00 do 15:00" placeholder="Komentarz do punktu trasy...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Załadunek L2 -->
+                <div class="flex gap-2 items-start">
+                    <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                    <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-emerald-500/50 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold px-2 py-0.5 bg-emerald-500/10 text-emerald-500 rounded uppercase">L2: Załadunek</span>
+                            <button class="text-slate-500 hover:text-red-500" title="Usuń punkt">
+                                <span class="material-icons-round text-lg">close</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                            <div class="col-span-2 md:col-span-1 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">business</span>
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="Metalex Sp. z o.o." placeholder="Firma">
+                            </div>
+                            <div class="col-span-1 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span>
+                                <select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2">
+                                    <option>Katowice</option>
+                                </select>
+                            </div>
+                            <div class="col-span-1 relative">
+                                <input class="w-full text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7" type="text" value="12.02" placeholder="dd.mm">
+                                <span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">calendar_today</span>
+                            </div>
+                            <div class="col-span-1 flex items-center gap-1">
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="time" value="14:00">
+                            </div>
+                        </div>
+                        <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <span class="material-icons-round text-sm">home</span>
+                            <span>ul. Stalowa 22, 40-123 Katowice, Polska</span>
+                        </div>
+                        <div class="mt-2 flex items-center gap-1">
+                            <span class="material-icons-round text-slate-500 text-sm">comment</span>
+                            <input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="wjazd od ul. Stalowej" placeholder="Komentarz do punktu trasy...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Rozładunek U2 -->
+                <div class="flex gap-2 items-start">
+                    <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                    <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-blue-500/50 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold px-2 py-0.5 bg-blue-500/10 text-blue-500 rounded uppercase">U2: Rozładunek</span>
+                            <button class="text-slate-500 hover:text-red-500" title="Usuń punkt">
+                                <span class="material-icons-round text-lg">close</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-2 md:grid-cols-route gap-2">
+                            <div class="col-span-2 md:col-span-1 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">business</span>
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="Hamburg Metals GmbH" placeholder="Firma">
+                            </div>
+                            <div class="col-span-1 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">location_on</span>
+                                <select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2">
+                                    <option>Hamburg</option>
+                                </select>
+                            </div>
+                            <div class="col-span-1 relative">
+                                <input class="w-full text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 pl-2 pr-7" type="text" value="14.02" placeholder="dd.mm">
+                                <span class="material-icons-round text-slate-400 text-base absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none">calendar_today</span>
+                            </div>
+                            <div class="col-span-1 flex items-center gap-1">
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="time" value="10:30">
+                            </div>
+                        </div>
+                        <div class="mt-2 text-xs text-slate-500 dark:text-slate-400 flex items-center gap-1">
+                            <span class="material-icons-round text-sm">home</span>
+                            <span>Hafenstr. 45, 20097 Hamburg, Germany</span>
+                        </div>
+                        <div class="mt-2 flex items-center gap-1">
+                            <span class="material-icons-round text-slate-500 text-sm">comment</span>
+                            <input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="" placeholder="Komentarz do punktu trasy...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Przyciski dodawania punktów trasy -->
+                <div class="flex gap-2 mt-4">
+                    <button class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-emerald-500/10 text-emerald-500 border border-emerald-500/30 rounded-lg hover:bg-emerald-500/20 hover:border-emerald-500/50 transition-all">
+                        <span class="material-icons-round text-base">add_circle</span>
+                        Dodaj punkt załadunku (max 8)
+                    </button>
+                    <button class="flex-1 flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-blue-500/10 text-blue-500 border border-blue-500/30 rounded-lg hover:bg-blue-500/20 hover:border-blue-500/50 transition-all">
+                        <span class="material-icons-round text-base">add_circle</span>
+                        Dodaj punkt rozładunku (max 3)
+                    </button>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKCJA 3: Towar -->
+        <section class="space-y-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-icons-round text-amber-500">inventory_2</span>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 2: Towar</h2>
+            </div>
+
+            <!-- Lista towarów -->
+            <div class="space-y-3">
+                <!-- Produkt 1 -->
+                <div class="flex gap-2 items-start">
+                    <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                    <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-amber-500/50 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase">Produkt 1</span>
+                            <button class="text-slate-500 hover:text-red-500" title="Usuń produkt">
+                                <span class="material-icons-round text-lg">close</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-12 gap-2">
+                            <div class="col-span-12 md:col-span-6 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">label</span>
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="miedź wire rod" placeholder="Nazwa towaru">
+                            </div>
+                            <div class="col-span-6 md:col-span-2 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">scale</span>
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="number" value="5" step="0.1" min="0" placeholder="t">
+                            </div>
+                            <div class="col-span-6 md:col-span-4 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">widgets</span>
+                                <select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2">
+                                    <option>paleta</option>
+                                    <option selected>paleta + BigBag</option>
+                                    <option>luzem</option>
+                                    <option>kosze</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-2 flex items-center gap-1">
+                            <span class="material-icons-round text-slate-500 text-sm">comment</span>
+                            <input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="ładujemy na końcu naczepy" placeholder="Komentarz...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Produkt 2 -->
+                <div class="flex gap-2 items-start">
+                    <span class="material-icons-round text-slate-400 cursor-grab active:cursor-grabbing text-base mt-1">drag_indicator</span>
+                    <div class="flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 hover:border-amber-500/50 transition-all">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-xs font-bold px-2 py-0.5 bg-amber-500/10 text-amber-500 rounded uppercase">Produkt 2</span>
+                            <button class="text-slate-500 hover:text-red-500" title="Usuń produkt">
+                                <span class="material-icons-round text-lg">close</span>
+                            </button>
+                        </div>
+                        <div class="grid grid-cols-12 gap-2">
+                            <div class="col-span-12 md:col-span-6 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">label</span>
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="text" value="miedź milbera" placeholder="Nazwa towaru">
+                            </div>
+                            <div class="col-span-6 md:col-span-2 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">scale</span>
+                                <input class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2" type="number" value="10" step="0.1" min="0" placeholder="t">
+                            </div>
+                            <div class="col-span-6 md:col-span-4 flex items-center gap-1">
+                                <span class="material-icons-round text-slate-500 text-base shrink-0">widgets</span>
+                                <select class="flex-1 min-w-0 text-sm bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1.5 px-2">
+                                    <option selected>paleta</option>
+                                    <option>paleta + BigBag</option>
+                                    <option>luzem</option>
+                                    <option>kosze</option>
+                                </select>
+                            </div>
+                        </div>
+                        <div class="mt-2 flex items-center gap-1">
+                            <span class="material-icons-round text-slate-500 text-sm">comment</span>
+                            <input class="flex-1 text-xs bg-white dark:bg-slate-800/50 border-slate-200 dark:border-slate-700 rounded-lg py-1 px-2 text-slate-500 dark:text-slate-400" type="text" value="ładuje tylko Otwock" placeholder="Komentarz...">
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Podsumowanie -->
+                <div class="p-3 bg-slate-50 dark:bg-slate-800/30 rounded-lg border border-slate-200 dark:border-slate-800">
+                    <div class="flex items-center gap-2">
+                        <span class="material-icons-round text-slate-500 text-base">summarize</span>
+                        <span class="text-sm font-bold text-slate-400">Razem: 15t</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Przycisk dodawania asortymentu -->
+            <button class="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs font-semibold bg-amber-500/10 text-amber-500 border border-amber-500/30 rounded-lg hover:bg-amber-500/20 hover:border-amber-500/50 transition-all">
+                <span class="material-icons-round text-base">add_circle</span>
+                Dodaj kolejny asortyment
+            </button>
+        </section>
+
+        <!-- SEKCJA 4: Firma transportowa (Wariant 2: Subtle background) -->
+        <section class="space-y-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-icons-round text-violet-500">local_shipping</span>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 3: Firma transportowa</h2>
+            </div>
+            <div class="p-3 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800 space-y-2">
+                <!-- Row 1: Firma 50% + Typ auta 30% + Objętość 20% -->
+                <div class="flex gap-2">
+                    <div class="basis-1/2 min-w-0">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Nazwa firmy (przewoźnik) *</label>
+                        <input class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2" type="text" value="Transport Express Sp. z o.o." placeholder="Wpisz nazwę przewoźnika...">
+                        <p class="text-[11px] text-slate-400 dark:text-slate-500 mt-0.5 pl-0.5">NIP: PL9876543210</p>
+                    </div>
+                    <div class="basis-[30%] min-w-0">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Typ auta *</label>
+                        <select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2">
+                            <option selected>Firanka</option>
+                            <option>Hakowiec</option>
+                            <option>Wywrotka</option>
+                            <option>Bus</option>
+                            <option>Hakowiec z HDS</option>
+                        </select>
+                    </div>
+                    <div class="basis-[20%] min-w-0">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Objętość *</label>
+                        <select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2">
+                            <option>10 m³</option>
+                            <option>20 m³</option>
+                            <option>30 m³</option>
+                            <option selected>90 m³</option>
+                            <option>100 m³</option>
+                        </select>
+                    </div>
+                </div>
+                <!-- Row 2: Dokumenty full width -->
+                <div>
+                    <label class="text-xs font-semibold text-slate-400 block mb-1">Wymagane dokumenty</label>
+                    <select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2">
+                        <option selected>WZ, KPO, kwit wagowy</option>
+                        <option>WZE, Aneks VII, CMR</option>
+                    </select>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKCJA 5: Finanse -->
+        <section class="space-y-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-icons-round text-yellow-500">payments</span>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 4: Finanse</h2>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-3 p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div class="flex items-center gap-2">
+                    <span class="material-icons-round text-slate-500 text-lg">attach_money</span>
+                    <div class="flex-1">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Stawka *</label>
+                        <div class="relative">
+                            <input class="w-full pr-12 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2" type="number" value="1450" step="0.01" min="0">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">PLN</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-icons-round text-slate-500 text-lg">currency_exchange</span>
+                    <div class="flex-1">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Waluta *</label>
+                        <select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2">
+                            <option selected>PLN</option>
+                            <option>EUR</option>
+                            <option>USD</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-icons-round text-slate-500 text-lg">event_available</span>
+                    <div class="flex-1">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Termin płatności</label>
+                        <div class="relative">
+                            <input class="w-full pr-12 bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2" type="number" value="21" min="0">
+                            <span class="absolute right-3 top-1/2 -translate-y-1/2 text-xs font-bold text-slate-500">dni</span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center gap-2">
+                    <span class="material-icons-round text-slate-500 text-lg">account_balance</span>
+                    <div class="flex-1">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Forma płatności</label>
+                        <select class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-1.5 px-2">
+                            <option selected>Przelew</option>
+                            <option>Gotówka</option>
+                            <option>Karta</option>
+                        </select>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKCJA 6: Uwagi -->
+        <section class="space-y-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-icons-round text-slate-400">comment</span>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 5: Uwagi</h2>
+            </div>
+            <div class="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800">
+                <div class="flex items-start gap-2">
+                    <span class="material-icons-round text-slate-500 text-lg mt-1">notes</span>
+                    <div class="flex-1">
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Uwagi ogólne do zlecenia</label>
+                        <textarea class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-2 px-3" rows="4" maxlength="1000" placeholder="Wprowadź uwagi do zlecenia (max 1000 znaków)...">Proszę o kontakt telefoniczny 30 minut przed dotarciem na miejsce załadunku.</textarea>
+                        <p class="text-xs text-slate-500 text-right mt-1">42 / 1000 znaków</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEKCJA 7: Sekcja zmian (Status) -->
+        <section class="space-y-4">
+            <div class="flex items-center gap-2 mb-2">
+                <span class="material-icons-round text-indigo-500">swap_horiz</span>
+                <h2 class="text-sm font-bold uppercase tracking-wider text-slate-500">Sekcja 6: Zmiana statusu</h2>
+            </div>
+            <div class="p-4 bg-slate-50 dark:bg-slate-900/20 rounded-xl border border-slate-200 dark:border-slate-800 space-y-4">
+                <!-- Aktualny status -->
+                <div class="flex items-center gap-3">
+                    <span class="material-icons-round text-slate-500 text-lg">label</span>
+                    <div>
+                        <label class="text-xs font-semibold text-slate-400 block mb-1">Aktualny status</label>
+                        <span class="px-3 py-1.5 rounded-lg text-sm font-semibold bg-blue-500/20 text-blue-400 border border-blue-500/30">
+                            Wysłane
+                        </span>
+                    </div>
+                </div>
+
+                <!-- Przyciski wyboru statusu -->
+                <div>
+                    <div class="flex items-center gap-2 mb-2">
+                        <span class="material-icons-round text-slate-500 text-lg">sync_alt</span>
+                        <label class="text-xs font-semibold text-slate-400">Zmień na:</label>
+                    </div>
+                    <div class="flex flex-wrap gap-2">
+                        <button data-status="Zrealizowane" class="status-btn px-4 py-2 rounded-lg text-sm font-semibold bg-green-500/10 text-green-500 border-2 border-green-500/30 hover:bg-green-500/20 hover:border-green-500/50 transition-all">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-icons-round text-base">check_circle</span>
+                                Zrealizowane
+                            </div>
+                        </button>
+                        <button data-status="Reklamacja" class="status-btn px-4 py-2 rounded-lg text-sm font-semibold bg-red-500/10 text-red-500 border-2 border-red-500/30 hover:bg-red-500/20 hover:border-red-500/50 transition-all ring-2 ring-offset-2 ring-red-500">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-icons-round text-base">report_problem</span>
+                                Reklamacja
+                            </div>
+                        </button>
+                        <button data-status="Anulowane" class="status-btn px-4 py-2 rounded-lg text-sm font-semibold bg-slate-500/10 text-slate-500 border-2 border-slate-500/30 hover:bg-slate-500/20 hover:border-slate-500/50 transition-all">
+                            <div class="flex items-center gap-1.5">
+                                <span class="material-icons-round text-base">cancel</span>
+                                Anulowane
+                            </div>
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Pole powodu reklamacji (ukryte domyślnie) -->
+                <div class="" id="complaint-reason-field">
+                    <div class="flex items-start gap-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
+                        <span class="material-icons-round text-red-500 text-lg mt-1">report_problem</span>
+                        <div class="flex-1">
+                            <label class="text-xs font-semibold text-slate-400 block mb-1">Powód reklamacji *</label>
+                            <textarea class="w-full bg-white dark:bg-slate-900 border-slate-200 dark:border-slate-800 rounded-lg focus:ring-primary focus:border-primary text-sm py-2 px-3" rows="3" placeholder="Wymagane przy zmianie statusu na Reklamacja..."></textarea>
+                            <p class="text-xs text-red-500 mt-1">⚠️ Pole wymagane przy przejściu na status Reklamacja</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Informacja -->
+                <div class="flex items-start gap-2 pt-2 border-t border-slate-200 dark:border-slate-800">
+                    <span class="material-icons-round text-slate-500 text-base">info</span>
+                    <p class="text-xs text-slate-500">
+                        Zmiana statusu zostanie zapisana razem z całym formularzem przy kliknięciu "Zapisz" w stopce
+                    </p>
+                </div>
+            </div>
+        </section>
+
+        <!-- Alert walidacji biznesowej (przykład) -->
+        <div class="hidden p-4 bg-red-500/10 border border-red-500/30 rounded-xl">
+            <div class="flex items-start gap-3">
+                <span class="material-icons-round text-red-500">error_outline</span>
+                <div class="flex-1">
+                    <h3 class="text-sm font-bold text-red-500 mb-1">Nie można wysłać zlecenia</h3>
+                    <p class="text-xs text-slate-300 mb-2">Uzupełnij wymagane pola przed wysyłką:</p>
+                    <ul class="text-xs text-slate-400 list-disc list-inside">
+                        <li>Przewoźnik (Sekcja 3)</li>
+                        <li>Data załadunku w punkcie L1 (Sekcja 1)</li>
+                        <li>Min. 1 pozycja towarowa z ilością (Sekcja 2)</li>
+                    </ul>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Sticky Footer -->
+    <footer class="shrink-0 p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-[#0d151c] flex items-center justify-between">
+        <div class="flex items-center gap-2">
+            <button class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="POST /api/v1/orders/{id}/pdf">
+                <span class="material-icons-round text-lg">picture_as_pdf</span>
+                Generuj PDF
+            </button>
+            <button class="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors" title="POST /api/v1/orders/{id}/prepare-email - Walidacja biznesowa 422">
+                <span class="material-icons-round text-lg">mail_outline</span>
+                Wyślij maila
+            </button>
+            <a href="#" class="inline-flex items-center gap-1 px-3 py-2 text-sm font-medium text-primary hover:bg-primary/10 rounded-lg transition-colors">
+                <span class="material-icons-round text-sm">history</span>
+                Historia zmian
+            </a>
+        </div>
+        <div class="flex items-center gap-3">
+            <button class="px-6 py-2 text-sm font-medium text-slate-500 hover:text-slate-700 dark:hover:text-slate-300" title="Zamknięcie z niezapisanymi zmianami → modal z 3 opcjami">
+                Zamknij
+            </button>
+            <button class="px-8 py-2 text-sm font-bold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-[0.98]" title="PUT /api/v1/orders/{id} - Zapis wszystkich zmian">
+                Zapisz
+            </button>
+        </div>
+    </footer>
+</div>
+
+<!-- Info Panel (tryb edycji / readonly) -->
+<div class="fixed bottom-6 left-6 z-50 bg-slate-800/90 backdrop-blur-sm border border-slate-700 rounded-xl p-4 max-w-xs shadow-2xl">
+    <div class="flex items-center gap-2 mb-2">
+        <span class="material-icons-round text-green-400 text-sm">lock_open</span>
+        <h3 class="text-xs font-bold text-green-400 uppercase">Tryb: Edycja</h3>
+    </div>
+    <p class="text-xs text-slate-400">
+        Drawer otwarty w trybie edycji (lock sukces 200). Wszystkie pola edytowalne. Role: ADMIN, PLANNER.
+    </p>
+    <div class="mt-3 pt-3 border-t border-slate-700">
+        <p class="text-xs text-slate-500 mb-1">Endpointy:</p>
+        <ul class="text-xs text-slate-400 space-y-1">
+            <li>✓ POST /orders/{id}/lock</li>
+            <li>✓ GET /orders/{id}</li>
+            <li>→ PUT /orders/{id} (Zapisz)</li>
+            <li>→ POST /orders/{id}/unlock (Zamknij)</li>
+        </ul>
+    </div>
+</div>
+
+<style>
+    .custom-scrollbar::-webkit-scrollbar {
+        width: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+        background: transparent;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+        background: #334155;
+        border-radius: 10px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+        background: #475569;
+    }
+
+    /* Dodatkowe animacje */
+    @keyframes slideIn {
+        from { transform: translateX(100%); }
+        to { transform: translateX(0); }
+    }
+
+    .z-50 > div:first-child {
+        animation: slideIn 0.3s ease-out;
+    }
+</style>
+
+<script>
+    // Theme Toggle - Przełącznik trybu jasny/ciemny
+    const themeToggle = document.getElementById('theme-toggle');
+    const htmlElement = document.documentElement;
+
+    if (themeToggle) {
+        themeToggle.addEventListener('click', function() {
+            htmlElement.classList.toggle('dark');
+
+            // Zapisz preferencję użytkownika w localStorage
+            if (htmlElement.classList.contains('dark')) {
+                localStorage.setItem('theme', 'dark');
+            } else {
+                localStorage.setItem('theme', 'light');
+            }
+        });
+    }
+
+    // Przywróć zapisaną preferencję przy załadowaniu strony
+    const savedTheme = localStorage.getItem('theme');
+    if (savedTheme === 'light') {
+        htmlElement.classList.remove('dark');
+    } else if (savedTheme === 'dark') {
+        htmlElement.classList.add('dark');
+    }
+
+    // Interaktywność: obsługa przycisków statusu
+    const statusButtons = document.querySelectorAll('.status-btn');
+    const complaintField = document.getElementById('complaint-reason-field');
+
+    statusButtons.forEach(button => {
+        button.addEventListener('click', function() {
+            const selectedStatus = this.getAttribute('data-status');
+
+            // Usuń zaznaczenie z wszystkich przycisków
+            statusButtons.forEach(btn => {
+                btn.classList.remove('ring-2', 'ring-offset-2');
+                btn.classList.remove('ring-green-500', 'ring-red-500', 'ring-slate-500');
+            });
+
+            // Dodaj zaznaczenie do klikniętego przycisku
+            this.classList.add('ring-2', 'ring-offset-2');
+            if (selectedStatus === 'Zrealizowane') {
+                this.classList.add('ring-green-500');
+            } else if (selectedStatus === 'Reklamacja') {
+                this.classList.add('ring-red-500');
+            } else if (selectedStatus === 'Anulowane') {
+                this.classList.add('ring-slate-500');
+            }
+
+            // Pokaż/ukryj pole powodu reklamacji
+            if (selectedStatus === 'Reklamacja') {
+                complaintField.classList.remove('hidden');
+            } else {
+                complaintField.classList.add('hidden');
+            }
+        });
+    });
+</script>
+
+</body>
+</html>

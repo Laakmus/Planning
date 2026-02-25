@@ -62,27 +62,131 @@ Nowy produkt ma przede wszystkim poprawić:
 
 3.1 Zakres MVP (etap 1)
 
-3.1.1 Dostęp i uwierzytelnianie
+3.1.1 Dostęp, uwierzytelnianie i role
 
 - Proste logowanie użytkownika (login/hasło) dla pracowników wewnętrznych firmy.
 - Dostęp do aplikacji z poziomu przeglądarki Chrome na laptopach.
 - Aplikacja przeznaczona do użycia głównie z sieci firmowej lub przez VPN (konfiguracja po stronie IT).
+- System definiuje trzy role użytkowników:
+  - ADMIN: pełny dostęp do wszystkich funkcji, w tym synchronizacji słowników i zarządzania użytkownikami,
+  - PLANNER: pełny dostęp do planowania zleceń (tworzenie, edycja, wysyłka, zmiana statusów) oraz synchronizacji słowników,
+  - READ_ONLY: podgląd listy zleceń, szczegółów i historii zmian bez możliwości edycji, tworzenia ani zmiany statusów.
+- Rola przypisywana jest na poziomie konta użytkownika w systemie.
 
   3.1.2 Widok planistyczny aktualnych zleceń
 
 - Główny ekran aplikacji prezentuje listę wierszy reprezentujących zlecenia transportowe w zakładce aktualne.
 - Każdy wiersz (zlecenie) w widoku skróconym prezentuje m.in.:
+  - ikonę blokady (jeśli zlecenie edytowane przez innego użytkownika),
   - numer zlecenia,
-  - rodzaj transportu (krajowy, eksport drogowy, kontener morski),
-  - sekwencję miejsc rozładunku (np. w skróconej formie),
-  - sekwencję miejsc załadunku,
+  - rodzaj transportu (krajowy, eksport drogowy, kontener morski, import) — jako kolorowy badge,
+  - sekwencję punktów trasy w formie wizualnej (node-string): skrócone kody miejsc załadunku (zielone) i rozładunku (niebieskie) połączone strzałkami i linią, np. L1:KRK → L2:KAT → U1:BER,
   - datę i godzinę pierwszego i ostatniego załadunku i rozładunku (w formie czytelnego skrótu),
-  - przewoźnika (firma transportowa),
-  - opis towaru (skrócony),
-  - koszt transportu (cena globalna za transport),
-  - status zlecenia (np. robocze, wysłane, korekta, korekta wysłane, zrealizowane, anulowane, reklamacja),
-  - podstawowe uwagi do zlecenia.
-- Wiersze mają wyraźne oznaczenia kolorystyczne zależne od  ui kontekstu widoku (np. neutralny kolor dla aktualnych roboczych, inne kolory dla zrealizowanych i anulowanych).
+  - przewoźnika (nazwa firmy + skrócona informacja o kontakcie),
+  - opis towaru (nazwa produktu + ikona typu opakowania, np. Kontener, Big-Bag, Luzem),
+  - koszt transportu (cena globalna za transport z walutą),
+  - status zlecenia (np. robocze, wysłane, korekta, korekta wysłane, zrealizowane, anulowane, reklamacja) — jako kolorowy badge,
+  - podstawowe uwagi do zlecenia (skrócone),
+  - ikonę „Wyślij maila" jako bezpośrednią akcję.
+- Wiersze statusów Wysłane i Korekta wysłane mają zielone tło (`bg-emerald-50/30`). Pozostałe wiersze mają domyślne białe tło.
+- Na dole widoku wyświetlany jest pasek statystyk z liczbą zleceń w poszczególnych statusach oraz informacją o ostatniej aktualizacji danych.
+- Widok oferuje dwa warianty prezentacji listy (wdrożone):
+  - widok trasy: trasa w jednej kolumnie (node-string), daty załadunku i daty rozładunku w osobnych kolumnach,
+  - widok kolumn: miejsca załadunków i rozładunków w osobnych kolumnach, data załadunku i data rozładunku jako dwie osobne kolumny; typ auta = rodzaj auta + objętość (wybierane oddzielnie, wyświetlane łącznie np. „firanka (90m³)”); szczegóły kolumn widoku „Kolumny” — patrz plan implementacji widoku głównego.
+- Trzeci wariant (widok logiczny) — do wyboru w przyszłości, **na razie nie wdrażany**; kolejność kolumn grupująca logicznie elementy:
+  - **Tożsamość i stan:** Blokada (tylko ikona, bez etykiety), Nr zlecenia, Status, Rodzaj transportu.
+  - **Trasa:** Miejsce załadunku (każdy punkt w nowej linii), Data załadunku (lista dat z godzinami), Miejsce rozładunku (każdy punkt w nowej linii), Data rozładunku (lista dat z godzinami).
+  - **Ładunek:** Towar (pozycje numerowane + „Razem: Xt”), Komentarz (lista ponumerowana, powiązana z pozycjami towaru).
+  - **Wykonawca i warunki:** Firma transportowa, Typ auta (rodzaj + objętość wybierane oddzielnie, wyświetlane np. „firanka (90m³)”), Stawka (kwota + waluta).
+  - **Wysłanie:** Data wysłania zlecenia (linia 1: imię i nazwisko osoby wysyłającej, linia 2: data bez godziny).
+
+  3.1.2a Szczegółowa specyfikacja widoku głównego (ekran listy zleceń)
+
+Poniższa sekcja definiuje układ, kolejność elementów, zawartość kolumn tabeli oraz sposób wyświetlania z przykładami. Dotyczy ekranu `/orders` po zalogowaniu. Nagłówek strony, pasek filtrów oraz nagłówek tabeli (nazwy kolumn) są sticky; przewija się wyłącznie lista wierszy (ciało tabeli). Na wąskich ekranach tabela przewija się w poziomie z widocznym paskiem przewijania u dołu.
+
+**1. Nagłówek aplikacji (sticky, jeden blok)**
+
+- Kolejność elementów od lewej do prawej: logo aplikacji, tytuł aplikacji, zakładki (Aktualne | Zrealizowane | Anulowane), przycisk „Aktualizuj dane”, blok użytkownika.
+- Blok użytkownika (prawa strona nagłówka):
+  - Wiersz 1: imię i nazwisko zalogowanego użytkownika (np. „Jan Kowalski”).
+  - Wiersz 2: rola zwykłym tekstem — „Admin”, „Planner” lub „Read only” (bez badge’a).
+  - Na prawo od bloku imienia i roli: przycisk „Wyloguj”.
+- Bez avatara i zdjęcia użytkownika.
+
+**2. Pasek filtrów (sticky pod nagłówkiem)**
+
+- Kolejność filtrów (od lewej): rodzaj transportu, status, firma załadunku, firma rozładunku, Firma transportowa, towar, numer tygodnia, wyszukiwanie pełnotekstowe. Z prawej strony pasa: przycisk „Nowe zlecenie” (widoczny tylko w zakładce Aktualne i tylko dla ról Admin oraz Planner).
+- Typy filtrów i sposób wyświetlania:
+  - **Rodzaj transportu:** lista zamknięta (select); użytkownik wybiera np. kraj, eksport, import itd. Przykład wyświetlania w polu po wyborze: „kraj”.
+  - **Status:** lista zamknięta; wybór jednego statusu z listy (robocze, wysłane, korekta, korekta wysłane, zrealizowane, reklamacja, anulowane). Przykład: „wysłane”.
+  - **Firma załadunku:** pole z podpowiedziami (autocomplete); wyszukiwanie po firmie lub konkretnej lokalizacji; filtr zwraca wszystkie zlecenia, gdzie wybrana firma/lokalizacja występuje na **dowolnym** miejscu załadunku (L1, L2, … do L8). Przykład wpisu: „Nord” → wybór „Nord Sp. z o.o.: oddział Gorzyce”.
+  - **Firma rozładunku:** jak wyżej; zwraca zlecenia, gdzie firma/lokalizacja występuje na **dowolnym** miejscu rozładunku (U1, U2, U3). Przykład: „Berlina” → „Berlina Logistik: oddział Berlin”.
+  - **Firma transportowa:** pole z podpowiedziami; wybór firmy przewoźnika. Przykład: „Trans” → „Transport Express Sp. z o.o.”.
+  - **Towar:** pole z podpowiedziami; wybór z słownika towarów. Przykład: „miedź” → „miedź wire rod”.
+  - **Numer tygodnia:** pole tekstowe — użytkownik wpisuje ręcznie numer tygodnia (np. „07” lub „2026-07”). Format do ustalenia (np. ISO numer tygodnia).
+  - **Wyszukiwanie pełnotekstowe:** pole tekstowe; użytkownik wpisuje słowo lub kilka słów; wyszukiwane są tylko wiersze zawierające tę kombinację. Przykład: „Gorzyce 15t” — tylko zlecenia zawierające oba wyrazy w wyszukiwanym tekście.
+- Przycisk „Wyczyść filtry” (np. obok ostatniego filtra lub na końcu wiersza).
+- Filtry w jednym wierszu; na wąskim ekranie dopuszczalne zawinięcie na drugi wiersz.
+- Nazwy filtrów w UI są spójne z nazwami kolumn w tabeli (np. „Firma transportowa” w filtrze i w nagłówku kolumny).
+
+**3. Ustawienia listy**
+
+- W tym samym wierszu co pasek filtrów (np. z prawej): wybór rozmiaru strony (50 / 100 / 200) oraz przełącznik widoku tabeli: **Trasa** | **Kolumny**.
+
+**4. Tabela zleceń — kolumny i sposób wyświetlania**
+
+Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli jest sticky. Sortowanie: klik w nagłówek kolumny (np. data załadunku, data rozładunku, numer zlecenia, Firma transportowa). Tło wiersza: tylko Wysłane i Korekta wysłane mają zielone tło, pozostałe białe. Akcja „Wyślij maila" dostępna z menu kontekstowego (prawy klik) oraz z drawer footer.
+
+**4.1. Widok „Kolumny” — kolejność kolumn od lewej do prawej**
+
+| Lp | Nazwa kolumny | Zawartość i format wyświetlania | Przykład |
+|----|----------------|----------------------------------|----------|
+| 1 | (bez etykiety) | Ikona blokady (np. kłódka), tylko gdy zlecenie jest zablokowane przez innego użytkownika; brak etykiety w nagłówku. | 🔒 lub puste |
+| 2 | Nr zlecenia | Numer zlecenia (np. generowany przez system). | ZT-2026-0042 |
+| 3 | Status | Nazwa statusu jako badge; wyświetlana jest skrócona nazwa w UI: robocze, wysłane, korekta, **Korekta_w** (dla „korekta wysłane"), zrealizowane, reklamacja, anulowane. | wysłane |
+| 4 | Tydzień | Numer tygodnia ISO 8601 **obliczany automatycznie** z daty pierwszego załadunku; wyświetlany jako liczba całkowita (np. 7); **nie edytowalny** przez użytkownika. | 7 |
+| 5 | Rodzaj transportu | Nazwa rodzaju (kraj, eksport drogowy, kontener morski, import itd.). | kraj |
+| 6 | Miejsce załadunku | Lista wszystkich punktów załadunku; **każdy punkt w nowej linii**. Format: numer/oznaczenie punktu + nazwa firmy + oddział, np. „L1 NazwaFirmy: oddział X". | L1 Nord: oddział Gorzyce<br>L2 Metalex: oddział Katowice |
+| 7 | Data załadunku | **Tylko pierwsza data** załadunku z godziną. Format daty: **DD.MM** (bez roku; baza przechowuje YYYY-MM-DD, formatowanie w UI). | 12.02 08:00 |
+| 8 | Miejsce rozładunku | Jak wyżej, dla punktów rozładunku; każdy punkt w nowej linii. Format np. „U1 NazwaFirmy: oddział Y". | U1 Berlina: oddział Berlin |
+| 9 | Data rozładunku | **Tylko pierwsza data** rozładunku z godziną. Format daty: **DD.MM** (bez roku; baza przechowuje YYYY-MM-DD, formatowanie w UI). | 13.02 09:00 |
+| 10 | Towar | Pozycje towarowe numerowane; dla każdej: nazwa, ilość, jednostka/opakowanie; w ostatniej linii suma: „Razem: Xt". | 1. miedź (5t, big bag)<br>2. miedź milbera (10t, paleta)<br>Razem: 15t |
+| 11 | Komentarz | Lista komentarzy ponumerowana (powiązana z pozycjami towaru lub zleceniem); każdy wpis w nowej linii. | 1. ładujemy na końcu naczepy<br>2. ładuje tylko Otwock |
+| 12 | Firma transportowa | Nazwa firmy przewoźnika (z słownika). | Transport Express Sp. z o.o. |
+| 13 | Typ auta | Rodzaj auta + objętość w nawiasie; **rodzaj i objętość wybierane w formularzu oddzielnie**, w tabeli wyświetlane łącznie. | firanka (90m³) |
+| 14 | Stawka | Kwota + waluta, bez separatorów tysięcy lub z separatorem (spójnie w całej aplikacji). | 1450 PLN |
+| 15 | Data wysłania zlecenia | **Linia 1:** imię i nazwisko osoby, która wysłała zlecenie.<br>**Linia 2:** data (bez godziny, format DD.MM.YYYY). | Jan Kowalski<br>11.02.2026 |
+
+Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowane; powyższa tabela stanowi wersję referencyjną dla widoku „Kolumny”.
+
+**4.2. Widok „Trasa" — różnica względem „Kolumny"**
+
+- Zamiast czterech osobnych kolumn **Miejsce załadunku**, **Data załadunku**, **Miejsce rozładunku** i **Data rozładunku** w widoku „Trasa" stosuje się:
+  - jedną kolumnę **Trasa** (node-string): sekwencja punktów załadunku i rozładunku w jednej linii wizualnej, np. L1:KRK → L2:KAT → U1:BER (załadunki np. zielone, rozładunki np. niebieskie),
+  - oraz kolumny **Data załadunku** i **Data rozładunku** (każda osobno — wyświetlana jest **wyłącznie pierwsza data** załadunku / pierwsza data rozładunku; format DD.MM HH:MM; jeśli brak daty — „—").
+- Pozostałe kolumny (Blokada, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania zlecenia, Akcje) pozostają jak w tabeli powyżej; kolejność może być dostosowana tak, aby kolumna Trasa była w logicznym miejscu (np. po Tydzień i Rodzaj transportu).
+
+**5. Akcje i stany puste**
+
+- Przycisk „Nowe zlecenie” (lub „Dodaj nowy wiersz”): **tylko** w zakładce Aktualne, **tylko** dla ról Admin i Planner, w **jednym miejscu** — w pasie filtrów z prawej strony.
+- Stany puste (EmptyState):
+  - **Brak zleceń** — gdy w danej zakładce nie ma żadnych zleceń; w zakładce Aktualne: przycisk „Dodaj nowy wiersz”. Przykład komunikatu: „Brak zleceń w tej zakładce.”.
+  - **Brak wyników dla zastosowanych filtrów** — gdy filtry zwracają pusty zestaw; przycisk „Wyczyść filtry”. Przykład: „Brak zleceń spełniających kryteria. Zmień filtry lub wyczyść je.”.
+- Trzeci wariant („Zbyt wiele wyników — zawęź filtry”) nie jest używany.
+
+**6. Menu kontekstowe (prawy klik na wierszu)**
+
+- Opcje: Wyślij maila, Historia zmian, Zmień status (podmenu z dozwolonymi przejściami), Skopiuj zlecenie, Anuluj zlecenie; w zakładkach Zrealizowane i Anulowane dodatkowo: Przywróć do aktualnych. Opcje zależne od roli (np. Read only — tylko Historia zmian).
+- **Reklamacja:** Przy zmianie statusu na reklamacja wymagane jest pole „Powód reklamacji” — zarówno z menu kontekstowego (lista), jak i z draweru edycji. Jeśli użytkownik zamknie okienko/panel bez wpisania powodu, status **nie** zmienia się na reklamacja (zmiana jest anulowana).
+- Otwieranie menu: na razie **tylko prawy klik myszy** (bez skrótu klawiaturowego).
+
+**7. Stopka (sticky na dole ekranu)**
+
+- Wysokość np. 40px (h-10); zawsze widoczna, także przy pustej liście.
+- **Lewa strona:** liczniki zleceń (np. tylko „Aktywne: X” dla bieżącej zakładki lub liczniki per status — bez „W trasie”, „Załadunek”, „Opóźnione”).
+- **Prawa strona:** tekst „System Status: OK” oraz „Ostatnia aktualizacja: HH:MM” (czas ostatniego pobrania listy).
+
+---
 
   3.1.3 Filtrowanie i sortowanie w widoku planistycznym
 
@@ -129,14 +233,11 @@ Nowy produkt ma przede wszystkim poprawić:
     - przewoźnik (firma transportowa),
     - firma nadawcy (od której odbieramy towar) wraz z lokalizacją (oddział),
     - firma odbiorcy (gdzie dostarczamy towar) wraz z lokalizacją (oddział),
-    - osoba kontaktowa z danymi (imię, nazwisko, telefon, e-mail),
-  - informacje o ładunku (globalne dla zlecenia, nie per pozycja towaru):
-    - opis towaru,
-    - ilość (np. liczba ton, liczba palet),
-    - masa, objętość (opcjonalne parametry),
-    - typ pojazdu (wybór z listy, np. hakowiec, firanka, ruchoma podłoga, wywrotka, bus, hakowiec z HDS),
-    - sposób załadunku (wybór z listy, np. paleta, paleta + BigBag, BigBag, luzem, kosze),
-    - pojemność auta (wybór z listy),
+    - osoba kontaktowa po stronie nadawcy z danymi (imię, telefon, e-mail),
+  - informacje o ładunku (pozycje towarowe per zlecenie + parametry globalne):
+    - pozycje towarowe (1…N): każda zawiera towar (z autocomplete), ilość (tony), oraz sposób załadunku (domyślnie z produktu, nadpisywalny przez użytkownika: paleta, paleta + BigBag, luzem, kosze),
+    - masa całkowita, objętość (opcjonalne parametry globalne),
+    - wariant pojazdu (wybór z listy rozwijanych łączący typ pojazdu i pojemność/objętość, np. „Hakowiec 30m³", „Firanka 90m³", „Wywrotka 25m³", „Bus 10m³", „Hakowiec z HDS 30m³"; każdy wariant ma przypisany kod, typ pojazdu, nośność w tonach i objętość w m³),
     - wymagania specjalne (np. ADR, chłodnia),
   - trasa:
     - minimalnie 1 punkt załadunku i 1 punkt rozładunku,
@@ -158,6 +259,155 @@ Nowy produkt ma przede wszystkim poprawić:
     - lista wymaganych dokumentów dla kierowcy,
     - uwagi do zlecenia (tekst wielowierszowy).
 
+  3.1.5a Szczegółowa specyfikacja widoku Drawer edycji zlecenia
+
+Poniższa sekcja definiuje układ, zawartość i zachowanie panelu bocznego (drawer / sheet) edycji zlecenia transportowego. Drawer jest jedynym miejscem, w którym użytkownik edytuje szczegółowe dane zlecenia. Jest to autorytatywna specyfikacja — w razie rozbieżności z innymi dokumentami obowiązuje ta sekcja.
+
+**1. Ogólne cechy drawera**
+
+- Typ: panel boczny (sheet) wysuwany z prawej strony ekranu.
+- Szerokość: ~720–800 px na dużych ekranach; na wąskich ekranach drawer zajmuje całą dostępną szerokość.
+- Otwarcie: lewy klik na wiersz w tabeli zleceń.
+- Zamknięcie: przycisk X w nagłówku, klawisz Escape, klik na backdrop lub przycisk „Zamknij" w stopce.
+- Przy zamknięciu z niezapisanymi zmianami: modal z trzema opcjami — „Zapisz i zamknij", „Odrzuć i zamknij", „Zostań".
+- Kliknięcie w backdrop przy niezapisanych zmianach — modal jak wyżej; przy braku zmian — zamknięcie.
+- Powiązane API: `GET /api/v1/orders/{id}`, `POST /api/v1/orders/{id}/lock`, `POST /api/v1/orders/{id}/unlock`, `PUT /api/v1/orders/{id}`, `POST /api/v1/orders/{id}/status`, `POST /api/v1/orders/{id}/pdf`, `POST /api/v1/orders/{id}/prepare-email`.
+
+**2. Przepływ otwarcia i blokada**
+
+1. Użytkownik klika wiersz → system wywołuje `POST /orders/{id}/lock`.
+2. Sukces (200): drawer otwiera się w **trybie edycji**; pobierane są dane `GET /orders/{id}`.
+3. Konflikt (409): komunikat „Zlecenie edytowane przez [imię]"; drawer otwiera się w **trybie tylko do odczytu** — wszystkie pola disabled, brak przycisków Zapisz, Generuj PDF, Wyślij maila. Aktywne pozostają: podgląd danych, link „Historia zmian", przycisk Zamknij.
+4. Przy zamknięciu draweru → `POST /orders/{id}/unlock`.
+5. W MVP brak okresowego sprawdzania blokady. Przy próbie zapisu, gdy blokada wygasła lub przejął ją inny użytkownik (409), wyświetlany jest komunikat i drawer przechodzi w tryb tylko do odczytu lub zamyka się z odświeżeniem listy.
+
+**3. Nagłówek drawera**
+
+Nagłówek jest stałym (sticky) elementem na górze drawera. Nie zawiera tytułu „Edycja zlecenia". Elementy:
+
+- **Numer zlecenia** (np. „Zlecenie #ZT-2026-0042") — readonly, generowany przez serwer.
+- **Link „Historia zmian"** — otwiera panel historii zmian obok drawera. Aktywny także w trybie readonly.
+- **Przycisk X** — zamknięcie drawera (z obsługą niezapisanych zmian).
+- Opcjonalna linia metadanych: „Utworzone przez [imię], [data] | Ostatnia zmiana: [imię], [data]".
+
+**4. Treść drawera — 7 sekcji formularza**
+
+Formularz jest przewijalną częścią drawera między nagłówkiem a stopką. Sekcje są zawsze rozwinięte (bez accordionu). Pola wymagane do wysłania zlecenia mailem oznaczone gwiazdką (*). Formularz w siatce 2–4 kolumn, etykiety nad polami. Firma zlecająca (nasza firma) nie występuje w formularzu — jest domyślna.
+
+**Sekcja 0 — Nagłówek**
+
+| Lp. | Pole | Typ pola | Uwagi |
+|-----|------|----------|-------|
+| 1 | Nr zlecenia | Tylko do odczytu (tekst) | Generowany przez serwer, niezmienny |
+| 2 | Data utworzenia | Tylko do odczytu (data) | Z API (`createdAt`) |
+| 3 | Przez kogo utworzone | Tylko do odczytu (tekst — imię i nazwisko) | Z logowania / API |
+| 4 | Historia zmian | Link / przycisk | Otwiera panel historii zmian |
+
+Ewentualna linia „Ostatnia zmiana: [imię], [data]" do doprecyzowania w implementacji.
+
+**Sekcja 1 — Trasa**
+
+| Lp. | Pole | Typ pola | Uwagi |
+|-----|------|----------|-------|
+| 1 | Rodzaj transportu* | Lista zamknięta (select) | Jedno pole na całe zlecenie (na górze sekcji); wartości: krajowy, eksport drogowy, kontener morski, import |
+| **Na każdy punkt trasy (załadunek / rozładunek):** | | | |
+| 2 | Firma | Autocomplete | Podpowiedź z bazy firm |
+| 3 | Oddział firmy | Lista zamknięta (select) | Zależna od wybranej firmy; lista oddziałów z bazy dla tej firmy (nie autocomplete) |
+| 4 | Adres | Tylko do odczytu (tekst) | Auto po wyborze oddziału; bez możliwości edycji |
+| 5 | NIP | Tylko do odczytu (tekst) | Auto po wyborze firmy/oddziału |
+| 6 | Data załadunku/rozładunku | Pole daty (datepicker + ręczne wpisanie) | Na punkt |
+| 7 | Godzina załadunku/rozładunku | Pole godziny (timepicker + ręczne wpisanie) | Na punkt |
+| — | Przyciski „Dodaj załadunek" / „Dodaj rozładunek" | Przyciski | Dodają kolejny punkt (max 8 załadunków, 3 rozładunki) |
+
+Zmiana kolejności: drag-and-drop + przyciski góra/dół. Reguła kolejności przystanków: pierwszy przystanek musi być zawsze załadunkiem (L1), ostatni musi być zawsze rozładunkiem. Przystanki środkowe mogą być w dowolnej kolejności (załadunek lub rozładunek). Drag-and-drop respektuje tę regułę — nie można upuścić rozładunku na pierwszą pozycję ani załadunku na ostatnią. Dodawanie załadunku wstawia punkt po ostatnim istniejącym załadunku; dodawanie rozładunku wstawia punkt przed ostatnim istniejącym rozładunkiem. Przy zmianie firmy w punkcie: zerowanie oddziału, adresu i NIP; użytkownik wybiera oddział z nowej listy. Minimalna trasa: 1 załadunek + 1 rozładunek (walidacja biznesowa — przy wysyłce maila).
+
+**Sekcja 2 — Towar**
+
+| Lp. | Pole | Typ pola | Uwagi |
+|-----|------|----------|-------|
+| **Na każdą pozycję towarową:** | | | |
+| 1 | Nazwa towaru* | Autocomplete | Z słownika towarów (`products`) |
+| 2 | Ilość w t* | Pole liczbowe | Tony; ≥ 0 |
+| 3 | Sposób załadunku | Lista zamknięta (select) | Wartości: paleta, paleta + BigBag, luzem, kosze; domyślnie ustawiany z produktu po wyborze towaru, ale nadpisywalny przez użytkownika per pozycja |
+| 4 | Komentarz | Pole tekstowe (input lub textarea) | Uwagi do pozycji |
+| — | Przycisk dodania kolejnego asortymentu | Przycisk | Dodaje kolejny zestaw pól |
+
+Przycisk „Usuń pozycję" przy każdej pozycji towarowej.
+
+**Sekcja 3 — Firma transportowa**
+
+| Lp. | Pole | Typ pola | Uwagi |
+|-----|------|----------|-------|
+| 1 | Nazwa firmy (przewoźnik)* | Autocomplete | Firmy typu przewoźnik z bazy (`companies`) |
+| 2 | NIP | Tylko do odczytu (tekst) | Auto po wyborze firmy przewoźnika |
+| 3 | Typ auta | Lista zamknięta (select) | Z wariantów pojazdu (np. Firanka, Hakowiec, Wywrotka, Bus) |
+| 4 | Objętość w m³ | Lista zamknięta z wpisywaniem (combobox) | Wartości: 10, 20, 30, …, 100 m³; wpis filtruje listę; klik bez wpisu = pełna lista. Na MVP dozwolone tylko wartości z listy (co 10) |
+| 5 | Wymagane dokumenty | Lista zamknięta (select, **2 opcje**) | **1.** „WZ, KPO, kwit wagowy" **2.** „WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** z dwóch opcji (select, nie checkboxy). **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 1): jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić automatycznie wybraną wartość |
+
+**Sekcja 4 — Finanse**
+
+| Lp. | Pole | Typ pola | Uwagi |
+|-----|------|----------|-------|
+| 1 | Stawka* | Pole liczbowe (kwota) | ≥ 0; przy nowym zleceniu puste |
+| 2 | Waluta* | Lista zamknięta (select) | PLN, EUR, USD. **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 1): jeśli kraj → PLN; jeśli eksport / eksport kontener / import → EUR. Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie wybrać inną walutę z listy |
+| 3 | Termin płatności | Pole liczbowe (dni) | Domyślnie 21 |
+| 4 | Forma płatności | Lista zamknięta (select) | Domyślnie „Przelew" |
+
+**Sekcja 5 — Uwagi**
+
+| Lp. | Pole | Typ pola | Uwagi |
+|-----|------|----------|-------|
+| 1 | Uwagi ogólne do zlecenia | Pole tekstowe wielowierszowe (textarea) | Jedno pole na całe zlecenie; max 500 znaków |
+
+Sekcja 5 zawiera tylko jedno pole. „Wymagane dokumenty" znajdują się w Sekcji 3.
+
+**Sekcja 6 — Sekcja zmian (status)**
+
+| Lp. | Element | Typ pola | Uwagi |
+|-----|---------|----------|-------|
+| 1 | Aktualny status | Tylko do odczytu (badge / tekst) | Pełne nazwy statusów |
+| 2 | Wybór nowego statusu | Lista zamknięta (select) | Tylko dozwolone przejścia ręczne (zgodnie z 3.1.7); wyświetlane pełne nazwy |
+| 3 | Przycisk „Zmień status" | Przycisk (akcja) | Zmiana zapisywana przy ogólnym „Zapisz" |
+| 4 | Powód reklamacji | Pole tekstowe wielowierszowe (textarea) | Widoczne **tylko** gdy aktualny status = Reklamacja lub gdy użytkownik wybierze przejście na Reklamację. Wymagane przy zmianie na Reklamację — bez wypełnienia zapis jest zablokowany. Dowolny tekst (textarea), max 500 znaków |
+
+Sekcja 6 widoczna od razu (także przy nowym zleceniu). Zmiana statusu zapisywana dopiero przy kliknięciu ogólnego „Zapisz" w stopce — żadna zmiana (dane ani status) nie zapisuje się automatycznie.
+
+**5. Stopka drawera (sticky na dole)**
+
+Stopka jest stałym elementem na dole drawera z przyciskami akcji:
+
+- **Zapisz** (primary) — zapisuje wszystkie zmiany (dane formularza + ewentualną zmianę statusu) → `PUT /orders/{id}`. Po zapisie odświeżenie danych zlecenia (GET lub z odpowiedzi), żeby status (np. Korekta) i Sekcja 6 były aktualne. Toast sukcesu.
+- **Zamknij** — zamyka drawer; przy niezapisanych zmianach: modal „Zapisać?" z opcjami (Zapisz i zamknij / Odrzuć i zamknij / Zostań).
+- **Generuj PDF** — `POST /orders/{id}/pdf` → pobranie pliku PDF.
+- **Wyślij maila** — `POST /orders/{id}/prepare-email`. Przed wysyłką system sprawdza kompletność pól wymaganych. Przy brakach (422) — alert na górze formularza z listą brakujących pól; Outlook nie jest otwierany. Przy sukcesie — otwarcie Outlooka z załączonym PDF; status zmienia się automatycznie (robocze→wysłane, korekta→korekta wysłane).
+- **Historia zmian** (link) — otwiera panel historii zmian obok drawera. Alternatywnie dostępne z nagłówka drawera.
+
+Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 6 formularza i zapisywana razem z innymi zmianami przez „Zapisz".
+
+**6. Zależności między sekcjami**
+
+- **Sekcja 1 → Sekcja 3:** Rodzaj transportu (z Sekcji 1) określa automatyczny wybór wymaganych dokumentów w Sekcji 3: jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Auto-aktualizacja przy każdej zmianie rodzaju transportu (także przy edycji), ale użytkownik może ręcznie zmienić wartość.
+- **Sekcja 1 → Sekcja 4:** Rodzaj transportu (z Sekcji 1) określa domyślną walutę w Sekcji 4: kraj → PLN, eksport / eksport kontener / import → EUR. Auto-aktualizacja waluty przy każdej zmianie rodzaju transportu (także przy edycji istniejącego zlecenia), ale użytkownik może ręcznie wybrać inną walutę.
+- **Sekcja 1 (punkty trasy):** Firma → lista oddziałów (select); oddział → adres i NIP (readonly). Przy zmianie firmy — zerowanie oddziału, adresu, NIP.
+- **Sekcja 2:** Wybór towaru → domyślny sposób załadunku (nadpisywalny per pozycja).
+- **Sekcja 6:** Pole „Powód reklamacji" widoczne tylko przy statusie Reklamacja lub wyborze przejścia na Reklamację.
+
+**7. Tryb tylko do odczytu**
+
+Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
+- Wszystkie pola formularza disabled / grayed out.
+- Brak przycisków: Zapisz, Wyślij maila. Sekcja 6 (Zmiana statusu) niewidoczna. (Sekcja 5 Uwagi pozostaje widoczna — tylko do odczytu.)
+- Aktywne: **Generuj PDF**, link „Historia zmian" (tylko odczyt), przycisk „Zamknij".
+- Nad formularzem wyświetlany jest bursztynowy (amber) banner informujący o tym, kto aktualnie blokuje zlecenie (np. „Zlecenie edytowane przez Anna Nowak").
+
+**8. Walidacja w drawerze**
+
+- **Walidacja techniczna (przy „Zapisz"):** inline pod polami po próbie zapisu; opcjonalnie przy blur dla pól wymaganych. Sprawdzenie formatów dat, liczb, limitów znaków, limitów punktów trasy.
+- **Walidacja biznesowa (przy „Wyślij maila"):** realizowana przez API (422); frontend wyświetla alert na górze formularza z listą brakujących pól.
+- Zlecenie można zapisać jako wersję roboczą z nieuzupełnionymi polami — pełna kompletność sprawdzana dopiero przy wysyłce maila.
+
+---
+
   3.1.6 Edycja zlecenia i blokada współbieżna
 
 - Po kliknięciu w wiersz na liście użytkownik przechodzi do szczegółowego widoku edycji zlecenia.
@@ -170,29 +420,41 @@ Nowy produkt ma przede wszystkim poprawić:
 
   3.1.7 Statusy zlecenia i cykl życia
 
+- **Uwaga o nazewnictwie:** W systemie używane są wyłącznie pełne nazwy statusów (bez skrótów). Nazwy statusów to: **robocze**, **wysłane**, **korekta**, **korekta wysłane**, **zrealizowane**, **reklamacja**, **anulowane**. W UI i w dokumentacji wymagań stosuje się te pełne nazwy; ewentualne kody techniczne w API lub bazie (np. dla `status_code`) mapują się na te nazwy przy prezentacji użytkownikowi.
+
 - Każde zlecenie posiada status, który opisuje etap cyklu życia:
-  - robocze (nowe / w trakcie wypełniania),
-  - wysłane (zlecenie wysłano do przewoźnika),
-  - korekta (zlecenie wysłane, ale wprowadzone zostały zmiany po wysyłce, które nie zostały jeszcze ponownie wysłane do przewoźnika),
-  - korekta wysłane (zlecenie zostało skorygowane i ponownie wysłane przewoźnikowi),
-  - zrealizowane (transport się odbył, bez reklamacji),
-  - reklamacja (transport z reklamacją, wymagane dalsze działania),
-  - anulowane (zlecenie anulowane, nie będzie realizowane).
-- Przejścia:
-  - robocze → wysłane: status automatycznie zmienia się na wysłane po poprawnym uruchomieniu akcji wysyłki maila (otwarcie Outlooka z przygotowaną wiadomością i załączonym PDF zlecenia); użytkownik nie ustawia tego statusu ręcznie,
-  - wysłane / korekta wysłane → korekta: status automatycznie zmienia się na korekta, gdy użytkownik edytuje i zapisuje zlecenie wysłane lub korekta wysłane (pojawiają się nowe zmiany, które nie zostały jeszcze ponownie wysłane),
-  - korekta → korekta wysłane: status automatycznie zmienia się na korekta wysłane po poprawnym uruchomieniu akcji ponownej wysyłki maila (otwarcie Outlooka z przygotowaną wiadomością i zaktualizowanym załączonym PDF zlecenia),
-  - wysłane / korekta / korekta wysłane → zrealizowane: ustawiane ręcznie, gdy transport został zrealizowany bez reklamacji,
-  - wysłane / korekta / korekta wysłane → reklamacja: ustawiane ręcznie, gdy występuje reklamacja co do transportu,
-  - robocze / wysłane / korekta / korekta wysłane → anulowane: ustawiane ręcznie, gdy zlecenie nie będzie realizowane.
+  - **robocze** — nowe zlecenie lub w trakcie wypełniania; status ten występuje tylko od utworzenia zlecenia do momentu pierwszego wysłania lub anulowania; po wysłaniu lub anulowaniu zlecenie nigdy nie wraca do statusu robocze,
+  - **wysłane** — zlecenie wysłano do przewoźnika mailem (po raz pierwszy); status ustawiany wyłącznie automatycznie po akcji „Wyślij maila” ze statusu robocze,
+  - **korekta** — zlecenie było wysłane, ale ma zmiany nieprzesłane ponownie; pojawia się automatycznie w sytuacjach: (1) użytkownik zmodyfikował i zapisał zlecenie w statusie wysłane, (2) użytkownik przywrócił zlecenie z zakładki zrealizowane do głównego ekranu, (3) użytkownik przywrócił zlecenie z zakładki anulowane do głównego ekranu, (4) zlecenie w statusie korekta wysłane zostało zmodyfikowane i zapisane lub przywrócone z widoku zrealizowane/anulowane,
+  - **korekta wysłane** — zlecenie skorygowane i ponownie wysłane przewoźnikowi; status ustawiany wyłącznie automatycznie po akcji „Wyślij maila” ze statusu korekta,
+  - **zrealizowane** — transport się odbył, bez reklamacji; ustawiane wyłącznie ręcznie; zlecenia zrealizowane widoczne tylko w zakładce zrealizowane (nie na głównym ekranie),
+  - **reklamacja** — transport z reklamacją; ustawiane wyłącznie ręcznie i tylko ze statusu wysłane, korekta lub korekta wysłane; zlecenia w statusie reklamacja należą do widoku aktualne (główny ekran),
+  - **anulowane** — zlecenie anulowane; ustawiane wyłącznie ręcznie z statusu robocze, wysłane, korekta lub korekta wysłane; z widoku zrealizowane nie można bezpośrednio anulować — należy najpierw przywrócić zlecenie do aktualnych (wówczas otrzyma status korekta), a dopiero potem ustawić anulowane; zlecenia anulowane widoczne tylko w zakładce anulowane.
+
+- Przejścia automatyczne:
+  - robocze → wysłane: po poprawnym uruchomieniu akcji „Wyślij maila” (otwarcie Outlooka z PDF); użytkownik nie ustawia wysłane ręcznie,
+  - wysłane / korekta wysłane → korekta: gdy użytkownik edytuje i zapisuje zlecenie (wykrycie zmiany pól biznesowych),
+  - przywrócenie z zakładki zrealizowane lub anulowane → korekta (zlecenie wraca na główny ekran),
+  - korekta → korekta wysłane: po poprawnym uruchomieniu akcji „Wyślij maila” (ponowna wysyłka z zaktualizowanym PDF).
+
+- Przejścia ręczne (użytkownik wybiera nowy status):
+  - robocze → zrealizowane, anulowane (reklamacja nie jest dostępna z robocze),
+  - wysłane → zrealizowane, reklamacja, anulowane,
+  - korekta → zrealizowane, reklamacja, anulowane,
+  - korekta wysłane → zrealizowane, reklamacja, anulowane,
+  - reklamacja → zrealizowane, anulowane.
+
 - Zlecenia zrealizowane:
-  - po oznaczeniu jako zrealizowane są przenoszone z głównego widoku aktualne do zakładki zrealizowane (archiwum),
-  - pozostają w systemie bez limitu czasu (z myślą o późniejszych raportach).
+  - po ustawieniu statusu zrealizowane zlecenie znika z głównego widoku i jest wyświetlane wyłącznie w zakładce zrealizowane,
+  - pozostają w systemie i w widoku zrealizowane bez limitu czasu (historia transportu i wysłanych zleceń),
+  - można je przywrócić do aktualnych (status zmienia się na korekta); nie ma limitu czasowego na przywrócenie.
+
 - Zlecenia anulowane:
-  - po oznaczeniu jako anulowane są dostępne w zakładce anulowane przez maksymalnie 24 godziny,
-  - po 24 godzinach mogą być trwale usuwane z bazy (szczegóły do potwierdzenia technicznie),
-  - wyjątkowo zlecenie anulowane w ciągu 24 godzin może zostać przywrócone do aktualnych.
-- Zlecenia zrealizowane mogą być przywracane do aktualnych w przypadku pomyłki (np. błędne oznaczenie jako zrealizowane).
+  - po ustawieniu statusu anulowane zlecenie znika z głównego widoku i jest wyświetlane wyłącznie w zakładce anulowane,
+  - przywrócenie do aktualnych (→ korekta) możliwe tylko w ciągu 24 godzin od anulowania,
+  - jeśli użytkownik nie przywróci zlecenia w ciągu 24 godzin, zlecenie zostaje fizycznie usunięte z bazy (job w tle); takie zlecenia uznaje się za utworzone błędnie i nie są one wykorzystywane w raportach.
+
+- Powód reklamacji: przy zmianie statusu na reklamacja wymagane jest pole „powód reklamacji". W UI wyświetlane jest okienko lub panel na dole widoku z danymi zlecenia; zapis zmiany statusu na reklamacja jest zablokowany, dopóki pole nie zostanie wypełnione.
 
   3.1.8 Historia zmian (audyt)
 
@@ -219,6 +481,19 @@ Nowy produkt ma przede wszystkim poprawić:
   - firmy, lokalizacje, towary i spedycje wybierane są poprzez pola z podpowiedzią (autocomplete),
   - użytkownik wpisuje kilka pierwszych liter nazwy lub miasta, a system wyświetla dopasowania z bazy,
   - typ auta, sposób załadunku i pojemność auta wybierane są z krótkich list rozwijanych.
+- **Snapshoty (immutable) danych słownikowych:**
+  - Przy wyborze firmy, lokalizacji lub towaru w formularzu system zapisuje nazwę i adres z tego momentu jako „snapshot" (migawkę) — tzw. pola snapshot w bazie danych.
+  - Snapshoty służą do zachowania dokładnych nazw, które były użyte w zleceniu, nawet jeśli później dane w słowniku ulegną zmianie (np. firma zmieni nazwę, oddział zmieni adres).
+  - Snapshoty są **immutable** (niezmienne automatycznie) — system **nie aktualizuje** ich automatycznie, gdy zmienią się dane w słowniku.
+  - Użytkownik może edytować snapshoty **ręcznie** bezpośrednio w formularzu (np. poprawić literówkę w nazwie firmy), ale system nigdy nie nadpisuje ich automatycznie.
+- **Format dat:**
+  - Baza danych i API przechowują i przekazują daty w formacie **ISO 8601** (YYYY-MM-DD) oraz godziny w formacie HH:MM:SS.
+  - Frontend (UI) wyświetla daty w **polskim formacie wizualnym** (DD.MM.YYYY) poprzez funkcję formatowania.
+  - Użytkownik wprowadza daty w formularzu w dowolnym akceptowanym formacie (datepicker pomaga w poprawnym wprowadzeniu).
+- **Numer tygodnia:**
+  - Numer tygodnia (ISO 8601) jest obliczany **automatycznie** przez system na podstawie daty pierwszego załadunku.
+  - **Nie jest edytowalny** przez użytkownika — zmienia się tylko przy zmianie daty pierwszego załadunku.
+  - W widoku listy zleceń wyświetlany jest jako osobna kolumna (Tydzień); w filtrze użytkownik może wpisać numer tygodnia, który jest następnie mapowany na zakres dat po stronie frontendu.
 
   3.1.10 Generowanie PDF zlecenia (MVP)
 
@@ -245,14 +520,17 @@ Nowy produkt ma przede wszystkim poprawić:
 
   3.1.12 Widok zrealizowanych i anulowanych zleceń
 
+- Zlecenia w statusie zrealizowane są widoczne wyłącznie w zakładce zrealizowane; zlecenia w statusie anulowane wyłącznie w zakładce anulowane. Status reklamacja należy do widoku aktualne (główny ekran).
+
 - Zakładka zrealizowane:
-  - prezentuje listę wszystkich zakończonych zleceń,
+  - prezentuje listę wszystkich zleceń zrealizowanych (historia transportu i wysłanych zleceń),
+  - zlecenia pozostają w systemie bez limitu czasu,
   - posiada takie same możliwości filtrowania jak widok aktualne,
-  - umożliwia podgląd szczegółów zlecenia i ponowne wygenerowanie PDF.
+  - umożliwia podgląd szczegółów zlecenia, ponowne wygenerowanie PDF oraz przywrócenie zlecenia do aktualnych (bez limitu czasowego).
 - Zakładka anulowane:
-  - prezentuje zlecenia anulowane (przez maksymalnie 24 godziny),
-  - umożliwia w wyjątkowych sytuacjach przywrócenie zlecenia do aktualnych,
-  - po upływie czasu retencji zlecenia mogą być usuwane z bazy (szczegóły techniczne do doprecyzowania).
+  - prezentuje zlecenia anulowane przez maksymalnie 24 godziny,
+  - umożliwia przywrócenie zlecenia do aktualnych (status → korekta) tylko w ciągu 24 h od anulowania,
+  - po upływie 24 godzin zlecenia są fizycznie usuwane z bazy (job w tle).
 
   3.1.13 Walidacja danych
 
@@ -297,7 +575,7 @@ Nowy produkt ma przede wszystkim poprawić:
   - komunikaty o powodzeniu/porażce autozapisu.
 - Zaawansowana wysyłka maili z poziomu aplikacji (integracja z Outlook/Exchange/SMTP).
 - Zaawansowane raporty (koszty, ilości towarów, liczba transportów per przewoźnik i kierunek).
-- Ewentualne role i ograniczenia dostępu do danych finansowych lub raportów.
+- Granularne role i ograniczenia dostępu do danych finansowych lub raportów (w MVP dostępne są trzy podstawowe role: ADMIN, PLANNER, READ_ONLY; rozbudowa ról planowana na etap 2).
 
 ## 4. Granice produktu
 
@@ -324,7 +602,7 @@ Poza zakresem pierwszej wersji znajdują się:
 - pełne odwzorowanie układu PDF 1:1 z firmowym szablonem (sztywne współrzędne wszystkich pól),
 - automatyczny harmonogram synchronizacji słowników (np. nocne integracje),
 - rozbudowane raporty i dashboardy (w tym eksporty, wykresy, analizy),
-- zaawansowane mechanizmy bezpieczeństwa (SSO, 2FA, granularne role uprawnień),
+- zaawansowane mechanizmy bezpieczeństwa (SSO, 2FA, granularne ograniczenia w ramach ról),
 - wysyłanie maili bezpośrednio z aplikacji z dołączonym PDF,
 - automatyczne czyszczenie/anonymizacja danych historycznych wg polityk prawnych (poza usuwaniem anulacji po 24 h),
 - praca mobilna (optymalizacja pod telefony) – priorytet stanowi wygoda na laptopach.
@@ -345,6 +623,7 @@ Kryteria akceptacji:
 - Po poprawnym wprowadzeniu danych użytkownik jest przekierowany do głównego widoku planistycznego.
 - Przy błędnych danych logowania wyświetlany jest czytelny komunikat o błędzie bez ujawniania, które pole jest niepoprawne.
 - Po wylogowaniu użytkownik nie ma dostępu do żadnych widoków zleceń bez ponownego logowania.
+- Dostępne funkcje w widoku zależą od roli użytkownika (ADMIN, PLANNER, READ_ONLY) — użytkownik READ_ONLY nie widzi przycisków tworzenia, edycji, zmiany statusu ani synchronizacji danych.
 
 ### 5.2 Widok planistyczny i filtrowanie
 
@@ -480,7 +759,7 @@ Jako planista chcę mieć możliwość przywrócenia zlecenia z zakładki zreali
 Kryteria akceptacji:
 
 - Użytkownik może w zakładce zrealizowane wybrać zlecenie i przywrócić je do aktualnych.
-- Po przywróceniu zlecenie pojawia się w zakładce aktualne z odpowiednim statusem (np. wysłane lub robocze).
+- Po przywróceniu zlecenie pojawia się w zakładce aktualne ze statusem korekta.
 - Historia zmian odnotowuje fakt przywrócenia zlecenia.
 
 ID: US-028  
@@ -517,15 +796,16 @@ Kryteria akceptacji:
 - Próba dodania kolejnego punktu ponad limit skutkuje komunikatem o osiągnięciu maksymalnej liczby punktów.
 - Wszystkie dodane punkty są prezentowane w logicznej kolejności.
 
-ID: US-032  
-Tytuł: Zmiana kolejności punktów trasy  
-Opis:  
-Jako planista chcę zmieniać kolejność punktów załadunku i rozładunku, aby łatwo korygować plan trasy bez ponownego wpisywania danych.  
+ID: US-032
+Tytuł: Zmiana kolejności punktów trasy
+Opis:
+Jako planista chcę zmieniać kolejność punktów załadunku i rozładunku, aby łatwo korygować plan trasy bez ponownego wpisywania danych.
 Kryteria akceptacji:
 
 - Użytkownik może przeciągnąć punkt załadunku/rozładunku na inne miejsce na liście.
 - Po zmianie kolejności numery/sekwencja punktów aktualizują się automatycznie.
 - Widok skrócony zlecenia odzwierciedla aktualną kolejność punktów.
+- System egzekwuje regułę kolejności: pierwszy przystanek zawsze załadunek, ostatni zawsze rozładunek; drag-and-drop blokuje upuszczenie rozładunku na pierwszą pozycję oraz załadunku na ostatnią pozycję.
 
 ### 5.5 Integracja ze słownikami i podpowiedzi
 
