@@ -96,6 +96,13 @@ export const PATCH: APIRoute = async ({ params, locals, request }) => {
         "Zlecenie jest zablokowane przez innego użytkownika."
       );
     }
+    if (msg === "INVALID_ROUTE_ORDER") {
+      return errorResponse(
+        400,
+        "Bad Request",
+        "Zmiana typu stopu narusza kolejność trasy (pierwszy = załadunek, ostatni = rozładunek)."
+      );
+    }
     console.error("[PATCH /api/v1/orders/{orderId}/stops/{stopId}]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas aktualizacji punktu trasy.");
   }

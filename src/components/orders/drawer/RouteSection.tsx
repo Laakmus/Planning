@@ -5,7 +5,7 @@
  * Drag handle jest NA ZEWNĄTRZ karty — w wrapperze flex.
  */
 
-import { useCallback } from "react";
+import { useCallback, useMemo } from "react";
 import { GripVertical, PlusCircle } from "lucide-react";
 import {
   DndContext,
@@ -103,7 +103,11 @@ export function RouteSection({
   isReadOnly,
   onChange,
 }: RouteSectionProps) {
-  const activeStops = formData.stops.filter((s) => !s._deleted);
+  // M-07: Memoizacja zmiennych używanych w handleDragEnd
+  const activeStops = useMemo(
+    () => formData.stops.filter((s) => !s._deleted),
+    [formData.stops]
+  );
   const loadingStops = activeStops.filter((s) => s.kind === "LOADING");
   const unloadingStops = activeStops.filter((s) => s.kind === "UNLOADING");
 
@@ -116,15 +120,19 @@ export function RouteSection({
   );
 
   // Build a mapping: activeIndex -> original index in formData.stops
-  const activeIndexToOriginal: number[] = [];
-  formData.stops.forEach((stop, origIdx) => {
-    if (!stop._deleted) {
-      activeIndexToOriginal.push(origIdx);
-    }
-  });
+  const activeIndexToOriginal = useMemo(() => {
+    const mapping: number[] = [];
+    formData.stops.forEach((stop, origIdx) => {
+      if (!stop._deleted) mapping.push(origIdx);
+    });
+    return mapping;
+  }, [formData.stops]);
 
   // Sortable IDs for active stops
-  const sortableIds = activeStops.map((_, activeIdx) => `stop-${activeIndexToOriginal[activeIdx]}`);
+  const sortableIds = useMemo(
+    () => activeStops.map((_, activeIdx) => `stop-${activeIndexToOriginal[activeIdx]}`),
+    [activeStops, activeIndexToOriginal]
+  );
 
   /**
    * After reordering active stops, renumber sequenceNo for all active stops
@@ -165,8 +173,7 @@ export function RouteSection({
 
       onChange({ stops: renumberAndBuild(reordered) });
     },
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [formData.stops, onChange]
+    [sortableIds, activeStops, formData.stops, onChange]
   );
 
   function patchStop(idx: number, patch: Partial<OrderFormStop>) {

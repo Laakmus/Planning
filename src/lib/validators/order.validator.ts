@@ -43,7 +43,16 @@ export const orderListQuerySchema = z.object({
   sortDirection: z.enum(["ASC", "DESC"]).default("ASC"),
   page: z.coerce.number().int().min(1).default(1),
   pageSize: z.coerce.number().int().min(1).max(200).default(50),
-});
+}).refine(
+  (data) => {
+    // M-03: Walidacja że dateFrom <= dateTo (jeśli oba podane)
+    if (data.dateFrom && data.dateTo) {
+      return data.dateFrom <= data.dateTo;
+    }
+    return true;
+  },
+  { message: "dateFrom musi być wcześniejsze lub równe dateTo", path: ["dateFrom"] }
+);
 
 export type OrderListQueryParams = z.infer<typeof orderListQuerySchema>;
 

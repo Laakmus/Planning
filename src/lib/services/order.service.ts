@@ -1696,11 +1696,18 @@ export async function updateOrder(
     if (bizLogErr) throw bizLogErr;
   }
 
+  // M-02: Pobierz rzeczywisty updated_at z DB (nie Date.now()) — spójność z optimistic concurrency
+  const { data: refreshed } = await supabase
+    .from("transport_orders")
+    .select("updated_at")
+    .eq("id", orderId)
+    .single();
+
   return {
     id: orderId,
     orderNo: order.order_no,
     statusCode: newStatusCode,
-    updatedAt: new Date().toISOString(),
+    updatedAt: refreshed?.updated_at ?? new Date().toISOString(),
   };
 }
 
@@ -1891,6 +1898,28 @@ export async function patchStop(
 
   if (stopErr) throw stopErr;
   if (!stop) return null;
+
+  // M-04: Walidacja kolejności trasy przy zmianie kind (pierwszy stop = LOADING, ostatni = UNLOADING)
+  if (params.kind !== undefined) {
+    const { data: currentStops } = await supabase
+      .from("order_stops")
+      .select("id, kind, sequence_no")
+      .eq("order_id", orderId)
+      .order("sequence_no", { ascending: true });
+
+    if (currentStops && currentStops.length > 0) {
+      // Symuluj zmianę kind dla patchowanego stopu
+      const simulated = currentStops.map((s) =>
+        s.id === stopId ? { ...s, kind: params.kind! } : s
+      );
+      if (simulated[0].kind !== "LOADING") {
+        throw new Error("INVALID_ROUTE_ORDER");
+      }
+      if (simulated[simulated.length - 1].kind !== "UNLOADING") {
+        throw new Error("INVALID_ROUTE_ORDER");
+      }
+    }
+  }
 
   const stopUpdatePayload: Record<string, unknown> = {};
   if (params.kind !== undefined) stopUpdatePayload.kind = params.kind;

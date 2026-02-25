@@ -414,7 +414,7 @@ export type Database = {
           transport_year: number | null
           updated_at: string
           updated_by_user_id: string | null
-          vehicle_variant_code: string
+          vehicle_variant_code: string | null
           week_number: number | null
         }
         Insert: {
@@ -462,7 +462,7 @@ export type Database = {
           transport_year?: number | null
           updated_at?: string
           updated_by_user_id?: string | null
-          vehicle_variant_code: string
+          vehicle_variant_code?: string | null
           week_number?: number | null
         }
         Update: {
@@ -510,7 +510,7 @@ export type Database = {
           transport_year?: number | null
           updated_at?: string
           updated_by_user_id?: string | null
-          vehicle_variant_code?: string
+          vehicle_variant_code?: string | null
           week_number?: number | null
         }
         Relationships: [

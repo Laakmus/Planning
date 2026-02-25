@@ -21,11 +21,9 @@ export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
     return <span className="text-slate-400 dark:text-slate-500 text-[11px]">—</span>;
   }
 
-  // Sortuj: LOADING zawsze przed UNLOADING, w ramach kind po sequenceNo
-  const sorted = [...stops].sort((a, b) => {
-    if (a.kind !== b.kind) return a.kind === "LOADING" ? -1 : 1;
-    return a.sequenceNo - b.sequenceNo;
-  });
+  // M-10: Sortuj po sequenceNo (trasy mogą mieć mieszaną kolejność L/U)
+  const sorted = [...stops].sort((a, b) => a.sequenceNo - b.sequenceNo);
+
   let loadingCount = 0;
   let unloadingCount = 0;
 

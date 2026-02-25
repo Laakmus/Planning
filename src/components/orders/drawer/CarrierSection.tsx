@@ -3,7 +3,7 @@
  * Autocomplete firmy, NIP (readonly), typ auta + objętość (2 selecty), wymagane dokumenty.
  */
 
-import { useState, useMemo, useCallback } from "react";
+import { useState, useMemo, useCallback, useEffect } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -56,6 +56,19 @@ export function CarrierSection({
       ? String(currentVariant.capacityVolumeM3)
       : "",
   );
+
+  // M-08: Synchronizacja lokalnego stanu przy zmianie zlecenia/wariantu pojazdu
+  useEffect(() => {
+    const variant = vehicleVariants.find(
+      (v) => v.code === formData.vehicleVariantCode,
+    );
+    setSelectedVehicleType(variant?.vehicleType ?? "");
+    setVolumeInput(
+      variant?.capacityVolumeM3 != null
+        ? String(variant.capacityVolumeM3)
+        : "",
+    );
+  }, [formData.vehicleVariantCode, vehicleVariants]);
 
   const uniqueVehicleTypes = useMemo(() => {
     const types = new Set(

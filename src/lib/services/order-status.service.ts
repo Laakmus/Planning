@@ -127,6 +127,9 @@ export async function changeStatus(
   };
   if (params.newStatusCode === "reklamacja" && params.complaintReason != null) {
     updatePayload.complaint_reason = params.complaintReason.trim();
+  } else if (params.newStatusCode !== "reklamacja") {
+    // M-01: Czyść complaint_reason przy wyjściu ze statusu reklamacja — pole nie jest już aktualne
+    updatePayload.complaint_reason = null;
   }
 
   // Atomic UPDATE with current status guard — prevents TOCTOU where status

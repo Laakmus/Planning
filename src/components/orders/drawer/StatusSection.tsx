@@ -69,8 +69,9 @@ export function StatusSection({
   const allowedTransitions =
     ALLOWED_MANUAL_STATUS_TRANSITIONS[currentStatusCode as OrderStatusCode] ?? [];
 
-  const isComplaintPending =
-    pendingStatusCode === "reklamacja" || currentStatusCode === "reklamacja";
+  // M-11: Rozdzielenie warunków — przejście na reklamację vs. aktualnie w reklamacji
+  const isChangingToComplaint = pendingStatusCode === "reklamacja";
+  const isCurrentlyComplaint = currentStatusCode === "reklamacja";
 
   function handleStatusClick(code: OrderStatusCode) {
     if (pendingStatusCode === code) {
@@ -116,13 +117,13 @@ export function StatusSection({
         )}
       </div>
 
-      {/* Powód reklamacji */}
-      {isComplaintPending && (
+      {/* Powód reklamacji — edytowalny przy zmianie na reklamację, readonly przy aktualnym statusie */}
+      {(isChangingToComplaint || isCurrentlyComplaint) && (
         <div className="flex items-start gap-2 p-3 bg-red-500/5 border border-red-500/20 rounded-lg">
           <AlertTriangle className="w-4 h-4 text-red-500 mt-1 shrink-0" />
           <div className="flex-1">
             <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
-              Powód reklamacji{pendingStatusCode === "reklamacja" && <span className="text-red-500 ml-0.5">*</span>}
+              Powód reklamacji{isChangingToComplaint && <span className="text-red-500 ml-0.5">*</span>}
             </label>
             <Textarea
               value={complaintReason ?? ""}
@@ -131,8 +132,9 @@ export function StatusSection({
               maxLength={500}
               className="text-sm resize-none"
               placeholder="Wymagane przy zmianie statusu na Reklamacja..."
+              disabled={isCurrentlyComplaint && !isChangingToComplaint}
             />
-            {pendingStatusCode === "reklamacja" && (
+            {isChangingToComplaint && (
               <p className="text-xs text-red-500 mt-1">Pole wymagane przy przejściu na status Reklamacja</p>
             )}
           </div>

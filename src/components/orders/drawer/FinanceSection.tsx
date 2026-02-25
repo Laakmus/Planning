@@ -102,7 +102,7 @@ export function FinanceSection({
       <div className="basis-[25%] min-w-0 space-y-1">
         <Label className="text-xs">Forma płatności</Label>
         <Select
-          value={formData.paymentMethod ?? "Przelew"}
+          value={formData.paymentMethod ?? ""}
           onValueChange={(v) => onChange({ paymentMethod: v })}
           disabled={isReadOnly}
         >

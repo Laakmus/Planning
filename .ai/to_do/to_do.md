@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-25 (sesja 16)
+> Ostatnia aktualizacja: 2026-02-25 (sesja 16, część 2 — MEDIUM)
 
 ---
 
@@ -19,63 +19,25 @@
 - [x] H-08: `SheetTitle`/`SheetDescription` sr-only w HistoryPanel
 - [x] H-09: `tokenRef` zamiast `useState` w AuthContext — stabilny `api`
 - [x] H-10: `carrier_cell_color` dodane do `database.types.ts`
-- [x] M-07: `order_seq_no INT` + trigger + indeks (sortowanie numeryczne)
-- [x] M-09: won't fix — filtr tygodniowy po dacie załadunku by design
-
----
-
-## MEDIUM
-
-### M-01. `changeStatus` nie czyści `complaint_reason` przy wyjściu ze statusu reklamacja
-- **Plik:** `order-status.service.ts:124-129`
-
-### M-02. `updatedAt` w odpowiedzi PUT pochodzi z `Date.now()`, nie z DB
-- **Plik:** `order.service.ts:1692`
-
-### M-03. Brak walidacji `dateFrom <= dateTo`
-- **Plik:** `order.validator.ts:33-34`
-
-### M-04. `patchStop` pozwala zmienić `kind` bez walidacji kolejności trasy
-- **Plik:** `[stopId].ts:60-63`
-
-### M-05. `/duplicate` nie obsługuje błędu `FK_VALIDATION` → HTTP 500
-- **Plik:** `duplicate.ts:57-64`
-
-### M-06. In-memory rate limiter/idempotency nie skaluje się (OK dla MVP)
-- **Plik:** `middleware.ts:18-64`
-
-### M-07. Stale closure `sortableIds` w `handleDragEnd`
-- **Plik:** `RouteSection.tsx:168-169`
-
-### M-08. Lokalny stan pojazdu w CarrierSection nie synchronizuje się przy zmianie zlecenia
-- **Plik:** `CarrierSection.tsx:50-58`
-
-### M-09. Fallback `"Przelew"` dla null maskuje faktyczną wartość
-- **Plik:** `FinanceSection.tsx:105`
-
-### M-10. RouteSummaryCell sortuje stopy po `kind` zamiast `sequenceNo`
-- **Plik:** `RouteSummaryCell.tsx:25-26`
-
-### M-11. Pole "Powód reklamacji" wyświetlane jako wymagane bez zmiany statusu
-- **Plik:** `StatusSection.tsx:72-73`
-
-### M-12. `vehicle_variant_code` nullable po migracji, `database.types.ts` mówi `string`
-- **Plik:** `database.types.ts:416`
-
-### M-13. `UpdateOrderResponseDto` zawiera `orderNo` — nieudokumentowane w api-plan §2.5
-- **Plik:** `types.ts:311-317`
-
-### M-14. Auto-waluta przy zmianie transportType — tylko frontend, backend nie egzekwuje
-- **Plik:** `order.service.ts:734-751`
-
-### M-15. `prepare-email` nie aktualizuje `main_product_name` (opisane w api-plan §2.15)
-- **Plik:** `order.service.ts:1727+`
-
-### M-16. FilterBar — brak filtra po lokalizacji (tylko po firmie)
-- **Plik:** `FilterBar.tsx`
-
-### M-17. Brak jobu czyszczącego anulowane zlecenia po 24h (opisane w PRD/api-plan)
-- Wymaga implementacji `pg_cron` lub scheduled function.
+- [x] M-01: `changeStatus` czyści `complaint_reason` przy wyjściu ze statusu reklamacja
+- [x] M-02: `updatedAt` w odpowiedzi PUT teraz z DB (SELECT po UPDATE)
+- [x] M-03: Walidacja `dateFrom <= dateTo` w `orderListQuerySchema` (.refine)
+- [x] M-04: `patchStop` waliduje kolejność trasy przy zmianie kind (INVALID_ROUTE_ORDER)
+- [x] M-05: `/duplicate` obsługuje `FK_VALIDATION` → HTTP 422
+- [x] M-06: won't fix — in-memory rate limiter OK dla MVP
+- [x] M-07 (sort): `order_seq_no INT` + trigger + indeks (sortowanie numeryczne)
+- [x] M-07 (DnD): `sortableIds`/`activeStops` → `useMemo` + pełne deps w `handleDragEnd`
+- [x] M-08: CarrierSection `useEffect` synchronizuje stan pojazdu przy zmianie zlecenia
+- [x] M-09 (filter): won't fix — filtr tygodniowy po dacie załadunku by design
+- [x] M-09 (finance): Fallback `"Przelew"` usunięty — null → pusty placeholder
+- [x] M-10: RouteSummaryCell sortuje po `sequenceNo` (obsługuje mieszane trasy)
+- [x] M-11: StatusSection — powód reklamacji readonly gdy aktualny status=reklamacja, wymagany tylko przy pendingStatus=reklamacja
+- [x] M-12: `vehicle_variant_code: string | null` w database.types.ts (Row/Insert/Update)
+- [x] M-13: won't fix — `orderNo` w UpdateOrderResponseDto jest przydatne, docs update minor
+- [x] M-14: won't fix — auto-waluta frontend-only OK dla MVP
+- [x] M-15: już naprawione — `prepare-email` aktualizuje `main_product_name` (kod weryfikuje)
+- [x] M-16: deferred — FilterBar filtr po lokalizacji to feature work
+- [x] M-17: deferred — job czyszczący anulowane wymaga pg_cron (infrastructure)
 
 ---
 

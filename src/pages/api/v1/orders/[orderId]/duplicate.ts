@@ -55,6 +55,15 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
     }
     return jsonResponse(result, 201);
   } catch (err) {
+    // M-05: Obsługa FK_VALIDATION — klucze obce do nieaktywnych/usuniętych rekordów
+    const msg = err instanceof Error ? err.message : "";
+    if (msg === "FK_VALIDATION") {
+      return errorResponse(
+        422,
+        "Unprocessable Entity",
+        "Zlecenie zawiera odniesienia do nieaktywnych lub usuniętych rekordów słownikowych."
+      );
+    }
     console.error("[POST /api/v1/orders/{orderId}/duplicate]", err);
     return errorResponse(
       500,
