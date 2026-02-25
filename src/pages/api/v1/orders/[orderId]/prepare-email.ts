@@ -85,6 +85,13 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
         "Wysyłka niedozwolona dla zlecenia w tym statusie (zrealizowane, anulowane, reklamacja)."
       );
     }
+    if (msg === "STATUS_CHANGED") {
+      return errorResponse(
+        409,
+        "Conflict",
+        "Status zlecenia zmienił się w trakcie operacji. Odśwież dane i spróbuj ponownie."
+      );
+    }
     console.error("[POST /api/v1/orders/{orderId}/prepare-email]", err);
     return errorResponse(
       500,

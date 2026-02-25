@@ -14,6 +14,7 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
@@ -70,12 +71,6 @@ export function AuthProvider({
     [supabaseUrl, supabaseAnonKey],
   );
 
-  // Funkcja pobierająca aktualny token z sesji Supabase
-  const getToken = useCallback(async (): Promise<string | null> => {
-    const { data } = await supabase.auth.getSession();
-    return data.session?.access_token ?? null;
-  }, [supabase]);
-
   // Callback wylogowania (wywoływany przez ApiClient przy 401)
   const handleUnauthorized = useCallback(() => {
     setUser(null);
@@ -85,17 +80,18 @@ export function AuthProvider({
   }, [supabase]);
 
   // ApiClient — stabilna instancja z lazy getToken
-  // Uwaga: getToken jest async, ale api-client wymaga sync callback.
-  // Przechowujemy token w ref-like zmiennej aktualizowanej przez auth state change.
-  const [currentToken, setCurrentToken] = useState<string | null>(null);
+  // Token przechowujemy w ref (nie state), by uniknąć tworzenia nowej instancji api
+  // przy każdym odświeżeniu JWT (~co 55 min) — zamknięcie nad tokenRef.current
+  // zawsze zwraca aktualny token bez potrzeby przebudowy useMemo.
+  const tokenRef = useRef<string | null>(null);
 
   const api = useMemo<ApiClient>(
     () =>
       createApiClient({
-        getToken: () => currentToken,
+        getToken: () => tokenRef.current,
         onUnauthorized: handleUnauthorized,
       }),
-    [currentToken, handleUnauthorized],
+    [handleUnauthorized],
   );
 
   // Pobierz profil użytkownika z API
@@ -146,7 +142,7 @@ export function AuthProvider({
         }
 
         const token = data.session.access_token;
-        setCurrentToken(token);
+        tokenRef.current = token;
 
         const profile = await fetchUserProfile(token);
         if (!profile) {
@@ -171,7 +167,7 @@ export function AuthProvider({
   const logout = useCallback(async (): Promise<void> => {
     await supabase.auth.signOut();
     setUser(null);
-    setCurrentToken(null);
+    tokenRef.current = null;
     window.location.href = "/";
   }, [supabase]);
 
@@ -181,7 +177,7 @@ export function AuthProvider({
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       const token = session?.access_token ?? null;
-      setCurrentToken(token);
+      tokenRef.current = token;
 
       if (!session) {
         setUser(null);
@@ -201,7 +197,7 @@ export function AuthProvider({
         const token = data.session?.access_token ?? null;
 
         if (cancelled) return;
-        setCurrentToken(token);
+        tokenRef.current = token;
 
         if (token) {
           const profile = await fetchUserProfile(token);

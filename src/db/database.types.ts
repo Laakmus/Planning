@@ -371,6 +371,7 @@ export type Database = {
       transport_orders: {
         Row: {
           carrier_address_snapshot: string | null
+          carrier_cell_color: string | null
           carrier_company_id: string | null
           carrier_location_name_snapshot: string | null
           carrier_name_snapshot: string | null
@@ -418,6 +419,7 @@ export type Database = {
         }
         Insert: {
           carrier_address_snapshot?: string | null
+          carrier_cell_color?: string | null
           carrier_company_id?: string | null
           carrier_location_name_snapshot?: string | null
           carrier_name_snapshot?: string | null
@@ -465,6 +467,7 @@ export type Database = {
         }
         Update: {
           carrier_address_snapshot?: string | null
+          carrier_cell_color?: string | null
           carrier_company_id?: string | null
           carrier_location_name_snapshot?: string | null
           carrier_name_snapshot?: string | null

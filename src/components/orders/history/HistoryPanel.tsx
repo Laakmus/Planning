@@ -11,6 +11,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import {
   Sheet,
   SheetContent,
+  SheetDescription,
+  SheetTitle,
 } from "@/components/ui/sheet";
 import { useOrderHistory } from "@/hooks/useOrderHistory";
 import type { ChangeLogItemDto, StatusHistoryItemDto } from "@/types";
@@ -105,6 +107,10 @@ export function HistoryPanel({ orderId, orderNo, isOpen, onClose }: HistoryPanel
         onInteractOutside={() => onClose()}
         onEscapeKeyDown={() => onClose()}
       >
+        <SheetTitle className="sr-only">Historia zmian zlecenia {orderNo}</SheetTitle>
+        <SheetDescription className="sr-only">
+          Lista zmian statusów i danych zlecenia
+        </SheetDescription>
         {/* Nagłówek */}
         <div className="shrink-0 px-5 py-4 border-b border-slate-200 dark:border-slate-800 flex items-center justify-between bg-white/80 dark:bg-slate-950/80 backdrop-blur-sm sticky top-0 z-10">
           <div className="flex items-center gap-2">

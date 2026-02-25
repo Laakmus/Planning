@@ -187,18 +187,23 @@ export const onRequest = defineMiddleware(async (context, next) => {
       const responseHeaders: Record<string, string> = {};
       response.headers.forEach((v, k) => { responseHeaders[k] = v; });
 
-      // Ewikacja najstarszego wpisu gdy cache osiągnął limit
-      if (idempotencyCache.size >= MAX_CACHE_SIZE) {
-        const oldestKey = idempotencyCache.keys().next().value;
-        if (oldestKey !== undefined) idempotencyCache.delete(oldestKey);
-      }
+      // Cachuj tylko odpowiedzi sukcesu — błędy (4xx/5xx) nie powinny być powtarzane.
+      // Nawet z fałszywym JWT atakujący potrzebuje dokładnego klucza idempotentności,
+      // a oryginalne żądanie musiało przejść weryfikację tokenu Supabase.
+      if (response.status >= 200 && response.status < 300) {
+        // Ewikacja najstarszego wpisu gdy cache osiągnął limit
+        if (idempotencyCache.size >= MAX_CACHE_SIZE) {
+          const oldestKey = idempotencyCache.keys().next().value;
+          if (oldestKey !== undefined) idempotencyCache.delete(oldestKey);
+        }
 
-      idempotencyCache.set(cacheKey, {
-        status: response.status,
-        body: responseBody,
-        headers: responseHeaders,
-        expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
-      });
+        idempotencyCache.set(cacheKey, {
+          status: response.status,
+          body: responseBody,
+          headers: responseHeaders,
+          expiresAt: Date.now() + IDEMPOTENCY_TTL_MS,
+        });
+      }
 
       return new Response(responseBody, {
         status: response.status,

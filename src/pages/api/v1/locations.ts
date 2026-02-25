@@ -27,7 +27,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
         ? params.companyId
         : undefined;
     const result = await getLocations(locals.supabase, { search, companyId });
-    return jsonResponse(result, 200, { "Cache-Control": "public, max-age=3600" });
+    return jsonResponse(result, 200, { "Cache-Control": "private, max-age=3600" });
   } catch (err) {
     console.error("[GET /api/v1/locations]", err);
     return errorResponse(500, "Internal Server Error", "Błąd pobierania listy lokalizacji.");

@@ -1,72 +1,26 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-25 (sesja 16, audyt)
+> Ostatnia aktualizacja: 2026-02-25 (sesja 16)
 
 ---
 
-## CRITICAL
+## Zrobione (sesja 16)
 
-### C-01. `SUPABASE_KEY` w middleware — ryzyko użycia service_role key
-- **Pliki:** `middleware.ts:122`, `src/env.d.ts:16`, `.env.example`
-- `.env.example` definiuje `SUPABASE_ANON_KEY`, ale kod używa `SUPABASE_KEY`. Jeśli `.env` ma service_role key → omija RLS.
-- **Fix:** Ujednolicić na `SUPABASE_ANON_KEY` w middleware, env.d.ts, supabase.client.ts.
-
-### C-02. `patchStop` — błędy READONLY/FORBIDDEN_EDIT → HTTP 500
-- **Plik:** `src/pages/api/v1/orders/[orderId]/stops/[stopId].ts:76-87`
-- Serwis rzuca `READONLY` i `FORBIDDEN_EDIT`, endpoint obsługuje tylko `LOCKED` → catch-all 500.
-- **Fix:** Dodać obsługę obu błędów (400/409).
-
-### C-03. Unlock po zapisie — race condition
-- **Plik:** `src/components/orders/drawer/OrderDrawer.tsx:190-202, 313-323`
-- `doClose()` (unlock) wywoływane **po** `onOrderUpdated()` (refetch) → okno na zablokowanie zlecenia.
-- **Fix:** Wywołać unlock przed refetch.
-
----
-
-## HIGH
-
-### H-01. Idempotency cache sprawdzany przed auth — replay z fałszywym JWT
-- **Plik:** `middleware.ts:170-210`
-- Cache sprawdzany przed Supabase auth → fałszywy JWT z poprawnym `sub` odtwarza odpowiedź.
-- **Fix:** Przenieść idempotency check po autentykacji.
-
-### H-02. `unlockOrder` — TOCTOU, UPDATE bez warunku `locked_by_user_id`
-- **Plik:** `order-lock.service.ts:101-104`
-- SELECT → sprawdzenie → UPDATE bez `.eq("locked_by_user_id", userId)` → może usunąć cudzą blokadę.
-
-### H-03. `prepareEmailForOrder` — UPDATE bez warunku na status (TOCTOU)
-- **Plik:** `order.service.ts:1787-1792`
-- Brak `.eq("status_code", ...)` → równoległa zmiana statusu (np. anulowanie) może zostać nadpisana.
-
-### H-04. `Cache-Control: public` na endpointach z RLS
-- **Pliki:** `companies.ts`, `locations.ts`, `products.ts` (~linia 25)
-- `public` pozwala proxy cache'ować odpowiedź z sesji A dla użytkownika B.
-- **Fix:** Zmienić na `private, max-age=3600`.
-
-### H-05. `duplicateOrder` nie zapisuje do `order_status_history`
-- **Plik:** `order.service.ts:869-1019`
-- Nowe zlecenie z duplikacji nie ma wpisu w historii statusów.
-
-### H-06. `vehicleVariantCode` = `""` zamiast `null` → fałszywy dirty state
-- **Plik:** `CarrierSection.tsx:92-106`
-- `onChange({ vehicleVariantCode: match?.code ?? "" })` — powinno być `?? null`.
-
-### H-07. Formularz nie resetuje się po zmianie danych tego samego zlecenia
-- **Plik:** `OrderForm.tsx:149`
-- `useEffect` zależy tylko od `order.id` — po prepare-email (zmiana statusu) formularz nie odświeża danych.
-
-### H-08. Brak `SheetTitle`/`SheetDescription` w HistoryPanel
-- **Plik:** `src/components/orders/history/HistoryPanel.tsx:101-107`
-- Naruszenie Radix a11y — screen reader nie ogłasza tytułu.
-
-### H-09. Nowy `api` przy każdym odświeżeniu tokenu → kaskadowe re-rendery
-- **Plik:** `AuthContext.tsx:92-99`
-- `useMemo` z `[currentToken]` dep → nowa referencja co ~55 min → re-render całej aplikacji.
-- **Fix:** `useRef` dla tokenu, getter w `createApiClient`.
-
-### H-10. `carrier_cell_color` brakuje w `database.types.ts`
-- Migracja `20260222000000` dodała kolumnę, ale typy TS nie mają tego pola.
-- **Fix:** Dodać `carrier_cell_color: string | null` do Row/Insert/Update.
+- [x] C-01: Rename `SUPABASE_KEY` → `SUPABASE_ANON_KEY`
+- [x] C-02: Obsługa `READONLY`/`FORBIDDEN_EDIT` w patchStop endpoint
+- [x] C-03: Unlock przed refetch w OrderDrawer
+- [x] H-01: Idempotency cache — tylko 2xx cachowane (zabezpieczenie przed replay)
+- [x] H-02: `unlockOrder` — atomic UPDATE z `.eq("locked_by_user_id", userId)`
+- [x] H-03: `prepareEmailForOrder` — TOCTOU guard `.eq("status_code", ...)` + `STATUS_CHANGED` error
+- [x] H-04: `Cache-Control: private` na companies, locations, products
+- [x] H-05: `duplicateOrder` — wpis do `order_status_history`
+- [x] H-06: `vehicleVariantCode` = `null` zamiast `""`
+- [x] H-07: OrderForm reset na `[order.id, order.updatedAt]`
+- [x] H-08: `SheetTitle`/`SheetDescription` sr-only w HistoryPanel
+- [x] H-09: `tokenRef` zamiast `useState` w AuthContext — stabilny `api`
+- [x] H-10: `carrier_cell_color` dodane do `database.types.ts`
+- [x] M-07: `order_seq_no INT` + trigger + indeks (sortowanie numeryczne)
+- [x] M-09: won't fix — filtr tygodniowy po dacie załadunku by design
 
 ---
 

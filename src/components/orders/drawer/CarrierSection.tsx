@@ -89,9 +89,9 @@ export function CarrierSection({
     const vol = parseFloat(volumeInput);
     if (!isNaN(vol)) {
       const match = findVariantByVolume(type, vol);
-      onChange({ vehicleVariantCode: match?.code ?? "" });
+      onChange({ vehicleVariantCode: match?.code ?? null });
     } else {
-      onChange({ vehicleVariantCode: "" });
+      onChange({ vehicleVariantCode: null });
     }
   }
 
@@ -100,9 +100,9 @@ export function CarrierSection({
     const vol = parseFloat(value);
     if (!isNaN(vol) && selectedVehicleType) {
       const match = findVariantByVolume(selectedVehicleType, vol);
-      onChange({ vehicleVariantCode: match?.code ?? "" });
+      onChange({ vehicleVariantCode: match?.code ?? null });
     } else {
-      onChange({ vehicleVariantCode: "" });
+      onChange({ vehicleVariantCode: null });
     }
   }
 

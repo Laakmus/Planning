@@ -146,7 +146,7 @@ export function OrderForm({
     setPendingStatusCode(null);
     setComplaintReason(order.complaintReason);
     setIsDirty(false);
-  }, [order.id]); // reset przy zmianie zlecenia
+  }, [order.id, order.updatedAt]); // reset przy zmianie zlecenia LUB po aktualizacji danych
 
   /** Sprawdza czy formularz ma niezapisane zmiany */
   function computeDirty(

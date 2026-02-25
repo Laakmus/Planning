@@ -996,6 +996,16 @@ export async function duplicateOrder(
     throw err;
   }
 
+  // Wpis do historii statusów — nowe zlecenie z duplikacji.
+  // old_status_code = newStatus (brak poprzedniego stanu), gdyż kolumna NOT NULL z FK.
+  const { error: historyErr } = await supabase.from("order_status_history").insert({
+    order_id: newOrderId,
+    old_status_code: newStatus,
+    new_status_code: newStatus,
+    changed_by_user_id: userId,
+  });
+  if (historyErr) throw historyErr;
+
   // Nazwa statusu — z oryginału lub z bazy gdy reset do robocze (api-plan §2.9)
   let statusName: string;
   if (!params.resetStatusToDraft) {
@@ -1783,13 +1793,20 @@ export async function prepareEmailForOrder(
     }
   }
 
+  // Zabezpieczenie TOCTOU: UPDATE z warunkiem na status_code.
+  // Jeśli między odczytem a zapisem inny proces zmienił status, count === 0.
   type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
-  const { error: updateError } = await supabase
+  const { error: updateError, count } = await supabase
     .from("transport_orders")
-    .update(updatePayload as OrderUpdate)
-    .eq("id", orderId);
+    .update(updatePayload as OrderUpdate, { count: "exact" })
+    .eq("id", orderId)
+    .eq("status_code", order.statusCode);
 
   if (updateError) throw updateError;
+
+  if (count === 0) {
+    throw new Error("STATUS_CHANGED");
+  }
 
   if (newStatusCode !== order.statusCode) {
     const { error: historyErr } = await supabase.from("order_status_history").insert({
