@@ -990,21 +990,21 @@ export async function duplicateOrder(
       const { error: itemsErr } = await supabase.from("order_items").insert(itemsInsert);
       if (itemsErr) throw itemsErr;
     }
+
+    // Wpis do historii statusów — nowe zlecenie z duplikacji.
+    // old_status_code = newStatus (brak poprzedniego stanu), gdyż kolumna NOT NULL z FK.
+    const { error: historyErr } = await supabase.from("order_status_history").insert({
+      order_id: newOrderId,
+      old_status_code: newStatus,
+      new_status_code: newStatus,
+      changed_by_user_id: userId,
+    });
+    if (historyErr) throw historyErr;
   } catch (err) {
     // Kompensujący cleanup — usuń osierocony duplikat zlecenia
     await supabase.from("transport_orders").delete().eq("id", newOrderId);
     throw err;
   }
-
-  // Wpis do historii statusów — nowe zlecenie z duplikacji.
-  // old_status_code = newStatus (brak poprzedniego stanu), gdyż kolumna NOT NULL z FK.
-  const { error: historyErr } = await supabase.from("order_status_history").insert({
-    order_id: newOrderId,
-    old_status_code: newStatus,
-    new_status_code: newStatus,
-    changed_by_user_id: userId,
-  });
-  if (historyErr) throw historyErr;
 
   // Nazwa statusu — z oryginału lub z bazy gdy reset do robocze (api-plan §2.9)
   let statusName: string;

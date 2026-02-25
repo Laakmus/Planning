@@ -101,13 +101,13 @@ export async function unlockOrder(
   // Zwykły użytkownik — unlock tylko swojej blokady; admin — dowolnej.
   // Warunek WHERE zabezpiecza przed TOCTOU: między SELECT a UPDATE
   // inny użytkownik mógłby przejąć blokadę.
-  const updateQuery = supabase
+  let updateQuery = supabase
     .from("transport_orders")
     .update({ locked_by_user_id: null, locked_at: null })
     .eq("id", orderId);
 
   if (!isAdmin) {
-    updateQuery.eq("locked_by_user_id", userId);
+    updateQuery = updateQuery.eq("locked_by_user_id", userId);
   }
 
   const { error: updateError } = await updateQuery;

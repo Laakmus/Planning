@@ -98,7 +98,7 @@ export function AuthProvider({
   const fetchUserProfile = useCallback(
     async (token: string): Promise<AuthMeDto | null> => {
       try {
-        // Bezpośredni fetch z tokenem (zamiast api.get, bo api może mieć stary token)
+        // Bezpośredni fetch z tokenem (potrzebny przy pierwszym logowaniu, zanim tokenRef się zaktualizuje)
         const response = await fetch("/api/v1/auth/me", {
           headers: {
             Authorization: `Bearer ${token}`,
