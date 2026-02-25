@@ -47,15 +47,14 @@ vehicle_variants        — warianty pojazdów (słownik)
 
 ### Istniejące migracje
 ```
-20260207000000_create_transport_schema.sql      — schemat bazowy
-20260208000000_add_payment_volume_requirements.sql
-20260208100000_add_last_loading_unloading_dates.sql
-20260209000000_add_missing_columns_from_db_plan.sql
-20260210000000_add_missing_columns_transport_orders.sql
-20260220000000_add_atomic_lock_and_order_no.sql — RPC functions
-20260222000000_add_carrier_cell_color.sql
-20260222100000_vehicle_variant_code_nullable.sql
+20260207000000_consolidated_schema.sql — skonsolidowany schemat (tabele, RLS, triggery, RPC)
 ```
+<!-- UWAGA: Migracje zostały skonsolidowane 2026-02-25.
+     Poprzednio było 9 osobnych plików (create_transport_schema, add_payment_volume_requirements,
+     add_last_loading_unloading_dates, add_missing_columns_from_db_plan,
+     add_missing_columns_transport_orders, add_atomic_lock_and_order_no,
+     add_carrier_cell_color, vehicle_variant_code_nullable, add_order_seq_no).
+     Wszystko zostało scalone w jeden plik consolidated_schema. -->
 
 ### RPC functions
 - `try_lock_order(p_order_id UUID, p_user_id UUID)` — atomowa blokada z cleanup expired
@@ -75,8 +74,7 @@ vehicle_variants        — warianty pojazdów (słownik)
 
 ## Kluczowe pliki do przeczytania przed pracą
 - `.ai/db-plan.md` — pełna specyfikacja schematu
-- `supabase/migrations/20260207000000_create_transport_schema.sql` — główny schemat
-- `supabase/migrations/20260220000000_add_atomic_lock_and_order_no.sql` — RPC functions
+- `supabase/migrations/20260207000000_consolidated_schema.sql` — skonsolidowany schemat (tabele, RLS, triggery, RPC)
 - `supabase/seed.sql` — dane testowe
 
 ## Po migracji — WAŻNE

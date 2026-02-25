@@ -843,7 +843,7 @@ async function generateOrderNo(
   supabase: SupabaseClient<Database>
 ): Promise<string> {
   // Cast needed: generated Supabase types don't include custom RPC functions.
-  // The RPC is defined in migration 20260220000000_add_atomic_lock_and_order_no.sql.
+  // RPC zdefiniowane w supabase/migrations/20260207000000_consolidated_schema.sql (sekcja 7.2).
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const { data, error } = await (supabase as any).rpc("generate_next_order_no");
 
@@ -1300,7 +1300,7 @@ export async function updateOrder(
 ): Promise<UpdateOrderResponseDto | null> {
   // Rozszerzony SELECT o pola biznesowe do logowania zmian (M-02).
   // Kolumny payment_term_days, payment_method, total_load_volume_m3, special_requirements
-  // istnieją w DB (migracja 20260208) ale brakuje ich w wygenerowanych typach — stąd cast.
+  // istnieją w DB (consolidated_schema.sql) ale brakuje ich w wygenerowanych typach — stąd cast.
   const { data: order, error: fetchError } = await (supabase
     .from("transport_orders")
     .select(`id, order_no, status_code, locked_by_user_id,

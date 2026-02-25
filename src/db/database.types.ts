@@ -387,11 +387,17 @@ export type Database = {
           first_unloading_time: string | null
           general_notes: string | null
           id: string
+          last_loading_date: string | null
+          last_loading_time: string | null
+          last_unloading_date: string | null
+          last_unloading_time: string | null
           locked_at: string | null
           locked_by_user_id: string | null
           main_product_name: string | null
           order_no: string
           order_seq_no: number | null
+          payment_method: string | null
+          payment_term_days: number | null
           price_amount: number | null
           receiver_address_snapshot: string | null
           receiver_location_id: string | null
@@ -407,9 +413,11 @@ export type Database = {
           shipper_address_snapshot: string | null
           shipper_location_id: string | null
           shipper_name_snapshot: string | null
+          special_requirements: string | null
           status_code: string
           summary_route: string | null
           total_load_tons: number | null
+          total_load_volume_m3: number | null
           transport_type_code: string
           transport_year: number | null
           updated_at: string
@@ -435,11 +443,17 @@ export type Database = {
           first_unloading_time?: string | null
           general_notes?: string | null
           id?: string
+          last_loading_date?: string | null
+          last_loading_time?: string | null
+          last_unloading_date?: string | null
+          last_unloading_time?: string | null
           locked_at?: string | null
           locked_by_user_id?: string | null
           main_product_name?: string | null
           order_no: string
           order_seq_no?: number | null
+          payment_method?: string | null
+          payment_term_days?: number | null
           price_amount?: number | null
           receiver_address_snapshot?: string | null
           receiver_location_id?: string | null
@@ -455,9 +469,11 @@ export type Database = {
           shipper_address_snapshot?: string | null
           shipper_location_id?: string | null
           shipper_name_snapshot?: string | null
+          special_requirements?: string | null
           status_code: string
           summary_route?: string | null
           total_load_tons?: number | null
+          total_load_volume_m3?: number | null
           transport_type_code: string
           transport_year?: number | null
           updated_at?: string
@@ -483,11 +499,17 @@ export type Database = {
           first_unloading_time?: string | null
           general_notes?: string | null
           id?: string
+          last_loading_date?: string | null
+          last_loading_time?: string | null
+          last_unloading_date?: string | null
+          last_unloading_time?: string | null
           locked_at?: string | null
           locked_by_user_id?: string | null
           main_product_name?: string | null
           order_no?: string
           order_seq_no?: number | null
+          payment_method?: string | null
+          payment_term_days?: number | null
           price_amount?: number | null
           receiver_address_snapshot?: string | null
           receiver_location_id?: string | null
@@ -503,9 +525,11 @@ export type Database = {
           shipper_address_snapshot?: string | null
           shipper_location_id?: string | null
           shipper_name_snapshot?: string | null
+          special_requirements?: string | null
           status_code?: string
           summary_route?: string | null
           total_load_tons?: number | null
+          total_load_volume_m3?: number | null
           transport_type_code?: string
           transport_year?: number | null
           updated_at?: string
@@ -673,6 +697,15 @@ export type Database = {
     }
     Functions: {
       current_user_is_admin_or_planner: { Args: never; Returns: boolean }
+      generate_next_order_no: { Args: never; Returns: string }
+      try_lock_order: {
+        Args: {
+          p_lock_expiry_minutes?: number
+          p_order_id: string
+          p_user_id: string
+        }
+        Returns: Json
+      }
     }
     Enums: {
       [_ in never]: never

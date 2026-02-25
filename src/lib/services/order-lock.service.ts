@@ -30,7 +30,7 @@ export async function lockOrder(
   orderId: string
 ): Promise<LockOrderResponseDto | null> {
   // Cast needed: generated Supabase types don't include custom RPC functions.
-  // The RPC is defined in migration 20260220000000_add_atomic_lock_and_order_no.sql.
+  // RPC zdefiniowane w supabase/migrations/20260207000000_consolidated_schema.sql (sekcja 7.1).
   type TryLockResult = {
     status: string;
     lockedByUserId?: string;
