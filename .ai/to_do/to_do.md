@@ -1,7 +1,7 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-24 (sesja 15)
-> Kontekst: Sesja 15: M-01 (compensating cleanup) + M-02 (logowanie zmian pól biznesowych).
+> Ostatnia aktualizacja: 2026-02-25 (sesja 16)
+> Kontekst: Sesja 16: M-07 (order_seq_no sortowanie numeryczne), M-09 zamknięte (won't fix).
 
 ---
 
@@ -115,19 +115,9 @@
 - [x] Pełny audyt projektu z 5 agentami równolegle — spójność docs↔kod ~95% (sesja 12)
 - [x] Dark mode — kompletny: anti-flash script, ThemeProvider, ThemeToggle, 40 komponentów z `dark:` klasami (sesje 6-8)
 
----
-
-## MEDIUM — do zrobienia
-
-### M-07. Sortowanie po order_no (tekst) — problem po >9999 zleceń
-- **Plik:** `order.service.ts:47`
-- **Problem:** `ZT2026/10000` < `ZT2026/9999` w sortowaniu tekstowym.
-- **Rozwiązanie:** Sortować po extracted numeric part lub dodać kolumnę `order_seq_no INT`.
-
-### M-09. dateFrom/dateTo filtruje tylko first_loading_date
-- **Plik:** `order.service.ts:285-289`
-- **Problem:** PRD mówi "zakres dat (np. data załadunku, data rozładunku)" — sugeruje filtrowanie po obu.
-- **Rozwiązanie:** Dodać OR z first_unloading_date lub zmienić spec.
+### MEDIUM — sortowanie + docs (sesja 16)
+- [x] M-07: Sortowanie order_no — dodano kolumnę `order_seq_no INT` + trigger auto-extract + indeks + SORT_COLUMN zmieniony na `order_seq_no` (sesja 16)
+- [x] M-09: dateFrom/dateTo filtruje only first_loading_date — won't fix: UI nie ma osobnych inputów dat, filtr tygodniowy działa po dacie załadunku by design; uściślono api-plan.md (sesja 16)
 
 ---
 
@@ -168,14 +158,13 @@
 
 ## Otwarte decyzje (pending user)
 
-### D-01. READ_ONLY — weryfikacja ukrycia akcji we wszystkich komponentach
-- Pkt 59 z planu implementacji.
-
 ### D-03. PDF endpoint — stub 501 po stronie serwera
 - Wymaga generatora PDF (np. Puppeteer, jsPDF, Reportlab).
 
-### D-04. history/UserAvatar.tsx — inicjały inline w TimelineEntry
-- Komponent nie wyekstrahowany.
-
 ### D-05. hooks/useOrderDetail.ts — logika wbudowana w OrderDrawer
-- Hook nie wydzielony — OrderDrawer robi fetch + lock + unlock wewnętrznie.
+- Hook istnieje ale nieużywany — OrderDrawer robi fetch + lock + unlock wewnętrznie.
+- Opcja: usunąć martwy plik lub refaktoryzować OrderDrawer.
+
+### Zamknięte decyzje (sesja 16)
+- [x] D-01: READ_ONLY — weryfikacja kompletna: 8 komponentów poprawnie ukrywa akcje (OrdersPage, FilterBar, SyncButton, OrderRowContextMenu, OrderDrawer, DrawerFooter, OrderForm sections, RoutePointCard)
+- [x] D-04: UserAvatar — komponent wbudowany w TimelineEntry.tsx, działa prawidłowo; ekstrakcja do osobnego pliku opcjonalna

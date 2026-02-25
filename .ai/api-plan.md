@@ -67,7 +67,7 @@
     - `unloadingLocationId` (opcjonalny, UUID): analogicznie dla rozładunku (U1…U3)
     - `unloadingCompanyId` (opcjonalny, UUID): filtr po firmie rozładunku
     - `search` (opcjonalny, string): wyszukiwanie po `search_text`
-    - `dateFrom` / `dateTo` (opcjonalne, ISO date): zakres dat załadunku/rozładunku
+    - `dateFrom` / `dateTo` (opcjonalne, ISO date): zakres dat pierwszego załadunku (`first_loading_date`); używane wewnętrznie przez filtr tygodniowy (weekNumber → dateFrom/dateTo)
     - `sortBy` (opcjonalny): `FIRST_LOADING_DATETIME | FIRST_UNLOADING_DATETIME | ORDER_NO | CARRIER_NAME`
     - `sortDirection` (opcjonalny): `ASC | DESC`
     - `page` (opcjonalny): numer strony (domyślnie `1`)

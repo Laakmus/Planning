@@ -45,7 +45,7 @@ const SORT_COLUMN: Record<
 > = {
   FIRST_LOADING_DATETIME: "first_loading_date",
   FIRST_UNLOADING_DATETIME: "first_unloading_date",
-  ORDER_NO: "order_no",
+  ORDER_NO: "order_seq_no",
   CARRIER_NAME: "carrier_name_snapshot",
 };
 
