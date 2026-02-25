@@ -1,158 +1,157 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-25 (sesja 16)
-> Kontekst: Sesja 16: M-07 (order_seq_no sortowanie numeryczne), M-09 zamknięte (won't fix).
+> Ostatnia aktualizacja: 2026-02-25 (sesja 16, audyt)
 
 ---
 
-## Zrobione (referencja)
+## CRITICAL
 
-### CRITICAL (sesje 3-5)
-- [x] Race condition w lockOrder (atomic RPC `try_lock_order`)
-- [x] Race condition w generateOrderNo (atomic RPC `generate_next_order_no`)
-- [x] TOCTOU bypass blokady/statusu (conditional WHERE w UPDATE)
-- [x] C-01/C-03: ROW_BG — tylko `wysłane` i `korekta wysłane` → `bg-emerald-50/30` (sesja 5)
-- [x] C-02: Korekta wysłane — `yellow-*` → `amber-*` w StatusBadge + fix zamienione kolory Wysłane↔Zrealizowane (sesja 5)
+### C-01. `SUPABASE_KEY` w middleware — ryzyko użycia service_role key
+- **Pliki:** `middleware.ts:122`, `src/env.d.ts:16`, `.env.example`
+- `.env.example` definiuje `SUPABASE_ANON_KEY`, ale kod używa `SUPABASE_KEY`. Jeśli `.env` ma service_role key → omija RLS.
+- **Fix:** Ujednolicić na `SUPABASE_ANON_KEY` w middleware, env.d.ts, supabase.client.ts.
 
-### HIGH (sesje 3-12)
-- [x] H-01: handleSendEmail w OrdersPage — emailOpenUrl
-- [x] H-02: autoSetDocumentsAndCurrency — poprawne dokumenty wg PRD
-- [x] H-03: generalNotes max 500 (PRD + validator + DB zgodne)
-- [x] H-04: ALLOWED_TRANSITIONS — korekta -> reklamacja
-- [x] H-05: Server-side stop ordering (first=LOADING, last=UNLOADING)
-- [x] H-06: Sanityzacja LIKE wildcards (4 lokalizacje)
-- [x] H-07: CORS default localhost zamiast *
-- [x] H-08: unlock.ts requireWriteAccess
-- [x] H-09: dictionary-sync requireWriteAccess (PLANNER moze sync)
-- [x] H-10: Nowe zlecenie POST na frontendzie (OrderDrawer create mode)
-- [x] NEW-01: isDirty nie śledził zmian complaintReason — dodano `computeDirty()` z `originalComplaintReasonRef` w OrderForm.tsx (sesja 12)
-- [x] NEW-02: Zamiana deprecated `React.MutableRefObject` na `React.RefObject` w OrderForm.tsx (sesja 12)
+### C-02. `patchStop` — błędy READONLY/FORBIDDEN_EDIT → HTTP 500
+- **Plik:** `src/pages/api/v1/orders/[orderId]/stops/[stopId].ts:76-87`
+- Serwis rzuca `READONLY` i `FORBIDDEN_EDIT`, endpoint obsługuje tylko `LOCKED` → catch-all 500.
+- **Fix:** Dodać obsługę obu błędów (400/409).
 
-### MEDIUM (sesje 3-13)
-- [x] M-04: patchStop — dodano guard READONLY_STATUSES (zrealizowane/anulowane) (sesja 12)
-- [x] M-05: patchStop — dodano auto-korekta gdy edycja stopu w zleceniu wysłanym (sesja 12)
-- [x] M-06: OrderDetailDto — dodano 7 pól (statusName, weekNumber, sentAt, sentByUserName, createdByUserName, updatedByUserName, lockedByUserName) + JOINy z order_statuses i user_profiles w getOrderDetail (sesja 13)
-- [x] M-08: autoSetDocumentsAndCurrency — usunięto martwy kod `if (!userCurrency)` (sesja 13)
-- [x] M-10: Dodano MAX_CACHE_SIZE (10k) na idempotency cache z FIFO eviction + MAX_RATE_BUCKETS (50k) na rate limiter (sesja 12)
-- [x] M-11: Rate limiting — identyfikacja klienta po JWT sub claim zamiast slice(-16) tokena, fallback na IP (sesja 12)
-- [x] M-12: Dodano `.min(1).max(11)` na stops i `.max(50)` na items w Zod walidatorach + 10 nowych testów (sesja 12)
-- [x] M-13: Usunięto X-XSS-Protection, dodano CSP (`default-src 'none'; frame-ancestors 'none'`) i Referrer-Policy (sesja 12)
-- [x] M-14: duplicateOrder — dodano walidację FK (vehicle_variants, transport_types, companies, locations, products) + fix testów (sesja 13)
-- [x] M-15: AbortController z timeout 30s na fetch() w api-client.ts (sesja 13)
-- [x] M-16: Lock catch block w OrderDrawer ustawia lockedByUserName przy bledzie — drawer otwiera sie readonly (sesja 4)
-- [x] M-17: lockedByUserName — JOIN z user_profiles w getOrderDetail + pole w OrderDetailDto (sesja 13)
-- [x] M-18 (częściowo): POST /duplicate teraz wywolywany z context menu. PATCH /stops/{stopId} — nadal nieuzywany (sesja 5)
-- [x] M-19: Accept header — `raw: true` → `Accept: */*` zamiast `application/json` w api-client.ts (sesja 13)
-
-### LOW (sesja 12)
-- [x] L-06: Dodano `updated_by_user_id` do `cancelOrder()`, `restoreOrder()` i `changeStatus()` + 2 nowe testy (sesja 12)
-- [x] L-08: Usunięto `src/lib/utils/format.ts` (183 linii, 0 importów) + pusty katalog `utils/` (sesja 12)
-- [x] L-09: Usunięte razem z L-08 (sesja 12)
-
-### FIXy i CLEANUP (sesje 3-11)
-- [x] Migracja RPC zastosowana do lokalnej bazy — przyczyna 500 na lock i PUT
-- [x] NotesSection MAX_NOTES zmieniony z 1000 na 500
-- [x] PUT stops body — usunieto zbedne snapshot pola
-- [x] handleDrawerClose w OrdersPage opakowany w useCallback
-- [x] "Lost this" bug — `supabase.rpc` kontekst `this` (sesja 4)
-- [x] PostgREST v14 bug — `.or()` + `.select()` (sesja 4)
-- [x] PostgREST schema cache — restart po migracji (sesja 4)
-- [x] Usunięto martwy kod `isLockExpired()` i `buildSnapshotsForItem()`
-- [x] Dodano `SheetDescription` (sr-only) w OrderDrawer
-- [x] Context menu Radix pointerup race condition — time-based guard 300ms (sesja 10)
-- [x] ContextMenuSubContent Portal + collisionPadding (sesja 10)
-- [x] Zamiana native confirm() na shadcn AlertDialog (sesja 10)
-- [x] Auto-scroll po duplikacji zlecenia (sesja 10)
-- [x] 500 na PUT — UNIQUE constraint fix (3-fazowe przetwarzanie stops)
-
-### UI (sesje 5-9)
-- [x] Badge'e unloading — blue (bg-blue-100 text-blue-700)
-- [x] Daty w tabeli — format DD.MM, tylko pierwsza data
-- [x] "Skopiuj zlecenie" w menu kontekstowym + POST /duplicate
-- [x] Usunięto legacy transport codes (KRAJ, MIEDZY, EKSPRES)
-- [x] "Wyślij maila" dostępne dla statusów wysłane/korekta wysłane
-- [x] Order View (A4): Refaktoring stopów — unified stops[] z DnD (sesja 9)
-
-### DOCS (sesje 5-8)
-- [x] PRD §3.1.7 + api-plan §2.7 — poprawiono opis statusu `reklamacja`
-- [x] PRD — "Korekta_w", format DD.MM, tylko pierwsza data
-- [x] ui-plan.md — usunięto sticky kolumnę Akcje, format DD.MM, generalNotes max 500
-
-### HIGH — naruszenia PRD (sesja 14)
-- [x] P-01: patchStop — logowanie zmian do order_change_log (daty, lokalizacje, notatki) (sesja 14)
-- [x] P-02: patchStop auto-korekta — wpis do order_status_history gdy shouldAutoKorekta=true (sesja 14)
-- [x] P-03: complaintReason — spread warunkowy zamiast `?? null`, nie nadpisuje undefined (sesja 14)
-- [x] P-04: patchStop — race condition guard `.not("status_code", "in", "(zrealizowane,anulowane)")` na UPDATE (sesja 14)
-
-### MEDIUM (sesja 14)
-- [x] M-03: order_change_log w cancelOrder, restoreOrder, prepareEmailForOrder — spójność z changeStatus() (sesja 14)
-
-### MEDIUM — transakcje + logowanie (sesja 15)
-- [x] M-01: Compensating cleanup w createOrder/duplicateOrder — try/catch + DELETE osierconego nagłówka (sesja 15)
-- [x] M-02: Logowanie zmian 18 pól biznesowych w updateOrder do order_change_log (PRD §3.1.8) (sesja 15)
-
-### MEDIUM + LOW — Faza 6 walidatory + defensive (sesja 14)
-- [x] M-24: isoDateSchema/isoTimeSchema — .refine() z walidacją zakresu + 3 nowe testy (sesja 14)
-- [x] L-12: formatDateShort — guard `parts.length !== 3` (już istniał w kodzie, nie wymagał zmian)
-- [x] L-13: getInitials() — guard na whitespace-only string via `name?.trim()` (sesja 14)
-- [x] L-14: senderContactEmail — `z.preprocess(v => v === "" ? null : v, ...)` (sesja 14)
-
-### DOCS — Faza 7 dokumentacja (sesja 14)
-- [x] DOC-01: api-plan.md §2.3 — dodano `lockedByUserName` do OrderDetailDto (sesja 14)
-- [x] DOC-02: api-plan.md §4 — dodano przejście korekta→reklamacja w opisie ALLOWED_TRANSITIONS (sesja 14)
-- [x] DOC-03: api-plan.md §2.10a — dodano dokumentację PATCH /orders/{id}/carrier-color (sesja 14)
-- [x] DOC-04: api-plan.md §4 — uściślono politykę logowania order_change_log i order_status_history (sesja 14)
-
-### MEDIUM — API consistency (sesja 14)
-- [x] M-20: Ujednolicenie JOIN FK syntax — getOrderDetail na pełne constraint names (sesja 14)
-- [x] M-21: Dodano sent_by_user JOIN w listOrders + fix mappera (sesja 14)
-- [x] M-22: statusName w CreateOrderResponseDto i DuplicateOrderResponseDto + query order_statuses (sesja 14)
-- [x] M-23: FK_VALIDATION casting — ujednolicenie `as Error & { details }` w duplicateOrder (sesja 14)
-
-### INFRA (sesje 10-12)
-- [x] System custom agents — 7 agentów (.claude/agents/), slash commands, pamięć agentów, CLAUDE.md orchestrator (sesja 10)
-- [x] Unit testy — 9 nowych plików testowych + 2 helpery. Łącznie 253 testów (z 35→241→253), 0 błędów TS (sesje 11-12)
-- [x] Pełny audyt projektu z 5 agentami równolegle — spójność docs↔kod ~95% (sesja 12)
-- [x] Dark mode — kompletny: anti-flash script, ThemeProvider, ThemeToggle, 40 komponentów z `dark:` klasami (sesje 6-8)
-
-### MEDIUM — sortowanie + docs (sesja 16)
-- [x] M-07: Sortowanie order_no — dodano kolumnę `order_seq_no INT` + trigger auto-extract + indeks + SORT_COLUMN zmieniony na `order_seq_no` (sesja 16)
-- [x] M-09: dateFrom/dateTo filtruje only first_loading_date — won't fix: UI nie ma osobnych inputów dat, filtr tygodniowy działa po dacie załadunku by design; uściślono api-plan.md (sesja 16)
+### C-03. Unlock po zapisie — race condition
+- **Plik:** `src/components/orders/drawer/OrderDrawer.tsx:190-202, 313-323`
+- `doClose()` (unlock) wywoływane **po** `onOrderUpdated()` (refetch) → okno na zablokowanie zlecenia.
+- **Fix:** Wywołać unlock przed refetch.
 
 ---
 
-## LOW — nice to have
+## HIGH
+
+### H-01. Idempotency cache sprawdzany przed auth — replay z fałszywym JWT
+- **Plik:** `middleware.ts:170-210`
+- Cache sprawdzany przed Supabase auth → fałszywy JWT z poprawnym `sub` odtwarza odpowiedź.
+- **Fix:** Przenieść idempotency check po autentykacji.
+
+### H-02. `unlockOrder` — TOCTOU, UPDATE bez warunku `locked_by_user_id`
+- **Plik:** `order-lock.service.ts:101-104`
+- SELECT → sprawdzenie → UPDATE bez `.eq("locked_by_user_id", userId)` → może usunąć cudzą blokadę.
+
+### H-03. `prepareEmailForOrder` — UPDATE bez warunku na status (TOCTOU)
+- **Plik:** `order.service.ts:1787-1792`
+- Brak `.eq("status_code", ...)` → równoległa zmiana statusu (np. anulowanie) może zostać nadpisana.
+
+### H-04. `Cache-Control: public` na endpointach z RLS
+- **Pliki:** `companies.ts`, `locations.ts`, `products.ts` (~linia 25)
+- `public` pozwala proxy cache'ować odpowiedź z sesji A dla użytkownika B.
+- **Fix:** Zmienić na `private, max-age=3600`.
+
+### H-05. `duplicateOrder` nie zapisuje do `order_status_history`
+- **Plik:** `order.service.ts:869-1019`
+- Nowe zlecenie z duplikacji nie ma wpisu w historii statusów.
+
+### H-06. `vehicleVariantCode` = `""` zamiast `null` → fałszywy dirty state
+- **Plik:** `CarrierSection.tsx:92-106`
+- `onChange({ vehicleVariantCode: match?.code ?? "" })` — powinno być `?? null`.
+
+### H-07. Formularz nie resetuje się po zmianie danych tego samego zlecenia
+- **Plik:** `OrderForm.tsx:149`
+- `useEffect` zależy tylko od `order.id` — po prepare-email (zmiana statusu) formularz nie odświeża danych.
+
+### H-08. Brak `SheetTitle`/`SheetDescription` w HistoryPanel
+- **Plik:** `src/components/orders/history/HistoryPanel.tsx:101-107`
+- Naruszenie Radix a11y — screen reader nie ogłasza tytułu.
+
+### H-09. Nowy `api` przy każdym odświeżeniu tokenu → kaskadowe re-rendery
+- **Plik:** `AuthContext.tsx:92-99`
+- `useMemo` z `[currentToken]` dep → nowa referencja co ~55 min → re-render całej aplikacji.
+- **Fix:** `useRef` dla tokenu, getter w `createApiClient`.
+
+### H-10. `carrier_cell_color` brakuje w `database.types.ts`
+- Migracja `20260222000000` dodała kolumnę, ale typy TS nie mają tego pola.
+- **Fix:** Dodać `carrier_cell_color: string | null` do Row/Insert/Update.
+
+---
+
+## MEDIUM
+
+### M-01. `changeStatus` nie czyści `complaint_reason` przy wyjściu ze statusu reklamacja
+- **Plik:** `order-status.service.ts:124-129`
+
+### M-02. `updatedAt` w odpowiedzi PUT pochodzi z `Date.now()`, nie z DB
+- **Plik:** `order.service.ts:1692`
+
+### M-03. Brak walidacji `dateFrom <= dateTo`
+- **Plik:** `order.validator.ts:33-34`
+
+### M-04. `patchStop` pozwala zmienić `kind` bez walidacji kolejności trasy
+- **Plik:** `[stopId].ts:60-63`
+
+### M-05. `/duplicate` nie obsługuje błędu `FK_VALIDATION` → HTTP 500
+- **Plik:** `duplicate.ts:57-64`
+
+### M-06. In-memory rate limiter/idempotency nie skaluje się (OK dla MVP)
+- **Plik:** `middleware.ts:18-64`
+
+### M-07. Stale closure `sortableIds` w `handleDragEnd`
+- **Plik:** `RouteSection.tsx:168-169`
+
+### M-08. Lokalny stan pojazdu w CarrierSection nie synchronizuje się przy zmianie zlecenia
+- **Plik:** `CarrierSection.tsx:50-58`
+
+### M-09. Fallback `"Przelew"` dla null maskuje faktyczną wartość
+- **Plik:** `FinanceSection.tsx:105`
+
+### M-10. RouteSummaryCell sortuje stopy po `kind` zamiast `sequenceNo`
+- **Plik:** `RouteSummaryCell.tsx:25-26`
+
+### M-11. Pole "Powód reklamacji" wyświetlane jako wymagane bez zmiany statusu
+- **Plik:** `StatusSection.tsx:72-73`
+
+### M-12. `vehicle_variant_code` nullable po migracji, `database.types.ts` mówi `string`
+- **Plik:** `database.types.ts:416`
+
+### M-13. `UpdateOrderResponseDto` zawiera `orderNo` — nieudokumentowane w api-plan §2.5
+- **Plik:** `types.ts:311-317`
+
+### M-14. Auto-waluta przy zmianie transportType — tylko frontend, backend nie egzekwuje
+- **Plik:** `order.service.ts:734-751`
+
+### M-15. `prepare-email` nie aktualizuje `main_product_name` (opisane w api-plan §2.15)
+- **Plik:** `order.service.ts:1727+`
+
+### M-16. FilterBar — brak filtra po lokalizacji (tylko po firmie)
+- **Plik:** `FilterBar.tsx`
+
+### M-17. Brak jobu czyszczącego anulowane zlecenia po 24h (opisane w PRD/api-plan)
+- Wymaga implementacji `pg_cron` lub scheduled function.
+
+---
+
+## LOW
 
 ### L-01. Lock możliwy na anulowanych/zrealizowanych
 - **Plik:** `order-lock.service.ts`
-- Niespójność logiki — nie stanowi zagrożenia.
 
 ### L-02. Brak paginacji w endpointach słownikowych
 - **Pliki:** companies, locations, products
-- Przy dużych zbiorach może być problemem wydajnościowym.
 
 ### L-04. buildSnapshotsForCarrier nie pobiera address/location name
-- **Plik:** `order.service.ts:502-521`
-- Snapshoty adresu i lokalizacji przewoźnika są zawsze null.
+- **Plik:** `order.service.ts:524-543`
 
 ### L-10. unsafe type casts w api-client.ts
-- `undefined as T`, `JSON.parse(text) as T`, `response as unknown as T`.
-- Standardowe w TS, ale brak runtime walidacji.
 
 ### L-11. week-utils.ts regex fałszywie akceptuje format
-- Regex `[W-]?` jest opcjonalny, więc `"202607"` matchuje.
-
 
 ### L-15. Brak testów: postRaw Accept header + AbortController timeout
-- **Plik:** `api-client.test.ts`
-- Dwie nowe ścieżki kodu bez pokrycia testami.
 
 ### L-16. listOrders 5 filtrów niezaimplementowanych
-- **Plik:** `order.service.ts:118-119`
-- productId, loadingLocationId, loadingCompanyId, unloadingLocationId, unloadingCompanyId — walidowane ale ignorowane.
-- Komentarz w kodzie: "na razie nie stosowane".
 
----
+### L-17. JWT bez weryfikacji podpisu w `extractSubFromJwt`
+- **Plik:** `middleware.ts:92-103`
+
+### L-18. Brak `dark:` na etykietach w CarrierSection i EmptyState
+
+### L-19. `span[role=button]` bez obsługi Space w AutocompleteField
+
+### L-20. `order_seq_no` i `carrier_cell_color` nieudokumentowane w db-plan
 
 ---
 
@@ -162,9 +161,4 @@
 - Wymaga generatora PDF (np. Puppeteer, jsPDF, Reportlab).
 
 ### D-05. hooks/useOrderDetail.ts — logika wbudowana w OrderDrawer
-- Hook istnieje ale nieużywany — OrderDrawer robi fetch + lock + unlock wewnętrznie.
-- Opcja: usunąć martwy plik lub refaktoryzować OrderDrawer.
-
-### Zamknięte decyzje (sesja 16)
-- [x] D-01: READ_ONLY — weryfikacja kompletna: 8 komponentów poprawnie ukrywa akcje (OrdersPage, FilterBar, SyncButton, OrderRowContextMenu, OrderDrawer, DrawerFooter, OrderForm sections, RoutePointCard)
-- [x] D-04: UserAvatar — komponent wbudowany w TimelineEntry.tsx, działa prawidłowo; ekstrakcja do osobnego pliku opcjonalna
+- Hook istnieje ale nieużywany — usunąć lub refaktoryzować.

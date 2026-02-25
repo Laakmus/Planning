@@ -319,8 +319,10 @@ export function OrderDrawer({
           }
 
           toast.success("Zlecenie zapisane.");
-          onOrderUpdated();
+          // Najpierw zwolnij blokadę, potem odśwież listę — minimalizuje okno,
+          // w którym inny użytkownik widzi wciąż zablokowane zlecenie.
           await doClose();
+          onOrderUpdated();
         }
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Błąd zapisu.");

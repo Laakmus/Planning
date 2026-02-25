@@ -119,7 +119,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const authHeader = context.request.headers.get("authorization") ?? "";
   context.locals.supabase = createClient<Database>(
     import.meta.env.SUPABASE_URL,
-    import.meta.env.SUPABASE_KEY,
+    import.meta.env.SUPABASE_ANON_KEY,
     {
       global: { headers: { Authorization: authHeader } },
       auth: { persistSession: false, autoRefreshToken: false },

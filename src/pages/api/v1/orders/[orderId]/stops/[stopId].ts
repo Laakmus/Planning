@@ -75,6 +75,20 @@ export const PATCH: APIRoute = async ({ params, locals, request }) => {
     return jsonResponse(result, 200);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
+    if (msg === "READONLY") {
+      return errorResponse(
+        400,
+        "Bad Request",
+        "Edycja niedozwolona — zlecenie w statusie zrealizowane lub anulowane."
+      );
+    }
+    if (msg === "FORBIDDEN_EDIT") {
+      return errorResponse(
+        409,
+        "Conflict",
+        "Zlecenie zostało zmodyfikowane równolegle. Odśwież i spróbuj ponownie."
+      );
+    }
     if (msg === "LOCKED") {
       return errorResponse(
         409,
