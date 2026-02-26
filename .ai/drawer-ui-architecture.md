@@ -208,7 +208,7 @@ OrderDrawer (główny kontener)
 | Oddział firmy | Select + ikona | - | - | **Zależne od Firmy**: `GET /api/v1/locations?companyId={id}`. **Przy wyborze: auto-wypełnienie Adresu i NIP**. Ikona Material: `location_on` |
 | Adres | Text (readonly, pod grid) | `stop.addressSnapshot` | - | Auto z wybranego oddziału. Format: "ulica, kod, miasto, kraj". Ikona Material: `home`, styl: `text-xs text-slate-500 dark:text-slate-400` |
 | Data załadunku/rozładunku | Input text + ikona | `stop.dateLocal` | Format dd.mm | Ręczny wpis format dd.mm (frontend konwertuje na YYYY-MM-DD). Ikona Material: `calendar_today` jako overlay (absolute right) |
-| Godzina | Input time | `stop.timeLocal` | Format HH:MM | HTML5 time picker. Styl: `flex-1 min-w-0 text-sm` |
+| Godzina | Combobox (Popover + Command) | `stop.timeLocal` | Format HH:MM | Lista slotów co 30 min (04:00–22:00) z możliwością wpisania niestandardowego czasu. Auto-scroll do wybranej/najbliższej wartości. Przycisk X do wyczyszczenia. Wzorzec identyczny z `AutocompleteField`. Implementacja: prywatny `TimeCombobox` w `RoutePointCard.tsx` |
 | Uwagi do punktu | Input text + ikona (pod grid) | `stop.notes` | Max 500 znaków | Opcjonalne. Ikona Material: `comment`, styl: `text-xs` |
 
 **Przyciski akcji**:

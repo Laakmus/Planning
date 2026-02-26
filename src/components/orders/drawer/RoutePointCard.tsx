@@ -4,13 +4,206 @@
  * Drag-and-drop obsługiwany przez SortableStopWrapper w RouteSection.
  */
 
-import { X } from "lucide-react";
+import { useEffect, useState } from "react";
 
+import { Check, ChevronsUpDown, X } from "lucide-react";
+
+import { Button } from "@/components/ui/button";
+import {
+  Command,
+  CommandEmpty,
+  CommandGroup,
+  CommandInput,
+  CommandItem,
+  CommandList,
+} from "@/components/ui/command";
 import { Input } from "@/components/ui/input";
+import {
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from "@/components/ui/popover";
 import type { CompanyDto, LocationDto } from "@/types";
 import type { OrderFormStop, StopKind } from "@/lib/view-models";
 
 import { AutocompleteField } from "./AutocompleteField";
+
+// ---------------------------------------------------------------------------
+// TimeCombobox — prywatny komponent: combobox z listą czasów co 30 min
+// ---------------------------------------------------------------------------
+
+/** Generuje sloty co 30 min od 04:00 do 22:00 (37 pozycji) */
+const TIME_SLOTS: string[] = (() => {
+  const slots: string[] = [];
+  for (let h = 4; h <= 22; h++) {
+    slots.push(`${String(h).padStart(2, "0")}:00`);
+    if (h < 22) {
+      slots.push(`${String(h).padStart(2, "0")}:30`);
+    }
+  }
+  return slots;
+})();
+
+/** Walidacja formatu HH:MM (0-23 godziny, 0-59 minuty) */
+function isValidTime(val: string): boolean {
+  if (!/^\d{2}:\d{2}$/.test(val)) return false;
+  const [hh, mm] = val.split(":").map(Number);
+  return hh >= 0 && hh <= 23 && mm >= 0 && mm <= 59;
+}
+
+interface TimeComboboxProps {
+  value: string | null;
+  onChange: (val: string | null) => void;
+  disabled?: boolean;
+}
+
+/** Konwertuje czas HH:MM na minuty od północy */
+function timeToMinutes(t: string): number {
+  const [h, m] = t.split(":").map(Number);
+  return h * 60 + m;
+}
+
+function TimeCombobox({ value, onChange, disabled = false }: TimeComboboxProps) {
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState("");
+
+  // Auto-scroll do wybranej (lub najbliższej) wartości po otwarciu.
+  // Używamy setTimeout zamiast rAF, bo Popover renderuje przez Portal
+  // i DOM może nie być jeszcze zamontowany w momencie rAF.
+  // Szukamy elementu przez document.querySelector, bo cmdk może nie
+  // przekazywać ref do DOM w CommandList.
+  useEffect(() => {
+    if (!open) return;
+
+    const timer = setTimeout(() => {
+      // Szukaj dokładnego dopasowania lub najbliższego slotu
+      let targetValue = value;
+      if (value && !TIME_SLOTS.includes(value)) {
+        // Znajdź najbliższy slot — porównanie numeryczne w minutach
+        const valueMinutes = timeToMinutes(value);
+        targetValue = TIME_SLOTS.reduce((closest, slot) =>
+          Math.abs(timeToMinutes(slot) - valueMinutes) < Math.abs(timeToMinutes(closest) - valueMinutes)
+            ? slot
+            : closest
+        );
+      }
+
+      if (targetValue) {
+        // cmdk renderuje atrybut data-value na itemach (lowercase)
+        const el = document.querySelector(
+          `[cmdk-list] [data-value="${targetValue.toLowerCase()}"]`
+        );
+        if (el) {
+          el.scrollIntoView({ block: "center" });
+        }
+      }
+    }, 80);
+
+    return () => clearTimeout(timer);
+  }, [open, value]);
+
+  // Filtrowanie slotów po wpisanym tekście
+  const filtered = query.length === 0
+    ? TIME_SLOTS
+    : TIME_SLOTS.filter((slot) => slot.includes(query));
+
+  // Niestandardowy czas — jeśli wpis pasuje do HH:MM, ale nie jest na liście
+  const showCustom =
+    query.length > 0 &&
+    isValidTime(query) &&
+    !TIME_SLOTS.includes(query);
+
+  function handleSelect(val: string) {
+    onChange(val);
+    setOpen(false);
+    setQuery("");
+  }
+
+  function handleClear(e: React.MouseEvent) {
+    e.stopPropagation();
+    onChange(null);
+  }
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <Button
+          variant="outline"
+          role="combobox"
+          aria-expanded={open}
+          disabled={disabled}
+          className="w-full justify-between font-normal text-sm h-auto py-1.5 px-2"
+        >
+          <span className={value ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}>
+            {value || "Godzina"}
+          </span>
+          <div className="flex items-center gap-0.5 ml-2 shrink-0">
+            {value && !disabled && (
+              <span
+                role="button"
+                tabIndex={0}
+                onClick={handleClear}
+                onKeyDown={(e) => e.key === "Enter" && handleClear(e as unknown as React.MouseEvent)}
+                className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
+                aria-label="Wyczyść"
+              >
+                <X className="w-3 h-3 text-slate-500" />
+              </span>
+            )}
+            <ChevronsUpDown className="w-3 h-3 text-slate-400" />
+          </div>
+        </Button>
+      </PopoverTrigger>
+      <PopoverContent className="w-40 p-0" align="start">
+        <Command shouldFilter={false}>
+          <CommandInput
+            placeholder="Wpisz godzinę..."
+            value={query}
+            onValueChange={setQuery}
+            className="text-sm"
+          />
+          <CommandList>
+            <CommandEmpty className="py-3 text-xs text-slate-500 text-center">
+              Brak wyników
+            </CommandEmpty>
+            <CommandGroup>
+              {/* Opcja niestandardowego czasu */}
+              {showCustom && (
+                <CommandItem
+                  value={`custom-${query}`}
+                  onSelect={() => handleSelect(query)}
+                  className="text-sm cursor-pointer font-medium"
+                >
+                  <Check
+                    className={`mr-2 h-3 w-3 ${value === query ? "opacity-100" : "opacity-0"}`}
+                  />
+                  Użyj {query}
+                </CommandItem>
+              )}
+              {/* Standardowe sloty */}
+              {filtered.map((slot) => (
+                <CommandItem
+                  key={slot}
+                  value={slot}
+                  data-value={slot}
+                  onSelect={() => handleSelect(slot)}
+                  className="text-sm cursor-pointer"
+                >
+                  <Check
+                    className={`mr-2 h-3 w-3 ${value === slot ? "opacity-100" : "opacity-0"}`}
+                  />
+                  {slot}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          </CommandList>
+        </Command>
+      </PopoverContent>
+    </Popover>
+  );
+}
+
+// ---------------------------------------------------------------------------
 
 interface RoutePointCardProps {
   stop: OrderFormStop;
@@ -152,12 +345,10 @@ export function RoutePointCard({
 
         {/* Godzina */}
         <div className="col-span-1">
-          <Input
-            type="time"
-            value={stop.timeLocal ? stop.timeLocal.substring(0, 5) : ""}
-            onChange={(e) => onChange({ timeLocal: e.target.value ? `${e.target.value}:00` : null })}
+          <TimeCombobox
+            value={stop.timeLocal ? stop.timeLocal.substring(0, 5) : null}
+            onChange={(val) => onChange({ timeLocal: val ? `${val}:00` : null })}
             disabled={isReadOnly}
-            className="h-8 text-sm w-full"
           />
         </div>
       </div>
