@@ -284,7 +284,7 @@ function isValidUUID(value: string): boolean
 4. Generuj `order_no` — format `ZT{year}/{seqNo}` (np. `ZT2026/0001`):
    - Pobierz najwyższy `order_no` z tego roku lub użyj sekwencji DB.
    - **Rekomendacja:** Funkcja PostgreSQL (`rpc`) `generate_order_no()` z sekwencją.
-   - **Uwaga:** PRD używa formatu `ZT-2026-0042` (z myślnikami). Przyjęto format z db-plan.md (`ZT2026/0001`) jako źródło prawdy dla bazy — do uzgodnienia z właścicielem produktu.
+   - **Format numeru zlecenia:** `ZT{rok}/{seqNo}` np. `ZT2026/0001`. Min. 4 cyfry, dynamiczny padding powyżej 9999. Format uzgodniony i spójny we wszystkich dokumentach (PRD, db-plan, api-plan).
 5. Automatyczne uzupełnienie pól:
    - `required_documents_text` wg `transport_type_code` (sekcja 5.1 db-plan)
    - `currency_code` wg `transport_type_code` (sekcja 5.2 db-plan) — nadpisz tylko jeśli user nie podał innej
@@ -429,7 +429,7 @@ function isValidUUID(value: string): boolean
 3. Pobierz bieżący status zlecenia.
 4. Sprawdź dozwolone przejście wg `ALLOWED_MANUAL_STATUS_TRANSITIONS` z `src/types.ts`:
    - `zrealizowane` ← z: robocze, wysłane, korekta, korekta wysłane, reklamacja
-   - `reklamacja` ← z: wysłane, korekta wysłane (+ wymagane `complaintReason`)
+   - `reklamacja` ← z: wysłane, korekta, korekta wysłane (+ wymagane `complaintReason`)
    - `anulowane` ← z: robocze, wysłane, korekta, korekta wysłane, reklamacja (nie z zrealizowane)
 5. Jeśli przejście niedozwolone → 400.
 6. Jeśli reklamacja i brak `complaintReason` → 422.

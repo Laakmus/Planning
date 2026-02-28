@@ -18,7 +18,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { useAuth } from "@/contexts/AuthContext";
-import type { CarrierColorResponseDto, CreateOrderResponseDto, DuplicateOrderResponseDto, PrepareEmailResponseDto } from "@/types";
+import type { CarrierColorResponseDto, CreateOrderResponseDto, DuplicateOrderResponseDto, EntryFixedResponseDto, PrepareEmailResponseDto } from "@/types";
 import { useOrders } from "@/hooks/useOrders";
 import { DEFAULT_FILTERS } from "@/lib/view-models";
 import type {
@@ -269,6 +269,24 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     [api, refetch]
   );
 
+  const handleSetEntryFixed = useCallback(
+    async (orderId: string, value: boolean | null) => {
+      try {
+        await api.patch<EntryFixedResponseDto>(
+          `/api/v1/orders/${orderId}/entry-fixed`,
+          { isEntryFixed: value }
+        );
+        toast.success(
+          value === true ? "Fix: Tak" : value === false ? "Fix: Nie" : "Fix usunięty."
+        );
+        refetch();
+      } catch (err) {
+        toast.error(err instanceof Error ? err.message : "Błąd ustawiania pola Fix.");
+      }
+    },
+    [api, refetch]
+  );
+
   const handleDuplicate = useCallback(
     async (orderId: string) => {
       try {
@@ -337,6 +355,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           onCancel={handleCancelRequest}
           onRestore={handleRestore}
           onSetCarrierColor={handleSetCarrierColor}
+          onSetEntryFixed={handleSetEntryFixed}
         />
       )}
 

@@ -117,7 +117,7 @@ INSERT INTO public.transport_orders (
   sender_contact_name, sender_contact_phone, sender_contact_email,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000001', 'ZT/2026/02/001', 'robocze', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000001', 'ZT2026/0001', 'robocze', 'PL', 'PLN',
   4500.00, 22.5, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'MEGA_24T', 'Pilne — dostarczyć przed weekendem', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-20', '08:00:00', '2026-02-21', '14:00:00',
@@ -135,7 +135,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000002', 'ZT/2026/02/002', 'wysłane', 'EXP', 'EUR',
+  'd0000000-0000-0000-0000-000000000002', 'ZT2026/0002', 'wysłane', 'EXP', 'EUR',
   2800.00, 18.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-18', '06:00:00', '2026-02-19', '16:00:00',
@@ -152,7 +152,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000003', 'ZT/2026/02/003', 'korekta', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000003', 'ZT2026/0003', 'korekta', 'PL', 'PLN',
   3200.00, 12.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'SOLO_12T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-22', '10:00:00', '2026-02-22', '18:00:00',
@@ -169,7 +169,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000004', 'ZT/2026/02/004', 'korekta wysłane', 'EXP', 'EUR',
+  'd0000000-0000-0000-0000-000000000004', 'ZT2026/0004', 'korekta wysłane', 'EXP', 'EUR',
   5100.00, 24.0, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
   'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-25', '07:00:00', '2026-02-26', '12:00:00',
@@ -186,7 +186,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000005', 'ZT/2026/01/015', 'zrealizowane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000005', 'ZT2026/0005', 'zrealizowane', 'PL', 'PLN',
   3800.00, 20.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-01-28', '09:00:00', '2026-01-29', '15:00:00',
@@ -203,7 +203,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000006', 'ZT/2026/02/005', 'reklamacja', 'IMP', 'PLN',
+  'd0000000-0000-0000-0000-000000000006', 'ZT2026/0006', 'reklamacja', 'IMP', 'PLN',
   6500.00, 3.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'BUS_3T', 'Towar uszkodzony podczas transportu — pęknięcia opakowań', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-15', '14:00:00', '2026-02-15', '20:00:00',
@@ -220,7 +220,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000007', 'ZT/2026/02/006', 'anulowane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000007', 'ZT2026/0007', 'anulowane', 'PL', 'PLN',
   2000.00, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'SOLO_12T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-28', '2026-03-01',
@@ -237,7 +237,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   special_requirements, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000008', 'ZT/2026/02/007', 'robocze', 'IMP', 'PLN',
+  'd0000000-0000-0000-0000-000000000008', 'ZT2026/0008', 'robocze', 'IMP', 'PLN',
   8500.00, 3.2, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
   'BUS_3T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-19', '05:30:00', '2026-02-19', '22:00:00',
@@ -363,7 +363,7 @@ INSERT INTO public.transport_orders (
   sender_contact_name, sender_contact_phone,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000009', 'ZT/2026/02/008', 'robocze', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000009', 'ZT2026/0009', 'robocze', 'PL', 'PLN',
   3900.00, 20.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-24', '07:00:00', '2026-02-25', '13:00:00',
@@ -381,7 +381,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   carrier_cell_color, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000010', 'ZT/2026/02/009', 'robocze', 'EXP', 'EUR',
+  'd0000000-0000-0000-0000-000000000010', 'ZT2026/0010', 'robocze', 'EXP', 'EUR',
   3200.00, 22.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'MEGA_24T', 'Dokumenty celne przygotowane', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-26', '06:00:00', '2026-02-27', '18:00:00',
@@ -399,7 +399,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, carrier_cell_color, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000011', 'ZT/2026/02/010', 'wysłane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000011', 'ZT2026/0011', 'wysłane', 'PL', 'PLN',
   5800.00, 23.5, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
   'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-23', '06:00:00', '2026-02-24', '16:00:00',
@@ -417,7 +417,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000012', 'ZT/2026/02/011', 'wysłane', 'EXP_K', 'EUR',
+  'd0000000-0000-0000-0000-000000000012', 'ZT2026/0012', 'wysłane', 'EXP_K', 'EUR',
   4200.00, 24.0, 'a0000000-0000-0000-0000-000000000008', 'EuroLog Transport GmbH',
   'MEGA_24T', 'WZE, Aneks VII, CMR, Bill of Lading', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-24', '05:00:00', '2026-02-25', '14:00:00',
@@ -434,7 +434,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000013', 'ZT/2026/02/012', 'korekta', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000013', 'ZT2026/0013', 'korekta', 'PL', 'PLN',
   2600.00, 10.5, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'SOLO_12T', 'Korekta: zmiana adresu rozładunku', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-27', '09:00:00', '2026-02-27', '17:00:00',
@@ -452,7 +452,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, carrier_cell_color, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000014', 'ZT/2026/02/013', 'korekta wysłane', 'IMP', 'EUR',
+  'd0000000-0000-0000-0000-000000000014', 'ZT2026/0014', 'korekta wysłane', 'IMP', 'EUR',
   3600.00, 18.5, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-22', '08:00:00', '2026-02-23', '10:00:00',
@@ -470,7 +470,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000015', 'ZT/2026/01/016', 'zrealizowane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000015', 'ZT2026/0015', 'zrealizowane', 'PL', 'PLN',
   4100.00, 23.0, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
   'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-01-20', '07:00:00', '2026-01-21', '15:00:00',
@@ -488,7 +488,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000016', 'ZT/2026/01/017', 'zrealizowane', 'EXP', 'EUR',
+  'd0000000-0000-0000-0000-000000000016', 'ZT2026/0016', 'zrealizowane', 'EXP', 'EUR',
   5500.00, 24.0, 'a0000000-0000-0000-0000-000000000008', 'EuroLog Transport GmbH',
   'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-01-15', '06:00:00', '2026-01-16', '12:00:00',
@@ -506,7 +506,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000017', 'ZT/2026/02/014', 'reklamacja', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000017', 'ZT2026/0017', 'reklamacja', 'PL', 'PLN',
   1800.00, 2.8, 'a0000000-0000-0000-0000-000000000010', 'GreenWaste Recycling',
   'BUS_3T', 'Opóźnienie dostawy o 6h — kara umowna', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-17', '10:00:00', '2026-02-17', '18:00:00',
@@ -524,7 +524,7 @@ INSERT INTO public.transport_orders (
   sender_contact_name, sender_contact_phone, sender_contact_email,
   carrier_cell_color, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000018', 'ZT/2026/02/015', 'robocze', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000018', 'ZT2026/0018', 'robocze', 'PL', 'PLN',
   3500.00, 18.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-28', '08:00:00', '2026-03-01', '12:00:00',
@@ -542,7 +542,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000019', 'ZT/2026/02/016', 'wysłane', 'EXP', 'USD',
+  'd0000000-0000-0000-0000-000000000019', 'ZT2026/0019', 'wysłane', 'EXP', 'USD',
   2900.00, 20.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'MEGA_24T', 'WZE, Aneks VII, CMR', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-25', '07:00:00', '2026-02-26', '15:00:00',
@@ -559,7 +559,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000020', 'ZT/2026/02/017', 'anulowane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000020', 'ZT2026/0020', 'anulowane', 'PL', 'PLN',
   2200.00, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'SOLO_12T', 'Klient zrezygnował z zamówienia', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-03-05', '2026-03-06',

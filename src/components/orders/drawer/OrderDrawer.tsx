@@ -345,7 +345,7 @@ export function OrderDrawer({
       const url = URL.createObjectURL(blob);
       const a = document.createElement("a");
       a.href = url;
-      a.download = `zlecenie-${detail?.order.orderNo ?? orderId}.pdf`;
+      a.download = `zlecenie-${(detail?.order.orderNo ?? orderId).replace(/\//g, "-")}.pdf`;
       document.body.appendChild(a);
       a.click();
       a.remove();

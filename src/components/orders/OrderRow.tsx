@@ -12,6 +12,7 @@ import type { OrderListItemDto } from "@/types";
 import type { ListViewMode, OrderStatusCode, ViewGroup } from "@/lib/view-models";
 
 import { DatesCell, LocationsCell } from "./LocationsCell";
+import { FixCell } from "./FixCell";
 import { LockIndicator } from "./LockIndicator";
 import { OrderRowContextMenu } from "./OrderRowContextMenu";
 import { RouteSummaryCell } from "./RouteSummaryCell";
@@ -43,6 +44,7 @@ interface OrderRowProps {
   onCancel: (orderId: string) => void;
   onRestore: (orderId: string) => void;
   onSetCarrierColor: (orderId: string, color: string | null) => void;
+  onSetEntryFixed: (orderId: string, value: boolean | null) => void;
 }
 
 export function OrderRow({
@@ -57,6 +59,7 @@ export function OrderRow({
   onCancel,
   onRestore,
   onSetCarrierColor,
+  onSetEntryFixed,
 }: OrderRowProps) {
   const { user } = useAuth();
   const rowBg = ROW_BG[order.statusCode] ?? "bg-white dark:bg-slate-900";
@@ -167,6 +170,18 @@ export function OrderRow({
         ) : (
           <DatesCell stops={order.stops} kind="UNLOADING" />
         )}
+      </td>
+
+      {/* Fix */}
+      <td
+        className="py-1 px-4 w-14 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <FixCell
+          orderId={order.id}
+          value={order.isEntryFixed}
+          onSetEntryFixed={onSetEntryFixed}
+        />
       </td>
 
       {/* Towar */}

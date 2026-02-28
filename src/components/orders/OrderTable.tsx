@@ -29,6 +29,7 @@ interface OrderTableProps {
   onCancel: (orderId: string) => void;
   onRestore: (orderId: string) => void;
   onSetCarrierColor: (orderId: string, color: string | null) => void;
+  onSetEntryFixed: (orderId: string, value: boolean | null) => void;
 }
 
 type SortableColumn = { label: string; sortKey: OrderSortBy };
@@ -108,6 +109,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
   onCancel,
   onRestore,
   onSetCarrierColor,
+  onSetEntryFixed,
 }, ref) {
   const minWidth = viewMode === "columns" ? "1500px" : "1280px";
 
@@ -169,6 +171,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
               onSort={onSort}
             />
 
+            <th className="py-2 px-4 w-14 text-center">Fix</th>
             <th className="py-2 px-4 min-w-[160px]">Towar</th>
             <th className="py-2 px-4 min-w-[120px]">Komentarz</th>
 
@@ -192,7 +195,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
             // Skeleton loading — 5 wierszy
             Array.from({ length: 5 }).map((_, i) => (
               <tr key={i} className="animate-pulse">
-                {Array.from({ length: viewMode === "columns" ? 15 : 14 }).map((_, j) => (
+                {Array.from({ length: viewMode === "columns" ? 16 : 15 }).map((_, j) => (
                   <td key={j} className="py-2 px-4">
                     <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full" />
                   </td>
@@ -214,6 +217,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
                 onCancel={onCancel}
                 onRestore={onRestore}
                 onSetCarrierColor={onSetCarrierColor}
+                onSetEntryFixed={onSetEntryFixed}
               />
             ))
           )}

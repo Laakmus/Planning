@@ -185,6 +185,13 @@ export const dictionarySyncSchema = z.object({
 
 export type DictionarySyncParams = z.infer<typeof dictionarySyncSchema>;
 
+/** Body PATCH /api/v1/orders/{orderId}/entry-fixed. */
+export const entryFixedSchema = z.object({
+  isEntryFixed: z.boolean().nullable(),
+});
+
+export type EntryFixedParams = z.infer<typeof entryFixedSchema>;
+
 /** Allowed carrier cell colors (hex). */
 export const ALLOWED_CARRIER_CELL_COLORS = [
   "#48A111",

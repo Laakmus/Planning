@@ -925,7 +925,8 @@ begin
   where order_no like v_prefix || '%';
 
   v_next_seq := v_max_seq + 1;
-  v_order_no := v_prefix || lpad(v_next_seq::text, 4, '0');
+  -- dynamiczny padding: min 4 cyfry, rośnie automatycznie powyżej 9999
+  v_order_no := v_prefix || lpad(v_next_seq::text, greatest(4, length(v_next_seq::text)), '0');
 
   return v_order_no;
 end;

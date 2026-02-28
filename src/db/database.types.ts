@@ -387,6 +387,7 @@ export type Database = {
           first_unloading_time: string | null
           general_notes: string | null
           id: string
+          is_entry_fixed: boolean | null
           last_loading_date: string | null
           last_loading_time: string | null
           last_unloading_date: string | null
@@ -443,6 +444,7 @@ export type Database = {
           first_unloading_time?: string | null
           general_notes?: string | null
           id?: string
+          is_entry_fixed?: boolean | null
           last_loading_date?: string | null
           last_loading_time?: string | null
           last_unloading_date?: string | null
@@ -499,6 +501,7 @@ export type Database = {
           first_unloading_time?: string | null
           general_notes?: string | null
           id?: string
+          is_entry_fixed?: boolean | null
           last_loading_date?: string | null
           last_loading_time?: string | null
           last_unloading_date?: string | null

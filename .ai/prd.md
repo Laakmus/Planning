@@ -142,7 +142,7 @@ Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli jest sticky. Sortow
 | Lp | Nazwa kolumny | Zawartość i format wyświetlania | Przykład |
 |----|----------------|----------------------------------|----------|
 | 1 | (bez etykiety) | Ikona blokady (np. kłódka), tylko gdy zlecenie jest zablokowane przez innego użytkownika; brak etykiety w nagłówku. | 🔒 lub puste |
-| 2 | Nr zlecenia | Numer zlecenia (np. generowany przez system). | ZT-2026-0042 |
+| 2 | Nr zlecenia | Numer zlecenia (np. generowany przez system). | ZT2026/0042 |
 | 3 | Status | Nazwa statusu jako badge; wyświetlana jest skrócona nazwa w UI: robocze, wysłane, korekta, **Korekta_w** (dla „korekta wysłane"), zrealizowane, reklamacja, anulowane. | wysłane |
 | 4 | Tydzień | Numer tygodnia ISO 8601 **obliczany automatycznie** z daty pierwszego załadunku; wyświetlany jako liczba całkowita (np. 7); **nie edytowalny** przez użytkownika. | 7 |
 | 5 | Rodzaj transportu | Nazwa rodzaju (kraj, eksport drogowy, kontener morski, import itd.). | kraj |
@@ -285,7 +285,7 @@ Poniższa sekcja definiuje układ, zawartość i zachowanie panelu bocznego (dra
 
 Nagłówek jest stałym (sticky) elementem na górze drawera. Nie zawiera tytułu „Edycja zlecenia". Elementy:
 
-- **Numer zlecenia** (np. „Zlecenie #ZT-2026-0042") — readonly, generowany przez serwer.
+- **Numer zlecenia** (np. „Zlecenie #ZT2026/0042") — readonly, generowany przez serwer.
 - **Link „Historia zmian"** — otwiera panel historii zmian obok drawera. Aktywny także w trybie readonly.
 - **Przycisk X** — zamknięcie drawera (z obsługą niezapisanych zmian).
 - Opcjonalna linia metadanych: „Utworzone przez [imię], [data] | Ostatnia zmiana: [imię], [data]".

@@ -63,6 +63,7 @@ function mapRowToOrderListItemDto(
     vehicle_capacity_volume_m3?: number | null;
     sent_at?: string | null;
     carrier_cell_color?: string | null;
+    is_entry_fixed?: boolean | null;
   },
   stops: OrderListStopDto[],
   items: OrderListItemInnerDto[]
@@ -109,6 +110,7 @@ function mapRowToOrderListItemDto(
     updatedByUserId: row.updated_by_user_id,
     updatedByUserName: row.updated_by_user?.full_name ?? null,
     carrierCellColor: row.carrier_cell_color ?? null,
+    isEntryFixed: row.is_entry_fixed ?? null,
   };
 }
 
@@ -2084,4 +2086,51 @@ export async function updateCarrierCellColor(
   if (!count || count === 0) return null;
 
   return { id: orderId, carrierCellColor: color };
+}
+
+/**
+ * Aktualizuje pole is_entry_fixed (Fix) zlecenia i loguje zmianę w order_change_log.
+ */
+export async function updateEntryFixed(
+  supabase: SupabaseClient<Database>,
+  orderId: string,
+  userId: string,
+  isEntryFixed: boolean | null
+): Promise<{ id: string; isEntryFixed: boolean | null } | null> {
+  // Pobierz starą wartość do logu zmian
+  const { data: oldRow, error: fetchErr } = await supabase
+    .from("transport_orders")
+    .select("is_entry_fixed")
+    .eq("id", orderId)
+    .single();
+
+  if (fetchErr || !oldRow) return null;
+
+  const oldValue = (oldRow as { is_entry_fixed?: boolean | null }).is_entry_fixed ?? null;
+
+  // Aktualizuj pole
+  type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
+  const { error, count } = await supabase
+    .from("transport_orders")
+    .update({ is_entry_fixed: isEntryFixed } as OrderUpdate, { count: "exact" })
+    .eq("id", orderId);
+
+  if (error) throw error;
+  if (!count || count === 0) return null;
+
+  // Loguj zmianę w order_change_log
+  const formatValue = (v: boolean | null): string | null =>
+    v === true ? "true" : v === false ? "false" : null;
+
+  if (oldValue !== isEntryFixed) {
+    await supabase.from("order_change_log").insert({
+      order_id: orderId,
+      changed_by_user_id: userId,
+      field_name: "is_entry_fixed",
+      old_value: formatValue(oldValue),
+      new_value: formatValue(isEntryFixed),
+    });
+  }
+
+  return { id: orderId, isEntryFixed };
 }

@@ -519,7 +519,7 @@ Przyciski akcji (sticky na dole draweru):
 │ [AppHeader]                │                            │
 ├────────────────────────────┤   [Drawer edycji zlecenia] │
 │ [Zakładki]                 │   ┌──────────────────────┐ │
-├────────────────────────────┤   │ Nagłówek: ZT-0001    │ │
+├────────────────────────────┤   │ Nagłówek: ZT2026/0001    │ │
 │ [Filtry]                   │   │ Historia zmian ↗     │ │
 ├────────────────────────────┤   ├──────────────────────┤ │
 │                            │   │ Sekcja: Strony       │ │
@@ -542,7 +542,7 @@ Przyciski akcji (sticky na dole draweru):
 │ [Tabela — w tle]     │ [Drawer —    │ [Panel historii]  │
 │                      │  w tle]      │ ┌──────────────┐  │
 │                      │              │ │ Historia zmian│  │
-│                      │              │ │ ZT-0001      │  │
+│                      │              │ │ ZT2026/0001      │  │
 │                      │              │ ├──────────────┤  │
 │                      │              │ │ Dzisiaj      │  │
 │                      │              │ │ ● Status     │  │

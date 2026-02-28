@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-25 (sesja 16, część 2 — MEDIUM)
+> Ostatnia aktualizacja: 2026-02-28 (sesja 17 — sync docs z PRD + READ_ONLY audit)
 
 ---
 
@@ -67,14 +67,29 @@
 
 ### L-19. `span[role=button]` bez obsługi Space w AutocompleteField
 
-### L-20. `order_seq_no` i `carrier_cell_color` nieudokumentowane w db-plan
+### L-20. ~~`order_seq_no` i `carrier_cell_color` nieudokumentowane w db-plan~~ — DONE (sesja 17)
 
 ---
+
+## Zrobione (sesja 17 — sync docs + audit)
+
+- [x] Sync dokumentacji .ai/ z PRD jako źródłem prawdy (6 plików naprawionych, 1 usunięty)
+  - drawer-ui-architecture.md: renumeracja sekcji 1-7 → 0-6, generalNotes 1000→500
+  - orders-view-implementation-plan.md: tła wierszy, daty DD.MM, generalNotes, vehicle 2 pola, StatusBadge lowercase + display names
+  - view-implementation-plan.md: reklamacja dozwolona z korekta
+  - order.md: packagingType → loading_method_code
+  - db-plan.md: dodano order_seq_no + carrier_cell_color
+  - ui-architecture-summary.md: usunięty (przestarzały)
+- [x] READ_ONLY audit: 58 komponentów sprawdzonych, wszystkie akcje chronione
+  - StatusSection.tsx: dodano defensywny prop isReadOnly
+- [x] L-20: order_seq_no i carrier_cell_color udokumentowane w db-plan
 
 ## Otwarte decyzje (pending user)
 
 ### D-03. PDF endpoint — stub 501 po stronie serwera
 - Wymaga generatora PDF (np. Puppeteer, jsPDF, Reportlab).
+- W przyszłości będzie powiązany z widokiem z order.md.
 
 ### D-05. hooks/useOrderDetail.ts — logika wbudowana w OrderDrawer
 - Hook istnieje ale nieużywany — usunąć lub refaktoryzować.
+- User: do decyzji (refaktoring, nie zmienia funkcjonalności).

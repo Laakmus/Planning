@@ -298,6 +298,7 @@ export function OrderForm({
                 currentStatusName={statusName}
                 pendingStatusCode={pendingStatusCode}
                 complaintReason={complaintReason}
+                isReadOnly={isReadOnly}
                 onStatusChange={(code) => {
                   setPendingStatusCode(code);
                   const dirty = computeDirty(formData, code, complaintReason);

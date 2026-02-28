@@ -91,6 +91,13 @@ export interface OrderListItemDto {
   updatedByUserId: string | null;
   updatedByUserName: string | null;
   carrierCellColor: string | null;
+  isEntryFixed: boolean | null;
+}
+
+/** Odpowiedź PATCH /api/v1/orders/{orderId}/entry-fixed. */
+export interface EntryFixedResponseDto {
+  id: string;
+  isEntryFixed: boolean | null;
 }
 
 /** Odpowiedź PATCH /api/v1/orders/{orderId}/carrier-color. */

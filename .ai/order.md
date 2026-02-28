@@ -129,10 +129,10 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 | ASORTYMENT (etykieta) | Szary label | 98px (shrink-0) |
 | (pusta) | Początek nazwy produktu | 136px |
 | UWAGI | Label kolumny uwag | 178px |
-| LUZEM | Checkbox opakowania | 33px |
-| BIGBAG | Checkbox opakowania | 28px |
-| PALETA | Checkbox opakowania | 29px |
-| INNA | Checkbox opakowania | 24px |
+| LUZEM | Checkbox sposobu załadunku (loading_method_code=LUZEM) | 33px |
+| PAL.+BB | Checkbox sposobu załadunku (loading_method_code=PALETA_BIGBAG) | 28px |
+| PALETA | Checkbox sposobu załadunku (loading_method_code=PALETA) | 29px |
+| KOSZE | Checkbox sposobu załadunku (loading_method_code=KOSZE) | 24px |
 
 **Wiersze danych** (544px = 526px treści + 18px kolumna gutter):
 
@@ -140,10 +140,10 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 |---------|------|-----------|
 | Lp. + Nazwa towaru | Numer + ProductAutocomplete | 234px |
 | Uwagi do towaru | Input tekstowy | 178px |
-| LUZEM | Checkbox (klik = toggle „X") | 33px |
-| BIGBAG | Checkbox | 28px |
-| PALETA | Checkbox | 29px |
-| INNA | Checkbox | 24px |
+| LUZEM | Checkbox (klik = toggle „X", loading_method_code=LUZEM) | 33px |
+| PAL.+BB | Checkbox (loading_method_code=PALETA_BIGBAG) | 28px |
+| PALETA | Checkbox (loading_method_code=PALETA) | 29px |
+| KOSZE | Checkbox (loading_method_code=KOSZE) | 24px |
 | (gutter) | Niewidoczna kolumna — przycisk × na hover | 18px |
 
 **Wyrównanie kolumn**: dzielnik BIGBAG|PALETA (234+178+33+28 = **473px**) wyrównany z dzielnikiem Content|GOD/KRAJ w stop rows.
@@ -152,13 +152,13 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 |-----|------|----------|------------------------|--------------|
 | 1 | Nazwa towaru | Autocomplete (ProductAutocomplete) | Sekcja 2 drawera → Nazwa towaru | **Edytowalne** |
 | 2 | Uwagi do towaru | Input tekstowy (max 500 znaków) | Sekcja 2 drawera → Komentarz (pole „Uwagi do towaru…") | **Edytowalne** |
-| 3 | Typ opakowania | Checkbox (klik na kolumnę = toggle) | Sekcja 2 drawera → Sposób załadunku | **Edytowalne** |
+| 3 | Sposób załadunku | Checkbox (klik na kolumnę = toggle) | Sekcja 2 drawera → `loading_method_code` (Sposób załadunku) | **Edytowalne** |
 
 - Każdy wiersz = jedna pozycja towarowa z `items[]` modelu Order.
 - **Pełna edycja**: użytkownik może dodawać i usuwać wiersze bezpośrednio w widoku Order.
 - **Przycisk usuwania** (×): w kolumnie gutter 18px (poza widocznym obramowaniem tabeli), pojawia się na hover wiersza.
 - Dynamiczna ilość wierszy (w mockupie przewidziano 8 slotów wizualnych, ale lista jest dynamiczna).
-- Opcje pakowania: LUZEM, BIGBAG, PALETA, INNA (mapowanie na `packagingType`).
+- Sposób załadunku: LUZEM, PAL.+BB (=PALETA_BIGBAG), PALETA, KOSZE (mapowanie na `loading_method_code`).
 
 ---
 

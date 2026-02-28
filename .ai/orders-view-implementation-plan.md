@@ -295,8 +295,8 @@ OrdersApp (React island — korzenny komponent)
 - **Opis**: Pojedynczy wiersz tabeli zleceń. Kompaktowy (`py-1 px-4 text-[12px]`), tło wg statusu (jaśniejszy odcień koloru statusu). Zawartość kolumn i format zgodnie z **PRD 3.1.2a**.
 - **Główne elementy** (widok Kolumny): `<tr class={getRowBgClass(statusCode)} role="row">` z:
   - **(bez etykiety)** `<LockIndicator>` — ikona blokady tylko gdy zlecenie zablokowane przez innego użytkownika (`lockedByUserId !== null && lockedByUserId !== currentUserId`)
-  - **Nr zlecenia** — np. ZT-2026-0042; styl: `text-[12px] font-medium`
-  - **StatusBadge** — pełna nazwa statusu (`statusName` z API), np. "Wysłane", "Robocze"
+  - **Nr zlecenia** — np. ZT2026/0042; styl: `text-[12px] font-medium`
+  - **StatusBadge** — skrócona nazwa statusu z `STATUS_DISPLAY_NAMES[statusCode]`, np. "Wysłane", "Korekta_w"
   - **Tydzień** — numer tygodnia ISO 8601 (`order.weekNumber` z API), wyświetlany jako liczba całkowita (np. `7`); pole obliczane automatycznie przez backend, **nie edytowalne**; styl: `text-[12px]`
   - **Rodzaj transportu** — nazwa (np. "eksport drogowy"); styl: `text-[12px]`
   - **Miejsce załadunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`:
@@ -314,7 +314,7 @@ OrdersApp (React island — korzenny komponent)
       <span class="whitespace-nowrap">{dateLocal} {timeLocal}</span>
     </div>
     ```
-    **Format daty: DD.MM.YYYY HH:MM** (backend zwraca YYYY-MM-DD + HH:MM:SS, frontend formatuje przez `formatDate()` i `formatTime()`)
+    **Format daty: DD.MM HH:MM** (bez roku; backend zwraca YYYY-MM-DD + HH:MM:SS, frontend formatuje przez `formatDateShort()` i `formatTime()`)
   - **Miejsce rozładunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`:
     - `<div class="space-y-1">`:
       - **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm:
@@ -323,7 +323,7 @@ OrdersApp (React island — korzenny komponent)
         <span class="font-medium">{companyName}</span>
         ```
       - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Berlin")
-  - **Data rozładunku** — lista dat z godzinami dla każdego punktu rozładunku (analogicznie do daty załadunku); **format: DD.MM.YYYY HH:MM**
+  - **Data rozładunku** — lista dat z godzinami dla każdego punktu rozładunku (analogicznie do daty załadunku); **format: DD.MM HH:MM** (bez roku)
   - **Towar** — pozycje numerowane z `order.items`:
     ```html
     <div class="space-y-0.5">
@@ -350,8 +350,9 @@ OrdersApp (React island — korzenny komponent)
   - **Kolumna "Data załadunku"** — **tylko PIERWSZA** data załadunku, format DD.MM HH:MM. Jeśli brak daty — `—`.
   - **Kolumna "Data rozładunku"** — **tylko PIERWSZA** data rozładunku, format DD.MM HH:MM. Jeśli brak daty — `—`.
   - Pozostałe kolumny (Lock, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania, Akcje) — identyczne jak w widoku Kolumny
-- **Mapowanie tła wiersza wg statusu** (statusCode/statusName z API; w UI pełna nazwa):
-  - Robocze: `bg-white`, Wysłane: `bg-blue-50/30`, Korekta: `bg-orange-50/30`, Korekta wysłane: `bg-teal-50/30`, Zrealizowane: `bg-green-50/30`, Anulowane: `bg-gray-50/50`, Reklamacja: `bg-red-50/30`
+- **Mapowanie tła wiersza wg statusu** (PRD §3.1.2a):
+  - Wysłane, Korekta wysłane: `bg-emerald-50/30` (zielone tło)
+  - Wszystkie pozostałe statusy (Robocze, Korekta, Zrealizowane, Anulowane, Reklamacja): `bg-white` (białe tło)
 - **Obsługiwane interakcje**:
   - Lewy klik → `onRowClick(orderId)`
   - Prawy klik → `onRowContextMenu(orderId, event)` (menu kontekstowe tylko prawy klik — PRD)
@@ -371,8 +372,8 @@ OrdersApp (React island — korzenny komponent)
 ### 4.10 StatusBadge
 
 - **Opis**: Badge statusu zlecenia z mapowaniem koloru. **BEZ animacji pulse**. Styl base: `inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`.
-- **Główne elementy**: `<span>` z pełną nazwą statusu (`statusName`), bez ikony pulsowania, bez klasy `animate-pulse`.
-- **Mapowanie kolorów** (wyświetlana pełna nazwa z `statusName`):
+- **Główne elementy**: `<span>` z nazwą statusu z `STATUS_DISPLAY_NAMES[statusCode]` (skrócone nazwy per PRD §3.1.2a), bez ikony pulsowania, bez klasy `animate-pulse`.
+- **Mapowanie kolorów** (klucze = `statusCode` z API, np. `"robocze"`, `"wysłane"`, `"korekta wysłane"`):
   - **Robocze** → `bg-slate-100 text-slate-700` **(BEZ border)**
   - **Wysłane** → `bg-blue-50 text-blue-600 border border-blue-200`
   - **Korekta** → `bg-orange-50 text-orange-600 border border-orange-200`
@@ -380,27 +381,39 @@ OrdersApp (React island — korzenny komponent)
   - **Zrealizowane** → `bg-emerald-50 text-emerald-700 border border-emerald-200`
   - **Anulowane** → `bg-slate-100 text-slate-500 border border-slate-200` **(z borderem, inaczej niż Robocze)**
   - **Reklamacja** → `bg-red-50 text-red-600 border border-red-200`
+- **Mapowanie nazw wyświetlanych** (PRD §3.1.2a kolumna 3 — skrócone nazwy w UI):
+  ```ts
+  const STATUS_DISPLAY_NAMES: Record<string, string> = {
+    "robocze": "Robocze",
+    "wysłane": "Wysłane",
+    "korekta": "Korekta",
+    "korekta wysłane": "Korekta_w",
+    "zrealizowane": "Zrealizowane",
+    "reklamacja": "Reklamacja",
+    "anulowane": "Anulowane",
+  };
+  ```
 - **Implementacja**:
   ```tsx
-  function StatusBadge({ statusCode, statusName }: StatusBadgeProps) {
+  function StatusBadge({ statusCode }: StatusBadgeProps) {
     const baseClass = "inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full";
-    const colorMap = {
-      ROBOCZE: "bg-slate-100 text-slate-700",
-      WYSLANE: "bg-blue-50 text-blue-600 border border-blue-200",
-      KOREKTA: "bg-orange-50 text-orange-600 border border-orange-200",
-      KOREKTA_WYSLANE: "bg-amber-50 text-amber-700 border border-amber-200",
-      ZREALIZOWANE: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      ANULOWANE: "bg-slate-100 text-slate-500 border border-slate-200",
-      REKLAMACJA: "bg-red-50 text-red-600 border border-red-200",
+    const colorMap: Record<string, string> = {
+      "robocze": "bg-slate-100 text-slate-700",
+      "wysłane": "bg-blue-50 text-blue-600 border border-blue-200",
+      "korekta": "bg-orange-50 text-orange-600 border border-orange-200",
+      "korekta wysłane": "bg-amber-50 text-amber-700 border border-amber-200",
+      "zrealizowane": "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      "anulowane": "bg-slate-100 text-slate-500 border border-slate-200",
+      "reklamacja": "bg-red-50 text-red-600 border border-red-200",
     };
-    return <span className={`${baseClass} ${colorMap[statusCode]}`}>{statusName}</span>;
+    const displayName = STATUS_DISPLAY_NAMES[statusCode] ?? statusCode;
+    return <span className={`${baseClass} ${colorMap[statusCode] ?? ""}`}>{displayName}</span>;
   }
   ```
 - **Propsy**:
   ```ts
   interface StatusBadgeProps {
-    statusCode: OrderStatusCode;  // do mapowania koloru
-    statusName: string;           // pełna nazwa do wyświetlenia (Robocze, Wysłane, …)
+    statusCode: OrderStatusCode;  // do mapowania koloru i nazwy wyświetlanej (via STATUS_DISPLAY_NAMES)
   }
   ```
 
@@ -481,9 +494,9 @@ OrdersApp (React island — korzenny komponent)
   - **Sekcja 0 – Nagłówek** *(tylko do odczytu)*: Nr zlecenia (readonly), data wystawienia (`createdAt` readonly), autor (readonly), aktualny badge statusu (readonly), link „Historia zmian".
   - **Sekcja 1 – Trasa**: Rodzaj transportu* (Select u góry sekcji — zmiana auto-aktualizuje dokumenty w Sekcji 3 i walutę w Sekcji 4); następnie punkty L1, U1, L2, U2 (i kolejne) — każdy punkt: data, godzina, firma (autocomplete), oddział (select zależny od firmy), adres (readonly), NIP (readonly), uwagi; uchwyt drag-and-drop; przycisk usuń; przyciski „+ Dodaj załadunek" i „+ Dodaj rozładunek" (limity 8/3); na końcu sekcji: pola Osoba kontaktowa (`senderContactName`, `senderContactPhone`, `senderContactEmail`).
   - **Sekcja 2 – Towar**: lista pozycji towarowych z polami: nazwa towaru* (autocomplete), waga t* (Input ≥ 0), sposób załadunku (Select PALETA/PALETA_BIGBAG/LUZEM/KOSZE — domyślnie z produktu, nadpisywalny), komentarz (Input); na dole przycisk „+ Dodaj towar"; podsumowanie „Razem: Xt". *(Pola globalne `totalLoadTons`, `totalLoadVolumeM3`, `specialRequirements` istnieją w DB/API, ale usunięte z UI drawera.)*
-  - **Sekcja 3 – Firma transportowa**: nazwa firmy (autocomplete carriers), NIP (Input `disabled` — auto), wariant pojazdu* (Select `vehicleVariantCode` — jeden select łączący typ + objętość, np. „firanka 90m³"), wymagane dokumenty (Select 2 opcje: „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR" — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny).
+  - **Sekcja 3 – Firma transportowa**: nazwa firmy (autocomplete carriers), NIP (Input `disabled` — auto), **Typ auta** (Select — z wariantów pojazdu, np. Firanka, Hakowiec, Wywrotka, Bus), **Objętość w m³** (Combobox — wartości: 10, 20, 30, …, 100 m³; wpis filtruje listę; na MVP dozwolone tylko wartości z listy co 10), wymagane dokumenty (Select 2 opcje: „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR" — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny).
   - **Sekcja 4 – Finanse**: stawka* (Input ≥ 0), waluta* (Select PLN/EUR/USD — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny), termin płatności (Input dni, default 21), forma płatności (Select, default „Przelew").
-  - **Sekcja 5 – Uwagi**: `<Textarea generalNotes>` z licznikiem znaków (max 1000). Tylko to jedno pole.
+  - **Sekcja 5 – Uwagi**: `<Textarea generalNotes>` z licznikiem znaków (max 500). Tylko to jedno pole.
   - **Sekcja 6 – Zmiana statusu** (niewidoczna w trybie readonly): aktualny badge statusu + Select dozwolonych przejść ręcznych (wg `ALLOWED_MANUAL_STATUS_TRANSITIONS`); pole „Powód reklamacji" (Textarea, max 500 znaków) — widoczne tylko gdy status = Reklamacja lub wybrano przejście na Reklamację, wymagane przy zapisie; przycisk „Zmień status" — zmiana zapisywana przy „Zapisz".
 - **Główne elementy**: `<form>` z sekcjami `<fieldset>`, pola shadcn (`<Input>`, `<Select>`, `<Textarea>`, `<AutocompleteField>`), sekcja trasy `<RouteSection>`, sekcja pozycji `<CargoSection>`.
 - **Obsługiwane interakcje**:
@@ -492,14 +505,15 @@ OrdersApp (React island — korzenny komponent)
 - **Walidacja techniczna** (przy zapisie):
   - `transportTypeCode` — wymagane (enum PL|EXP|EXP_K|IMP)
   - `currencyCode` — wymagane (enum PLN|EUR|USD)
-  - `vehicleVariantCode` — wymagane (string min 1)
+  - Typ auta (`vehicleTypeName`) — wymagane (Select z wariantów pojazdu)
+  - Objętość m³ (`vehicleCapacityVolumeM3`) — wymagane (Combobox 10–100 m³ co 10; na MVP tylko wartości z listy)
   - `priceAmount` — ≥ 0 (jeśli podane)
   - `quantityTons` — ≥ 0 (jeśli podane)
   - `paymentTermDays` — integer ≥ 0 (jeśli podane)
   - `senderContactEmail` — format email (jeśli podane)
   - Daty w formacie YYYY-MM-DD, czasy HH:MM lub HH:MM:SS
   - Max 8 punktów LOADING, max 3 punkty UNLOADING
-  - Łańcuchy: `generalNotes` ≤ 1000, `requiredDocumentsText` ≤ 500, `specialRequirements` ≤ 1000, `notes` (na stop/item) ≤ 500
+  - Łańcuchy: `generalNotes` ≤ 500, `requiredDocumentsText` ≤ 500, `specialRequirements` ≤ 1000, `notes` (na stop/item) ≤ 500
 - **Walidacja biznesowa** (przy wysyłce maila — realizowana przez API 422):
   - Wszystkie pola oznaczone (*) w formularzu
 - **Typy**: `OrderFormData` (ViewModel), `OrderDetailDto`, `OrderDetailStopDto[]`, `OrderDetailItemDto[]`, `UpdateOrderCommand`
@@ -1125,14 +1139,15 @@ Realizowana na froncie (inline pod polami) i potwierdzana przez API (400):
 |---|---|---|
 | `transportTypeCode` | Wymagane, ∈ {PL, EXP, EXP_K, IMP} | HeaderSection |
 | `currencyCode` | Wymagane, ∈ {PLN, EUR, USD} | HeaderSection |
-| `vehicleVariantCode` | Wymagane, niepusty | CargoSection |
+| Typ auta (`vehicleTypeName`) | Wymagane (Select z wariantów pojazdu) | CarrierSection |
+| Objętość m³ (`vehicleCapacityVolumeM3`) | Wymagane (10–100 m³ co 10) | CarrierSection |
 | `priceAmount` | ≥ 0 (jeśli podane) | FinanceSection |
 | `paymentTermDays` | Integer ≥ 0 (jeśli podane) | FinanceSection |
 | `quantityTons` | ≥ 0 (jeśli podane) | ItemRow |
 | `senderContactEmail` | Format email (jeśli podane) | PartiesSection |
 | `dateLocal` (stop) | Format YYYY-MM-DD (jeśli podane) | RoutePointCard |
 | `timeLocal` (stop) | Format HH:MM lub HH:MM:SS (jeśli podane) | RoutePointCard |
-| `generalNotes` | Max 1000 znaków | DocumentsSection |
+| `generalNotes` | Max 500 znaków | DocumentsSection |
 | `requiredDocumentsText` | Max 500 znaków | DocumentsSection |
 | `notes` (stop/item) | Max 500 znaków | RoutePointCard / ItemRow |
 | Punkty trasy | Max 8 LOADING, max 3 UNLOADING | RoutePointList |
@@ -1148,7 +1163,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 | `shipperLocationId` | Niepuste | „Nadawca (lokalizacja) jest wymagany" |
 | `receiverLocationId` | Niepuste | „Odbiorca (lokalizacja) jest wymagany" |
 | `priceAmount` | Niepuste | „Cena frachtu jest wymagana" |
-| `vehicleVariantCode` | Niepuste | „Wariant pojazdu jest wymagany" |
+| Typ auta + Objętość m³ → `vehicleVariantCode` | Niepuste (oba pola wymagane) | „Typ auta i objętość są wymagane" |
 | `items` | Min 1 z nazwą + ilością | „Wymagana min. 1 pozycja z nazwą towaru i ilością" |
 | `stops` (LOADING) | Min 1 z datą i godziną | „Wymagany min. 1 punkt załadunku z datą i godziną" |
 | `stops` (UNLOADING) | Min 1 z datą i godziną | „Wymagany min. 1 punkt rozładunku z datą i godziną" |

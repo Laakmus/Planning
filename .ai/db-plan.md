@@ -120,6 +120,10 @@ Tabela główna, centralna dla całego systemu.
   - ustawiany z menu kontekstowego (prawy klik); ukryty gdy status = wysłane/korekta wysłane (wiersz ma zielone tło)
   - NIE kopiowany przy duplikacji zlecenia
   - edytowalny przez ADMIN i PLANNER; READ_ONLY widzi kolor, ale nie może zmieniać
+- **order_seq_no**: `integer`
+  - sekwencyjny numer porządkowy zlecenia (do sortowania numerycznego w widoku listy), `NOT NULL`
+  - generowany automatycznie przez trigger przy INSERT (kolejna wartość z sekwencji `order_seq_no_seq`)
+  - używany w ORDER BY zamiast sortowania tekstowego po `order_no`
 
 Klucz główny:  
 - PK(`id`)
@@ -480,6 +484,7 @@ PK:
 - (opcjonalnie) `INDEX` na `(transport_type_code, first_loading_date)` – filtrowanie po typie transportu i dacie.  
 - (opcjonalnie) `GIN INDEX` na `search_vector` – do pełnotekstowego wyszukiwania (wymaga rozszerzeń `pg_trgm`/`unaccent`/konfiguracji FTS).
 - (opcjonalnie) `INDEX` na `sent_at` – sortowanie / filtrowanie po dacie wysłania.
+- `INDEX` na `order_seq_no` – sortowanie numeryczne w widoku listy.
 
 #### 3.2 Indeksy na `order_stops`
 
