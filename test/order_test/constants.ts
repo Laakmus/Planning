@@ -23,8 +23,11 @@ export const VEHICLE_TYPE_OPTIONS = [
 
 export const PAYMENT_METHODS = ["PRZELEW", "GOTÓWKA", "KOMPENSATA"] as const;
 
-// Max items visible in the table (8 visual slots per mockup)
-export const MAX_VISIBLE_ITEMS = 8;
+// Minimalna liczba wizualnych slotów w tabeli towarów (puste wiersze do wypełnienia)
+export const MIN_VISIBLE_ITEMS = 8;
+
+// Maksymalna liczba pozycji towarowych (limit dodawania)
+export const MAX_VISIBLE_ITEMS = 15;
 
 // Max stops per kind (matching Drawer RouteSection limits)
 export const MAX_LOADING_STOPS = 8;

@@ -157,7 +157,7 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 - Każdy wiersz = jedna pozycja towarowa z `items[]` modelu Order.
 - **Pełna edycja**: użytkownik może dodawać i usuwać wiersze bezpośrednio w widoku Order.
 - **Przycisk usuwania** (×): w kolumnie gutter 18px (poza widocznym obramowaniem tabeli), pojawia się na hover wiersza.
-- Dynamiczna ilość wierszy (w mockupie przewidziano 8 slotów wizualnych, ale lista jest dynamiczna).
+- **Dynamiczna ilość wierszy**: maksymalnie **15 pozycji** (`MAX_VISIBLE_ITEMS`), minimum **8 wizualnych slotów** (`MIN_VISIBLE_ITEMS`). Przy < 8 towarach puste wiersze wypełniają tabelę do 8 slotów. Przy > 8 towarach tabela rośnie dynamicznie (dokument A4 wydłuża się). Zawsze jest co najmniej 1 pusty slot na przycisk „+ dodaj pozycję" (do momentu osiągnięcia limitu 15).
 - Sposób załadunku: LUZEM, PAL.+BB (=PALETA_BIGBAG), PALETA, KOSZE (mapowanie na `loading_method_code`).
 
 ---
