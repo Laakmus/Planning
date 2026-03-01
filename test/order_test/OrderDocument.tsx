@@ -1769,10 +1769,9 @@ export default function OrderDocument({
             >
               {/* Name column */}
               <div
-                className={`${CELL} w-[234px] ${borderBottomClass} border-r-[0.5px] border-r-dashed text-[7px] font-bold items-end`}
+                className={`${CELL} w-[234px] ${borderBottomClass} text-[7px] font-bold items-end`}
                 style={{
                   padding: "7px 6px",
-                  borderRightStyle: "dashed",
                 }}
               >
                 {hasItem ? (
@@ -1805,8 +1804,8 @@ export default function OrderDocument({
 
               {/* Notes column (merged 90px + 88px) */}
               <div
-                className={`${CELL} w-[178px] ${borderBottomClass} border-r-[0.5px] border-r-dashed`}
-                style={{ borderRightStyle: "dashed" }}
+                className={`${CELL} w-[178px] ${borderBottomClass} border-l-[0.5px]`}
+                style={{ borderLeftStyle: "dashed" }}
               >
                 {hasItem && (
                   <EditableText
@@ -1829,19 +1828,14 @@ export default function OrderDocument({
                         ? "w-[29px]"
                         : "w-[24px]";
                 const isSelected = hasItem && item.packagingType === pt;
-                const isLastPackaging = pt === "INNA";
 
                 return (
                   <div
                     key={pt}
-                    className={`${CELL} ${widthClass} ${borderBottomClass} justify-center ${
-                      !isLastPackaging
-                        ? "border-r-[0.5px] border-r-dashed"
-                        : ""
-                    } ${!disabled && hasItem ? "cursor-pointer hover:bg-gray-50" : ""}`}
-                    style={
-                      !isLastPackaging ? { borderRightStyle: "dashed" } : {}
-                    }
+                    className={`${CELL} ${widthClass} ${borderBottomClass} justify-center border-l-[0.5px] ${
+                      !disabled && hasItem ? "cursor-pointer hover:bg-gray-50" : ""
+                    }`}
+                    style={{ borderLeftStyle: "dashed" }}
                     onClick={() => {
                       if (disabled || !hasItem) return;
                       updateItem(itemIndex, {
