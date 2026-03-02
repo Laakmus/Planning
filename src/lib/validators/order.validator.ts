@@ -115,7 +115,7 @@ export const createOrderSchema = z.object({
     (v) => (v === "" ? null : v),
     z.string().max(320).email().nullable()
   ),
-  stops: z.array(createOrderStopSchema).min(1).max(11),
+  stops: z.array(createOrderStopSchema).max(11),
   items: z.array(createOrderItemSchema).max(50),
 });
 
@@ -138,7 +138,7 @@ export const updateOrderItemSchema = createOrderItemSchema.extend({
 export const updateOrderSchema = createOrderSchema.extend({
   generalNotes: z.string().max(500).nullable(),
   complaintReason: z.string().max(500).nullable().optional(),
-  stops: z.array(updateOrderStopSchema).min(1).max(11),
+  stops: z.array(updateOrderStopSchema).max(11),
   items: z.array(updateOrderItemSchema).max(50),
 });
 

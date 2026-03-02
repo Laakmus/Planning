@@ -238,10 +238,9 @@ describe("createOrderSchema", () => {
 
   // --- Limity tablic stops/items ---
 
-  it("stops: 0 elementów → ZodError (min 1)", () => {
-    expect(() =>
-      createOrderSchema.parse({ ...validCreateOrder, stops: [] })
-    ).toThrow(ZodError);
+  it("stops: 0 elementów → OK (zlecenie robocze może nie mieć tras)", () => {
+    const result = createOrderSchema.parse({ ...validCreateOrder, stops: [] });
+    expect(result.stops).toHaveLength(0);
   });
 
   it("stops: 11 elementów → OK (max 11)", () => {
@@ -446,10 +445,9 @@ describe("updateOrderSchema", () => {
     _deleted: false,
   };
 
-  it("stops: 0 elementów → ZodError (min 1)", () => {
-    expect(() =>
-      updateOrderSchema.parse({ ...updateBase, stops: [], items: [] })
-    ).toThrow(ZodError);
+  it("stops: 0 elementów → OK (zlecenie robocze może nie mieć tras)", () => {
+    const result = updateOrderSchema.parse({ ...updateBase, stops: [], items: [] });
+    expect(result.stops).toHaveLength(0);
   });
 
   it("stops: 11 elementów → OK (max 11)", () => {
