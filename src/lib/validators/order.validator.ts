@@ -99,7 +99,8 @@ export const createOrderSchema = z.object({
   carrierCompanyId: z.string().uuid().nullable(),
   shipperLocationId: z.string().uuid().nullable(),
   receiverLocationId: z.string().uuid().nullable(),
-  vehicleVariantCode: z.string().min(1).nullable(),
+  vehicleTypeText: z.string().max(100).nullable(),
+  vehicleCapacityVolumeM3: z.number().nonnegative().nullable(),
   priceAmount: z.number().nonnegative().nullable(),
   paymentTermDays: z.number().int().nonnegative().nullable(),
   paymentMethod: z.string().max(100).nullable(),
@@ -135,7 +136,6 @@ export const updateOrderItemSchema = createOrderItemSchema.extend({
 
 /** Body PUT /api/v1/orders/{orderId} — pełna aktualizacja zlecenia. */
 export const updateOrderSchema = createOrderSchema.extend({
-  vehicleVariantCode: z.string().min(1).nullable(),
   generalNotes: z.string().max(500).nullable(),
   complaintReason: z.string().max(500).nullable().optional(),
   stops: z.array(updateOrderStopSchema).min(1).max(11),

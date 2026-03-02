@@ -74,8 +74,7 @@ export interface OrderListItemDto {
   items: OrderListItemInnerDto[];
   priceAmount: number | null;
   currencyCode: string;
-  vehicleVariantCode: string | null;
-  vehicleVariantName: string | null;
+  vehicleTypeText: string | null;
   vehicleCapacityVolumeM3: number | null;
   requiredDocumentsText: string | null;
   generalNotes: string | null;
@@ -236,7 +235,8 @@ export interface OrderDetailDto {
   receiverLocationId: string | null;
   receiverNameSnapshot: string | null;
   receiverAddressSnapshot: string | null;
-  vehicleVariantCode: string | null;
+  vehicleTypeText: string | null;
+  vehicleCapacityVolumeM3: number | null;
   mainProductName: string | null;
   specialRequirements: string | null;
   requiredDocumentsText: string | null;

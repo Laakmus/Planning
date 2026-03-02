@@ -1,9 +1,9 @@
 /**
  * Sekcja 3 – Firma transportowa.
- * Autocomplete firmy, NIP (readonly), typ auta + objętość (2 selecty), wymagane dokumenty.
+ * Autocomplete firmy, NIP (readonly), typ auta + objętość (2 niezależne pola), wymagane dokumenty.
  */
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useMemo } from "react";
 
 import { Input } from "@/components/ui/input";
 import {
@@ -42,52 +42,13 @@ export function CarrierSection({
     ? companies.find((c) => c.id === formData.carrierCompanyId)
     : null;
 
-  // Derive initial vehicleType from current vehicleVariantCode
-  const currentVariant = vehicleVariants.find(
-    (v) => v.code === formData.vehicleVariantCode,
-  );
-
-  const [selectedVehicleType, setSelectedVehicleType] = useState<string>(
-    currentVariant?.vehicleType ?? "",
-  );
-
-  const [volumeInput, setVolumeInput] = useState<string>(
-    currentVariant?.capacityVolumeM3 != null
-      ? String(currentVariant.capacityVolumeM3)
-      : "",
-  );
-
-  // M-08: Synchronizacja lokalnego stanu przy zmianie zlecenia/wariantu pojazdu
-  useEffect(() => {
-    const variant = vehicleVariants.find(
-      (v) => v.code === formData.vehicleVariantCode,
-    );
-    setSelectedVehicleType(variant?.vehicleType ?? "");
-    setVolumeInput(
-      variant?.capacityVolumeM3 != null
-        ? String(variant.capacityVolumeM3)
-        : "",
-    );
-  }, [formData.vehicleVariantCode, vehicleVariants]);
-
+  // Lista unikalnych typów pojazdów do selecta
   const uniqueVehicleTypes = useMemo(() => {
     const types = new Set(
       vehicleVariants.filter((v) => v.isActive).map((v) => v.vehicleType),
     );
     return Array.from(types);
   }, [vehicleVariants]);
-
-  const findVariantByVolume = useCallback(
-    (type: string, volume: number) => {
-      return vehicleVariants.find(
-        (v) =>
-          v.isActive &&
-          v.vehicleType === type &&
-          v.capacityVolumeM3 === volume,
-      );
-    },
-    [vehicleVariants],
-  );
 
   function handleCarrierChange(
     _id: string | null,
@@ -97,26 +58,12 @@ export function CarrierSection({
   }
 
   function handleVehicleTypeChange(type: string) {
-    setSelectedVehicleType(type);
-    // Try to match current volume input to new type
-    const vol = parseFloat(volumeInput);
-    if (!isNaN(vol)) {
-      const match = findVariantByVolume(type, vol);
-      onChange({ vehicleVariantCode: match?.code ?? null });
-    } else {
-      onChange({ vehicleVariantCode: null });
-    }
+    onChange({ vehicleTypeText: type });
   }
 
   function handleVolumeInputChange(value: string) {
-    setVolumeInput(value);
-    const vol = parseFloat(value);
-    if (!isNaN(vol) && selectedVehicleType) {
-      const match = findVariantByVolume(selectedVehicleType, vol);
-      onChange({ vehicleVariantCode: match?.code ?? null });
-    } else {
-      onChange({ vehicleVariantCode: null });
-    }
+    const parsed = value === "" ? null : parseFloat(value);
+    onChange({ vehicleCapacityVolumeM3: parsed != null && !isNaN(parsed) ? parsed : null });
   }
 
   return (
@@ -150,7 +97,7 @@ export function CarrierSection({
             Typ auta *
           </label>
           <Select
-            value={selectedVehicleType}
+            value={formData.vehicleTypeText ?? ""}
             onValueChange={handleVehicleTypeChange}
             disabled={isReadOnly}
           >
@@ -177,9 +124,9 @@ export function CarrierSection({
             min={0}
             step={1}
             placeholder="m³"
-            value={volumeInput}
+            value={formData.vehicleCapacityVolumeM3 ?? ""}
             onChange={(e) => handleVolumeInputChange(e.target.value)}
-            disabled={isReadOnly || !selectedVehicleType}
+            disabled={isReadOnly}
             className="h-8 text-sm"
           />
         </div>

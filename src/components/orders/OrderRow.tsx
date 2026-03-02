@@ -227,7 +227,7 @@ export function OrderRow({
 
       {/* Typ auta */}
       <td className="py-1 px-4 text-[12px] min-w-[90px]">
-        {order.vehicleVariantName}
+        {order.vehicleTypeText ?? "—"}
         {order.vehicleCapacityVolumeM3 != null && (
           <span className="text-slate-500 dark:text-slate-400"> ({order.vehicleCapacityVolumeM3}m³)</span>
         )}

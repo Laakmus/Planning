@@ -145,7 +145,8 @@ export interface OrderFormData {
   carrierCompanyId: string | null;
   shipperLocationId: string | null;
   receiverLocationId: string | null;
-  vehicleVariantCode: string | null;
+  vehicleTypeText: string | null;
+  vehicleCapacityVolumeM3: number | null;
   specialRequirements: string | null;
   requiredDocumentsText: string | null;
   generalNotes: string | null;

@@ -27,11 +27,10 @@ import type {
   UpdateOrderParams,
 } from "../validators/order.validator";
 
-/** Wiersz transport_orders z joinami (order_statuses, transport_types, vehicle_variants, user_profiles). */
+/** Wiersz transport_orders z joinami (order_statuses, transport_types, user_profiles). */
 type TransportOrderRow = Database["public"]["Tables"]["transport_orders"]["Row"] & {
   order_statuses: { name: string; view_group: string } | null;
   transport_types: { name: string } | null;
-  vehicle_variants: { name: string } | null;
   created_by_user: { full_name: string | null } | null;
   updated_by_user: { full_name: string | null } | null;
   sent_by_user: { full_name: string | null } | null;
@@ -93,8 +92,7 @@ function mapRowToOrderListItemDto(
     items,
     priceAmount: row.price_amount,
     currencyCode: row.currency_code,
-    vehicleVariantCode: row.vehicle_variant_code,
-    vehicleVariantName: row.vehicle_variants?.name ?? "",
+    vehicleTypeText: row.vehicle_type_text ?? null,
     vehicleCapacityVolumeM3: row.vehicle_capacity_volume_m3 ?? null,
     requiredDocumentsText: row.required_documents_text,
     generalNotes: row.general_notes,
@@ -263,7 +261,6 @@ export async function listOrders(
     *,
     order_statuses(name, view_group),
     transport_types(name),
-    vehicle_variants(name),
     created_by_user:user_profiles!transport_orders_created_by_user_id_fkey(full_name),
     updated_by_user:user_profiles!transport_orders_updated_by_user_id_fkey(full_name),
     sent_by_user:user_profiles!transport_orders_sent_by_user_id_fkey(full_name),
@@ -452,7 +449,8 @@ export async function getOrderDetail(
     receiverLocationId: row.receiver_location_id,
     receiverNameSnapshot: row.receiver_name_snapshot,
     receiverAddressSnapshot: row.receiver_address_snapshot,
-    vehicleVariantCode: row.vehicle_variant_code,
+    vehicleTypeText: row.vehicle_type_text ?? null,
+    vehicleCapacityVolumeM3: row.vehicle_capacity_volume_m3 ?? null,
     mainProductName: row.main_product_name ?? null,
     specialRequirements: row.special_requirements ?? null,
     requiredDocumentsText: row.required_documents_text,
@@ -753,13 +751,12 @@ function autoSetDocumentsAndCurrency(
 }
 
 /**
- * Waliduje istnienie referencji FK w bazie (vehicleVariantCode, transportTypeCode, itp.).
+ * Waliduje istnienie referencji FK w bazie (transportTypeCode, carrierCompanyId, itp.).
  * Zwraca obiekt z błędami walidacji lub null gdy OK.
  */
 async function validateForeignKeys(
   supabase: SupabaseClient<Database>,
   params: {
-    vehicleVariantCode: string | null;
     transportTypeCode: string;
     carrierCompanyId?: string | null;
     stops: Array<{ locationId: string | null }>;
@@ -767,17 +764,6 @@ async function validateForeignKeys(
   }
 ): Promise<Record<string, string> | null> {
   const errors: Record<string, string> = {};
-
-  // vehicleVariantCode
-  if (params.vehicleVariantCode) {
-    const { data: vv } = await supabase
-      .from("vehicle_variants")
-      .select("code")
-      .eq("code", params.vehicleVariantCode)
-      .eq("is_active", true)
-      .maybeSingle();
-    if (!vv) errors.vehicleVariantCode = "Wariant pojazdu nie istnieje lub jest nieaktywny.";
-  }
 
   // transportTypeCode
   const { data: tt } = await supabase
@@ -882,7 +868,6 @@ export async function duplicateOrder(
 
   // Walidacja FK — kopia może zawierać nieaktywne referencje
   const fkErrors = await validateForeignKeys(supabase, {
-    vehicleVariantCode: detail.order.vehicleVariantCode,
     transportTypeCode: detail.order.transportTypeCode,
     carrierCompanyId: detail.order.carrierCompanyId,
     stops: params.includeStops ? detail.stops.map((s) => ({ locationId: s.locationId })) : [],
@@ -899,7 +884,8 @@ export async function duplicateOrder(
     status_code: newStatus,
     transport_type_code: detail.order.transportTypeCode,
     currency_code: detail.order.currencyCode,
-    vehicle_variant_code: detail.order.vehicleVariantCode,
+    vehicle_type_text: detail.order.vehicleTypeText ?? null,
+    vehicle_capacity_volume_m3: detail.order.vehicleCapacityVolumeM3 ?? null,
     created_by_user_id: userId,
     carrier_company_id: detail.order.carrierCompanyId ?? null,
     carrier_name_snapshot: detail.order.carrierNameSnapshot ?? null,
@@ -1034,7 +1020,7 @@ export async function duplicateOrder(
  * Tworzy nowe zlecenie (status robocze).
  * Generuje order_no, wstawia nagłówek, punkty trasy i pozycje.
  * Pobiera snapshoty z lokalizacji/firm/produktów i oblicza pola denormalizowane.
- * Waliduje FK (vehicleVariantCode, transportTypeCode, carrierCompanyId, locationId, productId).
+ * Waliduje FK (transportTypeCode, carrierCompanyId, locationId, productId).
  *
  * @param supabase — klient Supabase
  * @param userId — id użytkownika (created_by_user_id)
@@ -1068,7 +1054,6 @@ export async function createOrder(
 
   // 1b. Walidacja FK
   const fkErrors = await validateForeignKeys(supabase, {
-    vehicleVariantCode: params.vehicleVariantCode,
     transportTypeCode: params.transportTypeCode,
     carrierCompanyId: params.carrierCompanyId,
     stops: params.stops,
@@ -1167,7 +1152,8 @@ export async function createOrder(
     status_code: STATUS_ROBOCZE,
     transport_type_code: params.transportTypeCode,
     currency_code: currencyCode,
-    vehicle_variant_code: params.vehicleVariantCode ?? null,
+    vehicle_type_text: params.vehicleTypeText ?? null,
+    vehicle_capacity_volume_m3: params.vehicleCapacityVolumeM3 ?? null,
     created_by_user_id: userId,
     carrier_company_id: params.carrierCompanyId ?? null,
     carrier_name_snapshot: carrierSnapshots.carrier_name_snapshot,
@@ -1254,6 +1240,16 @@ export async function createOrder(
     throw err;
   }
 
+  // Audit trail: wpis "Utworzono zlecenie"
+  const { error: createdLogErr } = await supabase.from("order_change_log").insert({
+    order_id: orderId,
+    field_name: "order_created",
+    old_value: null,
+    new_value: orderNo,
+    changed_by_user_id: userId,
+  });
+  if (createdLogErr) throw createdLogErr;
+
   // Pobierz nazwę statusu dla odpowiedzi DTO (api-plan §2.4)
   const { data: statusRow } = await supabase
     .from("order_statuses")
@@ -1306,7 +1302,7 @@ export async function updateOrder(
   const { data: order, error: fetchError } = await (supabase
     .from("transport_orders")
     .select(`id, order_no, status_code, locked_by_user_id,
-      transport_type_code, carrier_company_id, vehicle_variant_code,
+      transport_type_code, carrier_company_id, vehicle_type_text, vehicle_capacity_volume_m3,
       price_amount, currency_code, payment_term_days, payment_method,
       general_notes, complaint_reason, required_documents_text,
       special_requirements, total_load_tons, total_load_volume_m3,
@@ -1316,7 +1312,8 @@ export async function updateOrder(
     .maybeSingle() as unknown as Promise<{
       data: {
         id: string; order_no: string; status_code: string; locked_by_user_id: string | null;
-        transport_type_code: string; carrier_company_id: string | null; vehicle_variant_code: string;
+        transport_type_code: string; carrier_company_id: string | null;
+        vehicle_type_text: string | null; vehicle_capacity_volume_m3: number | null;
         price_amount: number | null; currency_code: string;
         payment_term_days: number | null; payment_method: string | null;
         general_notes: string | null; complaint_reason: string | null;
@@ -1344,8 +1341,26 @@ export async function updateOrder(
   const activeStops = params.stops.filter((s) => !s._deleted).sort((a, b) => a.sequenceNo - b.sequenceNo);
   const activeItems = params.items.filter((i) => !i._deleted);
 
+  // Audit trail: snapshot starych items do porównania
+  const { data: oldItemsRaw } = await supabase
+    .from("order_items")
+    .select("id, product_name_snapshot, loading_method_code, quantity_tons, notes")
+    .eq("order_id", orderId);
+  const oldItemsMap = new Map(
+    (oldItemsRaw ?? []).map((r) => [r.id, r])
+  );
+
+  // Audit trail: snapshot starych stops do porównania
+  const { data: oldStopsRaw } = await supabase
+    .from("order_stops")
+    .select("id, kind, sequence_no, company_name_snapshot")
+    .eq("order_id", orderId)
+    .order("sequence_no", { ascending: true });
+  const oldStopsMap = new Map(
+    (oldStopsRaw ?? []).map((r) => [r.id, r])
+  );
+
   const fkErrors = await validateForeignKeys(supabase, {
-    vehicleVariantCode: params.vehicleVariantCode,
     transportTypeCode: params.transportTypeCode,
     carrierCompanyId: params.carrierCompanyId,
     stops: activeStops,
@@ -1454,7 +1469,8 @@ export async function updateOrder(
   const updatePayload: Record<string, unknown> = {
     transport_type_code: params.transportTypeCode,
     currency_code: params.currencyCode,
-    vehicle_variant_code: params.vehicleVariantCode ?? null,
+    vehicle_type_text: params.vehicleTypeText ?? null,
+    vehicle_capacity_volume_m3: params.vehicleCapacityVolumeM3 ?? null,
     carrier_company_id: params.carrierCompanyId ?? null,
     carrier_name_snapshot: carrierSnapshots.carrier_name_snapshot,
     carrier_address_snapshot: carrierSnapshots.carrier_address_snapshot,
@@ -1579,6 +1595,51 @@ export async function updateOrder(
     }
   }
 
+  // Audit trail: logowanie dodawania/usuwania przystanków
+  const stopChangeLogRows: Array<{
+    order_id: string;
+    field_name: string;
+    old_value: string | null;
+    new_value: string | null;
+    changed_by_user_id: string;
+  }> = [];
+
+  for (const s of params.stops) {
+    if (s._deleted && s.id) {
+      // Usunięty przystanek
+      const oldStop = oldStopsMap.get(s.id);
+      const kindPrefix = oldStop?.kind === "LOADING" ? "L" : "U";
+      const label = `${kindPrefix}${oldStop?.sequence_no ?? "?"}: ${oldStop?.company_name_snapshot ?? "?"}`;
+      stopChangeLogRows.push({
+        order_id: orderId,
+        field_name: "stop_removed",
+        old_value: label,
+        new_value: null,
+        changed_by_user_id: userId,
+      });
+    } else if (s.id == null && !s._deleted) {
+      // Nowy przystanek
+      const snap = stopSnapshotMap.get(s.sequenceNo);
+      const kindPrefix = s.kind === "LOADING" ? "L" : "U";
+      const seqInKind = activeStops
+        .filter((as) => as.kind === s.kind)
+        .findIndex((as) => as.sequenceNo === s.sequenceNo) + 1;
+      const label = `${kindPrefix}${seqInKind}: ${snap?.companyNameSnapshot ?? "?"}`;
+      stopChangeLogRows.push({
+        order_id: orderId,
+        field_name: "stop_added",
+        old_value: null,
+        new_value: label,
+        changed_by_user_id: userId,
+      });
+    }
+  }
+
+  if (stopChangeLogRows.length > 0) {
+    const { error: stopLogErr } = await supabase.from("order_change_log").insert(stopChangeLogRows);
+    if (stopLogErr) throw stopLogErr;
+  }
+
   // Build snapshot lookup for items by index
   const itemSnapshotByIdx = new Map(
     itemsWithSnapshots.map((item, idx) => [idx, item])
@@ -1626,6 +1687,108 @@ export async function updateOrder(
     }
   }
 
+  // Audit trail: logowanie zmian pozycji towarowych (items)
+  const itemChangeLogRows: Array<{
+    order_id: string;
+    field_name: string;
+    old_value: string | null;
+    new_value: string | null;
+    changed_by_user_id: string;
+  }> = [];
+
+  // Numeracja aktywnych items (1-based)
+  let auditItemNum = 0;
+  for (const item of params.items) {
+    if (item._deleted && !item.id) continue;
+
+    if (item._deleted && item.id) {
+      // Usunięta pozycja
+      const oldItem = oldItemsMap.get(item.id);
+      itemChangeLogRows.push({
+        order_id: orderId,
+        field_name: "item_removed",
+        old_value: oldItem?.product_name_snapshot ?? null,
+        new_value: null,
+        changed_by_user_id: userId,
+      });
+    } else if (item.id == null) {
+      // Nowa pozycja
+      auditItemNum++;
+      const snap = itemsWithSnapshots.find(
+        (_s, idx) => idx === auditItemNum - 1
+      );
+      itemChangeLogRows.push({
+        order_id: orderId,
+        field_name: "item_added",
+        old_value: null,
+        new_value: snap?.productNameSnapshot ?? item.productNameSnapshot ?? null,
+        changed_by_user_id: userId,
+      });
+    } else {
+      // Istniejąca pozycja — porównanie pól
+      auditItemNum++;
+      const oldItem = oldItemsMap.get(item.id);
+      if (oldItem) {
+        const snap = itemsWithSnapshots.find(
+          (_s, idx) => idx === auditItemNum - 1
+        );
+        const productName = snap?.productNameSnapshot ?? item.productNameSnapshot ?? null;
+
+        // product_name
+        if ((oldItem.product_name_snapshot ?? null) !== (productName)) {
+          itemChangeLogRows.push({
+            order_id: orderId,
+            field_name: `item[${auditItemNum}].product_name`,
+            old_value: oldItem.product_name_snapshot ?? null,
+            new_value: productName,
+            changed_by_user_id: userId,
+          });
+        }
+        // loading_method_code
+        const oldMethod = oldItem.loading_method_code ?? null;
+        const newMethod = item.loadingMethodCode ?? null;
+        if (oldMethod !== newMethod) {
+          itemChangeLogRows.push({
+            order_id: orderId,
+            field_name: `item[${auditItemNum}].loading_method_code`,
+            old_value: oldMethod,
+            new_value: newMethod,
+            changed_by_user_id: userId,
+          });
+        }
+        // quantity_tons
+        const oldQty = oldItem.quantity_tons != null ? String(oldItem.quantity_tons) : null;
+        const newQty = item.quantityTons != null ? String(item.quantityTons) : null;
+        if (oldQty !== newQty) {
+          itemChangeLogRows.push({
+            order_id: orderId,
+            field_name: `item[${auditItemNum}].quantity_tons`,
+            old_value: oldQty,
+            new_value: newQty,
+            changed_by_user_id: userId,
+          });
+        }
+        // notes
+        const oldNotes = oldItem.notes ?? null;
+        const newNotes = item.notes ?? null;
+        if (oldNotes !== newNotes) {
+          itemChangeLogRows.push({
+            order_id: orderId,
+            field_name: `item[${auditItemNum}].notes`,
+            old_value: oldNotes,
+            new_value: newNotes,
+            changed_by_user_id: userId,
+          });
+        }
+      }
+    }
+  }
+
+  if (itemChangeLogRows.length > 0) {
+    const { error: itemLogErr } = await supabase.from("order_change_log").insert(itemChangeLogRows);
+    if (itemLogErr) throw itemLogErr;
+  }
+
   if (newStatusCode !== order.status_code) {
     const { error: historyErr } = await supabase.from("order_status_history").insert({
       order_id: orderId,
@@ -1649,7 +1812,8 @@ export async function updateOrder(
   const businessFieldMap: Array<{ key: keyof UpdateOrderParams; dbField: string }> = [
     { key: "transportTypeCode", dbField: "transport_type_code" },
     { key: "carrierCompanyId", dbField: "carrier_company_id" },
-    { key: "vehicleVariantCode", dbField: "vehicle_variant_code" },
+    { key: "vehicleTypeText", dbField: "vehicle_type_text" },
+    { key: "vehicleCapacityVolumeM3", dbField: "vehicle_capacity_volume_m3" },
     { key: "priceAmount", dbField: "price_amount" },
     { key: "currencyCode", dbField: "currency_code" },
     { key: "paymentTermDays", dbField: "payment_term_days" },
@@ -1675,6 +1839,34 @@ export async function updateOrder(
     changed_by_user_id: string;
   }> = [];
 
+  // Audit trail: resolwer nazw dla pól FK (zamiast UUID)
+  const FK_FIELDS = new Set(["carrier_company_id", "shipper_location_id", "receiver_location_id"]);
+
+  async function resolveFkName(
+    fieldKey: string,
+    value: string | null
+  ): Promise<string | null> {
+    if (!value) return null;
+    if (fieldKey === "carrier_company_id") {
+      const { data } = await supabase
+        .from("companies")
+        .select("name")
+        .eq("id", value)
+        .maybeSingle();
+      return data?.name ?? value;
+    }
+    if (fieldKey === "shipper_location_id" || fieldKey === "receiver_location_id") {
+      const { data } = await supabase
+        .from("locations")
+        .select("name, companies(name)")
+        .eq("id", value)
+        .maybeSingle();
+      const companyName = (data?.companies as { name: string } | null)?.name;
+      return companyName ? `${companyName} — ${data?.name}` : data?.name ?? value;
+    }
+    return null;
+  }
+
   for (const { key, dbField } of businessFieldMap) {
     const newVal = params[key];
     if (newVal !== undefined) {
@@ -1682,11 +1874,28 @@ export async function updateOrder(
       const oldStr = oldVal != null ? String(oldVal) : null;
       const newStr = newVal != null ? String(newVal) : null;
       if (oldStr !== newStr) {
+        let resolvedOld = oldStr;
+        let resolvedNew = newStr;
+        if (FK_FIELDS.has(dbField)) {
+          resolvedOld = await resolveFkName(dbField, oldStr) ?? oldStr;
+          // Dla nowych wartości FK: użyj snapshotu (już pobranego)
+          if (dbField === "carrier_company_id") {
+            resolvedNew = carrierSnapshots.carrier_name_snapshot ?? newStr;
+          } else if (dbField === "shipper_location_id") {
+            resolvedNew = shipperSnapshots.nameSnapshot
+              ? `${shipperSnapshots.nameSnapshot}`
+              : newStr;
+          } else if (dbField === "receiver_location_id") {
+            resolvedNew = receiverSnapshots.nameSnapshot
+              ? `${receiverSnapshots.nameSnapshot}`
+              : newStr;
+          }
+        }
         changeLogRows.push({
           order_id: orderId,
           field_name: dbField,
-          old_value: oldStr,
-          new_value: newStr,
+          old_value: resolvedOld,
+          new_value: resolvedNew,
           changed_by_user_id: userId,
         });
       }
@@ -1955,7 +2164,6 @@ export async function patchStop(
     const fieldMap: Array<{ param: keyof PatchStopParams; dbField: string; oldVal: unknown }> = [
       { param: "dateLocal", dbField: "date_local", oldVal: stop.date_local },
       { param: "timeLocal", dbField: "time_local", oldVal: stop.time_local },
-      { param: "locationId", dbField: "location_id", oldVal: stop.location_id },
       { param: "notes", dbField: "notes", oldVal: stop.notes },
     ];
     const changeLogRows: Array<{
@@ -1980,6 +2188,41 @@ export async function patchStop(
         }
       }
     }
+
+    // Specjalna obsługa location_id — zapisz nazwę zamiast UUID
+    if (params.locationId !== undefined) {
+      const oldLocId = stop.location_id;
+      const newLocId = params.locationId;
+      const oldStr = oldLocId ?? null;
+      const newStr = newLocId ?? null;
+      if (oldStr !== newStr) {
+        let resolvedOld: string | null = null;
+        let resolvedNew: string | null = null;
+        if (oldLocId) {
+          const { data: oldLoc } = await supabase
+            .from("locations")
+            .select("name, companies(name)")
+            .eq("id", oldLocId)
+            .maybeSingle();
+          const oldCompany = (oldLoc?.companies as { name: string } | null)?.name;
+          resolvedOld = oldCompany ? `${oldCompany} — ${oldLoc?.name}` : oldLoc?.name ?? oldLocId;
+        }
+        if (newLocId) {
+          // Snapshot już pobrany wyżej w stopUpdatePayload
+          const newName = stopUpdatePayload.location_name_snapshot as string | null;
+          const newCompany = stopUpdatePayload.company_name_snapshot as string | null;
+          resolvedNew = newCompany ? `${newCompany} — ${newName}` : newName ?? newLocId;
+        }
+        changeLogRows.push({
+          order_id: orderId,
+          field_name: `stop.location_id`,
+          old_value: resolvedOld,
+          new_value: resolvedNew,
+          changed_by_user_id: userId,
+        });
+      }
+    }
+
     if (changeLogRows.length > 0) {
       const { error: logErr } = await supabase.from("order_change_log").insert(changeLogRows);
       if (logErr) throw logErr;

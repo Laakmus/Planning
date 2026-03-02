@@ -423,6 +423,8 @@ export type Database = {
           transport_year: number | null
           updated_at: string
           updated_by_user_id: string | null
+          vehicle_capacity_volume_m3: number | null
+          vehicle_type_text: string | null
           vehicle_variant_code: string | null
           week_number: number | null
         }
@@ -480,6 +482,8 @@ export type Database = {
           transport_year?: number | null
           updated_at?: string
           updated_by_user_id?: string | null
+          vehicle_capacity_volume_m3?: number | null
+          vehicle_type_text?: string | null
           vehicle_variant_code?: string | null
           week_number?: number | null
         }
@@ -537,6 +541,8 @@ export type Database = {
           transport_year?: number | null
           updated_at?: string
           updated_by_user_id?: string | null
+          vehicle_capacity_volume_m3?: number | null
+          vehicle_type_text?: string | null
           vehicle_variant_code?: string | null
           week_number?: number | null
         }

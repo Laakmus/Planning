@@ -688,4 +688,15 @@ INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, def
 
 -- (Zlecenie 20 — anulowane, bez pozycji towarowych)
 
+-- ============================================================
+-- Uzupełnienie nowych kolumn vehicle_type_text / vehicle_capacity_volume_m3
+-- z tabeli vehicle_variants (po dodaniu kolumn w migracji)
+-- ============================================================
+UPDATE public.transport_orders o
+SET vehicle_type_text = vv.vehicle_type,
+    vehicle_capacity_volume_m3 = vv.capacity_volume_m3
+FROM public.vehicle_variants vv
+WHERE o.vehicle_variant_code = vv.code
+  AND o.vehicle_type_text IS NULL;
+
 COMMIT;

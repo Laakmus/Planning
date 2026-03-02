@@ -333,8 +333,7 @@ describe("createOrder", () => {
   function buildCreateMock(overrides?: Record<string, TableMock>) {
     return buildOrderServiceMock(
       {
-        // FK validation — vehicle_variants, transport_types, companies, locations, products
-        vehicle_variants: { select: { data: { code: "MEGA" }, error: null } },
+        // FK validation — transport_types, companies, locations, products
         transport_types: { select: { data: { code: "PL" }, error: null } },
         companies: { select: { data: { id: VALID_COMPANY_ID, name: "TransPol" }, error: null } },
         locations: {
@@ -471,15 +470,6 @@ describe("createOrder", () => {
   });
 
   describe("walidacja FK", () => {
-    it("nieistniejący vehicleVariantCode → throws FK_VALIDATION", async () => {
-      const supabase = buildCreateMock({
-        vehicle_variants: { select: { data: null, error: null } },
-      });
-      const params = makeCreateOrderParams({ vehicleVariantCode: "NONEXIST" });
-
-      await expect(createOrder(supabase, VALID_USER_ID, params)).rejects.toThrow("FK_VALIDATION");
-    });
-
     it("nieistniejący transportTypeCode → throws FK_VALIDATION z details", async () => {
       const supabase = buildCreateMock({
         transport_types: { select: { data: null, error: null } },
@@ -536,7 +526,6 @@ describe("updateOrder", () => {
         },
         update: { data: null, error: null, count: 1 },
       },
-      vehicle_variants: { select: { data: { code: "MEGA" }, error: null } },
       transport_types: { select: { data: { code: "PL" }, error: null } },
       companies: { select: { data: { id: VALID_COMPANY_ID, name: "TransPol" }, error: null } },
       locations: { select: { data: [], error: null } },
@@ -673,7 +662,6 @@ describe("updateOrder", () => {
           },
           update: { data: null, error: null, count: 0 },
         },
-        vehicle_variants: { select: { data: { code: "MEGA" }, error: null } },
         transport_types: { select: { data: { code: "PL" }, error: null } },
         companies: { select: { data: { id: VALID_COMPANY_ID }, error: null } },
         locations: { select: { data: [], error: null } },

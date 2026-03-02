@@ -1,11 +1,283 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-02-28 (sesja 17 — sync docs z PRD + READ_ONLY audit)
+> Ostatnia aktualizacja: 2026-03-02 (sesja 21 — rozdzielenie pól pojazdu: vehicleVariantCode → vehicleTypeText + vehicleCapacityVolumeM3)
 
 ---
 
-## Zrobione (sesja 16)
+## Do zrobienia — CRITICAL
 
+### CR-01. Brak testów endpointów API (22 z 24 bez testów)
+- **Źródło:** Audyt testów
+- **Opis:** Tylko `/auth/me` ma testy. Brak testów dla: orders CRUD, status transitions, lock/unlock, duplicate, prepare-email, history, dictionary endpoints. Handlery zawierają logikę auth guard, walidację UUID, obsługę błędów 403/404/422.
+- **Pliki:** `src/pages/api/v1/**/*.ts`
+
+### CR-02. Brak testów middleware (rate limiting, idempotency, CORS)
+- **Źródło:** Audyt testów
+- **Opis:** `middleware.ts` zawiera rate limiting, idempotency cache, JWT parsing, CORS — zero testów. Scenariusze: rate limit po 100/1000 req/min, cache eviction, OPTIONS preflight, CORS headers.
+- **Plik:** `src/middleware.ts`
+
+### CR-03. Brak testów access control (role-based)
+- **Źródło:** Audyt testów
+- **Opis:** `requireWriteAccess` i `requireAdmin` nie mają ani jednego testu weryfikującego: READ_ONLY → 403, PLANNER → 403 na admin-only, brak tokenu → 401.
+- **Plik:** `src/lib/api-helpers.ts`
+
+### CR-04. `search_vector` tsvector nigdy nie jest populowany
+- **Źródło:** Audyt architektury
+- **Opis:** Kolumna `search_vector` z indeksem GIN istnieje w DB, ale żaden trigger ani kod aplikacji jej nie wypełnia. Aplikacja używa `search_text` z `ILIKE` (O(n)). Indeks GIN jest zmarnowany.
+- **Plik:** `supabase/migrations/...consolidated_schema.sql:442`
+- **Rekomendacja:** Dodaj trigger DB lub usuń nieużywaną kolumnę/indeks.
+
+---
+
+## Do zrobienia — HIGH
+
+### H-01. Brak React Error Boundary
+- **Źródło:** Audyt kodu
+- **Opis:** Cała aplikacja nie ma ErrorBoundary. Nieobsłużony błąd w dowolnym komponencie → biały ekran. React 19 nadal wymaga class-based ErrorBoundary lub `react-error-boundary`.
+- **Plik:** `src/components/orders/OrdersApp.tsx`
+
+### H-02. `order.service.ts` — 2379 linii (god service)
+- **Źródło:** Audyt kodu
+- **Opis:** Jeden plik zawiera list, detail, create, update, duplicate, email, snapshoty, denormalizacje, change log. Trudno testowalny i nawigowiny.
+- **Plik:** `src/lib/services/order.service.ts`
+- **Rekomendacja:** Rozbij na: `order-list`, `order-detail`, `order-create`, `order-update`, `order-snapshot`, `order-changelog` services.
+
+### H-03. 7x `(row as any)` w order.service.ts
+- **Źródło:** Audyt kodu
+- **Opis:** Joiny Supabase (created_by, sent_by, locked_by) dostępne w runtime ale nie w typach TS → `as any`. Ukrywa potencjalne błędy. Tak samo `(supabase as any).rpc()`.
+- **Plik:** `src/lib/services/order.service.ts:469-475, 836`
+- **Rekomendacja:** Rozszerz `Database` types o custom RPC functions + `type DetailRowWithJoins`.
+
+### H-04. `JSON.stringify` do dirty checking
+- **Źródło:** Audyt kodu
+- **Opis:** `JSON.stringify(fd) !== JSON.stringify(originalRef.current)` — O(n) na każdym keystroke, niestabilny porządek kluczy.
+- **Plik:** `src/components/orders/drawer/OrderForm.tsx:158`
+- **Rekomendacja:** Flaga `isDirty = true` przy każdym `patch()` lub shallow compare.
+
+### H-05. Zduplikowane ciało save w OrderDrawer (POST vs PUT)
+- **Źródło:** Audyt kodu
+- **Opis:** ~30 linii zduplikowanych pól w `handleSave` (create vs update). Zmiana pola wymaga edycji w 2 miejscach.
+- **Plik:** `src/components/orders/drawer/OrderDrawer.tsx:230-314`
+- **Rekomendacja:** Wydziel `buildSaveBody(formData, isNew)`.
+
+### H-06. Fetch requests bez AbortController w hookach
+- **Źródło:** Audyt kodu
+- **Opis:** `useOrders` i `useOrderHistory` używają `staleRef` do ignorowania starych zapytań, ale HTTP requests lecą nadal. Brak AbortController → marnowanie bandwidth przy szybkim przełączaniu.
+- **Pliki:** `src/hooks/useOrders.ts`, `src/hooks/useOrderHistory.ts`
+
+### H-07. `.env.example` zawiera prawdziwe klucze Supabase
+- **Źródło:** Audyt bezpieczeństwa
+- **Opis:** `.env.example` ma `SUPABASE_ANON_KEY=sb_publishable_...` i `SERVICE_ROLE_KEY=sb_secret_...` — wyglądają na prawdziwe klucze local dev. Plik jest w git.
+- **Plik:** `.env.example:3-4`
+- **Rekomendacja:** Zamień na placeholder `your-anon-key-here`. Zrotuj klucze.
+
+### H-08. `SECURITY DEFINER` RPC callable przez READ_ONLY
+- **Źródło:** Audyt bezpieczeństwa
+- **Opis:** `try_lock_order` i `generate_next_order_no` to `SECURITY DEFINER` z `GRANT ALL TO authenticated`. READ_ONLY user może zablokować zlecenie (DoS) lub spalić numery sekwencji. App layer sprawdza `requireWriteAccess`, ale RPC jest dostępne bezpośrednio.
+- **Plik:** `supabase/migrations/...consolidated_schema.sql:936-937`
+- **Rekomendacja:** Dodaj role check wewnątrz RPC lub ogranicz `GRANT EXECUTE`.
+
+### H-09. Brak testów hooków React
+- **Źródło:** Audyt testów
+- **Opis:** Żaden z 4 hooków (`useOrders`, `useOrderDetail`, `useOrderHistory`, `useDictionarySync`) nie ma testu. Zawierają logikę auto-lock, unlock, polling, error handling.
+- **Pliki:** `src/hooks/`
+
+### H-10. Brak testów ViewModels (`view-models.ts`)
+- **Źródło:** Audyt testów
+- **Opis:** ViewModels transformują DTO → dane wyświetlane. Błąd mappingu jest cichy. Zero testów.
+- **Plik:** `src/lib/view-models.ts`
+
+### H-11. Brak CI/CD pipeline i pre-commit hooków
+- **Źródło:** Audyt testów
+- **Opis:** Brak `.github/`, brak husky/lint-staged. Testy uruchamiane tylko ręcznie.
+
+---
+
+## Do zrobienia — MEDIUM
+
+### M-01. DRY: `hasActiveFilters` zduplikowane w 2 plikach
+- **Źródło:** Audyt kodu
+- **Pliki:** `OrdersPage.tsx:93-103`, `FilterBar.tsx:93-103`
+- **Rekomendacja:** Wydziel do `view-models.ts`.
+
+### M-02. DRY: `STATUS_NAMES` zduplikowane w 2 plikach
+- **Źródło:** Audyt kodu
+- **Pliki:** `OrderRowContextMenu.tsx:29-37`, `StatusSection.tsx:27-35`
+- **Rekomendacja:** Wydziel do `view-models.ts`.
+
+### M-03. DRY: status name capitalization powtórzona 2x
+- **Źródło:** Audyt kodu
+- **Pliki:** `OrderForm.tsx:182-185`, `OrderDrawer.tsx:381-386`
+- **Rekomendacja:** Użyj `STATUS_NAMES[code]` zamiast runtime transformacji.
+
+### M-04. Dead code: `SORTABLE_COLUMNS` w OrderTable.tsx
+- **Źródło:** Audyt kodu
+- **Plik:** `src/components/orders/OrderTable.tsx:37-42`
+
+### M-05. Identity mapping `TRANSPORT_CODE_DISPLAY` — do usunięcia
+- **Źródło:** Audyt kodu
+- **Pliki:** `OrderRow.tsx:22-27`, `FilterBar.tsx:25-27`
+- **Rekomendacja:** Użyj `order.transportTypeCode` bezpośrednio.
+
+### M-06. `OrderDrawer.tsx` — 508 linii, za dużo odpowiedzialności
+- **Źródło:** Audyt kodu
+- **Plik:** `src/components/orders/drawer/OrderDrawer.tsx`
+- **Rekomendacja:** Wydziel `useOrderDrawer(orderId, isOpen)` hook. (Powiązane z D-05)
+
+### M-07. `OrdersPage.tsx` — 433 linii, powtarzalne handlery
+- **Źródło:** Audyt kodu
+- **Plik:** `src/components/orders/OrdersPage.tsx`
+- **Rekomendacja:** Wydziel `useOrderActions()` hook lub helper `try/catch/toast/refetch`.
+
+### M-08. `TimeCombobox` nie wydzielony z RoutePointCard
+- **Źródło:** Audyt kodu
+- **Plik:** `src/components/orders/drawer/RoutePointCard.tsx:36-203`
+- **Rekomendacja:** Wydziel do `components/orders/drawer/TimeCombobox.tsx`.
+
+### M-09. ~~`createEmptyDetail()` zawiera `vehicleVariantCode`~~ — DONE (sesja 21)
+- Naprawione: zamienione na `vehicleTypeText` + `vehicleCapacityVolumeM3` zgodne z `OrderDetailDto`.
+
+### M-10. Brak CORS headers na odpowiedzi 429 (rate limit)
+- **Źródło:** Audyt bezpieczeństwa
+- **Plik:** `src/middleware.ts:153`
+- **Rekomendacja:** Dodaj CORS headers do odpowiedzi 429.
+
+### M-11. Brak limitu rozmiaru request body
+- **Źródło:** Audyt bezpieczeństwa
+- **Plik:** `src/lib/api-helpers.ts:158-164` (`parseJsonBody`)
+- **Rekomendacja:** Reject bodies > 1MB via `Content-Length` check.
+
+### M-12. `vehicle_variant_code` — schema drift po migracji decouple
+- **Źródło:** Audyt architektury
+- **Opis:** FK dropped ale kolumna zostaje. `db-plan.md` i `api-plan.md` nie zaktualizowane do nowego modelu 2-polowego.
+- **Plik:** `supabase/migrations/20260301000000_decouple_vehicle_fields.sql`
+- **Rekomendacja:** Zaktualizuj docs, rozważ usunięcie kolumny.
+
+### M-13. `entry-fixed.ts` endpoint nieudokumentowany
+- **Źródło:** Audyt architektury
+- **Opis:** `PATCH /orders/{orderId}/entry-fixed` istnieje ale brak w `api-plan.md` i `db-plan.md`.
+- **Plik:** `src/pages/api/v1/orders/[orderId]/entry-fixed.ts`
+
+### M-14. Brak health check endpoint
+- **Źródło:** Audyt architektury
+- **Rekomendacja:** Dodaj `GET /api/v1/health` sprawdzający DB connectivity.
+
+### M-15. Brak coverage konfiguracji w vitest.config.ts
+- **Źródło:** Audyt testów
+- **Opis:** Nie można zobaczyć % pokrycia. Brak reporters, brak testTimeout.
+- **Plik:** `vitest.config.ts`
+
+### M-16. Brak testów komponentów React (64+ pliki, 0 testów)
+- **Źródło:** Audyt testów
+- **Opis:** OrderRow, OrdersTable, StatusBadge, FilterBar — zero testów poza tymczasowymi drawer-e2e.
+
+---
+
+## Do zrobienia — LOW
+
+### L-01. Lock możliwy na anulowanych/zrealizowanych
+- **Plik:** `order-lock.service.ts`
+- **Potwierdzone przez:** Audyt architektury (L-01), audyt bezpieczeństwa
+
+### L-02. Brak paginacji w endpointach słownikowych
+- **Pliki:** companies, locations, products
+- **Potwierdzone przez:** Audyt architektury (L-02)
+
+### L-04. buildSnapshotsForCarrier nie pobiera address/location name
+- **Plik:** `order.service.ts:524-543`
+
+### L-10. Unsafe type casts w api-client.ts
+
+### L-11. week-utils.ts regex fałszywie akceptuje format
+
+### L-15. Brak testów: postRaw Accept header + AbortController timeout
+
+### L-17. JWT bez weryfikacji podpisu w `extractSubFromJwt`
+- **Plik:** `middleware.ts:92-103`
+- **Potwierdzone przez:** Audyt bezpieczeństwa (H-03), audyt architektury (M-05)
+- **Dodatkowy kontekst:** Atakujący może sfałszować JWT z `sub` ofiary → wyczerpanie rate limit ofiary (429). Sam auth jest bezpieczny (Supabase weryfikuje server-side).
+
+### L-18. Brak `dark:` na etykietach w CarrierSection i EmptyState
+
+### L-19. `span[role=button]` bez obsługi Space w AutocompleteField
+
+### L-20. Puste `catch {}` bez komentarza w wielu miejscach
+- **Źródło:** Audyt kodu
+- **Pliki:** `OrderDrawer.tsx:148,195`, `AuthContext.tsx:110`, `api-client.ts:175,185`
+- **Rekomendacja:** Dodaj komentarze wyjaśniające dlaczego catch jest pusty.
+
+### L-21. `key={idx}` na liście items w OrderRow — brak stabilnego klucza
+- **Źródło:** Audyt kodu
+- **Plik:** `src/components/orders/OrderRow.tsx:193-194`
+
+### L-22. Timezone w `TimelineEntry.tsx` — `new Date(iso)` zależy od przeglądarki
+- **Źródło:** Audyt kodu
+- **Plik:** `src/components/orders/history/TimelineEntry.tsx:31-35`
+
+### L-23. Brak `aria-label` na paginacji
+- **Źródło:** Audyt kodu
+- **Plik:** `src/components/orders/OrdersPage.tsx:364-383`
+
+### L-24. `@types/react` i `@types/react-dom` w dependencies zamiast devDependencies
+- **Źródło:** Audyt kodu
+- **Plik:** `package.json:25-26`
+
+### L-25. Brak `Cache-Control: no-store` na wrażliwych API responses
+- **Źródło:** Audyt bezpieczeństwa
+- **Plik:** `src/lib/api-helpers.ts:94-98`
+
+### L-26. Brak `Permissions-Policy` header
+- **Źródło:** Audyt bezpieczeństwa
+- **Plik:** `src/lib/api-helpers.ts:25`
+- **Rekomendacja:** Dodaj `Permissions-Policy: camera=(), microphone=(), geolocation=()`.
+
+### L-27. CORS config zduplikowany w 2 plikach
+- **Źródło:** Audyt architektury
+- **Pliki:** `src/lib/api-helpers.ts:27`, `src/middleware.ts:134`
+
+### L-28. Brak dokumentacji strategii migracji DB
+- **Źródło:** Audyt architektury
+
+### L-29. Verbose `console.error` w API routes — brak structured logging
+- **Źródło:** Audyt bezpieczeństwa (M-05), audyt kodu (L-01), audyt architektury (M-04)
+- **Opis:** 21 wystąpień `console.error` bez structured JSON, request ID, log levels. Akceptowalne dla MVP.
+
+---
+
+## Do weryfikacji
+
+### V-01. L-16: listOrders 5 filtrów — prawdopodobnie ZROBIONE
+- **Źródło:** Audyt architektury (H-04)
+- **Opis:** Arch-analyst znalazł, że filtry `productId`, `loadingLocationId`, `loadingCompanyId`, `unloadingLocationId`, `unloadingCompanyId` SĄ zaimplementowane (sub-queries na liniach 162-258 w `order.service.ts`). Komentarz na liniach 118-119 jest prawdopodobnie stary.
+- **Akcja:** Zweryfikuj ręcznie i przenieś do "Zrobione" jeśli potwierdzone.
+
+---
+
+## Odroczone (user decision: zostawić)
+
+### D-03. PDF endpoint — stub 501 po stronie serwera
+- Wymaga generatora PDF (np. Puppeteer, jsPDF, Reportlab).
+- W przyszłości będzie powiązany z widokiem z order.md.
+- **Potwierdzone przez:** Audyt architektury (H-01) — PRD wymaga jako MVP feature.
+
+### D-05. hooks/useOrderDetail.ts — logika wbudowana w OrderDrawer
+- Czysto refaktoringowa zmiana (~290 linii logiki → osobny hook). Nie zmienia funkcjonalności.
+- **User decyzja**: zostawić na później.
+- **Powiązane:** M-06 (OrderDrawer 508 linii)
+
+### D-06. Dictionary sync endpoints — stuby
+- **Źródło:** Audyt architektury (H-02)
+- **Opis:** `POST /dictionary-sync/run` i `GET /jobs/{id}` zwracają mock responses. Oczekiwane dla MVP bez integracji ERP.
+
+### D-07. Job czyszczący anulowane zlecenia po 24h
+- **Źródło:** Audyt architektury (H-03), wcześniej M-17
+- **Opis:** PRD wymaga usunięcia anulowanych po 24h. Wymaga `pg_cron` (infrastructure).
+
+---
+
+## Zrobione
+
+### Sesja 16 — security audit + MEDIUM fixes
 - [x] C-01: Rename `SUPABASE_KEY` → `SUPABASE_ANON_KEY`
 - [x] C-02: Obsługa `READONLY`/`FORBIDDEN_EDIT` w patchStop endpoint
 - [x] C-03: Unlock przed refetch w OrderDrawer
@@ -37,42 +309,9 @@
 - [x] M-14: won't fix — auto-waluta frontend-only OK dla MVP
 - [x] M-15: już naprawione — `prepare-email` aktualizuje `main_product_name` (kod weryfikuje)
 - [x] M-16: deferred — FilterBar filtr po lokalizacji to feature work
-- [x] M-17: deferred — job czyszczący anulowane wymaga pg_cron (infrastructure)
+- [x] M-17: deferred → przeniesione do D-07
 
----
-
-## LOW
-
-### L-01. Lock możliwy na anulowanych/zrealizowanych
-- **Plik:** `order-lock.service.ts`
-
-### L-02. Brak paginacji w endpointach słownikowych
-- **Pliki:** companies, locations, products
-
-### L-04. buildSnapshotsForCarrier nie pobiera address/location name
-- **Plik:** `order.service.ts:524-543`
-
-### L-10. unsafe type casts w api-client.ts
-
-### L-11. week-utils.ts regex fałszywie akceptuje format
-
-### L-15. Brak testów: postRaw Accept header + AbortController timeout
-
-### L-16. listOrders 5 filtrów niezaimplementowanych
-
-### L-17. JWT bez weryfikacji podpisu w `extractSubFromJwt`
-- **Plik:** `middleware.ts:92-103`
-
-### L-18. Brak `dark:` na etykietach w CarrierSection i EmptyState
-
-### L-19. `span[role=button]` bez obsługi Space w AutocompleteField
-
-### L-20. ~~`order_seq_no` i `carrier_cell_color` nieudokumentowane w db-plan~~ — DONE (sesja 17)
-
----
-
-## Zrobione (sesja 17 — sync docs + audit)
-
+### Sesja 17 — sync docs z PRD + READ_ONLY audit
 - [x] Sync dokumentacji .ai/ z PRD jako źródłem prawdy (6 plików naprawionych, 1 usunięty)
   - drawer-ui-architecture.md: renumeracja sekcji 1-7 → 0-6, generalNotes 1000→500
   - orders-view-implementation-plan.md: tła wierszy, daty DD.MM, generalNotes, vehicle 2 pola, StatusBadge lowercase + display names
@@ -80,16 +319,42 @@
   - order.md: packagingType → loading_method_code
   - db-plan.md: dodano order_seq_no + carrier_cell_color
   - ui-architecture-summary.md: usunięty (przestarzały)
+- [x] vehicleVariantCode → 2 osobne pola (Typ auta + Objętość m³) w walidacji orders-view-implementation-plan.md
 - [x] READ_ONLY audit: 58 komponentów sprawdzonych, wszystkie akcje chronione
-  - StatusSection.tsx: dodano defensywny prop isReadOnly
+  - StatusSection.tsx: dodano defensywny prop `isReadOnly`
 - [x] L-20: order_seq_no i carrier_cell_color udokumentowane w db-plan
 
-## Otwarte decyzje (pending user)
+### Sesja 18 — rozszerzenie audit trail
+- [x] Faza 1: Wpis "Utworzono zlecenie" (`order_created`) w `createOrder()` — `order.service.ts`
+- [x] Faza 2: Śledzenie zmian pozycji towarowych (dodawanie/usuwanie/edycja pól) w `updateOrder()` — `order.service.ts`
+- [x] Faza 3: Śledzenie dodawania/usuwania przystanków w `updateOrder()` — `order.service.ts`
+- [x] Faza 4: Czytelne wartości FK (nazwy firm zamiast UUID) w `updateOrder()` i `patchStop()` — `order.service.ts`
+- [x] Faza 5: Mapa polskich nazw pól — NOWY plik `src/lib/field-labels.ts`
+- [x] Faza 6: Polskie etykiety + nowe typy wpisów (stop/item added/removed) w `TimelineEntry.tsx`
+- [x] Faza 7: Rozpoznawanie `order_created` w `HistoryPanel.tsx`
 
-### D-03. PDF endpoint — stub 501 po stronie serwera
-- Wymaga generatora PDF (np. Puppeteer, jsPDF, Reportlab).
-- W przyszłości będzie powiązany z widokiem z order.md.
+### Sesja 21 — rozdzielenie pól pojazdu (vehicleVariantCode → 2 niezależne pola)
+- [x] Migracja DB: nowe kolumny `vehicle_type_text` + `vehicle_capacity_volume_m3`, drop FK constraint
+- [x] Typy DTO: `OrderListItemDto.vehicleTypeText` (zamiast vehicleVariantCode + vehicleVariantName), `OrderDetailDto.vehicleTypeText` + `vehicleCapacityVolumeM3`
+- [x] ViewModel: `OrderFormData.vehicleTypeText` + `vehicleCapacityVolumeM3` (zamiast vehicleVariantCode)
+- [x] Validator: `createOrderSchema` + `updateOrderSchema` — nowe pola Zod
+- [x] Backend: order.service.ts — 12 miejsc zmienione (mapRowToOrderListItemDto, selectColumns, getOrderDetail, validateForeignKeys, createOrder, updateOrder, duplicateOrder, businessFieldMap)
+- [x] Frontend: CarrierSection uproszczone (usunięto useState/useEffect/useRef, bezpośrednie bindowanie do formData)
+- [x] Frontend: OrderDrawer, OrderForm, OrderRow, OrdersPage — nowe pola
+- [x] field-labels.ts: vehicle_type_text + historyczny fallback vehicle_variant_code
+- [x] Testy: 352/352 pass, 0 błędów TS
+- [x] seed.sql: UPDATE uzupełniający nowe kolumny z vehicle_variants
 
-### D-05. hooks/useOrderDetail.ts — logika wbudowana w OrderDrawer
-- Hook istnieje ale nieużywany — usunąć lub refaktoryzować.
-- User: do decyzji (refaktoring, nie zmienia funkcjonalności).
+### Sesja 20 — audyt 4 agentów: security, code quality, architecture, test coverage
+- [x] (patrz sekcja "Do zrobienia" powyżej — wpisy CR-01..04, H-01..11, M-01..16, L-20..29)
+
+### Sesja 19 — fix vehicle variant auto-fill + testy E2E drawera
+- [x] Bug fix: auto-wypełnienie objętości przy wyborze typu auta w `CarrierSection.tsx`
+  - Root cause: vehicleType/volume to local state, vehicleVariantCode (exact match) jedyny w formData
+  - Fix: `handleVehicleTypeChange` → gdy 1 wariant dla typu → auto-fill volume + ustaw vehicleVariantCode
+- [x] Testy E2E drawera (tymczasowe, do usunięcia): 97 testów w `src/test/drawer-e2e/`
+  - `drawer-buttons.test.tsx`: 61 testów interaktywnych elementów drawera
+  - `drawer-roundtrip.test.tsx`: 8 testów save→close→reopen→verify
+  - `drawer-history.test.tsx`: 28 testów panelu historii zmian
+- [x] Fix stabilnych referencji mocków (`vi.hoisted()` w roundtrip tests)
+- [x] Fix typów TS w `drawer-buttons.test.tsx` (CompanyDto.type/notes, LocationDto fields)

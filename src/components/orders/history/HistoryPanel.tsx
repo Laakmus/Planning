@@ -52,7 +52,7 @@ function mergeToTimeline(
   for (const c of changeLog) {
     entries.push({
       id: `change-${c.id}`,
-      type: "field_change",
+      type: c.fieldName === "order_created" ? "order_created" : "field_change",
       changedAt: c.changedAt,
       changedByUserName: c.changedByUserName,
       changedByUserId: c.changedByUserId,
