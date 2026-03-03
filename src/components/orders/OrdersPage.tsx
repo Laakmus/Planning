@@ -17,6 +17,7 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
 import type { CarrierColorResponseDto, CreateOrderResponseDto, DuplicateOrderResponseDto, EntryFixedResponseDto, PrepareEmailResponseDto } from "@/types";
 import { useOrders } from "@/hooks/useOrders";
@@ -391,13 +392,21 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
       />
 
       {/* OrderDrawer */}
-      <OrderDrawer
-        orderId={selectedOrderId}
-        isOpen={drawerOpen}
-        onClose={handleDrawerClose}
-        onOrderUpdated={refetch}
-        onShowHistory={handleShowHistory}
-      />
+      <ErrorBoundary
+        fallback={
+          <div className="p-4 text-center text-sm text-red-600 dark:text-red-400">
+            Błąd ładowania formularza. Zamknij i otwórz ponownie.
+          </div>
+        }
+      >
+        <OrderDrawer
+          orderId={selectedOrderId}
+          isOpen={drawerOpen}
+          onClose={handleDrawerClose}
+          onOrderUpdated={refetch}
+          onShowHistory={handleShowHistory}
+        />
+      </ErrorBoundary>
 
       {/* HistoryPanel */}
       <HistoryPanel

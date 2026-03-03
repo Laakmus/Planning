@@ -21,6 +21,7 @@
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { Toaster } from "@/components/ui/sonner";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { DictionaryProvider } from "@/contexts/DictionaryContext";
@@ -69,11 +70,13 @@ function OrdersAppInner() {
 export default function OrdersApp() {
   return (
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
-        <DictionaryProvider>
-          <OrdersAppInner />
-        </DictionaryProvider>
-      </AuthProvider>
+      <ErrorBoundary>
+        <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
+          <DictionaryProvider>
+            <OrdersAppInner />
+          </DictionaryProvider>
+        </AuthProvider>
+      </ErrorBoundary>
     </ThemeProvider>
   );
 }

@@ -68,6 +68,7 @@ function makeOrderDetail(overrides?: Partial<OrderDetailResponseDto["order"]>): 
       specialRequirements: null,
       requiredDocumentsText: null,
       generalNotes: null,
+      notificationDetails: null,
       confidentialityClause: null,
       complaintReason: null,
       senderContactName: null,

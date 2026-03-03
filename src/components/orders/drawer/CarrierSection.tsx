@@ -6,6 +6,7 @@
 import { useMemo } from "react";
 
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,6 +14,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 import type { CompanyDto, VehicleVariantDto } from "@/types";
 import type { OrderFormData } from "@/lib/view-models";
 
@@ -153,6 +155,25 @@ export function CarrierSection({
             ))}
           </SelectContent>
         </Select>
+      </div>
+
+      {/* Row 3: Dane do awizacji — full width */}
+      <div>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium">Dane do awizacji</Label>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">
+            {(formData.notificationDetails ?? "").length}/500
+          </span>
+        </div>
+        <Textarea
+          value={formData.notificationDetails ?? ""}
+          onChange={(e) => onChange({ notificationDetails: e.target.value || null })}
+          disabled={isReadOnly}
+          rows={4}
+          maxLength={500}
+          className="text-sm resize-none mt-1"
+          placeholder="Informacje do awizacji dla przewoźnika…"
+        />
       </div>
     </div>
   );

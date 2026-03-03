@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-02 (sesja 23 — implementacja OrderView + integracja z drawerem)
+> Ostatnia aktualizacja: 2026-03-03 (sesja 24 — security fixes: H-07, H-08, H-01)
 
 ---
 
@@ -16,10 +16,11 @@
 - **Opis:** `middleware.ts` zawiera rate limiting, idempotency cache, JWT parsing, CORS — zero testów. Scenariusze: rate limit po 100/1000 req/min, cache eviction, OPTIONS preflight, CORS headers.
 - **Plik:** `src/middleware.ts`
 
-### CR-03. Brak testów access control (role-based)
+### ~~CR-03. Brak testów access control (role-based)~~ — CZĘŚCIOWO DONE (sesja 24)
 - **Źródło:** Audyt testów
 - **Opis:** `requireWriteAccess` i `requireAdmin` nie mają ani jednego testu weryfikującego: READ_ONLY → 403, PLANNER → 403 na admin-only, brak tokenu → 401.
 - **Plik:** `src/lib/api-helpers.ts`
+- **Status:** 8 testów dodanych w `src/lib/__tests__/access-control.test.ts` (ADMIN ok, PLANNER ok/403, READ_ONLY 403, Content-Type, brak details). Brak tokenu → 401 wymaga testów endpointów (CR-01).
 
 ### CR-04. `search_vector` tsvector nigdy nie jest populowany
 - **Źródło:** Audyt architektury
@@ -37,10 +38,11 @@
 ### ~~H-NEW-02. Fix labeli pakowania w CargoSection~~ — DONE (sesja 23)
 - Zrealizowane: LOADING_METHODS: Luzem, Bigbag, Paleta, Inne.
 
-### H-01. Brak React Error Boundary
-- **Źródło:** Audyt kodu
-- **Opis:** Cała aplikacja nie ma ErrorBoundary. Nieobsłużony błąd w dowolnym komponencie → biały ekran. React 19 nadal wymaga class-based ErrorBoundary lub `react-error-boundary`.
-- **Plik:** `src/components/orders/OrdersApp.tsx`
+### ~~H-01. Brak React Error Boundary~~ — DONE (sesja 24)
+- Zrealizowane: `ErrorBoundary` class-based (zero deps), 2-poziomowa integracja:
+  - Globalny: `OrdersApp.tsx` (wewnątrz ThemeProvider, na zewnątrz AuthProvider)
+  - Drawer: `OrdersPage.tsx` (wokół OrderDrawer z custom fallback)
+  - 6 testów w `src/components/ui/__tests__/ErrorBoundary.test.tsx`
 
 ### H-02. `order.service.ts` — 2379 linii (god service)
 - **Źródło:** Audyt kodu
@@ -71,17 +73,16 @@
 - **Opis:** `useOrders` i `useOrderHistory` używają `staleRef` do ignorowania starych zapytań, ale HTTP requests lecą nadal. Brak AbortController → marnowanie bandwidth przy szybkim przełączaniu.
 - **Pliki:** `src/hooks/useOrders.ts`, `src/hooks/useOrderHistory.ts`
 
-### H-07. `.env.example` zawiera prawdziwe klucze Supabase
-- **Źródło:** Audyt bezpieczeństwa
-- **Opis:** `.env.example` ma `SUPABASE_ANON_KEY=sb_publishable_...` i `SERVICE_ROLE_KEY=sb_secret_...` — wyglądają na prawdziwe klucze local dev. Plik jest w git.
-- **Plik:** `.env.example:3-4`
-- **Rekomendacja:** Zamień na placeholder `your-anon-key-here`. Zrotuj klucze.
+### ~~H-07. `.env.example` zawiera prawdziwe klucze Supabase~~ — DONE (sesja 24)
+- Zrealizowane: Klucze zamienione na placeholdery `<your-anon-key-from-supabase-start>`.
+  - 6 testów w `src/test/security/env-example.test.ts` (brak JWT, brak base64, CORS ≠ *).
 
-### H-08. `SECURITY DEFINER` RPC callable przez READ_ONLY
-- **Źródło:** Audyt bezpieczeństwa
-- **Opis:** `try_lock_order` i `generate_next_order_no` to `SECURITY DEFINER` z `GRANT ALL TO authenticated`. READ_ONLY user może zablokować zlecenie (DoS) lub spalić numery sekwencji. App layer sprawdza `requireWriteAccess`, ale RPC jest dostępne bezpośrednio.
-- **Plik:** `supabase/migrations/...consolidated_schema.sql:936-937`
-- **Rekomendacja:** Dodaj role check wewnątrz RPC lub ogranicz `GRANT EXECUTE`.
+### ~~H-08. `SECURITY DEFINER` RPC callable przez READ_ONLY~~ — DONE (sesja 24)
+- Zrealizowane: Migracja `20260303120000_rpc_role_guard.sql`:
+  - `require_write_role()` — reusable helper (sprawdza `user_profiles.role` via `auth.uid()`)
+  - `try_lock_order` — guard roli + guard anti-spoofing (`p_user_id != auth.uid()`)
+  - `generate_next_order_no` — guard roli
+  - errcode `42501` → PostgREST HTTP 403
 
 ### H-09. Brak testów hooków React
 - **Źródło:** Audyt testów
@@ -356,6 +357,13 @@
 - [x] Faza 5: Fix labeli pakowania w CargoSection (Luzem, Bigbag, Paleta, Inne)
 - [x] Faza 6: Weryfikacja — 0 błędów TS, build OK
 - [x] Aktualizacja testów drawer-e2e (onShowPreview, confidentialityClause)
+
+### Sesja 24 — security fixes (H-07, H-08, H-01) + testy
+- [x] H-07: `.env.example` — klucze zamienione na placeholdery + 6 testów bezpieczeństwa
+- [x] H-08: Migracja RPC role guard (`require_write_role()`, anti-spoofing w `try_lock_order`)
+- [x] H-01: ErrorBoundary class-based (zero deps) + 2-poziomowa integracja (global + drawer) + 6 testów
+- [x] CR-03 (częściowo): 8 testów access-control (`requireWriteAccess` + `requireAdmin`)
+- [x] Wynik: 372/372 testów, 0 błędów TypeScript
 
 ### Sesja 22 — analiza i aktualizacja planu ORDER-implementation-plan + dokumentacji
 - [x] Analiza ORDER-implementation-plan.md vs prototyp, codebase, dokumentacja (3 agenty równolegle)

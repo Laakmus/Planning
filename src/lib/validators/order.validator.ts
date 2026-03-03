@@ -109,6 +109,7 @@ export const createOrderSchema = z.object({
   specialRequirements: z.string().max(500).nullable(),
   requiredDocumentsText: z.string().max(500).nullable(),
   generalNotes: z.string().max(500).nullable(),
+  notificationDetails: z.string().max(500).nullable().optional(),
   confidentialityClause: z.string().max(2000).nullable().optional(),
   senderContactName: z.string().max(200).nullable(),
   senderContactPhone: z.string().max(100).nullable(),

@@ -163,6 +163,7 @@ function makeOrderDetail(overrides?: Partial<OrderDetailResponseDto["order"]>): 
       specialRequirements: null,
       requiredDocumentsText: "WZ, KPO, kwit wagowy",
       generalNotes: "Uwaga testowa",
+      notificationDetails: null,
       confidentialityClause: null,
       complaintReason: null,
       senderContactName: "Jan Kowalski",
@@ -580,10 +581,9 @@ describe("Notes section", () => {
   it("shows character count", async () => {
     await openDrawerWithDetail();
 
-    // "Uwaga testowa" ma 13 znaków
-    const countElement = screen.getByText(/\d+\/500/);
+    // "Uwaga testowa" ma 13 znaków — szukamy konkretnie "13/500" (jest też "0/500" z awizacji)
+    const countElement = screen.getByText("13/500");
     expect(countElement).toBeInTheDocument();
-    expect(countElement.textContent).toContain("13/500");
   });
 
   it("renders as disabled when isReadOnly", async () => {
@@ -622,6 +622,7 @@ describe("NotesSection standalone", () => {
       specialRequirements: null,
       requiredDocumentsText: null,
       generalNotes: "abc",
+      notificationDetails: null,
       confidentialityClause: null,
       complaintReason: null,
       senderContactName: null,

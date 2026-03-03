@@ -81,8 +81,10 @@ Tabela główna, centralna dla całego systemu.
   - wymagania specjalne (np. ADR, chłodnia); może być `NULL`
 - **required_documents_text**: `varchar(500)`
   - wymagane dokumenty dla kierowcy (np. `CMR, WZ, BDO`)
-- **general_notes**: `varchar(500)`  
+- **general_notes**: `varchar(500)`
   - ogólne uwagi do zlecenia
+- **notification_details**: `text`
+  - dane do awizacji — informacje przekazywane przewoźnikowi o planowanym załadunku/rozładunku; opcjonalne, nullable; max 500 znaków (walidacja w aplikacji); nie kopiowane przy duplikowaniu zlecenia
 - **complaint_reason**: `varchar(500)`  
   - powód reklamacji (gdy status = reklamacja), opcjonalne
 - **sender_contact_name**: `varchar(200)`

@@ -150,6 +150,7 @@ export interface OrderFormData {
   specialRequirements: string | null;
   requiredDocumentsText: string | null;
   generalNotes: string | null;
+  notificationDetails: string | null;
   confidentialityClause: string | null;
   complaintReason: string | null;
   senderContactName: string | null;

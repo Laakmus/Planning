@@ -90,6 +90,7 @@ function buildInitialForm(order: OrderDetailDto, stops: OrderStopDto[], items: O
     specialRequirements: order.specialRequirements,
     requiredDocumentsText: order.requiredDocumentsText,
     generalNotes: order.generalNotes,
+    notificationDetails: order.notificationDetails,
     confidentialityClause: order.confidentialityClause,
     complaintReason: order.complaintReason,
     senderContactName: order.senderContactName,

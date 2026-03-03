@@ -344,6 +344,7 @@ Przycisk „Usuń pozycję" przy każdej pozycji towarowej.
 | 3 | Typ auta | Lista zamknięta (select) | Z unikalnych typów pojazdów z bazy (np. Firanka, Hakowiec, Wywrotka, Bus). Pole `vehicleTypeText` — niezależne od tabeli wariantów pojazdów |
 | 4 | Objętość w m³ | Pole liczbowe (input) | Dowolna wartość liczbowa (np. 30, 90). Pole `vehicleCapacityVolumeM3` — niezależne od typu auta |
 | 5 | Wymagane dokumenty | Lista zamknięta (select, **2 opcje**) | **1.** „WZ, KPO, kwit wagowy" **2.** „WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** z dwóch opcji (select, nie checkboxy). **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 1): jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić automatycznie wybraną wartość |
+| 6 | Dane do awizacji | Pole tekstowe (textarea, max 500 znaków) | Informacje do awizacji przekazywane przewoźnikowi (planowany załadunek/rozładunek). Opcjonalne, nullable. Licznik znaków (x/500). **Nie kopiowane** przy duplikowaniu zlecenia. **Nie wyświetlane** na podglądzie A4 / PDF |
 
 **Sekcja 4 — Finanse**
 

@@ -435,6 +435,7 @@ export function makeOrderDetailDto(
     specialRequirements: null,
     requiredDocumentsText: "WZ, KPO, kwit wagowy",
     generalNotes: "Pilne — dostarczyć przed weekendem",
+    notificationDetails: null,
     confidentialityClause: null,
     complaintReason: null,
     senderContactName: "Anna Nowak",
