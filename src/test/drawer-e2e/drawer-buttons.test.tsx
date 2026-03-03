@@ -163,6 +163,7 @@ function makeOrderDetail(overrides?: Partial<OrderDetailResponseDto["order"]>): 
       specialRequirements: null,
       requiredDocumentsText: "WZ, KPO, kwit wagowy",
       generalNotes: "Uwaga testowa",
+      confidentialityClause: null,
       complaintReason: null,
       senderContactName: "Jan Kowalski",
       senderContactPhone: "+48 123 456 789",
@@ -621,6 +622,7 @@ describe("NotesSection standalone", () => {
       specialRequirements: null,
       requiredDocumentsText: null,
       generalNotes: "abc",
+      confidentialityClause: null,
       complaintReason: null,
       senderContactName: null,
       senderContactPhone: null,
@@ -807,7 +809,7 @@ describe("Footer buttons", () => {
         lockedByUserName={null}
         onSave={vi.fn()}
         onClose={vi.fn()}
-        onGeneratePdf={vi.fn()}
+        onShowPreview={vi.fn()}
       />
     );
 
@@ -824,7 +826,7 @@ describe("Footer buttons", () => {
         lockedByUserName={null}
         onSave={vi.fn()}
         onClose={vi.fn()}
-        onGeneratePdf={vi.fn()}
+        onShowPreview={vi.fn()}
       />
     );
 
@@ -842,7 +844,7 @@ describe("Footer buttons", () => {
         lockedByUserName={null}
         onSave={onSave}
         onClose={vi.fn()}
-        onGeneratePdf={vi.fn()}
+        onShowPreview={vi.fn()}
       />
     );
 
@@ -859,7 +861,7 @@ describe("Footer buttons", () => {
         lockedByUserName={null}
         onSave={vi.fn()}
         onClose={vi.fn()}
-        onGeneratePdf={vi.fn()}
+        onShowPreview={vi.fn()}
       />
     );
 
@@ -868,7 +870,7 @@ describe("Footer buttons", () => {
     expect(closeBtn).not.toBeDisabled();
   });
 
-  it("shows PDF button when onGeneratePdf is provided", () => {
+  it("shows Preview button when onShowPreview is provided", () => {
     render(
       <DrawerFooter
         isReadOnly={false}
@@ -877,14 +879,14 @@ describe("Footer buttons", () => {
         lockedByUserName={null}
         onSave={vi.fn()}
         onClose={vi.fn()}
-        onGeneratePdf={vi.fn()}
+        onShowPreview={vi.fn()}
       />
     );
 
-    expect(screen.getByText("Generuj PDF")).toBeInTheDocument();
+    expect(screen.getByText("Podgląd")).toBeInTheDocument();
   });
 
-  it("does not show PDF button when onGeneratePdf is not provided", () => {
+  it("does not show Preview button when onShowPreview is not provided", () => {
     render(
       <DrawerFooter
         isReadOnly={false}
@@ -896,7 +898,7 @@ describe("Footer buttons", () => {
       />
     );
 
-    expect(screen.queryByText("Generuj PDF")).not.toBeInTheDocument();
+    expect(screen.queryByText("Podgląd")).not.toBeInTheDocument();
   });
 
   it("shows email button when onSendEmail is provided", () => {
@@ -939,13 +941,12 @@ describe("Footer buttons", () => {
         lockedByUserName={null}
         onSave={vi.fn()}
         onClose={vi.fn()}
-        onGeneratePdf={vi.fn()}
       />
     );
 
     expect(screen.queryByText("Zapisz")).not.toBeInTheDocument();
     expect(screen.getByText("Zamknij")).toBeInTheDocument();
-    expect(screen.getByText("Generuj PDF")).toBeInTheDocument();
+    expect(screen.queryByText("Podgląd")).not.toBeInTheDocument();
   });
 
   it("shows lock banner when lockedByUserName is set", () => {
@@ -957,7 +958,6 @@ describe("Footer buttons", () => {
         lockedByUserName="Jan Testowy"
         onSave={vi.fn()}
         onClose={vi.fn()}
-        onGeneratePdf={vi.fn()}
       />
     );
 

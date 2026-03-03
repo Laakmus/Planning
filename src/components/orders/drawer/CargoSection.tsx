@@ -27,10 +27,10 @@ interface CargoSectionProps {
 }
 
 const LOADING_METHODS: { code: LoadingMethodCode; label: string }[] = [
-  { code: "PALETA", label: "Paleta" },
-  { code: "PALETA_BIGBAG", label: "Paleta / BigBag" },
   { code: "LUZEM", label: "Luzem" },
-  { code: "KOSZE", label: "Kosze" },
+  { code: "PALETA_BIGBAG", label: "Bigbag" },
+  { code: "PALETA", label: "Paleta" },
+  { code: "KOSZE", label: "Inne" },
 ];
 
 export function CargoSection({

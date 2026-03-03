@@ -20,6 +20,8 @@ Aplikacja składa się z dwóch głównych stanów: niezalogowany (ekran logowan
 [Widok główny — Lista zleceń]
     ├── Tabela zleceń (sticky nagłówek tabeli; min-width 1280px)
     │   ├── (lewy klik wiersza) → [Drawer edycji zlecenia]
+    │   │                              ├── (przycisk Podgląd) → [OrderView — podgląd A4 inline]
+    │   │                              │                              └── Generuj PDF, Zapisz, Anuluj
     │   │                              └── (link) → [Panel historii zmian]
     │   └── (prawy klik wiersza) → [Menu kontekstowe]
     │                                   ├── Wyślij maila
@@ -287,6 +289,46 @@ Przyciski akcji (sticky na dole draweru):
 
 ---
 
+### 2.3a OrderView — podgląd A4 z edycją inline
+
+- **Cel**: Alternatywny widok zlecenia wyglądający jak drukowany dokument A4, z edycją inline pól.
+- **Typ**: Zamiana zawartości wewnątrz tego samego Sheet co drawer (nie osobny overlay).
+- **Powiązane API**: `PUT /api/v1/orders/{id}` (zapis), `POST /api/v1/orders/{id}/pdf` (generowanie PDF).
+- **Aktywacja**: Przycisk „Podgląd" w stopce drawera (zamienia „Generuj PDF"). Widoczny tylko dla istniejących zleceń w trybie edycji.
+- **Szerokość Sheet**: Powiększa się do `~80vw` gdy OrderView jest aktywny.
+
+**Struktura plików** (`src/components/orders/order-view/`):
+
+| Plik | Odpowiedzialność |
+|------|-----------------|
+| `types.ts` | OrderViewData, OrderViewItem, OrderViewStop, mappers (formData ↔ viewData) |
+| `constants.ts` | COMPANY_NAME, DEFAULT_CLAUSE, LOGO_BASE64, TIME_SLOTS, layout constants, limity |
+| `inline-editors.tsx` | EditableText, EditableNumber, EditableTextarea (edycja inline) |
+| `autocompletes.tsx` | 6 autocomplete: Product, Company, Location, Carrier, Documents, VehicleType |
+| `date-time-pickers.tsx` | DatePickerPopover, TimePickerPopover |
+| `StopRows.tsx` | SortableStopWrapper + StopRow (DnD z @dnd-kit) |
+| `OrderDocument.tsx` | Główny layout A4 (~14 sekcji wizualnych) |
+| `OrderView.tsx` | Kontener: toolbar + dirty detection + keyboard shortcuts |
+
+**Integracja z drawerem** (modyfikowane pliki):
+
+| Plik | Zmiana |
+|------|--------|
+| `OrderDrawer.tsx` | Nowy stan `showOrderView`, handlery open/save/cancel/pdf, dynamiczna szerokość Sheet |
+| `OrderForm.tsx` | Nowy prop `formDataRef` (ref do odczytu formData przez OrderDrawer) |
+| `DrawerFooter.tsx` | Zamiana „Generuj PDF" → „Podgląd" (ikona Eye) |
+| `PreviewUnsavedDialog.tsx` | Nowy komponent: dialog 3-opcyjny (Zapisz / Odrzuć / Anuluj) przed otwarciem OrderView z dirty drawerem |
+
+**Kluczowe cechy**:
+- Responsywne skalowanie A4: ResizeObserver + dynamiczny CSS zoom (nie stała skala).
+- Dark mode: dokument A4 zawsze biały, toolbar obsługuje dark mode.
+- Print styles: @media print ukrywa toolbar i elementy edycji.
+- DnD stops: osobna implementacja per widok (nie współdzielona z drawerem).
+- Keyboard shortcuts: Ctrl+S (zapisz), Escape (anuluj).
+- Pole `confidentialityClause`: edytowalne inline, zapisywane per zlecenie w DB.
+
+---
+
 ### 2.4 Panel historii zmian
 
 - **Cel**: Wyświetlenie chronologicznej historii zmian zlecenia (statusy + pola kluczowe).
@@ -460,11 +502,25 @@ Przyciski akcji (sticky na dole draweru):
    ↓ (FAILED → toast „Błąd synchronizacji" → przycisk ponownie aktywny)
 ```
 
-### 3.7 Przepływ: Generowanie PDF
+### 3.7 Przepływ: Podgląd A4 (OrderView)
 
 ```
-1. Z draweru edycji: klika „Generuj PDF"
+1. Z draweru edycji: klika „Podgląd" w stopce
+   ↓ (jeśli niezapisane zmiany w drawerze → dialog 3-opcyjny: Zapisz/Odrzuć/Anuluj)
+2. Sheet poszerza się do 80vw, zawartość zamienia się na OrderView (A4 dokument)
    ↓
+3. Użytkownik edytuje pola inline (klik → input, autocomplete, datepicker itp.)
+   ↓
+4a. „Zapisz zmiany" (lub Ctrl+S) → PUT /orders/{id} → toast → powrót do drawera
+4b. „Anuluj" (lub Escape) → dialog potwierdzenia jeśli dirty → powrót do drawera
+4c. „Generuj PDF" → POST /orders/{id}/pdf → blob download
+```
+
+### 3.7a Przepływ: Generowanie PDF
+
+```
+1. Z OrderView: klika „Generuj PDF" w toolbarze
+   ↓ (lub z drawera — akcja w kontekście)
 2. POST /orders/{id}/pdf → otrzymuje blob PDF
    ↓
 3. Przeglądarka pobiera plik (np. ZT2026-0001.pdf)

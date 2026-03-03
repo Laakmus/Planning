@@ -241,6 +241,7 @@ export interface OrderDetailDto {
   specialRequirements: string | null;
   requiredDocumentsText: string | null;
   generalNotes: string | null;
+  confidentialityClause: string | null;
   complaintReason: string | null;
   senderContactName: string | null;
   senderContactPhone: string | null;

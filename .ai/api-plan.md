@@ -118,8 +118,7 @@
           ],
           "priceAmount": "number | null",
           "currencyCode": "PLN | EUR | USD",
-          "vehicleVariantCode": "string",
-          "vehicleVariantName": "string",
+          "vehicleTypeText": "string | null",
           "vehicleCapacityVolumeM3": "number | null",
           "requiredDocumentsText": "string | null",
           "generalNotes": "string | null",
@@ -191,12 +190,13 @@
         "receiverLocationId": "uuid | null",
         "receiverNameSnapshot": "string | null",
         "receiverAddressSnapshot": "string | null",
-        "vehicleVariantCode": "string",
+        "vehicleTypeText": "string | null",
         "vehicleCapacityVolumeM3": "number | null",
         "specialRequirements": "string | null",
         "requiredDocumentsText": "string | null",
         "generalNotes": "string | null",
         "complaintReason": "string | null",
+        "confidentialityClause": "string | null",
         "senderContactName": "string | null",
         "senderContactPhone": "string | null",
         "senderContactEmail": "string | null",
@@ -257,7 +257,8 @@
       "carrierCompanyId": "uuid | null",
       "shipperLocationId": "uuid | null",
       "receiverLocationId": "uuid | null",
-      "vehicleVariantCode": "string",
+      "vehicleTypeText": "string | null",
+      "vehicleCapacityVolumeM3": "number | null",
       "priceAmount": "number | null",
       "paymentTermDays": "number | null",
       "paymentMethod": "string | null",
@@ -266,6 +267,7 @@
       "specialRequirements": "string | null",
       "requiredDocumentsText": "string | null",
       "generalNotes": "string | null",
+      "confidentialityClause": "string | null",
       "senderContactName": "string | null",
       "senderContactPhone": "string | null",
       "senderContactEmail": "string | null",
@@ -300,7 +302,7 @@
     }
     ```
   - **Walidacja techniczna**:
-    - `transportTypeCode`, `currencyCode`, `vehicleVariantCode` – wymagane.
+    - `transportTypeCode`, `currencyCode` – wymagane. `vehicleTypeText`, `vehicleCapacityVolumeM3` – opcjonalne.
     - `currencyCode ∈ {PLN, EUR, USD}`.
     - `quantityTons` `NULL` lub `>= 0`.
     - Pole `weekNumber` **nie jest przyjmowane** — jest obliczane automatycznie przez trigger bazodanowy po zapisie na podstawie `firstLoadingDate`.
@@ -329,11 +331,13 @@
       "carrierCompanyId": "uuid | null",
       "shipperLocationId": "uuid | null",
       "receiverLocationId": "uuid | null",
-      "vehicleVariantCode": "string",
+      "vehicleTypeText": "string | null",
+      "vehicleCapacityVolumeM3": "number | null",
       "specialRequirements": "string | null",
       "requiredDocumentsText": "string | null",
       "generalNotes": "string | null",
       "complaintReason": "string | null",
+      "confidentialityClause": "string | null",
       "senderContactName": "string | null",
       "senderContactPhone": "string | null",
       "senderContactEmail": "string | null",
@@ -511,6 +515,28 @@
     ```
   - **Sukces**: `200 OK`
   - **Błędy**: `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`
+
+---
+
+### 2.10b Zlecenia – oznaczenie Fix (is_entry_fixed)
+
+- **PATCH** `/api/v1/orders/{orderId}/entry-fixed`
+  - **Opis**: Ustawia flagę "Fix" (zafiksowany wjazd) na zleceniu. Czysto informacyjna flaga dla planistów. Zmiana logowana w `order_change_log`.
+  - **Body żądania**:
+    ```json
+    {
+      "isEntryFixed": "boolean | null"
+    }
+    ```
+  - **Body odpowiedzi**:
+    ```json
+    {
+      "id": "uuid",
+      "isEntryFixed": "boolean | null"
+    }
+    ```
+  - **Sukces**: `200 OK`
+  - **Błędy**: `400 Bad Request`, `401 Unauthorized`, `403 Forbidden` (READ_ONLY), `404 Not Found`
 
 ---
 

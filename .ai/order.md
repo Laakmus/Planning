@@ -15,8 +15,8 @@ Widok Order to interaktywny panel podglądu zlecenia transportowego w formacie p
 - **Przycisk**: „Podgląd" — umieszczony w **stopce drawera** (obok przycisków „Zapisz zmiany" i „Zamknij").
 - **Widoczność przycisku**: tylko dla ról **ADMIN** i **PLANNER**. Rola READ_ONLY nie ma dostępu do widoku Order.
 - **Zachowanie**: po kliknięciu „Podgląd" drawer chowa się, a w jego miejsce pojawia się widok Order.
-- **Rozmiar panelu**: szerszy niż drawer — ok. **60–70% szerokości ekranu**, wysuwany z prawej strony.
-- **Wygląd**: dokładne odwzorowanie kartki A4 — białe tło kartki na szarym tle, skalowanie jak w mockupie (`transform: scale(1.3345)`, `width: 595px`, `min-height: 842px`).
+- **Rozmiar panelu**: szerszy niż drawer — ok. **80% szerokości ekranu** (`80vw`), renderowany wewnątrz tego samego Sheet co drawer (zamiana zawartości).
+- **Wygląd**: dokładne odwzorowanie kartki A4 — białe tło kartki na szarym tle, **responsywne skalowanie** (ResizeObserver + dynamiczny CSS `zoom` dopasowujący A4 do kontenera), bazowa szerokość A4 = `595px`, `min-height: 842px`.
 
 ---
 
@@ -112,11 +112,10 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 
 | Lp. | Pole | Typ pola | Źródło danych (drawer) | Edytowalność |
 |-----|------|----------|------------------------|--------------|
-| 1 | Opis typu auta | Select | Sekcja 3 drawera → `vehicleVariantCode` (typ auta) | **Edytowalne** |
-| 2 | Objętość (m³) | Select/Combobox | Sekcja 3 drawera → `vehicleVariantCode` (objętość) | **Edytowalne** |
+| 1 | Opis typu auta | Select | Sekcja 3 drawera → `vehicleTypeText` (typ auta) | **Edytowalne** |
+| 2 | Objętość (m³) | Input liczbowy | Sekcja 3 drawera → `vehicleCapacityVolumeM3` (objętość) | **Edytowalne** |
 
-- Mapowanie: TYP AUTA = vehicleVariantCode z drawera.
-- Wyświetla: opis wariantu (np. „ruchoma podłoga") + objętość (np. „90" m³).
+- Mapowanie: TYP AUTA = `vehicleTypeText` (select z unikalnych typów pojazdów z bazy) + OBJĘTOŚĆ = `vehicleCapacityVolumeM3` (dowolna wartość liczbowa). Dwa niezależne pola, brak FK do tabeli wariantów pojazdów.
 
 ---
 
@@ -130,9 +129,9 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 | (pusta) | Początek nazwy produktu | 136px |
 | UWAGI | Label kolumny uwag | 178px |
 | LUZEM | Checkbox sposobu załadunku (loading_method_code=LUZEM) | 33px |
-| PAL.+BB | Checkbox sposobu załadunku (loading_method_code=PALETA_BIGBAG) | 28px |
+| BIGBAG | Checkbox sposobu załadunku (loading_method_code=PALETA_BIGBAG) | 28px |
 | PALETA | Checkbox sposobu załadunku (loading_method_code=PALETA) | 29px |
-| KOSZE | Checkbox sposobu załadunku (loading_method_code=KOSZE) | 24px |
+| INNE | Checkbox sposobu załadunku (loading_method_code=KOSZE) | 24px |
 
 **Wiersze danych** (544px = 526px treści + 18px kolumna gutter):
 
@@ -141,9 +140,9 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 | Lp. + Nazwa towaru | Numer + ProductAutocomplete | 234px |
 | Uwagi do towaru | Input tekstowy | 178px |
 | LUZEM | Checkbox (klik = toggle „X", loading_method_code=LUZEM) | 33px |
-| PAL.+BB | Checkbox (loading_method_code=PALETA_BIGBAG) | 28px |
+| BIGBAG | Checkbox (loading_method_code=PALETA_BIGBAG) | 28px |
 | PALETA | Checkbox (loading_method_code=PALETA) | 29px |
-| KOSZE | Checkbox (loading_method_code=KOSZE) | 24px |
+| INNE | Checkbox (loading_method_code=KOSZE) | 24px |
 | (gutter) | Niewidoczna kolumna — przycisk × na hover | 18px |
 
 **Wyrównanie kolumn**: dzielnik BIGBAG|PALETA (234+178+33+28 = **473px**) wyrównany z dzielnikiem Content|GOD/KRAJ w stop rows.
@@ -158,7 +157,7 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 - **Pełna edycja**: użytkownik może dodawać i usuwać wiersze bezpośrednio w widoku Order.
 - **Przycisk usuwania** (×): w kolumnie gutter 18px (poza widocznym obramowaniem tabeli), pojawia się na hover wiersza.
 - **Dynamiczna ilość wierszy**: maksymalnie **15 pozycji** (`MAX_VISIBLE_ITEMS`), minimum **8 wizualnych slotów** (`MIN_VISIBLE_ITEMS`). Przy < 8 towarach puste wiersze wypełniają tabelę do 8 slotów. Przy > 8 towarach tabela rośnie dynamicznie (dokument A4 wydłuża się). Zawsze jest co najmniej 1 pusty slot na przycisk „+ dodaj pozycję" (do momentu osiągnięcia limitu 15).
-- Sposób załadunku: LUZEM, PAL.+BB (=PALETA_BIGBAG), PALETA, KOSZE (mapowanie na `loading_method_code`).
+- Sposób załadunku: LUZEM, BIGBAG (=PALETA_BIGBAG), PALETA, INNE (=KOSZE) (mapowanie na `loading_method_code`).
 
 ---
 
@@ -292,15 +291,17 @@ Wszystkie stopy (LOADING + UNLOADING) renderowane jako jedna zunifikowana lista 
 
 ### 5. Przyciski akcji widoku Order
 
-Widok Order posiada dwa przyciski akcji (umieszczone w stopce lub nagłówku panelu):
+Widok Order posiada toolbar (sticky na górze) z trzema przyciskami akcji:
 
 | Przycisk | Działanie |
 |----------|-----------|
-| **Zapisz zmiany** (primary) | Walidacja → PUT `/api/v1/orders/{id}` → aktualizacja stanu drawera → zamknięcie widoku Order → powrót do drawera z nowymi danymi |
-| **Anuluj** | Odrzucenie zmian lokalnych → zamknięcie widoku Order → powrót do drawera z oryginalnymi danymi |
+| **Zapisz zmiany** (primary) | Walidacja → PUT `/api/v1/orders/{id}` → aktualizacja stanu drawera → zamknięcie widoku Order → powrót do drawera z nowymi danymi. Disabled gdy brak zmian. Keyboard shortcut: Ctrl+S |
+| **Anuluj** (secondary) | Odrzucenie zmian lokalnych → zamknięcie widoku Order → powrót do drawera z oryginalnymi danymi. Keyboard shortcut: Escape |
+| **Generuj PDF** (outline) | `POST /api/v1/orders/{id}/pdf` → pobranie pliku PDF blob |
 
+- Toolbar: lewo = tytuł „Podgląd zlecenia {orderNo}" + badge „Niezapisane zmiany" (amber, gdy isDirty); prawo = 3 przyciski.
 - Przy niezapisanych zmianach i kliknięciu „Anuluj": dialog potwierdzenia (analogiczny do drawera).
-- Brak przycisku „Generuj PDF" ani „Wyślij maila" w tym widoku (te akcje są dostępne z drawera).
+- „Wyślij maila" NIE jest dostępny z widoku Order (zostaje w drawerze).
 
 ---
 
@@ -355,7 +356,7 @@ Widok Order wymaga dodania następujących pól do modelu Order / bazy danych:
 | Sek. 1 (Nagłówek zlecenia) | Sekcja 0 drawera | Nr zlecenia, data utworzenia |
 | Sek. 2 (Zlecający) | — (hardcoded) | Firma ODYLION |
 | Sek. 4 (Spedycja) | Sekcja 3 drawera | Firma transportowa, NIP |
-| Sek. 5 (Typ auta) | Sekcja 3 drawera | vehicleVariantCode (typ + m³) |
+| Sek. 5 (Typ auta) | Sekcja 3 drawera | vehicleTypeText (typ) + vehicleCapacityVolumeM3 (m³) |
 | Sek. 6 (Asortyment) | Sekcja 2 drawera | items[] (nazwa, uwagi, opakowanie) |
 | Sek. 7 (Trasa — unified stops) | Sekcja 1 drawera | stops[] (unified LOADING + UNLOADING z DnD) |
 | Sek. 8 (Cena za fraht) | Sekcja 4 drawera | Stawka, waluta, termin, forma płatności |

@@ -36,6 +36,8 @@ interface OrderFormProps {
   onSave: (data: OrderFormData, pendingStatus: OrderStatusCode | null, complaintReason: string | null) => Promise<void>;
   /** Przekazywany przez OrderDrawer aby wywołać submit z zewnątrz */
   submitRef: React.RefObject<(() => void) | null>;
+  /** Ref do odczytu aktualnego stanu formData (dla OrderView) */
+  formDataRef: React.RefObject<OrderFormData | null>;
 }
 
 // ---------------------------------------------------------------------------
@@ -88,6 +90,7 @@ function buildInitialForm(order: OrderDetailDto, stops: OrderStopDto[], items: O
     specialRequirements: order.specialRequirements,
     requiredDocumentsText: order.requiredDocumentsText,
     generalNotes: order.generalNotes,
+    confidentialityClause: order.confidentialityClause,
     complaintReason: order.complaintReason,
     senderContactName: order.senderContactName,
     senderContactPhone: order.senderContactPhone,
@@ -124,6 +127,7 @@ export function OrderForm({
   onDirtyChange,
   onSave,
   submitRef,
+  formDataRef,
 }: OrderFormProps) {
   const { companies, locations, products, transportTypes, vehicleVariants } = useDictionaries();
 
@@ -178,6 +182,11 @@ export function OrderForm({
       onSave(formData, pendingStatusCode, complaintReason);
     };
   }, [formData, pendingStatusCode, complaintReason, onSave, submitRef]);
+
+  // Udostępnij aktualny formData przez ref (dla OrderView)
+  useEffect(() => {
+    formDataRef.current = formData;
+  }, [formData, formDataRef]);
 
   // Status name lookup
   const statusName = order.statusCode

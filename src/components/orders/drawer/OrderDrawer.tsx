@@ -17,6 +17,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useAuth } from "@/contexts/AuthContext";
+import { useDictionaries } from "@/contexts/DictionaryContext";
 import { formatDateFromTimestamp } from "@/lib/format-utils";
 import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
 import type {
@@ -26,9 +27,13 @@ import type {
 } from "@/types";
 
 import { StatusBadge } from "../StatusBadge";
+import OrderView from "../order-view/OrderView";
+import { formDataToViewData, viewDataToFormData } from "../order-view/types";
+import type { OrderViewData } from "../order-view/types";
 
 import { DrawerFooter } from "./DrawerFooter";
 import { OrderForm } from "./OrderForm";
+import { PreviewUnsavedDialog } from "./PreviewUnsavedDialog";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
 
 /** Empty defaults for new order creation. */
@@ -73,6 +78,7 @@ function createEmptyDetail(): OrderDetailResponseDto {
       specialRequirements: null,
       requiredDocumentsText: null,
       generalNotes: null,
+      confidentialityClause: null,
       complaintReason: null,
       senderContactName: null,
       senderContactPhone: null,
@@ -124,7 +130,15 @@ export function OrderDrawer({
   const [lockedByUserName, setLockedByUserName] = useState<string | null>(null);
 
   const submitRef = useRef<(() => void) | null>(null);
+  const formDataRef = useRef<OrderFormData | null>(null);
   const isReadOnly = user?.role === "READ_ONLY" || !!lockedByUserName;
+
+  // Stan OrderView (podgląd A4)
+  const [showOrderView, setShowOrderView] = useState(false);
+  const [orderViewInitialData, setOrderViewInitialData] = useState<OrderViewData | null>(null);
+  const [showPreviewUnsavedDialog, setShowPreviewUnsavedDialog] = useState(false);
+
+  const { companies, locations, products } = useDictionaries();
 
   // ---------------------------------------------------------------------------
   // Fetch detali + lock
@@ -199,6 +213,8 @@ export function OrderDrawer({
     setDetail(null);
     setIsDirty(false);
     setLockedByUserName(null);
+    setShowOrderView(false);
+    setOrderViewInitialData(null);
     onClose();
   }, [orderId, lockedByUserName, user, api, onClose]);
 
@@ -244,6 +260,7 @@ export function OrderDrawer({
             specialRequirements: formData.specialRequirements,
             requiredDocumentsText: formData.requiredDocumentsText,
             generalNotes: formData.generalNotes,
+            confidentialityClause: formData.confidentialityClause,
             senderContactName: formData.senderContactName,
             senderContactPhone: formData.senderContactPhone,
             senderContactEmail: formData.senderContactEmail?.trim() || null,
@@ -289,6 +306,7 @@ export function OrderDrawer({
             specialRequirements: formData.specialRequirements,
             requiredDocumentsText: formData.requiredDocumentsText,
             generalNotes: formData.generalNotes,
+            confidentialityClause: formData.confidentialityClause,
             senderContactName: formData.senderContactName,
             senderContactPhone: formData.senderContactPhone,
             senderContactEmail: formData.senderContactEmail?.trim() || null,
@@ -335,6 +353,199 @@ export function OrderDrawer({
     },
     [orderId, detail, api, onOrderUpdated, doClose, onClose]
   );
+
+  // ---------------------------------------------------------------------------
+  // Wydzielony zapis do API (reusable bez zamykania drawera)
+  // ---------------------------------------------------------------------------
+
+  const saveToApi = useCallback(async (formData: OrderFormData): Promise<boolean> => {
+    if (!orderId || !detail) return false;
+    setIsSaving(true);
+    try {
+      await api.put(`/api/v1/orders/${orderId}`, {
+        transportTypeCode: formData.transportTypeCode,
+        currencyCode: formData.currencyCode,
+        priceAmount: formData.priceAmount,
+        paymentTermDays: formData.paymentTermDays,
+        paymentMethod: formData.paymentMethod,
+        totalLoadTons: formData.totalLoadTons,
+        totalLoadVolumeM3: formData.totalLoadVolumeM3,
+        carrierCompanyId: formData.carrierCompanyId,
+        shipperLocationId: formData.shipperLocationId ?? null,
+        receiverLocationId: formData.receiverLocationId ?? null,
+        vehicleTypeText: formData.vehicleTypeText || null,
+        vehicleCapacityVolumeM3: formData.vehicleCapacityVolumeM3,
+        specialRequirements: formData.specialRequirements,
+        requiredDocumentsText: formData.requiredDocumentsText,
+        generalNotes: formData.generalNotes,
+        confidentialityClause: formData.confidentialityClause,
+        senderContactName: formData.senderContactName,
+        senderContactPhone: formData.senderContactPhone,
+        senderContactEmail: formData.senderContactEmail?.trim() || null,
+        stops: formData.stops.map((s) => ({
+          id: s.id,
+          kind: s.kind,
+          sequenceNo: s.sequenceNo,
+          dateLocal: s.dateLocal,
+          timeLocal: s.timeLocal,
+          locationId: s.locationId,
+          notes: s.notes,
+          _deleted: s._deleted,
+        })),
+        items: formData.items.map((it) => ({
+          id: it.id,
+          productId: it.productId,
+          productNameSnapshot: it.productNameSnapshot,
+          loadingMethodCode: it.loadingMethodCode,
+          quantityTons: it.quantityTons,
+          notes: it.notes,
+          _deleted: it._deleted,
+        })),
+      });
+      return true;
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Błąd zapisu.");
+      return false;
+    } finally {
+      setIsSaving(false);
+    }
+  }, [orderId, detail, api]);
+
+  // ---------------------------------------------------------------------------
+  // Handlery OrderView (podgląd A4)
+  // ---------------------------------------------------------------------------
+
+  /** Otwiera OrderView — helper wewnętrzny */
+  const openOrderView = useCallback((formData: OrderFormData) => {
+    if (!detail) return;
+    const viewData = formDataToViewData(
+      formData,
+      detail.order.orderNo,
+      detail.order.createdAt,
+      formData.senderContactName ?? "",
+      formData.senderContactEmail ?? "",
+      formData.senderContactPhone ?? "",
+      locations,
+      companies,
+    );
+    setOrderViewInitialData(viewData);
+    setShowOrderView(true);
+  }, [detail, companies, locations]);
+
+  /** Kliknięcie "Podgląd" w DrawerFooter */
+  const handleOpenOrderView = useCallback(() => {
+    const currentFormData = formDataRef.current;
+    if (!currentFormData) return;
+
+    if (isDirty) {
+      // Niezapisane zmiany — pokaż dialog 3-opcyjny
+      setShowPreviewUnsavedDialog(true);
+    } else {
+      openOrderView(currentFormData);
+    }
+  }, [isDirty, openOrderView]);
+
+  /** Dialog "Zapisz i przejdź" */
+  const handlePreviewSaveAndGo = useCallback(async () => {
+    const currentFormData = formDataRef.current;
+    if (!currentFormData) return;
+    const ok = await saveToApi(currentFormData);
+    setShowPreviewUnsavedDialog(false);
+    if (ok && orderId) {
+      // Re-fetch detali po zapisie
+      await loadDetail(orderId);
+      // Odczytaj świeże formData po re-fetch (useEffect w OrderForm zaktualizuje formDataRef)
+      setTimeout(() => {
+        const freshFormData = formDataRef.current;
+        if (freshFormData) openOrderView(freshFormData);
+      }, 100);
+      setIsDirty(false);
+    }
+  }, [saveToApi, orderId, loadDetail, openOrderView]);
+
+  /** Dialog "Odrzuć zmiany i przejdź" */
+  const handlePreviewDiscardAndGo = useCallback(() => {
+    setShowPreviewUnsavedDialog(false);
+    // Użyj oryginalne dane z detali (nie zmienionych formData)
+    if (detail) {
+      const originalFormData: OrderFormData = {
+        transportTypeCode: (detail.order.transportTypeCode as any) ?? "PL",
+        currencyCode: (detail.order.currencyCode as any) ?? "PLN",
+        priceAmount: detail.order.priceAmount,
+        paymentTermDays: detail.order.paymentTermDays,
+        paymentMethod: detail.order.paymentMethod,
+        totalLoadTons: detail.order.totalLoadTons,
+        totalLoadVolumeM3: detail.order.totalLoadVolumeM3,
+        carrierCompanyId: detail.order.carrierCompanyId,
+        shipperLocationId: detail.order.shipperLocationId,
+        receiverLocationId: detail.order.receiverLocationId,
+        vehicleTypeText: detail.order.vehicleTypeText,
+        vehicleCapacityVolumeM3: detail.order.vehicleCapacityVolumeM3,
+        specialRequirements: detail.order.specialRequirements,
+        requiredDocumentsText: detail.order.requiredDocumentsText,
+        generalNotes: detail.order.generalNotes,
+        confidentialityClause: detail.order.confidentialityClause,
+        complaintReason: detail.order.complaintReason,
+        senderContactName: detail.order.senderContactName,
+        senderContactPhone: detail.order.senderContactPhone,
+        senderContactEmail: detail.order.senderContactEmail,
+        stops: detail.stops.map((s) => ({
+          id: s.id,
+          kind: s.kind as "LOADING" | "UNLOADING",
+          sequenceNo: s.sequenceNo,
+          dateLocal: s.dateLocal,
+          timeLocal: s.timeLocal,
+          locationId: s.locationId,
+          locationNameSnapshot: s.locationNameSnapshot,
+          companyNameSnapshot: s.companyNameSnapshot,
+          addressSnapshot: s.addressSnapshot,
+          notes: s.notes,
+          _deleted: false,
+        })),
+        items: detail.items.map((it) => ({
+          id: it.id,
+          productId: it.productId,
+          productNameSnapshot: it.productNameSnapshot,
+          defaultLoadingMethodSnapshot: it.defaultLoadingMethodSnapshot,
+          loadingMethodCode: it.loadingMethodCode,
+          quantityTons: it.quantityTons,
+          notes: it.notes,
+          _deleted: false,
+        })),
+      };
+      openOrderView(originalFormData);
+    }
+  }, [detail, openOrderView]);
+
+  /** Zapis z OrderView */
+  const handleOrderViewSave = useCallback(async (viewData: OrderViewData) => {
+    const originalFormData = formDataRef.current;
+    if (!originalFormData || !orderId) return;
+
+    const mergedFormData = viewDataToFormData(
+      viewData,
+      originalFormData,
+      locations,
+      companies,
+      products,
+    );
+
+    const ok = await saveToApi(mergedFormData);
+    if (ok) {
+      toast.success("Zlecenie zapisane.");
+      setShowOrderView(false);
+      setOrderViewInitialData(null);
+      await loadDetail(orderId);
+      setIsDirty(false);
+      onOrderUpdated();
+    }
+  }, [orderId, locations, companies, products, saveToApi, loadDetail, onOrderUpdated]);
+
+  /** Anulowanie z OrderView */
+  const handleOrderViewCancel = useCallback(() => {
+    setShowOrderView(false);
+    setOrderViewInitialData(null);
+  }, []);
 
   // ---------------------------------------------------------------------------
   // Generuj PDF
@@ -398,7 +609,7 @@ export function OrderDrawer({
       <Sheet open={isOpen} onOpenChange={(open) => !open && handleCloseRequest()}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-[800px] p-0 flex flex-col"
+          className={`w-full p-0 flex flex-col ${showOrderView ? "sm:max-w-[80vw]" : "sm:max-w-[800px]"}`}
           showCloseButton={false}
           onInteractOutside={(e) => {
             e.preventDefault();
@@ -462,7 +673,17 @@ export function OrderDrawer({
             </div>
           )}
 
-          {!isLoading && detail && (
+          {!isLoading && detail && showOrderView && orderViewInitialData && (
+            <OrderView
+              initialData={orderViewInitialData}
+              isReadOnly={isReadOnly}
+              onSave={handleOrderViewSave}
+              onCancel={handleOrderViewCancel}
+              onGeneratePdf={handleGeneratePdf}
+            />
+          )}
+
+          {!isLoading && detail && !showOrderView && (
             <>
               <OrderForm
                 order={detail.order}
@@ -472,6 +693,7 @@ export function OrderDrawer({
                 onDirtyChange={setIsDirty}
                 onSave={handleSave}
                 submitRef={submitRef}
+                formDataRef={formDataRef}
               />
 
               <DrawerFooter
@@ -481,7 +703,11 @@ export function OrderDrawer({
                 lockedByUserName={lockedByUserName}
                 onSave={() => submitRef.current?.()}
                 onClose={handleCloseRequest}
-                onGeneratePdf={handleGeneratePdf}
+                onShowPreview={
+                  !isNewOrder && !isReadOnly
+                    ? handleOpenOrderView
+                    : undefined
+                }
                 onSendEmail={
                   !isReadOnly &&
                   detail &&
@@ -502,6 +728,14 @@ export function OrderDrawer({
           doClose();
         }}
         onCancel={() => setShowUnsavedDialog(false)}
+      />
+
+      <PreviewUnsavedDialog
+        open={showPreviewUnsavedDialog}
+        isSaving={isSaving}
+        onSave={handlePreviewSaveAndGo}
+        onDiscard={handlePreviewDiscardAndGo}
+        onCancel={() => setShowPreviewUnsavedDialog(false)}
       />
     </>
   );

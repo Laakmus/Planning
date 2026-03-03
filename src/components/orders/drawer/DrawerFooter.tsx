@@ -1,11 +1,11 @@
 /**
  * Stopka draweru zlecenia.
- * Tryb edycji: lewa = Generuj PDF + Wyślij maila | prawa = Zamknij + Zapisz.
- * Tryb readonly: lewa = Generuj PDF | prawa = Zamknij.
+ * Tryb edycji: lewa = Podgląd + Wyślij maila | prawa = Zamknij + Zapisz.
+ * Tryb readonly: prawa = Zamknij.
  * Lock banner: gdy zlecenie zablokowane przez innego użytkownika.
  */
 
-import { FileText, Loader2, Lock, Mail } from "lucide-react";
+import { Eye, Loader2, Lock, Mail } from "lucide-react";
 
 interface DrawerFooterProps {
   isReadOnly: boolean;
@@ -14,7 +14,7 @@ interface DrawerFooterProps {
   lockedByUserName: string | null;
   onSave: () => void;
   onClose: () => void;
-  onGeneratePdf?: () => void;
+  onShowPreview?: () => void;
   onSendEmail?: () => void;
 }
 
@@ -25,7 +25,7 @@ export function DrawerFooter({
   lockedByUserName,
   onSave,
   onClose,
-  onGeneratePdf,
+  onShowPreview,
   onSendEmail,
 }: DrawerFooterProps) {
   if (lockedByUserName) {
@@ -38,18 +38,7 @@ export function DrawerFooter({
           </span>
         </div>
         <footer className="shrink-0 flex items-center justify-between p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-          <div className="flex items-center gap-2">
-            {onGeneratePdf && (
-              <button
-                type="button"
-                onClick={onGeneratePdf}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                Generuj PDF
-              </button>
-            )}
-          </div>
+          <div />
           <button
             type="button"
             onClick={onClose}
@@ -65,18 +54,7 @@ export function DrawerFooter({
   if (isReadOnly) {
     return (
       <footer className="shrink-0 flex items-center justify-between p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-        <div className="flex items-center gap-2">
-          {onGeneratePdf && (
-            <button
-              type="button"
-              onClick={onGeneratePdf}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <FileText className="w-4 h-4" />
-              Generuj PDF
-            </button>
-          )}
-        </div>
+        <div />
         <button
           type="button"
           onClick={onClose}
@@ -92,14 +70,14 @@ export function DrawerFooter({
     <footer className="shrink-0 flex items-center justify-between p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
       {/* Lewa strona */}
       <div className="flex items-center gap-2">
-        {onGeneratePdf && (
+        {onShowPreview && (
           <button
             type="button"
-            onClick={onGeneratePdf}
+            onClick={onShowPreview}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            <FileText className="w-4 h-4" />
-            Generuj PDF
+            <Eye className="w-4 h-4" />
+            Podgląd
           </button>
         )}
         {onSendEmail && (

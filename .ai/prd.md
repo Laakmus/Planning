@@ -83,7 +83,7 @@ Nowy produkt ma przede wszystkim poprawić:
   - sekwencję punktów trasy w formie wizualnej (node-string): skrócone kody miejsc załadunku (zielone) i rozładunku (niebieskie) połączone strzałkami i linią, np. L1:KRK → L2:KAT → U1:BER,
   - datę i godzinę pierwszego i ostatniego załadunku i rozładunku (w formie czytelnego skrótu),
   - przewoźnika (nazwa firmy + skrócona informacja o kontakcie),
-  - opis towaru (nazwa produktu + ikona typu opakowania, np. Kontener, Big-Bag, Luzem),
+  - opis towaru (nazwa produktu + typ opakowania, np. luzem, bigbag, paleta, inne),
   - koszt transportu (cena globalna za transport z walutą),
   - status zlecenia (np. robocze, wysłane, korekta, korekta wysłane, zrealizowane, anulowane, reklamacja) — jako kolorowy badge,
   - podstawowe uwagi do zlecenia (skrócone),
@@ -235,9 +235,9 @@ Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowan
     - firma odbiorcy (gdzie dostarczamy towar) wraz z lokalizacją (oddział),
     - osoba kontaktowa po stronie nadawcy z danymi (imię, telefon, e-mail),
   - informacje o ładunku (pozycje towarowe per zlecenie + parametry globalne):
-    - pozycje towarowe (1…N): każda zawiera towar (z autocomplete), ilość (tony), oraz sposób załadunku (domyślnie z produktu, nadpisywalny przez użytkownika: paleta, paleta + BigBag, luzem, kosze),
+    - pozycje towarowe (1…N): każda zawiera towar (z autocomplete), ilość (tony), oraz sposób załadunku (domyślnie z produktu, nadpisywalny przez użytkownika: luzem, bigbag, paleta, inne),
     - masa całkowita, objętość (opcjonalne parametry globalne),
-    - wariant pojazdu (wybór z listy rozwijanych łączący typ pojazdu i pojemność/objętość, np. „Hakowiec 30m³", „Firanka 90m³", „Wywrotka 25m³", „Bus 10m³", „Hakowiec z HDS 30m³"; każdy wariant ma przypisany kod, typ pojazdu, nośność w tonach i objętość w m³),
+    - typ auta (rodzaj auta — select z listy typów pojazdów z bazy, np. „Firanka", „Hakowiec", „Wywrotka", „Bus") + objętość w m³ (osobne pole liczbowe, dowolna wartość) — dwa niezależne pola, nie powiązane FK z tabelą wariantów pojazdów,
     - wymagania specjalne (np. ADR, chłodnia),
   - trasa:
     - minimalnie 1 punkt załadunku i 1 punkt rozładunku,
@@ -257,11 +257,12 @@ Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowan
     - forma płatności,
   - dokumenty dla kierowcy i uwagi:
     - lista wymaganych dokumentów dla kierowcy,
-    - uwagi do zlecenia (tekst wielowierszowy).
+    - uwagi do zlecenia (tekst wielowierszowy),
+  - klauzula poufności (`confidentialityClause`): edytowalny tekst zapisywany per zlecenie w bazie danych; nowe zlecenia inicjalizowane domyślnym tekstem. Edytowalna wyłącznie w widoku OrderView (podgląd A4), nie w drawerze.
 
   3.1.5a Szczegółowa specyfikacja widoku Drawer edycji zlecenia
 
-Poniższa sekcja definiuje układ, zawartość i zachowanie panelu bocznego (drawer / sheet) edycji zlecenia transportowego. Drawer jest jedynym miejscem, w którym użytkownik edytuje szczegółowe dane zlecenia. Jest to autorytatywna specyfikacja — w razie rozbieżności z innymi dokumentami obowiązuje ta sekcja.
+Poniższa sekcja definiuje układ, zawartość i zachowanie panelu bocznego (drawer / sheet) edycji zlecenia transportowego. Drawer jest głównym miejscem edycji szczegółowych danych zlecenia. Alternatywny widok edycji: OrderView (podgląd A4 z edycją inline) — patrz sekcja 3.1.5b. Jest to autorytatywna specyfikacja — w razie rozbieżności z innymi dokumentami obowiązuje ta sekcja.
 
 **1. Ogólne cechy drawera**
 
@@ -328,7 +329,7 @@ Zmiana kolejności: drag-and-drop + przyciski góra/dół. Reguła kolejności p
 | **Na każdą pozycję towarową:** | | | |
 | 1 | Nazwa towaru* | Autocomplete | Z słownika towarów (`products`) |
 | 2 | Ilość w t* | Pole liczbowe | Tony; ≥ 0 |
-| 3 | Sposób załadunku | Lista zamknięta (select) | Wartości: paleta, paleta + BigBag, luzem, kosze; domyślnie ustawiany z produktu po wyborze towaru, ale nadpisywalny przez użytkownika per pozycja |
+| 3 | Sposób załadunku | Lista zamknięta (select) | Wartości: luzem, bigbag, paleta, inne; domyślnie ustawiany z produktu po wyborze towaru, ale nadpisywalny przez użytkownika per pozycja |
 | 4 | Komentarz | Pole tekstowe (input lub textarea) | Uwagi do pozycji |
 | — | Przycisk dodania kolejnego asortymentu | Przycisk | Dodaje kolejny zestaw pól |
 
@@ -340,8 +341,8 @@ Przycisk „Usuń pozycję" przy każdej pozycji towarowej.
 |-----|------|----------|-------|
 | 1 | Nazwa firmy (przewoźnik)* | Autocomplete | Firmy typu przewoźnik z bazy (`companies`) |
 | 2 | NIP | Tylko do odczytu (tekst) | Auto po wyborze firmy przewoźnika |
-| 3 | Typ auta | Lista zamknięta (select) | Z wariantów pojazdu (np. Firanka, Hakowiec, Wywrotka, Bus) |
-| 4 | Objętość w m³ | Lista zamknięta z wpisywaniem (combobox) | Wartości: 10, 20, 30, …, 100 m³; wpis filtruje listę; klik bez wpisu = pełna lista. Na MVP dozwolone tylko wartości z listy (co 10) |
+| 3 | Typ auta | Lista zamknięta (select) | Z unikalnych typów pojazdów z bazy (np. Firanka, Hakowiec, Wywrotka, Bus). Pole `vehicleTypeText` — niezależne od tabeli wariantów pojazdów |
+| 4 | Objętość w m³ | Pole liczbowe (input) | Dowolna wartość liczbowa (np. 30, 90). Pole `vehicleCapacityVolumeM3` — niezależne od typu auta |
 | 5 | Wymagane dokumenty | Lista zamknięta (select, **2 opcje**) | **1.** „WZ, KPO, kwit wagowy" **2.** „WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** z dwóch opcji (select, nie checkboxy). **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 1): jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić automatycznie wybraną wartość |
 
 **Sekcja 4 — Finanse**
@@ -378,7 +379,7 @@ Stopka jest stałym elementem na dole drawera z przyciskami akcji:
 
 - **Zapisz** (primary) — zapisuje wszystkie zmiany (dane formularza + ewentualną zmianę statusu) → `PUT /orders/{id}`. Po zapisie odświeżenie danych zlecenia (GET lub z odpowiedzi), żeby status (np. Korekta) i Sekcja 6 były aktualne. Toast sukcesu.
 - **Zamknij** — zamyka drawer; przy niezapisanych zmianach: modal „Zapisać?" z opcjami (Zapisz i zamknij / Odrzuć i zamknij / Zostań).
-- **Generuj PDF** — `POST /orders/{id}/pdf` → pobranie pliku PDF.
+- **Podgląd** (ikona Eye) — otwiera widok OrderView (podgląd A4 z edycją inline) wewnątrz tego samego panelu Sheet. Zastępuje dawny przycisk „Generuj PDF". Widoczny tylko dla istniejących zleceń w trybie edycji (nie przy nowym zleceniu, nie w readonly). Szczegóły: patrz sekcja 3.1.5b.
 - **Wyślij maila** — `POST /orders/{id}/prepare-email`. Przed wysyłką system sprawdza kompletność pól wymaganych. Przy brakach (422) — alert na górze formularza z listą brakujących pól; Outlook nie jest otwierany. Przy sukcesie — otwarcie Outlooka z załączonym PDF; status zmienia się automatycznie (robocze→wysłane, korekta→korekta wysłane).
 - **Historia zmian** (link) — otwiera panel historii zmian obok drawera. Alternatywnie dostępne z nagłówka drawera.
 
@@ -396,8 +397,8 @@ Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 
 
 Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
 - Wszystkie pola formularza disabled / grayed out.
-- Brak przycisków: Zapisz, Wyślij maila. Sekcja 6 (Zmiana statusu) niewidoczna. (Sekcja 5 Uwagi pozostaje widoczna — tylko do odczytu.)
-- Aktywne: **Generuj PDF**, link „Historia zmian" (tylko odczyt), przycisk „Zamknij".
+- Brak przycisków: Zapisz, Wyślij maila, Podgląd. Sekcja 6 (Zmiana statusu) niewidoczna. (Sekcja 5 Uwagi pozostaje widoczna — tylko do odczytu.)
+- Aktywne: link „Historia zmian" (tylko odczyt), przycisk „Zamknij".
 - Nad formularzem wyświetlany jest bursztynowy (amber) banner informujący o tym, kto aktualnie blokuje zlecenie (np. „Zlecenie edytowane przez Anna Nowak").
 
 **8. Walidacja w drawerze**
@@ -405,6 +406,63 @@ Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
 - **Walidacja techniczna (przy „Zapisz"):** inline pod polami po próbie zapisu; opcjonalnie przy blur dla pól wymaganych. Sprawdzenie formatów dat, liczb, limitów znaków, limitów punktów trasy.
 - **Walidacja biznesowa (przy „Wyślij maila"):** realizowana przez API (422); frontend wyświetla alert na górze formularza z listą brakujących pól.
 - Zlecenie można zapisać jako wersję roboczą z nieuzupełnionymi polami — pełna kompletność sprawdzana dopiero przy wysyłce maila.
+
+---
+
+  3.1.5b Widok OrderView — podgląd A4 z edycją inline
+
+OrderView to alternatywny widok zlecenia transportowego, renderowany wewnątrz tego samego panelu Sheet co drawer. Wygląda jak drukowany dokument A4, ale pola są edytowalne inline. Otwiera się z drawera przyciskiem „Podgląd".
+
+**1. Ogólne cechy**
+
+- Wyświetlany wewnątrz tego samego panelu Sheet — drawer zamienia swoją zawartość na OrderView (bez drugiego nakładki/overlaya).
+- Szerokość Sheet powiększa się do ~80% ekranu (`80vw`) gdy OrderView jest aktywny; po powrocie do drawera wraca do standardowej szerokości (~800px).
+- Dostępny tylko dla istniejących zleceń w trybie edycji (nie dla nowych zleceń, nie w trybie readonly).
+- Blokada zlecenia pozostaje aktywna przez cały czas (drawer + OrderView).
+- Dark mode: dokument A4 zawsze biały, toolbar obsługuje dark mode.
+
+**2. Toolbar (nad dokumentem A4)**
+
+Sticky pasek narzędzi nad dokumentem:
+- **Lewo**: tytuł „Podgląd zlecenia {orderNo}" + badge „Niezapisane zmiany" (bursztynowy, gdy isDirty).
+- **Prawo**: „Generuj PDF" (outline) + „Anuluj" (secondary) + „Zapisz zmiany" (primary, disabled gdy brak zmian).
+- Keyboard shortcuts: Ctrl+S (zapisz), Escape (anuluj).
+- Ukryty przy druku (`print:hidden`).
+
+**3. Dokument A4 — sekcje**
+
+Dokument A4 zawiera ~14 sekcji wizualnych odzwierciedlających dane zlecenia:
+- Nagłówek z logo firmy, numerem zlecenia, datą, danymi osoby zlecającej.
+- Trasa: lista punktów załadunku i rozładunku z datami, godzinami, firmami, lokalizacjami i adresami. Drag-and-drop reordering (zasady jak w drawerze: pierwszy punkt = załadunek, ostatni = rozładunek, środkowe dowolna mieszanka).
+- Pozycje towarowe: tabela z nazwą, sposobem załadunku, uwagami. Minimalna wizualna ilość wierszy = 8, maksymalna = 15.
+- Firma transportowa: nazwa firmy (autocomplete), NIP (readonly), typ auta (select), objętość m³ (input), wymagane dokumenty (select).
+- Finanse: stawka, waluta, termin płatności, forma płatności.
+- Uwagi: pole tekstowe wielowierszowe (max 500 znaków).
+- Klauzula poufności: edytowalne pole tekstowe (`confidentialityClause`), zapisywane per zlecenie w bazie danych. Nowe zlecenia inicjalizowane domyślnym tekstem klauzuli.
+- Warunki realizacji zlecenia (tekst stały, nieedytowalny).
+
+**4. Model danych i synchronizacja**
+
+- Kopia formData z drawera → OrderView edytuje kopię → zapis = PUT API → powrót do drawera z odświeżonymi danymi.
+- OrderView wysyła WSZYSTKIE pola (nawet ukryte: transportTypeCode, senderContact, itp.) — pełny PUT.
+- Bez zmiany statusu — status zmienia się tylko w drawerze (Sekcja 6).
+
+**5. Przepływy**
+
+- **Otwarcie z dirty drawerem**: Dialog 3-opcyjny (Zapisz i przejdź / Odrzuć zmiany i przejdź / Anuluj).
+- **Zapisz w OrderView**: PUT API → toast sukcesu → powrót do drawera.
+- **Anuluj**: jeśli niezapisane zmiany → dialog potwierdzenia; jeśli czyste → powrót do drawera.
+- **Generuj PDF**: przycisk w toolbarze → blob download (POST /orders/{id}/pdf).
+
+**6. Druk**
+
+- @media print: toolbar ukryty, sam dokument A4 na wydruku.
+- Ukryte elementy: ikony edycji, drag handles, przyciski usuwania, dropdowny.
+- Przeglądarka automatycznie dzieli na strony A4.
+
+**7. Pole isEntryFixed**
+
+Pole „Fix" (is_entry_fixed) NIE jest widoczne w OrderView — jest dostępne tylko w tabeli zleceń jako inline dropdown.
 
 ---
 

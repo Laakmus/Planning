@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-02 (sesja 21 — rozdzielenie pól pojazdu: vehicleVariantCode → vehicleTypeText + vehicleCapacityVolumeM3)
+> Ostatnia aktualizacja: 2026-03-02 (sesja 23 — implementacja OrderView + integracja z drawerem)
 
 ---
 
@@ -30,6 +30,12 @@
 ---
 
 ## Do zrobienia — HIGH
+
+### ~~H-NEW-01. Implementacja OrderView (podgląd A4 z edycją inline)~~ — DONE (sesja 23)
+- Zrealizowane: migracja DB, 8 nowych plików w order-view/, integracja z drawerem, PreviewUnsavedDialog.
+
+### ~~H-NEW-02. Fix labeli pakowania w CargoSection~~ — DONE (sesja 23)
+- Zrealizowane: LOADING_METHODS: Luzem, Bigbag, Paleta, Inne.
 
 ### H-01. Brak React Error Boundary
 - **Źródło:** Audyt kodu
@@ -119,10 +125,11 @@
 - **Pliki:** `OrderRow.tsx:22-27`, `FilterBar.tsx:25-27`
 - **Rekomendacja:** Użyj `order.transportTypeCode` bezpośrednio.
 
-### M-06. `OrderDrawer.tsx` — 508 linii, za dużo odpowiedzialności
+### M-06. `OrderDrawer.tsx` — 742 linii, za dużo odpowiedzialności
 - **Źródło:** Audyt kodu
 - **Plik:** `src/components/orders/drawer/OrderDrawer.tsx`
 - **Rekomendacja:** Wydziel `useOrderDrawer(orderId, isOpen)` hook. (Powiązane z D-05)
+- **Uwaga:** Rozrosło się z 508→742 linii po dodaniu logiki OrderView (sesja 23)
 
 ### M-07. `OrdersPage.tsx` — 433 linii, powtarzalne handlery
 - **Źródło:** Audyt kodu
@@ -147,16 +154,12 @@
 - **Plik:** `src/lib/api-helpers.ts:158-164` (`parseJsonBody`)
 - **Rekomendacja:** Reject bodies > 1MB via `Content-Length` check.
 
-### M-12. `vehicle_variant_code` — schema drift po migracji decouple
-- **Źródło:** Audyt architektury
-- **Opis:** FK dropped ale kolumna zostaje. `db-plan.md` i `api-plan.md` nie zaktualizowane do nowego modelu 2-polowego.
-- **Plik:** `supabase/migrations/20260301000000_decouple_vehicle_fields.sql`
-- **Rekomendacja:** Zaktualizuj docs, rozważ usunięcie kolumny.
+### ~~M-12. `vehicle_variant_code` — schema drift po migracji decouple~~ — DONE (sesja 22)
+- Naprawione: `api-plan.md` zaktualizowany (`vehicleVariantCode` → `vehicleTypeText` + `vehicleCapacityVolumeM3`).
+- Dokumentacja `prd.md`, `order.md`, `ui-plan.md` również zaktualizowana.
 
-### M-13. `entry-fixed.ts` endpoint nieudokumentowany
-- **Źródło:** Audyt architektury
-- **Opis:** `PATCH /orders/{orderId}/entry-fixed` istnieje ale brak w `api-plan.md` i `db-plan.md`.
-- **Plik:** `src/pages/api/v1/orders/[orderId]/entry-fixed.ts`
+### ~~M-13. `entry-fixed.ts` endpoint nieudokumentowany~~ — DONE (sesja 22)
+- Naprawione: Dodano sekcję `2.10b` w `api-plan.md` dokumentującą `PATCH /orders/{orderId}/entry-fixed`.
 
 ### M-14. Brak health check endpoint
 - **Źródło:** Audyt architektury
@@ -332,6 +335,39 @@
 - [x] Faza 5: Mapa polskich nazw pól — NOWY plik `src/lib/field-labels.ts`
 - [x] Faza 6: Polskie etykiety + nowe typy wpisów (stop/item added/removed) w `TimelineEntry.tsx`
 - [x] Faza 7: Rozpoznawanie `order_created` w `HistoryPanel.tsx`
+
+### Sesja 23 — implementacja OrderView (podgląd A4 z edycją inline)
+- [x] Faza 0a: Migracja DB — `confidentiality_clause` (ALTER TABLE)
+- [x] Faza 0b: `confidentialityClause` dodane do: types.ts, view-models.ts, order.validator.ts, order.service.ts (5 miejsc), OrderForm.tsx, OrderDrawer.tsx
+- [x] Faza 1-3: 8 nowych plików w `src/components/orders/order-view/`:
+  - types.ts (interfejsy + mappery formDataToViewData/viewDataToFormData)
+  - constants.ts (stałe, limity, helpery, LOGO_BASE64)
+  - inline-editors.tsx (EditableText, EditableNumber, EditableTextarea)
+  - autocompletes.tsx (6 komponentów autocomplete)
+  - date-time-pickers.tsx (TimePickerPopover, DatePickerPopover)
+  - StopRows.tsx (DnD stop rows z ograniczeniami)
+  - OrderDocument.tsx (pełny layout A4 z ResizeObserver zoom)
+  - OrderView.tsx (kontener z toolbarem, dirty detection, keyboard shortcuts)
+- [x] Faza 4: Integracja z drawerem:
+  - DrawerFooter: `onGeneratePdf` → `onShowPreview` + ikona Eye + label "Podgląd"
+  - PreviewUnsavedDialog.tsx (nowy: 3 opcje — Zapisz/Odrzuć/Anuluj)
+  - OrderForm: nowy prop `formDataRef` do udostępniania stanu
+  - OrderDrawer: dynamiczna szerokość Sheet (80vw), stany OrderView, saveToApi helper, handlery podglądu
+- [x] Faza 5: Fix labeli pakowania w CargoSection (Luzem, Bigbag, Paleta, Inne)
+- [x] Faza 6: Weryfikacja — 0 błędów TS, build OK
+- [x] Aktualizacja testów drawer-e2e (onShowPreview, confidentialityClause)
+
+### Sesja 22 — analiza i aktualizacja planu ORDER-implementation-plan + dokumentacji
+- [x] Analiza ORDER-implementation-plan.md vs prototyp, codebase, dokumentacja (3 agenty równolegle)
+- [x] Rozwiązanie 8 rozbieżności przez Q&A z użytkownikiem
+- [x] Fix sequenceNo w planie: per-kind → globalny (jak drawer/prototyp)
+- [x] Klauzula poufności: zmiana z lokalnej edycji → pole w DB + API
+- [x] Dodanie brakujących elementów: scoped styles, TIME_SLOTS, layout constants, helper functions, null→"" konwersja
+- [x] Aktualizacja `api-plan.md`: vehicleVariantCode → vehicleTypeText + vehicleCapacityVolumeM3, confidentialityClause, entry-fixed endpoint
+- [x] Aktualizacja `ui-plan.md`: nowa sekcja 2.3a OrderView, przepływ 3.7 OrderView
+- [x] Aktualizacja `prd.md`: packaging labels (luzem/bigbag/paleta/inne), vehicle fields (decoupled), sekcja 3.1.5b OrderView, confidentialityClause, przycisk Podgląd
+- [x] Aktualizacja `order.md`: szerokość 80vw, responsywne skalowanie, vehicleTypeText, packaging labels, przycisk Generuj PDF w toolbarze
+- [x] Oznaczenie M-12 i M-13 jako DONE
 
 ### Sesja 21 — rozdzielenie pól pojazdu (vehicleVariantCode → 2 niezależne pola)
 - [x] Migracja DB: nowe kolumny `vehicle_type_text` + `vehicle_capacity_volume_m3`, drop FK constraint
