@@ -1,5 +1,5 @@
 /**
- * Pasek filtrów pod AppHeader.
+ * Pasek filtrów pod header w SidebarInset.
  * Kolejność zgodna z PRD 3.1.2a:
  * 1. Rodzaj transportu | 2. Status | 3. Firma załadunku | 4. Firma rozładunku
  * 5. Firma transportowa | 6. Towar | 7. Numer tygodnia | 8. Wyszukiwanie

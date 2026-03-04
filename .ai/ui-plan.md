@@ -15,23 +15,20 @@ Aplikacja składa się z dwóch głównych stanów: niezalogowany (ekran logowan
 ```
 [Ekran logowania]
     ↓ (po zalogowaniu)
-[Nagłówek aplikacji — sticky, z zakładkami; blok użytkownika: imię i nazwisko + rola (tekst), przycisk Wyloguj; bez avatara]
-[Pasek filtrów + ustawienia listy — sticky; przycisk „Nowe zlecenie" z prawej (tylko zakładka Aktualne, tylko Admin/Planner)]
-[Widok główny — Lista zleceń]
-    ├── Tabela zleceń (sticky nagłówek tabeli; min-width 1280px)
-    │   ├── (lewy klik wiersza) → [Drawer edycji zlecenia]
-    │   │                              ├── (przycisk Podgląd) → [OrderView — podgląd A4 inline]
-    │   │                              │                              └── Generuj PDF, Zapisz, Anuluj
-    │   │                              └── (link) → [Panel historii zmian]
-    │   └── (prawy klik wiersza) → [Menu kontekstowe]
-    │                                   ├── Wyślij maila
-    │                                   ├── Historia zmian → [Panel historii zmian]
-    │                                   ├── Zmień status
-    │                                   ├── Skopiuj zlecenie
-    │                                   ├── Anuluj zlecenie
-    │                                   └── Przywróć do aktualnych (w Zrealizowane/Anulowane)
-    └── EmptyState (Brak zleceń / Brak wyników dla filtrów — tylko te dwa warianty)
-[Pasek stopki — sticky bottom; liczniki bez „W trasie"/„Załadunek"/„Opóźnione"; po prawej: System Status, Ostatnia aktualizacja]
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [Sidebar (lewy)]               │ [Main content area]                    │
+│  - Logo (Truck) + tytuł        │  [Header: SidebarTrigger + tytuł      │
+│  - Nawigacja widoków:          │   widoku (Aktualne/Zrealizowane/       │
+│    Aktualne/Zrealizowane/      │   Anulowane)]                          │
+│    Anulowane                   │  [Pasek filtrów + ustawienia listy     │
+│  - SyncButton                  │   — sticky; „Nowe zlecenie" z prawej]  │
+│  - ThemeToggle + UserInfo      │  [Widok główny — Lista zleceń]         │
+│    (imię, rola, wyloguj)       │      ├── Tabela zleceń (sticky thead)  │
+│  Collapsible: Cmd+B/Ctrl+B    │      │   ├── (lewy klik) → Drawer      │
+│  Mobile: Sheet overlay         │      │   └── (prawy klik) → Menu kont. │
+│                                │      └── EmptyState                    │
+│                                │  [Pasek stopki — sticky bottom]        │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Mapowanie tras Astro
@@ -93,10 +90,13 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
 
 #### Kluczowe komponenty widoku
 
-1. **OrderTabs** — trzy zakładki (Aktualne, Zrealizowane, Anulowane) umieszczone w nagłówku aplikacji (nie nad tabelą).
-   - Mapowanie na parametr API `view`: `CURRENT` | `COMPLETED` | `CANCELLED`.
-   - Wizualnie: `bg-slate-100 rounded-lg p-1`, aktywna zakładka: `bg-white shadow-sm text-primary font-semibold`, nieaktywna: `text-slate-500`.
-   - Przełączanie zakładki resetuje filtry (lub zachowuje — do decyzji implementacyjnej) i wywołuje nowe zapytanie GET.
+1. **AppSidebar** — lewy sidebar nawigacyjny (shadcn/ui Sidebar). Zawiera:
+   - **SidebarHeader**: Logo (ikona Truck na `bg-primary` rounded-lg) + tytuł „Zlecenia Transportowe"
+   - **SidebarContent**: Nawigacja widoków — 3 pozycje: Aktualne (ClipboardList), Zrealizowane (CheckCircle2), Anulowane (XCircle). Mapowanie na `ViewGroup`: `CURRENT` | `COMPLETED` | `CANCELLED`.
+   - **SidebarFooter**: SyncButton + Separator + ThemeToggle + UserInfo (imię, rola, wyloguj; bez avatara)
+   - Collapsible (Cmd+B / Ctrl+B). Na mobile: Sheet overlay.
+   - Przełączanie widoku wywołuje nowe zapytanie GET z parametrem `view`.
+   - Inline header w SidebarInset: SidebarTrigger (hamburger) + separator + tytuł aktywnego widoku.
 
 2. **FilterBar** — pasek filtrów (sticky razem z nagłówkiem tabeli). Kolejność filtrów: rodzaj transportu | status | firma załadunku | firma rozładunku | Firma transportowa | towar | numer tygodnia | wyszukiwanie pełnotekstowe. Z prawej: przycisk „Nowe zlecenie".
    - **Rodzaj transportu:** select (lista zamknięta).
@@ -403,6 +403,74 @@ Przyciski akcji (sticky na dole draweru):
 - `position: sticky; top: 0; z-index: 40`.
 - Wylogowanie czyści sesję (Supabase `signOut`) i przekierowuje na logowanie.
 - Przycisk synchronizacji dostępny dla ADMIN i PLANNER (ukryty dla READ_ONLY).
+
+---
+
+### 2.6 Widok magazynowy — tygodniowy plan operacji
+
+- **Ścieżka**: `/warehouse?week=12&year=2026`
+- **Główny cel**: Prezentacja tygodniowego planu załadunków/rozładunków dla oddziału magazynowego użytkownika.
+- **Kluczowe informacje**: Karty dzienne (pon-pt) z operacjami chronologicznie, dane awizacyjne, podsumowanie tygodniowe.
+- **Powiązane API**: `GET /api/v1/warehouse/orders?week=12&year=2026`
+- **Warunki dostępu**: Zalogowany użytkownik z przypisanym oddziałem (`locationId` w profilu). Nawigacja przez sidebar: link "Magazyn" z ikoną `Warehouse`.
+
+#### Nawigacja tygodniowa (sticky top)
+- Strzałki ← → do przełączania tygodni
+- Pole input numeru tygodnia (1-53) z natychmiastową nawigacją
+- Wyświetlanie zakresu dat tygodnia: DD.MM – DD.MM.YYYY
+- Rok po prawej stronie
+
+#### Layout dnia (karta per dzień pon-pt)
+- Nagłówek: nazwa dnia + data (DD.MM.YYYY)
+- Jedna tabela chronologiczna z mieszanymi operacjami Zał/Roz (sortowanie po godzinie)
+- Puste dni: komunikat "Brak operacji"
+
+#### Kolumny tabeli operacji
+
+| # | Kolumna | Szerokość | Format |
+|---|---------|-----------|--------|
+| 1 | **Typ** | w-20, text-center | Badge: "Zał" (niebieski bg-blue-100/text-blue-700) / "Roz" (zielony bg-emerald-100/text-emerald-700) |
+| 2 | **Godzina** | w-16 | HH:MM, bold, kolor typu operacji (blue/emerald) |
+| 3 | **Nr zlecenia** | w-24 | ZT2026/0042, font-medium |
+| 4 | **Towar / Masa** | min-w-[140px], flex-1 | Nazwa produktu bold + metoda załadunku small + waga "X t" small; "Razem: XX t" bold kolorowy |
+| 5 | **Przewoźnik** | w-48 | Nazwa firmy bold + typ pojazdu small pod spodem |
+| 6 | **Awizacja** | min-w-[160px] | 5 linii bez etykiet: imię kierowcy, nr ciągnika, nr przyczepy, telefon, BDO |
+
+#### Stopy weekendowe
+- Sobota/niedziela → przesunięte do piątku z adnotacją "(sob. DD.MM)" lub "(niedz. DD.MM)" przy godzinie
+
+#### Sekcja "Bez przypisanej daty"
+- Osobna karta na dole widoku, ukryta gdy pusta
+- Stopy bez date_local
+
+#### Footer tygodniowy (fixed bottom)
+- Załadunki: liczba + łączna masa (blue)
+- Rozładunki: liczba + łączna masa (emerald)
+- Łącznie: suma mas (bold)
+
+#### Druk (print CSS)
+- Ukryte: nawigacja, footer, sidebar
+- Każdy dzień na osobnej stronie (page-break-before)
+
+#### Komponenty
+
+| Komponent | Plik | Opis |
+|-----------|------|------|
+| WarehouseApp | `src/components/warehouse/WarehouseApp.tsx` | Root z AuthProvider, ThemeProvider |
+| WeekNavigation | `src/components/warehouse/WeekNavigation.tsx` | Sticky nawigacja tygodniowa |
+| DayCard | `src/components/warehouse/DayCard.tsx` | Karta dnia z nagłówkiem |
+| OperationsTable | `src/components/warehouse/OperationsTable.tsx` | Tabela z 6 kolumnami |
+| OperationRow | `src/components/warehouse/OperationRow.tsx` | Wiersz operacji |
+| OperationTypeBadge | `src/components/warehouse/OperationTypeBadge.tsx` | Badge Zał/Roz |
+| CargoCell | `src/components/warehouse/CargoCell.tsx` | Lista towarów + waga |
+| DispatchInfoCell | `src/components/warehouse/DispatchInfoCell.tsx` | 5 linii awizacji |
+| WeekSummaryFooter | `src/components/warehouse/WeekSummaryFooter.tsx` | Footer z podsumowaniem |
+| EmptyDayMessage | `src/components/warehouse/EmptyDayMessage.tsx` | Komunikat pustego dnia |
+| NoDateSection | `src/components/warehouse/NoDateSection.tsx` | Sekcja stopów bez daty |
+
+#### Hook
+
+- `useWarehouseWeek` (`src/hooks/useWarehouseWeek.ts`): obliczanie tygodnia ISO, synchronizacja URL params, fetch danych z API, nawigacja (prevWeek/nextWeek/goToWeek)
 
 ---
 

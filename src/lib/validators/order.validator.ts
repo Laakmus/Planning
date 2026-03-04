@@ -208,3 +208,16 @@ export const carrierCellColorSchema = z.object({
 });
 
 export type CarrierCellColorParams = z.infer<typeof carrierCellColorSchema>;
+
+// ---------------------------------------------------------------------------
+// Widok magazynowy
+// ---------------------------------------------------------------------------
+
+/** Query params GET /api/v1/warehouse/orders. */
+export const warehouseQuerySchema = z.object({
+  week: z.coerce.number().int().min(1).max(53),
+  year: z.coerce.number().int().min(2020).max(2099),
+  locationId: z.string().uuid().optional(),
+});
+
+export type WarehouseQueryParams = z.infer<typeof warehouseQuerySchema>;

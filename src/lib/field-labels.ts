@@ -28,7 +28,6 @@ const FIELD_LABELS: Record<string, string> = {
   status_code: "Status",
   is_entry_fixed: "Pozycja oznaczona (Fix)",
   vehicle_capacity_volume_m3: "Pojemność pojazdu (m³)",
-
   // Pola stopów
   "stop.date_local": "Przystanek — data",
   "stop.time_local": "Przystanek — godzina",

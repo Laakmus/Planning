@@ -22,6 +22,7 @@ import type { OrderDetailDto, OrderItemDto, OrderStopDto } from "@/types";
 
 import { CargoSection } from "./CargoSection";
 import { CarrierSection } from "./CarrierSection";
+
 import { FinanceSection } from "./FinanceSection";
 import { NotesSection } from "./NotesSection";
 import { RouteSection } from "./RouteSection";

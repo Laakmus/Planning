@@ -29,6 +29,7 @@ const mockUser: AuthMeDto = {
   fullName: "Admin Testowy",
   phone: null,
   role: "ADMIN",
+  locationId: null,
 };
 
 vi.mock("@/contexts/AuthContext", () => ({

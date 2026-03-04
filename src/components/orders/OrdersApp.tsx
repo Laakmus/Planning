@@ -2,36 +2,47 @@
  * Korzenny komponent React wyspy /orders.
  *
  * Montowany jako `<OrdersApp client:load />` w src/pages/orders.astro.
- * Zarządza tylko activeView (dla AppHeader/OrderTabs).
- * Reszta stanu (filtry, paginacja, dane) żyje w OrdersPage.
+ * Zarządza activeView (sidebar nawigacja) i zapewnia layout z sidebarem.
  *
- * Struktura komponentów (docelowa):
+ * Struktura komponentów:
  *   OrdersApp
- *   └── AuthProvider
- *       └── DictionaryProvider
- *           ├── AppHeader (zakładki, sync, użytkownik) ← Faza 2 ✓
- *           └── OrdersPage (filtry, tabela, stopka)    ← Faza 3 ✓
- *               ├── FilterBar + ListSettings
- *               ├── OrderTable / EmptyState
- *               ├── OrderDrawer                        ← Faza 4
- *               ├── HistoryPanel                      ← Faza 5
- *               └── StatusFooter
+ *   └── ThemeProvider
+ *       └── ErrorBoundary
+ *           └── AuthProvider
+ *               └── DictionaryProvider
+ *                   └── TooltipProvider
+ *                       └── SidebarProvider
+ *                           ├── AppSidebar (nawigacja, sync, użytkownik)
+ *                           └── SidebarInset
+ *                               ├── header (SidebarTrigger + tytuł widoku)
+ *                               ├── OrdersPage (filtry, tabela, stopka)
+ *                               └── Toaster
  */
 
 import { useEffect, useState } from "react";
 import { ThemeProvider } from "next-themes";
 
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { Separator } from "@/components/ui/separator";
+import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { DictionaryProvider } from "@/contexts/DictionaryContext";
 import type { ViewGroup } from "@/lib/view-models";
 
-import AppHeader from "./AppHeader";
+import { AppSidebar } from "./AppSidebar";
 import { OrdersPage } from "./OrdersPage";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL as string;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
+
+/** Etykiety nagłówka dla poszczególnych widoków */
+const VIEW_LABELS: Record<ViewGroup, string> = {
+  CURRENT: "Aktualne zlecenia",
+  COMPLETED: "Zrealizowane",
+  CANCELLED: "Anulowane",
+};
 
 function OrdersAppInner() {
   const { user, isLoading } = useAuth();
@@ -59,11 +70,22 @@ function OrdersAppInner() {
   }
 
   return (
-    <div className="h-screen flex flex-col bg-slate-50 dark:bg-slate-950 overflow-hidden">
-      <AppHeader activeView={activeView} onViewChange={setActiveView} />
-      <OrdersPage activeView={activeView} />
-      <Toaster position="top-right" richColors />
-    </div>
+    <SidebarProvider>
+      <AppSidebar activeView={activeView} onViewChange={setActiveView} />
+      <SidebarInset>
+        <header className="shrink-0 flex h-14 items-center gap-2 border-b px-4">
+          <SidebarTrigger />
+          <Separator orientation="vertical" className="h-6" />
+          <h1 className="text-sm font-semibold">
+            {VIEW_LABELS[activeView]}
+          </h1>
+        </header>
+        <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
+          <OrdersPage activeView={activeView} />
+        </div>
+        <Toaster position="top-right" richColors />
+      </SidebarInset>
+    </SidebarProvider>
   );
 }
 
@@ -73,7 +95,9 @@ export default function OrdersApp() {
       <ErrorBoundary>
         <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
           <DictionaryProvider>
-            <OrdersAppInner />
+            <TooltipProvider>
+              <OrdersAppInner />
+            </TooltipProvider>
           </DictionaryProvider>
         </AuthProvider>
       </ErrorBoundary>

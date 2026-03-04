@@ -69,6 +69,7 @@ export const TEST_USER: AuthMeDto = {
   fullName: "Admin Test",
   phone: null,
   role: "ADMIN",
+  locationId: null,
 };
 
 /**

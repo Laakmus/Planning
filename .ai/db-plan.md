@@ -126,6 +126,12 @@ Tabela główna, centralna dla całego systemu.
   - sekwencyjny numer porządkowy zlecenia (do sortowania numerycznego w widoku listy), `NOT NULL`
   - generowany automatycznie przez trigger przy INSERT (kolejna wartość z sekwencji `order_seq_no_seq`)
   - używany w ORDER BY zamiast sortowania tekstowego po `order_no`
+- **vehicle_type_text**: `varchar(200)`
+  - typ pojazdu jako tekst (np. "FIRANKA", "HAKOWIEC"); niezależne od `vehicle_variants`, opcjonalne
+  - zastępuje FK do `vehicle_variants.code` (pole `vehicle_variant_code` zachowane w bazie, ale nieużywane przez aplikację)
+- **vehicle_capacity_volume_m3**: `numeric(12,1)`
+  - objętość ładunkowa pojazdu w m³ jako wolne pole numeryczne; opcjonalne
+  - niezależne od `vehicle_type_text` (dwa osobne pola w UI)
 
 Klucz główny:  
 - PK(`id`)
@@ -405,10 +411,14 @@ PK:
   - `CHECK (role IN ('ADMIN','PLANNER','READ_ONLY'))`
 - **created_at**: `timestamptz`  
   - `DEFAULT now()`, `NOT NULL`
-- **updated_at**: `timestamptz`  
+- **updated_at**: `timestamptz`
   - `DEFAULT now()`, `NOT NULL`
+- **location_id**: `uuid`
+  - FK → `locations.id`, może być `NULL`
+  - identyfikator oddziału magazynowego użytkownika; wymagany do widoku `/warehouse`
+  - dodane migracją `20260303200000_warehouse_view_fields.sql`
 
-PK:  
+PK:
 - PK(`id`)
 
 ---
@@ -464,7 +474,12 @@ PK:
     - relacja N:1  
     - `transport_orders.vehicle_variant_code` FK → `vehicle_variants.code`
 
-13. **`transport_orders` / logi → `user_profiles` / `auth.users`**
+13. **`user_profiles` → `locations`**
+    - relacja N:1 (opcjonalna — oddział magazynowy)
+    - `user_profiles.location_id` FK → `locations.id` (`ON DELETE RESTRICT`)
+    - używane przez widok magazynowy do filtrowania operacji wg oddziału użytkownika
+
+14. **`transport_orders` / logi → `user_profiles` / `auth.users`**
     - `transport_orders.created_by_user_id` / `updated_by_user_id` / `sent_by_user_id`,
       `order_status_history.changed_by_user_id`,
       `order_change_log.changed_by_user_id`
@@ -495,6 +510,7 @@ PK:
 - `INDEX` na `order_id`.  
 - `INDEX` na `location_id`.  
 - (opcjonalnie) `INDEX` na `(kind, date_local)` – jeśli często filtrujemy np. „załadunki w danym dniu”.
+- `INDEX` na `(location_id, date_local)` — `idx_order_stops_location_date` — widok magazynowy filtruje stopy po lokalizacji i zakresie dat.
 
 #### 3.3 Indeksy na `order_items`
 

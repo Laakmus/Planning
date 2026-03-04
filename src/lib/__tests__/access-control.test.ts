@@ -20,6 +20,7 @@ function makeUser(role: AuthMeDto["role"]): AuthMeDto {
     fullName: `Test ${role}`,
     phone: null,
     role,
+    locationId: null,
   };
 }
 

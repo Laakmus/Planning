@@ -104,14 +104,19 @@ Nowy produkt ma przede wszystkim poprawić:
 
 Poniższa sekcja definiuje układ, kolejność elementów, zawartość kolumn tabeli oraz sposób wyświetlania z przykładami. Dotyczy ekranu `/orders` po zalogowaniu. Nagłówek strony, pasek filtrów oraz nagłówek tabeli (nazwy kolumn) są sticky; przewija się wyłącznie lista wierszy (ciało tabeli). Na wąskich ekranach tabela przewija się w poziomie z widocznym paskiem przewijania u dołu.
 
-**1. Nagłówek aplikacji (sticky, jeden blok)**
+**1. Nawigacja (sidebar + header)**
 
-- Kolejność elementów od lewej do prawej: logo aplikacji, tytuł aplikacji, zakładki (Aktualne | Zrealizowane | Anulowane), przycisk „Aktualizuj dane”, blok użytkownika.
-- Blok użytkownika (prawa strona nagłówka):
+- **Sidebar (lewy panel)**: Collapsible sidebar (shadcn/ui Sidebar) z elementami:
+  - Nagłówek: logo aplikacji (ikona Truck) + tytuł „Zlecenia Transportowe”
+  - Nawigacja: 3 pozycje — Aktualne, Zrealizowane, Anulowane (ikony Lucide: ClipboardList, CheckCircle2, XCircle)
+  - Stopka: przycisk „Aktualizuj dane” (SyncButton), przełącznik motywu (ThemeToggle), blok użytkownika (UserInfo)
+  - Collapsible: Cmd+B / Ctrl+B. Na mobile: Sheet overlay.
+- **Blok użytkownika** (w stopce sidebara):
   - Wiersz 1: imię i nazwisko zalogowanego użytkownika (np. „Jan Kowalski”).
   - Wiersz 2: rola zwykłym tekstem — „Admin”, „Planner” lub „Read only” (bez badge’a).
-  - Na prawo od bloku imienia i roli: przycisk „Wyloguj”.
+  - Przycisk „Wyloguj” obok bloku imienia i roli.
 - Bez avatara i zdjęcia użytkownika.
+- **Inline header** (w main content area): SidebarTrigger (hamburger) + separator + tytuł aktywnego widoku (np. „Aktualne zlecenia”).
 
 **2. Pasek filtrów (sticky pod nagłówkiem)**
 
@@ -625,7 +630,64 @@ Pole „Fix" (is_entry_fixed) NIE jest widoczne w OrderView — jest dostępne t
   - korzysta z danych z firmowej bazy ERP,
   - startuje z pustą listą zleceń (realnych).
 
-  3.2 Funkcje planowane na etap 2 (poza MVP)
+  3.2 Widok magazynowy (tygodniowy)
+
+Dedykowany widok read-only dla pracowników magazynów poszczególnych oddziałów Odylion. Prezentuje zaplanowane załadunki i rozładunki dla oddziału użytkownika w danym tygodniu.
+
+**Pełna specyfikacja**: `.ai/widok-magazyn-specyfikacja.md`
+
+3.2.1 Dostęp i routing
+
+- URL: `/warehouse?week=12&year=2026` — parametry opcjonalne, domyślnie bieżący tydzień
+- Dostępny dla ról: ADMIN, PLANNER, READ_ONLY — wszyscy jako read-only
+- Oddział użytkownika pobierany z `user_profiles.location_id` (server-side)
+- Brak możliwości przełączania oddziałów — każdy użytkownik widzi wyłącznie swój oddział
+
+3.2.2 Layout i nawigacja
+
+- Nawigacja: strzałki ◀▶ + pole numeryczne nr tygodnia (bez selektora miesiąca)
+- Nagłówek tygodnia: „Tydzień 12 | 17.03 – 21.03.2026" (sticky, nad scroll containerem)
+- 5 kart dniowych (Pon–Pt), każda z jedną tabelą chronologiczną
+- Stopy weekendowe dołączane do piątku z adnotacją „(sob. DD.MM)"
+- Bez paginacji — scroll pionowy + sticky thead per karta
+- Sekcja „Bez przypisanej daty" na dole (ukryta gdy pusta)
+- Footer tygodniowy (sticky na dole): łączna masa, liczba załadunków/rozładunków
+
+3.2.3 Kolumny tabeli
+
+| # | Kolumna | Opis |
+|---|---------|------|
+| 1 | Typ | Badge: „Zał" (niebieski) / „Roz" (zielony) |
+| 2 | Godzina | HH:MM, bold, kolor typu |
+| 3 | Nr zlecenia | ZT2026/0042, font-medium |
+| 4 | Towar / Masa | Nazwa + opakowanie + „Razem: XX,X t" |
+| 5 | Przewoźnik | Nazwa firmy + typ pojazdu pod spodem |
+| 6 | Awizacja | 5 linii bez etykiet: kierowca, ciągnik, przyczepa, telefon, BDO |
+
+3.2.4 Filtrowanie danych
+
+- Widoczne statusy: robocze, wysłane, korekta, korekta wysłane, reklamacja
+- Niewidoczne: zrealizowane, anulowane
+- Filtrowanie po oddziale: zlecenia z stopem w `location_id` użytkownika
+- Oddział jako L i U w tym samym zleceniu → dwa osobne wiersze
+- Zlecenie z wieloma stopami w różnych dniach → wiersz w każdym dniu
+
+3.2.5 Dane awizacji
+
+Dane awizacji przechowywane są w polu `notification_details` (textarea, max 500 znaków) w Sekcji 3 formularza zlecenia (Firma transportowa). W widoku magazynowym wyświetlane jako tekst wieloliniowy w kolumnie Awizacja.
+
+3.2.6 Druk
+
+- Obsługa `Ctrl+P` / `Cmd+P` — layout A4 landscape
+- Ukryte: nawigacja, sidebar, footer
+- Zachowane kolory badge'ów (`print-color-adjust: exact`)
+
+3.2.7 API
+
+- Dedykowany endpoint: `GET /api/v1/warehouse/orders?week=12&year=2026`
+- Zwraca dane pogrupowane per dzień + sekcja „bez daty" + podsumowanie tygodnia
+
+  3.3 Funkcje planowane na etap 2 (poza MVP)
 
 - Dokładne odwzorowanie PDF zlecenia transportowego w 100 procentach zgodne z istniejącym sztywnym formularzem firmowym (układ, czcionki, współrzędne).
 - Autozapis w tle:
@@ -652,7 +714,8 @@ Do zakresu MVP należą:
 - generowanie funkcjonalnego PDF (pełne dane, prosty układ),
 - trzy zakładki: aktualne, zrealizowane, anulowane, wraz z logiką retencji anulacji (24 h),
 - prosty mechanizm blokady edycji wiersza przez wielu użytkowników jednocześnie,
-- dwa środowiska: testowe (Supabase) i produkcyjne (ERP).
+- dwa środowiska: testowe (Supabase) i produkcyjne (ERP),
+- widok magazynowy — tygodniowy widok read-only załadunków/rozładunków per oddział (§3.2).
 
   4.2 Poza zakresem MVP (etap 2 i kolejne)
 
@@ -986,6 +1049,53 @@ Kryteria akceptacji:
 - Użytkownik widzi informację o czasie ostatniego autozapisu.
 - W przypadku niepowodzenia autozapisu użytkownik jest o tym informowany.
 - Funkcjonalność może być zaimplementowana w kolejnym etapie, poza MVP, ale jest uwzględniona w wymaganiach.
+
+### 5.9 Widok magazynowy
+
+ID: US-090
+Tytuł: Podgląd tygodniowych załadunków i rozładunków dla oddziału
+Opis:
+Jako pracownik magazynu chcę widzieć tygodniowy widok zaplanowanych załadunków i rozładunków w moim oddziale, aby sprawnie przygotować się do obsługi transportów.
+Kryteria akceptacji:
+
+- Widok dostępny pod `/warehouse` dla ról ADMIN, PLANNER, READ_ONLY (read-only dla wszystkich).
+- Wyświetla 5 kart dniowych (Pon–Pt) z jedną tabelą chronologiczną per dzień.
+- Kolumny: Typ (badge Zał/Roz), Godzina, Nr zlecenia, Towar/Masa, Przewoźnik, Awizacja.
+- Widoczne statusy: robocze, wysłane, korekta, korekta wysłane, reklamacja.
+- Dane filtrowane po oddziale użytkownika (`user_profiles.location_id`).
+- Stopy weekendowe wyświetlane w piątku z adnotacją (sob./niedz.).
+- Footer tygodniowy z łączną masą załadunków/rozładunków.
+
+ID: US-091
+Tytuł: Nawigacja między tygodniami w widoku magazynowym
+Opis:
+Jako pracownik magazynu chcę przełączać się między tygodniami, aby przeglądać plan na kolejne lub poprzednie tygodnie.
+Kryteria akceptacji:
+
+- Strzałki ◀▶ przechodzą do poprzedniego/następnego tygodnia.
+- Pole numeryczne pozwala wpisać nr tygodnia i przejść bezpośrednio.
+- Nagłówek wyświetla „Tydzień X | DD.MM – DD.MM.YYYY".
+- URL aktualizuje się z parametrami `?week=X&year=YYYY`.
+
+ID: US-092
+Tytuł: Dane awizacji w zleceniu transportowym
+Opis:
+Jako planista chcę wprowadzać dane awizacji w zleceniu, aby magazyn mógł je widzieć w widoku tygodniowym.
+Kryteria akceptacji:
+
+- Dane awizacji przechowywane w polu `notificationDetails` (textarea, max 500 znaków) w Sekcji 3 formularza.
+- Pole edytowalne przez ADMIN i PLANNER; READ_ONLY widzi je jako read-only.
+- Dane wyświetlane w kolumnie Awizacja widoku magazynowego jako tekst wieloliniowy.
+
+ID: US-093
+Tytuł: Drukowanie widoku magazynowego
+Opis:
+Jako pracownik magazynu chcę wydrukować widok tygodniowy, aby mieć papierową kopię planu na hali.
+Kryteria akceptacji:
+
+- `Ctrl+P` / `Cmd+P` otwiera podgląd druku w formacie A4 landscape.
+- Nawigacja, sidebar i footer są ukryte na wydruku.
+- Kolory badge'ów zachowane na wydruku.
 
 ## 6. Metryki sukcesu
 

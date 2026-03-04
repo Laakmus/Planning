@@ -31,14 +31,21 @@ Strona `/orders` renderuje pojedynczą wyspę React (`<OrdersApp client:load />`
 
 ```
 OrdersApp (React island — korzenny komponent)
-├── AuthProvider
-│   └── DictionaryProvider
-│       ├── AppHeader
-│       │   ├── OrderTabs          ← zakładki w nagłówku
-│       │   ├── SyncButton
-│       │   └── UserInfo           ← bez avatara: imię i nazwisko, rola (tekst), Wyloguj
-│       └── OrdersPage
-│           ├── (OrderTabs przeniesione do AppHeader)
+├── ThemeProvider
+│   └── ErrorBoundary
+│       └── AuthProvider
+│           └── DictionaryProvider
+│               └── TooltipProvider
+│                   └── SidebarProvider
+│                       ├── AppSidebar
+│                       │   ├── SidebarHeader (logo Truck + tytuł)
+│                       │   ├── SidebarContent (nawigacja: Aktualne, Zrealizowane, Anulowane)
+│                       │   └── SidebarFooter (SyncButton, ThemeToggle, UserInfo — bez avatara)
+│                       └── SidebarInset
+│                           ├── header (SidebarTrigger + tytuł widoku)
+│                           ├── OrdersPage
+│                           └── Toaster
+│       OrdersPage
 │           ├── FilterBar
 │           │   ├── TransportTypeFilter
 │           │   ├── AutocompleteFilter (×4: przewoźnik, towar, załadunek, rozładunek)
@@ -96,43 +103,31 @@ OrdersApp (React island — korzenny komponent)
 ### 4.1 OrdersApp
 
 - **Opis**: Komponent korzenny montowany jako wyspa React w stronie Astro `/orders`. Opakowuje całą aplikację w providery (Auth, Dictionary). Przekazuje token Supabase z cookie/localStorage do kontekstu.
-- **Główne elementy**: `<AuthProvider>` → `<DictionaryProvider>` → `<AppHeader />` + `<OrdersPage />`
+- **Główne elementy**: `<ThemeProvider>` → `<ErrorBoundary>` → `<AuthProvider>` → `<DictionaryProvider>` → `<TooltipProvider>` → `<SidebarProvider>` → `<AppSidebar />` + `<SidebarInset>` (header + `<OrdersPage />` + `<Toaster />`)
 - **Obsługiwane interakcje**: Brak bezpośrednich — deleguje do dzieci.
 - **Walidacja**: Brak.
 - **Typy**: `AuthMeDto`, `DictionaryState`
 - **Propsy**: `initialToken?: string` (opcjonalnie token JWT z Astro SSR)
 
-### 4.2 AppHeader
+### 4.2 AppSidebar
 
-- **Opis**: Sticky nagłówek aplikacji (`h-14`) z logo, tytułem (UPPERCASE), zakładkami widoków, przyciskiem synchronizacji i blokiem użytkownika. Zgodnie z PRD 3.1.2a i ui-plan: **BEZ avatara i zdjęcia użytkownika**.
-- **Główne elementy**: `<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 h-14 sticky top-0 z-50 flex items-center justify-between px-4">`, `<OrderTabs />` (w środku nagłówka), `<SyncButton />`, `<UserInfo />`
-- **Styl nagłówka**:
-  - **Logo**: `w-8 h-8 bg-primary rounded` z białą ikoną (np. Lucide `Truck` lub Material `local_shipping`)
-  - **Tytuł**: `font-bold tracking-tight text-slate-800 dark:text-slate-100 uppercase text-sm` (np. „ZLECENIA TRANSPORTOWE")
-  - **Zakładki** (w środku nagłówka): `bg-slate-100 dark:bg-slate-800 rounded-lg p-1`
-    - Aktywna: `bg-white dark:bg-slate-900 shadow-sm text-primary font-semibold`
-    - Nieaktywna: `text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300`
-  - **UserInfo (prawa strona)**: **BEZ avatara**. Layout:
-    ```html
-    <div class="flex items-center gap-3">
-      <div class="text-right">
-        <div class="text-sm font-semibold text-slate-800 dark:text-slate-100">{fullName}</div>
-        <div class="text-xs text-slate-500 dark:text-slate-400">{role}</div>
-      </div>
-      <button class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-        Wyloguj
-      </button>
-    </div>
-    ```
-    - **Wiersz 1**: imię i nazwisko (`fullName`)
-    - **Wiersz 2**: rola zwykłym tekstem — „Admin", „Planner" lub „Read only"
-    - **Przycisk Wyloguj**: po prawej od bloku imienia i roli
+- **Opis**: Lewy sidebar nawigacyjny (shadcn/ui Sidebar). Zastępuje dawny AppHeader. Collapsible (Cmd+B/Ctrl+B), na mobile jako Sheet overlay. Zgodnie z PRD 3.1.2a i ui-plan: **BEZ avatara i zdjęcia użytkownika**.
+- **Plik**: `src/components/orders/AppSidebar.tsx`
+- **Główne elementy**: `<Sidebar>` → `<SidebarHeader>` (logo Truck + tytuł) + `<SidebarContent>` (3 pozycje nawigacji z ikonami Lucide) + `<SidebarFooter>` (SyncButton + Separator + ThemeToggle + UserInfo)
+- **Styl**:
+  - **Logo**: `w-8 h-8 bg-primary rounded-lg shadow-md` z ikoną `text-primary-foreground`
+  - **Tytuł**: `font-bold tracking-tight text-sm uppercase`
+  - **Nawigacja**: `SidebarMenuButton` z `isActive` prop, ikony: ClipboardList (Aktualne), CheckCircle2 (Zrealizowane), XCircle (Anulowane)
+  - **UserInfo (stopka)**: **BEZ avatara**. Wiersz 1: imię i nazwisko, Wiersz 2: rola zwykłym tekstem, przycisk „Wyloguj".
+- **Inline header** (w SidebarInset): `SidebarTrigger` (hamburger) + `Separator vertical` + `<h1>` z tytułem aktywnego widoku
 - **Obsługiwane interakcje**:
-  - Klik „Aktualizuj dane" → `POST /api/v1/dictionary-sync/run`, polling `GET /dictionary-sync/jobs/{jobId}`
+  - Klik na pozycję nawigacji → zmiana `activeView` → nowe zapytanie GET `/orders`
+  - Klik „Aktualizuj dane" → `POST /api/v1/dictionary-sync/run`
   - Klik „Wyloguj" → Supabase `signOut()`, redirect na `/`
+  - Cmd+B / Ctrl+B → toggle sidebar
 - **Walidacja**: Brak.
-- **Typy**: `AuthMeDto`, `DictionarySyncResponseDto`, `DictionarySyncJobDto`
-- **Propsy**: Brak (korzysta z `useAuth()` i `useDictionarySync()`)
+- **Typy**: `ViewGroup`, `AuthMeDto`
+- **Propsy**: `activeView: ViewGroup`, `onViewChange: (view: ViewGroup) => void`
 
 ### 4.3 SyncButton
 
@@ -146,20 +141,9 @@ OrdersApp (React island — korzenny komponent)
 - **Typy**: `DictionarySyncCommand`, `DictionarySyncResponseDto`, `DictionarySyncJobDto`
 - **Propsy**: Brak (korzysta z hooków)
 
-### 4.4 OrderTabs
+### 4.4 OrderTabs (ZASTĄPIONY przez AppSidebar)
 
-- **Opis**: Trzy zakładki przełączające widok listy: Aktualne, Zrealizowane, Anulowane. Umieszczone wewnątrz `AppHeader` (nie nad tabelą).
-- **Główne elementy**: `<nav class="flex space-x-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">` z przyciskami. Aktywna: `bg-white shadow-sm text-primary font-semibold`, nieaktywna: `text-slate-500 hover:text-slate-700`.
-- **Obsługiwane interakcje**: Klik na zakładkę → zmiana `view` w stanie filtrów → nowe zapytanie GET `/orders`.
-- **Walidacja**: Brak.
-- **Typy**: `ViewGroup`
-- **Propsy**:
-  ```ts
-  interface OrderTabsProps {
-    activeView: ViewGroup;
-    onViewChange: (view: ViewGroup) => void;
-  }
-  ```
+- **Status**: Zastąpiony. Nawigacja widoków przeniesiona do AppSidebar jako SidebarMenu. Plik `OrderTabs.tsx` zachowany jako referencja, ale nie jest importowany.
 
 ### 4.5 FilterBar
 
@@ -1229,7 +1213,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
    │   ├── auth/
    │   │   └── LoginCard.tsx
 │   ├── layout/
-│   │   ├── AppHeader.tsx
+│   │   ├── AppSidebar.tsx
 │   │   ├── SyncButton.tsx
 │   │   └── UserInfo.tsx
    │   ├── orders/
@@ -1322,14 +1306,14 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 7. **Zaimplementować `DictionaryContext.tsx`** — provider + hook `useDictionaries()` z ładowaniem 6 słowników po zalogowaniu.
 8. **Zaimplementować stronę logowania** (`src/pages/index.astro` + `LoginCard.tsx`) — formularz, Supabase Auth, redirect.
 9. **Zaimplementować `Layout.astro`** — aktualizacja tytułu, meta, font Inter.
-10. **Zaimplementować `AppHeader.tsx`** — sticky header (`h-14`) z logo (primary ikona), tytułem (UPPERCASE), zakładkami OrderTabs (w środku), SyncButton, **UserInfo** (bez avatara: wiersz 1 — imię i nazwisko, wiersz 2 — rola zwykłym tekstem „Admin" / „Planner" / „Read only", przycisk „Wyloguj"). Zgodnie z PRD 3.1.2a i ui-plan.
+10. **Zaimplementować `AppSidebar.tsx`** — lewy sidebar (shadcn/ui Sidebar) z SidebarHeader (logo Truck + tytuł), SidebarContent (nawigacja widoków: Aktualne, Zrealizowane, Anulowane z ikonami Lucide), SidebarFooter (SyncButton, ThemeToggle, UserInfo bez avatara). Collapsible Cmd+B/Ctrl+B. Inline header w SidebarInset: SidebarTrigger + tytuł widoku. Zgodnie z PRD 3.1.2a i ui-plan.
 
 ### Faza 2: Lista zleceń
 
 11. **Zaimplementować stronę `/orders`** (`src/pages/orders.astro`) — wyspa React `<OrdersApp>` z providerami.
 12. **Zaimplementować hook `useOrders.ts`** — stan filtrów, pobieranie listy, debounce, odświeżanie.
-13. **Zaimplementować `OrdersPage.tsx`** — główny kontener: FilterBar + ListSettings + OrderTable + EmptyState + StatusFooter (zakładki przeniesione do AppHeader).
-14. **Zaimplementować `OrderTabs.tsx`** — trzy zakładki w nagłówku: `bg-slate-100 rounded-lg p-1`, aktywna: `bg-white shadow-sm text-primary`.
+13. **Zaimplementować `OrdersPage.tsx`** — główny kontener: FilterBar + ListSettings + OrderTable + EmptyState + StatusFooter (nawigacja widoków w AppSidebar).
+14. ~~Zaimplementować `OrderTabs.tsx`~~ — **ZASTĄPIONY** (nawigacja widoków przeniesiona do AppSidebar).
 15. **Zaimplementować `FilterBar.tsx`** — kolejność filtrów zgodna z PRD 3.1.2a: rodzaj transportu, status (select), firma załadunku, firma rozładunku, Firma transportowa, towar, numer tygodnia (pole tekstowe), wyszukiwanie pełnotekstowe; przycisk „Wyczyść filtry"; z prawej przycisk „Nowe zlecenie" (tylko Aktualne + Admin/Planner). Debounce 300ms na polach tekstowych/autocomplete.
 16. **Zaimplementować `AutocompleteFilter`** — generyczny komponent filtra z autocomplete (shadcn Command).
 17. **Zaimplementować `ListSettings.tsx`** — pageSize + viewMode toggle.

@@ -135,6 +135,18 @@
   }
 }
 
+/* Druk widoku magazynowego — A4 landscape, zachowanie kolorów */
+@media print {
+  .warehouse-view {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .warehouse-view * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}
+
 /* Hover wierszy tabeli zleceń */
 .orders-table tbody tr:hover td {
   background-color: rgba(19, 127, 236, 0.04);

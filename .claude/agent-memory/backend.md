@@ -1,5 +1,30 @@
 # Backend Agent — Pamięć
 
+## Sesja 25 (2026-03-03) — Widok magazynowy (warehouse)
+
+### Nowe pliki
+- **`src/lib/services/warehouse.service.ts`** — serwis `getWarehouseWeekOrders()` + `getCurrentISOWeek()`
+  - Oblicza zakres dat tygodnia ISO (pon-nd) via `getISOWeekMonday()`
+  - 2 zapytania Supabase: stopy z datą w zakresie + stopy bez daty
+  - PostgREST inner join: `order_stops` → `transport_orders!inner` → `order_items`
+  - Filtr statusów: robocze, wysłane, korekta, korekta wysłane, reklamacja
+  - Sobota/niedziela przesuwane do piątku z `isWeekend: true`
+  - Sortowanie chronologiczne wg `timeLocal` w każdym dniu
+  - Podsumowanie: loadingCount/Tons, unloadingCount/Tons
+- **`src/pages/api/v1/warehouse/orders.ts`** — GET endpoint
+  - Auth guard + sprawdzenie `locationId` (403 gdy brak)
+  - Query params: `week` + `year` (opcjonalne, domyślnie bieżący tydzień ISO)
+  - Walidacja Zod via `warehouseQuerySchema`
+  - Pobiera nazwę lokalizacji z `locations` table
+
+### Zmiany w `order.service.ts`
+- **`duplicateOrder()`**: Dodano nullowanie 5 pól awizacji (driver_name, driver_phone, truck_plate, trailer_plate, bdo_number) — dane dyspozycji nie są kopiowane do duplikatu
+
+### Wzorce
+- Supabase inner join na order_stops: `transport_orders!inner(...)` — filtruje stopy po statusie zlecenia
+- `getDay()` JS: 0=nd, 1=pon; konwersja na indeks tygodniowy: `jsDay === 0 ? 6 : jsDay - 1`
+- Typy DB nie zawierają nowych kolumn (driver_name itp.) — użyto `as any` cast na zapytaniach
+
 ## Sesja 21 (2026-03-02) — Rozdzielenie pól pojazdu
 
 ### Zmiany w `order.service.ts`

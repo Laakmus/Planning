@@ -1,6 +1,47 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-03 (sesja 24 — security fixes: H-07, H-08, H-01)
+> Ostatnia aktualizacja: 2026-03-04 (sesja 29 — Redesign wizualny widoku magazynowego + selektor oddziałów)
+
+---
+
+## W trakcie — Widok magazynowy
+
+### WM-01. ~~Faza 1: Aktualizacja specyfikacji~~ — DONE (sesja 26)
+- Zaktualizowano `.ai/widok-magazyn-specyfikacja.md` o wszystkie 10 decyzji użytkownika i 15 rozwiązań problemów
+- Dodano sekcję 3.2 w PRD (`prd.md`) z pełnym opisem widoku magazynowego
+- Dodano user stories US-090..US-093 w sekcji 5.9 PRD
+- Dodano widok magazynowy do zakresu MVP (sekcja 4.1)
+
+### WM-02. ~~Faza 2: Migracja DB~~ — DONE (sesja 26)
+- `supabase/migrations/20260303200000_warehouse_view_fields.sql`
+- `user_profiles.location_id` (FK → locations)
+- Dane awizacji z pola `notification_details` (textarea, nie 5 osobnych kolumn)
+- Indeks `idx_order_stops_location_date` na `order_stops(location_id, date_local)`
+
+### WM-03. ~~Faza 3: Types + API~~ — DONE (sesja 26, poprawione sesja 28)
+- `src/types.ts`: locationId w AuthMeDto, nowe warehouse DTOs (4 interfejsy, notificationDetails zamiast 5 osobnych pól)
+- `src/lib/validators/order.validator.ts`: warehouseQuerySchema
+- `src/lib/services/auth.service.ts`: select location_id, map do locationId
+- `src/lib/services/warehouse.service.ts` (nowy): getWarehouseWeekOrders + getCurrentISOWeek
+- `src/pages/api/v1/warehouse/orders.ts` (nowy): GET endpoint
+- **Sesja 28 — poprawki:** Usunięto 5 osobnych pól awizacji (driverName/Phone, truckPlate, trailerPlate, bdoNumber) z 13 plików — dane awizacji z `notificationDetails` (textarea w Sekcji 3). Usunięto DispatchSection.tsx (Sekcja 7). DispatchInfoCell.tsx przepisany na notificationDetails.
+
+### WM-04. ~~Faza 4: Frontend warehouse~~ — DONE (sesja 26)
+- `src/pages/warehouse.astro` (nowy)
+- `src/hooks/useWarehouseWeek.ts` (nowy)
+- `src/components/warehouse/` (11 nowych plików): WarehouseApp, WeekNavigation, DayCard, OperationsTable, OperationRow, OperationTypeBadge, CargoCell, DispatchInfoCell, WeekSummaryFooter, EmptyDayMessage, NoDateSection
+- `src/components/orders/AppSidebar.tsx`: nawigacja "Magazyn" z ikoną Warehouse
+- Badge kolory: Zał=niebieski (blue), Roz=zielony (emerald) — odwrotnie niż w widoku planisty
+
+### WM-05. ~~Faza 5: Testy~~ — DONE (sesja 27)
+- `src/lib/services/__tests__/warehouse.service.test.ts` — 6 testów getCurrentISOWeek (typowe daty, granice lat, tydzień ISO przechodzący na nowy rok)
+- `src/lib/validators/__tests__/warehouse.validator.test.ts` — 10 testów warehouseQuerySchema (valid, coerce, invalid, missing fields)
+- Wynik: 388/388 testów, 0 failures
+
+### WM-06. ~~Faza 6: Aktualizacja dokumentacji~~ — DONE (sesja 27)
+- `api-plan.md`: dodano locationId w AuthMeDto (sekcja 2.1), 5 pól dispatch w sekcjach 2.3/2.4/2.5, nowa sekcja 2.16 (GET /api/v1/warehouse/orders)
+- `db-plan.md`: dodano location_id w user_profiles (sekcja 1.12), 5 pól awizacji + vehicle_type_text + vehicle_capacity_volume_m3 w transport_orders (sekcja 1.1), relacja 13 user_profiles→locations, indeks idx_order_stops_location_date (sekcja 3.2)
+- `ui-plan.md`: nowa sekcja 2.6 — widok magazynowy (layout, kolumny, komponenty, hook, druk, DispatchSection)
 
 ---
 
@@ -391,6 +432,40 @@
 
 ### Sesja 20 — audyt 4 agentów: security, code quality, architecture, test coverage
 - [x] (patrz sekcja "Do zrobienia" powyżej — wpisy CR-01..04, H-01..11, M-01..16, L-20..29)
+
+### Sesja 25 — shadcn/ui Sidebar
+- [x] Instalacja shadcn/ui sidebar (`npx shadcn@latest add sidebar`)
+- [x] Nowy plik `src/components/orders/AppSidebar.tsx` — sidebar z nawigacją widoków, SyncButton, ThemeToggle, UserInfo
+- [x] Refaktor `src/components/orders/OrdersApp.tsx` — SidebarProvider + SidebarInset + TooltipProvider, inline header z SidebarTrigger
+- [x] Fix kontrastu logo w dark mode (`text-white` → `text-primary-foreground`)
+- [x] Aktualizacja komentarzy (useDictionarySync, UserInfo, FilterBar) — referencje AppHeader → AppSidebar
+- [x] Aktualizacja dokumentacji: ui-plan.md (hierarchia + komponent #1), prd.md (§3.1.2a), orders-view-implementation-plan.md (§4.1, §4.2, §4.4, struktura plików, kroki)
+- [x] Aktualizacja to_do.md
+- [x] Wynik: 372/372 testów, 0 nowych błędów TypeScript, build OK
+- [x] AppHeader.tsx i OrderTabs.tsx zachowane jako dead code (decyzja użytkownika)
+
+### Sesja 29 — Redesign wizualny widoku magazynowego + selektor oddziałów
+- [x] WM-07a: Backend — opcjonalny query param `locationId` w endpoint `warehouse/orders.ts`
+  - Walidacja Zod (UUID format), sprawdzenie join locations→companies (type=INTERNAL)
+  - 3 ścieżki: query param → profil użytkownika → 403
+- [x] WM-07b: Frontend — `BranchSelector.tsx` (NOWY) — dropdown oddziałów INTERNAL
+  - Filtr: `useDictionaries()` → companies.type=INTERNAL → ich locations
+  - Ukrywa się gdy ≤1 lokalizacja
+- [x] WM-07c: Hook `useWarehouseWeek` — parametr `locationId`, re-fetch przy zmianie
+- [x] WM-07d: `WarehouseApp.tsx` — stan `selectedLocationId`, montaż BranchSelector + OperationLegend
+- [x] WM-08: Redesign wizualny — dopasowanie do prototypu `test/week_plan.html` (18 punktów)
+  - B1: WeekNavigation — h1 2xl, strzałki w kontenerze, input h-10, etykieta "Numer tygodnia"
+  - B2: OperationLegend.tsx (NOWY) — pasek legendy załadunki/rozładunki
+  - B3: DayCard — szary pasek nagłówka, licznik operacji, shadow-sm
+  - B4: OperationsTable — text-xs, thead bg-slate-50/50, "Przewoźnik", tbody divide-y
+  - B5: OperationTypeBadge — rounded-full, text-[10px] font-bold uppercase
+  - B6: OperationRow — py-1.5, hover:bg-slate-50, text-center Typ, leading-relaxed
+  - B7: CargoCell — font-medium, text-[10px], mt-1 na "Razem"
+  - B8: DispatchInfoCell — text-[10px] text-slate-500, font-medium pierwsza linia
+  - B9: WeekSummaryFooter — bg-slate-900 ciemna stopka, z-40, "System operacyjny aktywny"
+  - B10: EmptyDayMessage — p-4, text-xs font-medium text-slate-500
+- [x] Walidator Zod: `locationId: z.string().uuid().optional()` w warehouseQuerySchema
+- [x] Wynik: 388/388 testów, 0 błędów TypeScript, build OK
 
 ### Sesja 19 — fix vehicle variant auto-fill + testy E2E drawera
 - [x] Bug fix: auto-wypełnienie objętości przy wyborze typu auta w `CarrierSection.tsx`

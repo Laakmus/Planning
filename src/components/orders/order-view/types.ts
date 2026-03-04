@@ -368,6 +368,7 @@ export function viewDataToFormData(
     senderContactName: originalFormData.senderContactName,
     senderContactPhone: originalFormData.senderContactPhone,
     senderContactEmail: originalFormData.senderContactEmail,
+    notificationDetails: originalFormData.notificationDetails,
 
     // Pola edytowane w OrderView (konwersja "" -> null dla API)
     carrierCompanyId: carrier?.id ?? originalFormData.carrierCompanyId,

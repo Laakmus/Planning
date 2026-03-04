@@ -43,9 +43,11 @@
       "email": "user@example.com",
       "fullName": "string | null",
       "phone": "string | null",
-      "role": "ADMIN | PLANNER | READ_ONLY"
+      "role": "ADMIN | PLANNER | READ_ONLY",
+      "locationId": "uuid | null"
     }
     ```
+  - **Uwaga**: `locationId` to identyfikator oddziału magazynowego użytkownika (`user_profiles.location_id` FK → `locations.id`). Wymagany do korzystania z widoku magazynowego (`/warehouse`). Może być `null` jeśli użytkownik nie ma przypisanego oddziału.
   - **Sukces**: `200 OK`
   - **Błędy**: `401 Unauthorized`
 
@@ -652,6 +654,66 @@ Wszystkie te endpointy używają standardowego formatu:
     }
     ```
   - **Błędy**: `401`, `403`, `404`, `422` (lista braków do wysyłki)
+
+---
+
+### 2.16 Widok magazynowy — tygodniowy plan operacji
+
+- **GET** `/api/v1/warehouse/orders`
+  - **Opis**: Zwraca tygodniowy widok operacji załadunków/rozładunków dla oddziału magazynowego zalogowanego użytkownika. Dane grupowane po dniach (pon-pt), z przesunięciem weekendowych stopów do piątku.
+  - **Parametry zapytania** (opcjonalne):
+    - `week` (integer, 1-53): numer tygodnia ISO. Domyślnie bieżący tydzień.
+    - `year` (integer, 2020-2099): rok. Domyślnie bieżący rok.
+  - **Wymagania**: Zalogowany użytkownik z przypisanym oddziałem (`locationId` w profilu). Brak przypisanego oddziału → `403 Forbidden`.
+  - **Filtrowanie**: Wyświetlane są tylko stopy zlecenia pasujące do lokalizacji użytkownika (stop.location_id = user.locationId) i ze statusem zlecenia w zbiorze: robocze, wysłane, korekta, korekta wysłane, reklamacja.
+  - **Struktura odpowiedzi**:
+    ```json
+    {
+      "week": 12,
+      "year": 2026,
+      "weekStart": "2026-03-16",
+      "weekEnd": "2026-03-22",
+      "locationName": "NORD Główny",
+      "days": [
+        {
+          "date": "2026-03-16",
+          "dayName": "Poniedziałek",
+          "entries": [
+            {
+              "orderId": "uuid",
+              "orderNo": "ZT2026/0042",
+              "stopType": "LOADING | UNLOADING",
+              "timeLocal": "08:00 | null",
+              "isWeekend": false,
+              "originalDate": "YYYY-MM-DD | null",
+              "items": [
+                {
+                  "productName": "Granulat PE",
+                  "loadingMethod": "PALETA | null",
+                  "weightTons": 24.5
+                }
+              ],
+              "totalWeightTons": 24.5,
+              "carrierName": "Trans-Pol Sp. z o.o. | null",
+              "vehicleType": "FIRANKA | null",
+              "notificationDetails": "string | null"
+            }
+          ]
+        }
+      ],
+      "noDateEntries": [],
+      "summary": {
+        "loadingCount": 5,
+        "loadingTotalTons": 120.5,
+        "unloadingCount": 3,
+        "unloadingTotalTons": 72.0
+      }
+    }
+    ```
+  - **Logika weekendowa**: Stopy z datą sobota/niedziela są przesuwane do piątku z flagą `isWeekend: true` i `originalDate` zachowującym oryginalną datę.
+  - **Sekcja noDateEntries**: Stopy bez przypisanej daty (date_local IS NULL) wyświetlane w osobnej sekcji na dole widoku.
+  - **Sukces**: `200 OK`
+  - **Błędy**: `400 Bad Request` (nieprawidłowe parametry), `401 Unauthorized`, `403 Forbidden` (brak oddziału), `500 Internal Server Error`
 
 ---
 

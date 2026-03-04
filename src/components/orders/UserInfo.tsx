@@ -1,5 +1,5 @@
 /**
- * Blok użytkownika w AppHeader: imię/nazwisko, rola (tekst), przycisk Wyloguj.
+ * Blok użytkownika w AppSidebar: imię/nazwisko, rola (tekst), przycisk Wyloguj.
  * BEZ avatara ani zdjęcia — zgodnie z PRD 3.1.2a i ui-plan.
  */
 
