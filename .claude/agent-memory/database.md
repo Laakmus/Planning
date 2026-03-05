@@ -12,6 +12,6 @@
 ### Learningi
 - Kolumna w `user_profiles` to `role` (nie `role_code`) — typ TEXT, wartości: ADMIN, PLANNER, READ_ONLY
 - errcode `42501` (insufficient_privilege) → PostgREST automatycznie mapuje na HTTP 403
-- REVOKE na `generate_next_order_no` złamałoby app — `order.service.ts` wywołuje RPC z klienta użytkownika (authenticated), nie service_role
+- REVOKE na `generate_next_order_no` złamałoby app — `order-snapshot.service.ts` (via `order-create`) wywołuje RPC z klienta użytkownika (authenticated), nie service_role
 - Pattern: `PERFORM public.require_write_role()` na początku każdej chronionej funkcji
 - `SECURITY DEFINER` + `SET search_path = public` — wymagane przy dostępie do `auth.uid()`

@@ -61,7 +61,7 @@ Dodanie mechanizmów odporności na błędy: rollback danych, offline detection 
 - `handleCreate()`: przy błędzie POST nie nawiguj, zostań w trybie tworzenia
 
 #### 3b. Backend rollback — compensating cleanup
-- **Plik:** `src/lib/services/order.service.ts`
+- **Pliki:** `src/lib/services/order-create.service.ts`, `src/lib/services/order-update.service.ts`
 - `createOrder()`: try/catch wokół INSERT stops/items/history/changelog → DELETE order (CASCADE) przy błędzie
 - `updateOrder()`: logowanie niespójności + 500 (pełny rollback = post-MVP via RPC PL/pgSQL)
 
@@ -129,7 +129,8 @@ Dodanie mechanizmów odporności na błędy: rollback danych, offline detection 
 |------|--------|
 | `src/types.ts` | +OfflineError, +DataSourceAdapter, +DataSourceType |
 | `src/lib/api-client.ts` | +offline guard, +retry z backoff (GET/PUT) |
-| `src/lib/services/order.service.ts` | +compensating DELETE w createOrder, +logging w updateOrder |
+| `src/lib/services/order-create.service.ts` | +compensating DELETE w createOrder |
+| `src/lib/services/order-update.service.ts` | +logging w updateOrder |
 | `src/components/orders/OrdersApp.tsx` | +useOnlineStatus, +OfflineBanner |
 | `src/components/orders/drawer/OrderDrawer.tsx` | +snapshot/rollback w handleSave/handleCreate |
 | `src/components/orders/OrdersPage.tsx` | +ErrorBoundary wokół OrderDrawer |

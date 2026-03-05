@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-05 (sesja 32 — naprawiono 5 HIGH: CR-01 dokończone, CR-02, NEW-03, H-03, H-04, H-06 + 77 nowych testów)
+> Ostatnia aktualizacja: 2026-03-05 (sesja 33 — H-02 DONE: rozbicie order.service.ts na 6 sub-serwisów)
 
 ---
 
@@ -11,12 +11,8 @@
 - **Pozostało:** history/status, history/changes (LOW), 5 słownikowych (POMIŃ)
 - **Pliki z testami:** `src/pages/api/v1/orders/__tests__/`, `src/pages/api/v1/orders/[orderId]/__tests__/`
 
-### H-02. `order.service.ts` — 2379 linii (god service)
-- **Źródło:** Audyt kodu
-- **Opis:** Jeden plik zawiera list, detail, create, update, duplicate, email, snapshoty, denormalizacje, change log. Trudno testowalny.
-- **Plik:** `src/lib/services/order.service.ts`
-- **Rekomendacja:** Rozbij na: `order-list`, `order-detail`, `order-create`, `order-update`, `order-snapshot`, `order-changelog` services.
-- **Uwaga:** Próba rozbicia w sesji 32 nie powiodła się (agenci w worktree bazowali na starym kodzie z vehicleVariantCode). Wymaga ręcznego wykonania lub agenta na aktualnym branchu.
+### ~~H-02. `order.service.ts` — god service~~ → DONE (sesja 33)
+- Przeniesione do sekcji "Zrobione"
 
 ### H-11. Brak CI/CD pipeline i pre-commit hooków
 - **Źródło:** Audyt testów
@@ -105,7 +101,7 @@
 - **Pliki:** companies, locations, products
 
 ### L-04. buildSnapshotsForCarrier nie pobiera address/location name
-- **Plik:** `order.service.ts:524-543`
+- **Plik:** `order-snapshot.service.ts` (funkcja `buildSnapshotsForCarrier`)
 
 ### L-10. Unsafe type casts w api-client.ts
 
@@ -173,6 +169,16 @@
 ---
 
 ## Zrobione
+
+### Sesja 33 — H-02 DONE: rozbicie order.service.ts
+- [x] H-02: Rozbicie `order.service.ts` (2400 linii) na 6 sub-serwisów + re-export hub (17 linii)
+  - `order-snapshot.service.ts` — helpery snapshotów, denormalizacja, FK walidacja, generateOrderNo
+  - `order-list.service.ts` — listOrders
+  - `order-detail.service.ts` — getOrderDetail
+  - `order-create.service.ts` — createOrder
+  - `order-update.service.ts` — updateOrder, patchStop
+  - `order-misc.service.ts` — duplicateOrder, prepareEmailForOrder, updateCarrierCellColor, updateEntryFixed
+- 782 testów PASS, 0 błędów TS, Reviewer PASS 8/8
 
 ### Sesja 32 — naprawiono 5 HIGH (CR-01 dokończone, CR-02, NEW-03, H-03, H-04, H-06)
 - [x] CR-01 (dokończenie): 43 nowe testy — stops (23), carrier-color (10), entry-fixed (10)

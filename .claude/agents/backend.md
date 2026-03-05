@@ -54,7 +54,13 @@ GET    /api/v1/dictionary-sync/jobs/:jobId        → SyncJobDto
 
 ### Services
 - `auth.service.ts` — weryfikacja JWT, ekstrakcja profilu
-- `order.service.ts` — CRUD zleceń, filtrowanie, paginacja
+- `order.service.ts` — re-export hub (fasada); logika rozbita na sub-serwisy:
+  - `order-list.service.ts` — listOrders (filtrowanie, paginacja)
+  - `order-detail.service.ts` — getOrderDetail
+  - `order-create.service.ts` — createOrder
+  - `order-update.service.ts` — updateOrder, patchStop
+  - `order-misc.service.ts` — duplicateOrder, prepareEmail, carrierColor, entryFixed
+  - `order-snapshot.service.ts` — helpery snapshotów, denormalizacja, FK walidacja
 - `order-status.service.ts` — maszyna stanów, `ALLOWED_TRANSITIONS`
 - `order-lock.service.ts` — blokady (RPC `try_lock_order`), 15 min expiry
 - `order-history.service.ts` — historia zmian, historia statusów
@@ -93,7 +99,7 @@ PUT na zleceniu ze statusem `wysłane` lub `korekta wysłane` → backend automa
 - Po migracji: `docker restart supabase_rest_Planning` lub `NOTIFY pgrst, 'reload schema'`
 
 ### Bezpieczeństwo
-- LIKE wildcard sanitization (`%`, `_`, `\`) w order.service + dictionary.service
+- LIKE wildcard sanitization (`%`, `_`, `\`) w order-list.service + dictionary.service
 - CORS default: `http://localhost:4321` (nie `*`)
 - Zod validation na wszystkich inputach
 - Stop ordering: first=LOADING, last=UNLOADING (walidacja server-side)
@@ -101,7 +107,8 @@ PUT na zleceniu ze statusem `wysłane` lub `korekta wysłane` → backend automa
 ## Kluczowe pliki do przeczytania przed pracą
 - `.ai/api-plan.md` — pełna specyfikacja API
 - `src/lib/api-helpers.ts` — auth guards, response builders
-- `src/lib/services/order.service.ts` — główna logika CRUD
+- `src/lib/services/order.service.ts` — re-export hub (importy konsumentów bez zmian)
+- `src/lib/services/order-*.service.ts` — sub-serwisy z logiką CRUD
 - `src/lib/services/order-status.service.ts` — status transitions
 - `src/lib/validators/order.validator.ts` — Zod schemas
 - `src/types.ts` — DTOs (nie edytuj, ale czytaj)

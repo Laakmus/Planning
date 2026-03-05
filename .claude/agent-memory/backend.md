@@ -1,18 +1,23 @@
 # Backend Agent — Pamięć
 
-## Sesja 32 (2026-03-05) — H-02 próba rozbicia god service (NIEUDANA)
+## Sesja 33 (2026-03-05) — H-02 rozbicie god service (WYKONANE)
 
-### Próba
-- Cel: rozbić `order.service.ts` (2379 linii) na 6 sub-serwisów + re-export hub
-- Dwa agenty backend w worktree próbowały rozbicia
-- **Obie próby zawiodły**: worktree bazowały na starszym branchu z `vehicleVariantCode` zamiast `vehicleTypeText`
-- Agenty pomijały `updateEntryFixed()` — brak w sub-serwisach
-- TypeScript errors po merge zmian do głównego brancha
+### Wykonane
+- `order.service.ts` (2400 linii) rozbity na 6 sub-serwisów + re-export hub (17 linii)
+- Sub-serwisy: `order-snapshot`, `order-list`, `order-detail`, `order-create`, `order-update`, `order-misc`
+- Re-export hub zapewnia backward compatibility — zero zmian w 15 konsumentach
+- 782 testów PASS, 0 błędów TS w sub-serwisach
+- Reviewer: PASS na 8/8 punktów checklisty
+
+### Learningi
+- Orkiestrator wykonał rozbicie ręcznie (bez worktree) — uniknięto problemów z sesji 32
+- Wcześniejsze wpisy odnoszące się do monolitycznego `order.service.ts` → logika w odpowiednich sub-serwisach
+
+## Sesja 32 (2026-03-05) — H-02 próba rozbicia god service (NIEUDANA → naprawione w sesji 33)
 
 ### Learningi — KRYTYCZNE
 - **Worktree stale code**: Agenci w worktree dostają kod z brancha bazowego, NIE z bieżącego working directory. Jeśli zmiany nie są scommitowane, agent pracuje na starym kodzie.
-- **Re-export hub pattern działa**: `order.service.ts` jako fasada + import z sub-serwisów = zero zmian w importach konsumentów. Ale wymaga aktualnego kodu.
-- **Rekomendacja**: H-02 wykonać ręcznie (orkiestrator) lub na aktualnym branchu bez worktree isolation.
+- **Rekomendacja**: Duże refaktory plikowe wykonywać ręcznie (orkiestrator) lub commitować przed uruchomieniem agentów w worktree.
 
 ## Sesja 30 (2026-03-04) — Fix bugów API (audyt 4 agentów)
 
