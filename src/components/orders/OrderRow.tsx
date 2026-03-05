@@ -191,14 +191,19 @@ export function OrderRow({
           return (
             <div className="space-y-0.5">
               {validItems.map((item, idx) => (
-                <div key={idx} className="text-[11px] whitespace-nowrap">
-                  {validItems.length > 1 ? `${idx + 1}. ` : ""}{item.productNameSnapshot}
-                  {item.quantityTons != null ? ` (${item.quantityTons}t` : ""}
-                  {item.loadingMethodCode ? `, ${item.loadingMethodCode})` : item.quantityTons != null ? ")" : ""}
+                <div key={idx} className="text-xs whitespace-nowrap">
+                  {validItems.length > 1 ? `${idx + 1}. ` : ""}
+                  <span className="font-medium">{item.productNameSnapshot}</span>
+                  {(item.quantityTons != null || item.loadingMethodCode) && (
+                    <span className="text-slate-400 dark:text-slate-500">
+                      {item.quantityTons != null ? ` (${item.quantityTons}t` : " ("}
+                      {item.loadingMethodCode ? `${item.quantityTons != null ? ", " : ""}${item.loadingMethodCode.toLowerCase()})` : ")"}
+                    </span>
+                  )}
                 </div>
               ))}
               {validItems.length > 1 && totalTons > 0 && (
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold border-t border-slate-100 dark:border-slate-700 pt-0.5 mt-0.5">
                   Razem: {totalTons}t
                 </div>
               )}

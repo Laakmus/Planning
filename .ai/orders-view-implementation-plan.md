@@ -308,12 +308,12 @@ OrdersApp (React island — korzenny komponent)
         ```
       - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Berlin")
   - **Data rozładunku** — lista dat z godzinami dla każdego punktu rozładunku (analogicznie do daty załadunku); **format: DD.MM HH:MM** (bez roku)
-  - **Towar** — pozycje numerowane z `order.items`:
+  - **Towar** — pozycje numerowane z `order.items`. Nazwa produktu **pogrubiona** (`font-medium`), tonaż i metoda ładowania w przygaszonym kolorze (`text-slate-400 dark:text-slate-500`), `loadingMethodCode` w lowercase. Wiersz "Razem" oddzielony `border-t`. Rozmiar: `text-xs` (12px, spójny z resztą tabeli):
     ```html
     <div class="space-y-0.5">
-      <div class="text-[11px] whitespace-nowrap">1. {productNameSnapshot} ({quantityTons}t, {loadingMethodCode})</div>
-      <div class="text-[11px] whitespace-nowrap">2. ...</div>
-      <div class="text-[10px] text-slate-500 font-semibold">Razem: {sumaTon}t</div>
+      <div class="text-xs whitespace-nowrap">1. <span class="font-medium">{productNameSnapshot}</span> <span class="text-slate-400">({quantityTons}t, {loadingMethodCode.toLowerCase()})</span></div>
+      <div class="text-xs whitespace-nowrap">2. ...</div>
+      <div class="text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-0.5 mt-0.5">Razem: {sumaTon}t</div>
     </div>
     ```
   - **Komentarz** — lista ponumerowana uwag z `order.items[].notes` (powiązana z pozycjami towaru); jeśli brak — puste pole; styl: `text-[11px] text-slate-500`

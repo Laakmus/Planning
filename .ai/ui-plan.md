@@ -925,12 +925,13 @@ Kolumna Firma transportowa wyświetla **tylko nazwę firmy** (bez osoby kontakto
 <td class="py-1 px-4 text-[12px]" style="background-color: #25671E; color: #fff">Mega Transport</td>
 ```
 
-### 6.6 Kolumna Towaru (ikona + badge)
+### 6.6 Kolumna Towaru
 
-Kolumna towaru zawiera:
-- Ikonę (Material Symbols: `inventory`, `view_in_ar`, `recycling` itp.) — `text-sm text-slate-400`
-- Nazwę produktu — `font-medium`
-- Badge opakowania — `text-[10px] px-1 bg-slate-100 rounded text-slate-500 uppercase`
+Kolumna towaru zawiera pozycje z `order.items` w formacie: **Nazwa** (tonaż, metoda):
+- Nazwa produktu — `font-medium` (pogrubiona)
+- Tonaż i metoda ładowania — `text-slate-400 dark:text-slate-500` (przygaszone), `loadingMethodCode` w lowercase
+- Rozmiar: `text-xs` (12px, spójny z resztą kolumn tabeli)
+- Wiersz "Razem" (dla >1 pozycji): `text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-0.5 mt-0.5`
 
 ### 6.7 Nagłówek aplikacji
 
