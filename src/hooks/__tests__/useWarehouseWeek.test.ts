@@ -338,22 +338,38 @@ describe("useWarehouseWeek", () => {
     expect(result.current.year).toBe(2025);
   });
 
-  it("nextWeek from week 52 rolls over to week 1 of next year", async () => {
-    setWindowLocation("?week=52&year=2025");
-    mockGet.mockResolvedValue(makeMockResponse(52, 2025));
+  it("nextWeek from week 53 rolls over to week 1 of next year", async () => {
+    setWindowLocation("?week=53&year=2020");
+    mockGet.mockResolvedValue(makeMockResponse(53, 2020));
 
     const { result } = renderHook(() => useWarehouseWeek());
 
     await waitFor(() => expect(result.current.isLoading).toBe(false));
 
-    mockGet.mockResolvedValue(makeMockResponse(1, 2026));
+    mockGet.mockResolvedValue(makeMockResponse(1, 2021));
 
     act(() => {
       result.current.nextWeek();
     });
 
     expect(result.current.week).toBe(1);
-    expect(result.current.year).toBe(2026);
+    expect(result.current.year).toBe(2021);
+  });
+
+  it("nextWeek from week 52 goes to 53 (not rollover)", async () => {
+    setWindowLocation("?week=52&year=2020");
+    mockGet.mockResolvedValue(makeMockResponse(52, 2020));
+
+    const { result } = renderHook(() => useWarehouseWeek());
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+    act(() => {
+      result.current.nextWeek();
+    });
+
+    expect(result.current.week).toBe(53);
+    expect(result.current.year).toBe(2020);
   });
 
   // -------------------------------------------------------------------------

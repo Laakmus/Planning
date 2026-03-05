@@ -78,7 +78,7 @@ export function useWarehouseWeek(locationId?: string) {
   }, [week]);
 
   const nextWeek = useCallback(() => {
-    if (week >= 52) { setWeek(1); setYear(y => y + 1); }
+    if (week >= 53) { setWeek(1); setYear(y => y + 1); }
     else { setWeek(w => w + 1); }
   }, [week]);
 
