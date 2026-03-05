@@ -104,6 +104,35 @@ function createEmptyDetail(): OrderDetailResponseDto {
   };
 }
 
+/**
+ * Buduje wspólne pola body zapisu (POST i PUT).
+ * Stops i items różnią się strukturą między create/update, więc nie są tu uwzględnione.
+ */
+function buildSaveBody(formData: OrderFormData) {
+  return {
+    transportTypeCode: formData.transportTypeCode,
+    currencyCode: formData.currencyCode,
+    priceAmount: formData.priceAmount,
+    paymentTermDays: formData.paymentTermDays,
+    paymentMethod: formData.paymentMethod,
+    totalLoadTons: formData.totalLoadTons,
+    totalLoadVolumeM3: formData.totalLoadVolumeM3,
+    carrierCompanyId: formData.carrierCompanyId,
+    shipperLocationId: formData.shipperLocationId ?? null,
+    receiverLocationId: formData.receiverLocationId ?? null,
+    vehicleTypeText: formData.vehicleTypeText || null,
+    vehicleCapacityVolumeM3: formData.vehicleCapacityVolumeM3,
+    specialRequirements: formData.specialRequirements,
+    requiredDocumentsText: formData.requiredDocumentsText,
+    generalNotes: formData.generalNotes,
+    notificationDetails: formData.notificationDetails,
+    confidentialityClause: formData.confidentialityClause,
+    senderContactName: formData.senderContactName,
+    senderContactPhone: formData.senderContactPhone,
+    senderContactEmail: formData.senderContactEmail?.trim() || null,
+  };
+}
+
 interface OrderDrawerProps {
   orderId: string | null;
   isOpen: boolean;
@@ -245,27 +274,9 @@ export function OrderDrawer({
       try {
         if (!orderId) {
           // ---- CREATE NEW ORDER (POST) ----
+          const body = buildSaveBody(formData);
           const result = await api.post<CreateOrderResponseDto>("/api/v1/orders", {
-            transportTypeCode: formData.transportTypeCode,
-            currencyCode: formData.currencyCode,
-            priceAmount: formData.priceAmount,
-            paymentTermDays: formData.paymentTermDays,
-            paymentMethod: formData.paymentMethod,
-            totalLoadTons: formData.totalLoadTons,
-            totalLoadVolumeM3: formData.totalLoadVolumeM3,
-            carrierCompanyId: formData.carrierCompanyId,
-            shipperLocationId: formData.shipperLocationId ?? null,
-            receiverLocationId: formData.receiverLocationId ?? null,
-            vehicleTypeText: formData.vehicleTypeText || null,
-            vehicleCapacityVolumeM3: formData.vehicleCapacityVolumeM3,
-            specialRequirements: formData.specialRequirements,
-            requiredDocumentsText: formData.requiredDocumentsText,
-            generalNotes: formData.generalNotes,
-            notificationDetails: formData.notificationDetails,
-            confidentialityClause: formData.confidentialityClause,
-            senderContactName: formData.senderContactName,
-            senderContactPhone: formData.senderContactPhone,
-            senderContactEmail: formData.senderContactEmail?.trim() || null,
+            ...body,
             stops: formData.stops
               .filter((s) => !s._deleted)
               .map((s) => ({
@@ -292,27 +303,9 @@ export function OrderDrawer({
           onClose();
         } else {
           // ---- UPDATE EXISTING ORDER (PUT) ----
+          const body = buildSaveBody(formData);
           await api.put(`/api/v1/orders/${orderId}`, {
-            transportTypeCode: formData.transportTypeCode,
-            currencyCode: formData.currencyCode,
-            priceAmount: formData.priceAmount,
-            paymentTermDays: formData.paymentTermDays,
-            paymentMethod: formData.paymentMethod,
-            totalLoadTons: formData.totalLoadTons,
-            totalLoadVolumeM3: formData.totalLoadVolumeM3,
-            carrierCompanyId: formData.carrierCompanyId,
-            shipperLocationId: formData.shipperLocationId ?? null,
-            receiverLocationId: formData.receiverLocationId ?? null,
-            vehicleTypeText: formData.vehicleTypeText || null,
-            vehicleCapacityVolumeM3: formData.vehicleCapacityVolumeM3,
-            specialRequirements: formData.specialRequirements,
-            requiredDocumentsText: formData.requiredDocumentsText,
-            generalNotes: formData.generalNotes,
-            notificationDetails: formData.notificationDetails,
-            confidentialityClause: formData.confidentialityClause,
-            senderContactName: formData.senderContactName,
-            senderContactPhone: formData.senderContactPhone,
-            senderContactEmail: formData.senderContactEmail?.trim() || null,
+            ...body,
             stops: formData.stops.map((s) => ({
               id: s.id,
               kind: s.kind,
@@ -614,7 +607,7 @@ export function OrderDrawer({
       <Sheet open={isOpen} onOpenChange={(open) => !open && handleCloseRequest()}>
         <SheetContent
           side="right"
-          className={`w-full p-0 flex flex-col ${showOrderView ? "sm:max-w-[80vw]" : "sm:max-w-[800px]"}`}
+          className={`w-full p-0 flex flex-col ${showOrderView ? "sm:max-w-[65vw]" : "sm:max-w-[800px]"}`}
           showCloseButton={false}
           onInteractOutside={(e) => {
             e.preventDefault();

@@ -67,7 +67,7 @@ export default function OrderDocument({
       const width = entries[0].contentRect.width;
       // A4 base = 595px, padding = 2*16px
       const available = width - 32;
-      const factor = Math.min(available / 595, 2);
+      const factor = Math.min(available / 595, 1.4);
       setZoomFactor(factor);
     });
     observer.observe(containerRef.current);
