@@ -32,6 +32,7 @@ import { DictionaryProvider } from "@/contexts/DictionaryContext";
 import type { ViewGroup } from "@/lib/view-models";
 
 import { AppSidebar } from "./AppSidebar";
+import OrderTabs from "./OrderTabs";
 import { OrdersPage } from "./OrdersPage";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL as string;
@@ -76,9 +77,9 @@ function OrdersAppInner() {
         <header className="shrink-0 flex h-14 items-center gap-2 border-b px-4">
           <SidebarTrigger />
           <Separator orientation="vertical" className="h-6" />
-          <h1 className="text-sm font-semibold">
-            {VIEW_LABELS[activeView]}
-          </h1>
+          <div className="flex-1 flex justify-center">
+            <OrderTabs activeView={activeView} onViewChange={setActiveView} />
+          </div>
         </header>
         <div className="flex flex-col flex-1 min-h-0 overflow-hidden">
           <OrdersPage activeView={activeView} />
