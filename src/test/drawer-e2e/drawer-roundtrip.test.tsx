@@ -682,7 +682,7 @@ describe("General field round-trip", () => {
 });
 
 describe("isDirty behavior after reopen", () => {
-  it("re-entering same carrier value keeps isDirty false", async () => {
+  it("re-entering same carrier value marks isDirty true (flag-based dirty check)", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const onOrderUpdated = vi.fn();
@@ -709,20 +709,17 @@ describe("isDirty behavior after reopen", () => {
 
     // 4. Otwórz autocomplete i wybierz TEGO SAMEGO przewoźnika
     await user.click(carrierCb);
-    // W autocomplete nazwa firmy pojawia się zarówno w triggerze jak i w liście opcji — klikamy opcję
     await waitFor(() => {
       expect(screen.getAllByText(CARRIER_COMPANY_NAME).length).toBeGreaterThanOrEqual(2);
     });
-    // Ostatni element to opcja w liście
     const matches = screen.getAllByText(CARRIER_COMPANY_NAME);
     await user.click(matches[matches.length - 1]);
 
-    // 5. Save POWINIEN POZOSTAĆ WYŁĄCZONY (te same dane = isDirty=false)
-    // To dowodzi, że dane SĄ w formData — po prostu nie wyświetlały się w UI
-    expectSaveDisabled();
+    // 5. Po refaktorze H-04 (isDirtyRef flag): każdy patch() = dirty
+    expectSaveEnabled();
   });
 
-  it("re-entering same general notes value keeps isDirty false", async () => {
+  it("re-entering same general notes value marks isDirty true (flag-based dirty check)", async () => {
     const user = userEvent.setup();
     const onClose = vi.fn();
     const onOrderUpdated = vi.fn();
@@ -748,8 +745,8 @@ describe("isDirty behavior after reopen", () => {
     await user.clear(textarea);
     await user.type(textarea, "Oryginalne uwagi");
 
-    // 5. Save powinien być wyłączony (te same dane)
-    expectSaveDisabled();
+    // 5. Po refaktorze H-04 (isDirtyRef flag): każdy patch() = dirty
+    expectSaveEnabled();
   });
 });
 

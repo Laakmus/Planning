@@ -1,5 +1,26 @@
 # Tester Agent — Pamięć
 
+## Sesja 32 (2026-03-05) — 77 nowych testów (API endpoints + middleware)
+
+### Wykonane
+- `src/pages/api/v1/orders/[orderId]/__tests__/stops.test.ts` — 23 testy PATCH stops endpoint
+  - Auth (401, 403), params (bad UUID×2), body (invalid JSON, Zod fail, empty), logic (404, READONLY, FORBIDDEN_EDIT, LOCKED, INVALID_ROUTE_ORDER), happy paths (200 dateLocal, kind, locationId), 500
+- `src/pages/api/v1/orders/[orderId]/__tests__/carrier-color.test.ts` — 10 testów PATCH carrier-color
+  - Auth (401, 403), params (400 UUID), body (invalid JSON, invalid color), logic (404), happy (set color, null), 500
+- `src/pages/api/v1/orders/[orderId]/__tests__/entry-fixed.test.ts` — 10 testów PATCH entry-fixed
+  - Auth (401, 403), params (400 UUID), body (invalid JSON, invalid value), logic (404), happy (true, false, null), 500
+- `src/__tests__/middleware.test.ts` — 34 testy middleware.ts
+  - Rate limiting (10), idempotency (8), JWT parsing (5), CORS (3), cleanup (2), integration (6)
+- `src/test/mocks/astro-middleware.ts` — mock `defineMiddleware` for `astro:middleware` virtual module
+- `vitest.config.ts` — dodano alias `astro:middleware` → mock
+
+### Learningi
+- **`astro:middleware` virtual module**: Vitest nie rozumie Astro virtual imports — wymaga aliasu w vitest.config.ts + mock file
+- **Middleware testing pattern**: `vi.resetModules()` + dynamic `import()` w `loadMiddleware()` — gwarantuje świeży stan (rate limit buckets, idempotency cache) per describe block
+- **Middleware mock setup**: Mock `import.meta.env`, `@supabase/supabase-js`, `./lib/api-helpers` PRZED importem middleware
+- **AbortController w api-client**: `signal` dodany jako 3. parametr `get()` — testy hooków mogą sprawdzać abort behavior
+- **isDirty behavioral change**: Po H-04 (formDataDirtyRef), dowolne `patch()` = dirty=true (nawet re-enter same value). Zmieniono 2 testy drawer-e2e.
+
 ## Sesja 24 (2026-03-03) — testy security + access control + ErrorBoundary
 
 ### Wykonane

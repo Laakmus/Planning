@@ -68,6 +68,8 @@ export function createApiClient(config: ApiClientConfig) {
       params?: Record<string, string | string[] | number | boolean | undefined | null>;
       /** Jeśli true, zwraca Response zamiast parsować JSON (np. dla PDF blob). */
       raw?: boolean;
+      /** Zewnętrzny AbortSignal — łączony z wewnętrznym timeout signal. */
+      signal?: AbortSignal;
     }
   ): Promise<T> {
     const url = new URL(`${baseUrl}${path}`, window.location.origin);
@@ -105,6 +107,16 @@ export function createApiClient(config: ApiClientConfig) {
     let response: Response;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30_000);
+    // Łączenie zewnętrznego signal z wewnętrznym timeout
+    const externalSignal = options?.signal;
+    if (externalSignal) {
+      if (externalSignal.aborted) {
+        clearTimeout(timeoutId);
+        controller.abort();
+      } else {
+        externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
+      }
+    }
     try {
       response = await fetch(url.toString(), {
         method,
@@ -115,6 +127,10 @@ export function createApiClient(config: ApiClientConfig) {
     } catch (err) {
       clearTimeout(timeoutId);
       if (err instanceof DOMException && err.name === "AbortError") {
+        // Rozróżnij anulowanie zewnętrzne od timeout
+        if (externalSignal?.aborted) {
+          throw err; // Propaguj AbortError bez zamiany na tekst
+        }
         throw new Error("Przekroczono limit czasu żądania (30s). Sprawdź połączenie sieciowe.");
       }
       throw new Error("Brak połączenia z serwerem. Sprawdź połączenie sieciowe.");
@@ -192,9 +208,9 @@ export function createApiClient(config: ApiClientConfig) {
   }
 
   return {
-    /** GET z opcjonalnymi parametrami zapytania. */
-    get<T>(path: string, params?: Record<string, string | string[] | number | boolean | undefined | null>): Promise<T> {
-      return request<T>("GET", path, { params });
+    /** GET z opcjonalnymi parametrami zapytania i opcjonalnym AbortSignal. */
+    get<T>(path: string, params?: Record<string, string | string[] | number | boolean | undefined | null>, signal?: AbortSignal): Promise<T> {
+      return request<T>("GET", path, { params, signal });
     },
 
     /** POST z opcjonalnym ciałem JSON. */

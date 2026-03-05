@@ -177,22 +177,24 @@ export function OrderDrawer({
   const loadDetail = useCallback(async (id: string) => {
     setIsLoading(true);
     try {
-      const data = await api.get<OrderDetailResponseDto>(`/api/v1/orders/${id}`);
+      // Pobierz detale i lockuj równolegle — oszczędza jeden round-trip
+      const shouldLock = user?.role !== "READ_ONLY";
+      const lockPromise = shouldLock
+        ? api.post(`/api/v1/orders/${id}/lock`, {}).catch(() => ({ lockFailed: true }))
+        : Promise.resolve(null);
+
+      const [data, lockResult] = await Promise.all([
+        api.get<OrderDetailResponseDto>(`/api/v1/orders/${id}`),
+        lockPromise,
+      ]);
       setDetail(data);
 
       // Sprawdź blokadę przez innego użytkownika
       if (data.order.lockedByUserId && data.order.lockedByUserId !== user?.id) {
-        // Zlecenie zajęte — nie lockujemy, otwieramy readonly
-        // Próbujemy pobrać nazwę z detali (brak wprost w DTO — user może nie być w słowniku)
         setLockedByUserName("inny użytkownik");
-      } else if (user?.role !== "READ_ONLY") {
-        // Lockujemy zlecenie
-        try {
-          await api.post(`/api/v1/orders/${id}/lock`, {});
-        } catch {
-          // Lock mógł się nie udać (409 conflict lub błąd serwera) — otwieramy readonly
-          setLockedByUserName("inny użytkownik");
-        }
+      } else if (lockResult && typeof lockResult === "object" && "lockFailed" in lockResult) {
+        // Lock nie udał się (409 conflict lub błąd serwera) — otwieramy readonly
+        setLockedByUserName("inny użytkownik");
       }
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Błąd ładowania zlecenia.");

@@ -1,48 +1,22 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-05 (sesja 31 — 233 nowych testów: ViewModels, hooki React, 7 grup endpointów API + DRY buildSaveBody)
+> Ostatnia aktualizacja: 2026-03-05 (sesja 32 — naprawiono 5 HIGH: CR-01 dokończone, CR-02, NEW-03, H-03, H-04, H-06 + 77 nowych testów)
 
 ---
 
 ## Do zrobienia — HIGH
 
-### CR-01. Brak testów endpointów API — pozostałe (8 z 24)
-- **Status:** 93 testy w 7 plikach pokrywają: orders CRUD, status, lock/unlock, duplicate, prepare-email, restore + warehouse.
-- **Pozostało:** stops/{stopId} (HIGH — logika trasy), carrier-color, entry-fixed (MEDIUM), history/status, history/changes (LOW), 5 słownikowych (POMIŃ)
+### CR-01. Brak testów endpointów API — pozostałe (3 z 24)
+- **Status:** 136 testów w 10 plikach pokrywają: orders CRUD, status, lock/unlock, duplicate, prepare-email, restore, warehouse, stops, carrier-color, entry-fixed.
+- **Pozostało:** history/status, history/changes (LOW), 5 słownikowych (POMIŃ)
 - **Pliki z testami:** `src/pages/api/v1/orders/__tests__/`, `src/pages/api/v1/orders/[orderId]/__tests__/`
-
-### CR-02. Brak testów middleware (rate limiting, idempotency, CORS)
-- **Źródło:** Audyt testów (obniżone z CRITICAL — nie blokuje rozwoju)
-- **Opis:** `middleware.ts` zawiera rate limiting, idempotency cache, JWT parsing, CORS — zero testów.
-- **Plik:** `src/middleware.ts`
-
-### NEW-03. Brak testów `PATCH /orders/{id}/stops/{stopId}`
-- **Źródło:** Audyt sesja 31
-- **Opis:** Endpoint ma logikę walidacji kolejności trasy (LOADING pierwsza, UNLOADING ostatnia) + 5 ścieżek błędów (READONLY, FORBIDDEN_EDIT, LOCKED, INVALID_ROUTE_ORDER). Bez testów ryzyko regresji.
-- **Plik:** `src/pages/api/v1/orders/[orderId]/stops/[stopId].ts`
 
 ### H-02. `order.service.ts` — 2379 linii (god service)
 - **Źródło:** Audyt kodu
 - **Opis:** Jeden plik zawiera list, detail, create, update, duplicate, email, snapshoty, denormalizacje, change log. Trudno testowalny.
 - **Plik:** `src/lib/services/order.service.ts`
 - **Rekomendacja:** Rozbij na: `order-list`, `order-detail`, `order-create`, `order-update`, `order-snapshot`, `order-changelog` services.
-
-### H-03. 7x `(row as any)` w order.service.ts
-- **Źródło:** Audyt kodu
-- **Opis:** Joiny Supabase (created_by, sent_by, locked_by) dostępne w runtime ale nie w typach TS → `as any`. Ukrywa potencjalne błędy.
-- **Plik:** `src/lib/services/order.service.ts:469-475, 836`
-- **Rekomendacja:** Rozszerz `Database` types o custom RPC functions + `type DetailRowWithJoins`.
-
-### H-04. `JSON.stringify` do dirty checking
-- **Źródło:** Audyt kodu
-- **Opis:** `JSON.stringify(fd) !== JSON.stringify(originalRef.current)` — O(n) na każdym keystroke, niestabilny porządek kluczy.
-- **Plik:** `src/components/orders/drawer/OrderForm.tsx:158`
-- **Rekomendacja:** Flaga `isDirty = true` przy każdym `patch()` lub shallow compare.
-
-### H-06. Fetch requests bez AbortController w hookach
-- **Źródło:** Audyt kodu
-- **Opis:** `useOrders` i `useOrderHistory` używają `staleRef` do ignorowania starych zapytań, ale HTTP requests lecą nadal. Brak AbortController.
-- **Pliki:** `src/hooks/useOrders.ts`, `src/hooks/useOrderHistory.ts`
+- **Uwaga:** Próba rozbicia w sesji 32 nie powiodła się (agenci w worktree bazowali na starym kodzie z vehicleVariantCode). Wymaga ręcznego wykonania lub agenta na aktualnym branchu.
 
 ### H-11. Brak CI/CD pipeline i pre-commit hooków
 - **Źródło:** Audyt testów
@@ -100,9 +74,7 @@
   - **api-plan.md**: brak `locationId` w warehouse; brak `carrierCellColor`/`isEntryFixed`/`mainProductName` w sekcji 2.2; `weekEnd` niedziela vs piątek; brak `kind` w PATCH stop
 - **Rekomendacja:** Jednorazowa sesja aktualizacji 5 plików docs.
 
-### NEW-04. Brak testów `PATCH carrier-color` i `PATCH entry-fixed` endpoints
-- **Opis:** Identyczna struktura co pokryte endpointy — kopiowanie wzorca. Wchodzi w zakres CR-01.
-- **Pliki:** `src/pages/api/v1/orders/[orderId]/carrier-color.ts`, `entry-fixed.ts`
+### ~~NEW-04.~~ (DONE — sesja 32, wchłonięte do CR-01)
 
 ### NEW-05. `makeContext()` zduplikowany w 7 plikach testowych API
 - **Opis:** Każdy plik testowy endpointów definiuje własny `makeContext()` (~30 linii boilerplate). Wydzielić do `src/test/helpers/api-context.ts`.
@@ -201,6 +173,19 @@
 ---
 
 ## Zrobione
+
+### Sesja 32 — naprawiono 5 HIGH (CR-01 dokończone, CR-02, NEW-03, H-03, H-04, H-06)
+- [x] CR-01 (dokończenie): 43 nowe testy — stops (23), carrier-color (10), entry-fixed (10)
+- [x] CR-02: 34 testy middleware — rate limiting (10), idempotency (8), JWT (5), CORS (3), cleanup (2), integration (6)
+- [x] NEW-03: Pokryte przez CR-01 (stops.test.ts — 23 testy)
+- [x] NEW-04: Pokryte przez CR-01 (carrier-color + entry-fixed — 20 testów)
+- [x] H-03: `DetailRowWithJoins` type — usunięto 4x `(row as any)` w order.service.ts
+- [x] H-04: `formDataDirtyRef` flag zamiast `JSON.stringify` compare w OrderForm.tsx
+- [x] H-06: AbortController w useOrders.ts + useOrderHistory.ts + signal support w api-client.ts
+- [x] H-02 (próba): Agent-based split nie powiódł się (stale worktree) — odroczone
+- [x] Nowy mock: `src/test/mocks/astro-middleware.ts` + alias w vitest.config.ts
+- [x] Fix: 2 testy drawer-e2e zaktualizowane (isDirty behavioral change)
+- [x] Wynik: 782/782 testów (40 plików), 0 błędów TypeScript
 
 ### Sesja 31 — 233 nowych testów + DRY buildSaveBody + fix bug week 53
 - [x] NEW-01: 63 testy mapperów OrderView — roundtrip, null handling, carrier resolve

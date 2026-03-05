@@ -139,39 +139,36 @@ export function OrderForm({
   const [pendingStatusCode, setPendingStatusCode] = useState<OrderStatusCode | null>(null);
   const [complaintReason, setComplaintReason] = useState<string | null>(order.complaintReason);
 
-  // Śledź isDirty przez porównanie z oryginalnym snapshoten
-  const originalRef = useRef(buildInitialForm(order, stops, items));
+  // Flaga isDirty — ustawiana przy każdym patch(), resetowana przy zmianie zlecenia
+  const formDataDirtyRef = useRef(false);
   const originalComplaintReasonRef = useRef<string | null>(order.complaintReason);
   const [isDirty, setIsDirty] = useState(false);
 
   // Przebuduj formularz gdy order/stops/items się zmienią (np. po przeładowaniu detali)
   useEffect(() => {
     const initial = buildInitialForm(order, stops, items);
-    originalRef.current = initial;
     originalComplaintReasonRef.current = order.complaintReason;
     setFormData(initial);
     setPendingStatusCode(null);
     setComplaintReason(order.complaintReason);
+    formDataDirtyRef.current = false;
     setIsDirty(false);
   }, [order.id, order.updatedAt]); // reset przy zmianie zlecenia LUB po aktualizacji danych
 
   /** Sprawdza czy formularz ma niezapisane zmiany */
   function computeDirty(
-    fd: OrderFormData,
+    formDataChanged: boolean,
     status: OrderStatusCode | null,
     cr: string | null,
   ): boolean {
-    return (
-      JSON.stringify(fd) !== JSON.stringify(originalRef.current)
-      || status !== null
-      || cr !== originalComplaintReasonRef.current
-    );
+    return formDataChanged || status !== null || cr !== originalComplaintReasonRef.current;
   }
 
   function patch(update: Partial<OrderFormData>) {
     setFormData((prev) => {
       const next = { ...prev, ...update };
-      const dirty = computeDirty(next, pendingStatusCode, complaintReason);
+      formDataDirtyRef.current = true;
+      const dirty = computeDirty(true, pendingStatusCode, complaintReason);
       setIsDirty(dirty);
       onDirtyChange(dirty);
       return next;
@@ -313,13 +310,13 @@ export function OrderForm({
                 isReadOnly={isReadOnly}
                 onStatusChange={(code) => {
                   setPendingStatusCode(code);
-                  const dirty = computeDirty(formData, code, complaintReason);
+                  const dirty = computeDirty(formDataDirtyRef.current, code, complaintReason);
                   setIsDirty(dirty);
                   onDirtyChange(dirty);
                 }}
                 onComplaintReasonChange={(reason) => {
                   setComplaintReason(reason);
-                  const dirty = computeDirty(formData, pendingStatusCode, reason);
+                  const dirty = computeDirty(formDataDirtyRef.current, pendingStatusCode, reason);
                   setIsDirty(dirty);
                   onDirtyChange(dirty);
                 }}

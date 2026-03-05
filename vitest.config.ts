@@ -12,6 +12,7 @@ export default defineConfig({
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
+      "astro:middleware": path.resolve(__dirname, "./src/test/mocks/astro-middleware.ts"),
     },
   },
 });

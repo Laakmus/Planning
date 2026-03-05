@@ -20,6 +20,7 @@ export interface UseOrdersResult {
 /**
  * Pobiera stronę listy zleceń zgodnie z podanymi filtrami.
  * Automatycznie przelicza `weekNumber` na `dateFrom`/`dateTo` przed wysłaniem zapytania.
+ * Anuluje poprzednie żądanie HTTP przy zmianie zależności (AbortController).
  *
  * @param filters - bieżące filtry listy (widok, sortowanie, strona, itp.)
  * @param page - bieżący numer strony (1-based)
@@ -29,11 +30,14 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
   const [data, setData] = useState<OrderListResponseDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Flaga "przestarzałe" — zapobiega ustawianiu stanu po odmontowaniu lub zmianie zależności
-  const staleRef = useRef(false);
+  const controllerRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async () => {
-    staleRef.current = false;
+    // Anuluj poprzednie żądanie
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
     setIsLoading(true);
     setError(null);
 
@@ -62,33 +66,28 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
         params.dateFrom = range.dateFrom;
         params.dateTo = range.dateTo;
       }
-      // Ignoruj dateFrom/dateTo z filtrów gdy ustawiony weekNumber
     } else {
       params.dateFrom = filters.dateFrom;
       params.dateTo = filters.dateTo;
     }
 
     try {
-      const result = await api.get<OrderListResponseDto>("/api/v1/orders", params);
-      if (!staleRef.current) {
-        setData(result);
-      }
+      const result = await api.get<OrderListResponseDto>("/api/v1/orders", params, controller.signal);
+      setData(result);
     } catch (err) {
-      if (!staleRef.current) {
-        setError(err instanceof Error ? err.message : "Błąd pobierania listy zleceń.");
-      }
+      if (controller.signal.aborted) return; // Anulowane — ignoruj
+      setError(err instanceof Error ? err.message : "Błąd pobierania listy zleceń.");
     } finally {
-      if (!staleRef.current) {
+      if (!controller.signal.aborted) {
         setIsLoading(false);
       }
     }
   }, [api, filters, page]);
 
   useEffect(() => {
-    staleRef.current = false;
     fetchData();
     return () => {
-      staleRef.current = true;
+      controllerRef.current?.abort();
     };
   }, [fetchData]);
 

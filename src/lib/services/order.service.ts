@@ -388,6 +388,15 @@ type TransportOrderRowExtended = Database["public"]["Tables"]["transport_orders"
   confidentiality_clause?: string | null;
 };
 
+/** Wiersz transport_orders z JOINami z getOrderDetail() */
+type DetailRowWithJoins = TransportOrderRowExtended & {
+  order_statuses: { name: string } | null;
+  sent_by: { full_name: string | null } | null;
+  created_by: { full_name: string | null } | null;
+  updated_by: { full_name: string | null } | null;
+  locked_by: { full_name: string | null } | null;
+};
+
 /**
  * Pobiera pełne dane zlecenia (nagłówek + punkty trasy + pozycje).
  * Zwraca null, gdy zlecenie nie istnieje.
@@ -416,7 +425,7 @@ export async function getOrderDetail(
   if (orderError) throw orderError;
   if (!orderRow) return null;
 
-  const row = orderRow as TransportOrderRowExtended;
+  const row = orderRow as DetailRowWithJoins;
 
   const order: OrderDetailResponseDto["order"] = {
     id: row.id,
@@ -470,13 +479,13 @@ export async function getOrderDetail(
     lockedByUserId: row.locked_by_user_id,
     lockedAt: row.locked_at,
     // Pola z JOINów (api-plan §2.3)
-    statusName: (row as any).order_statuses?.name ?? row.status_code,
+    statusName: row.order_statuses?.name ?? row.status_code,
     weekNumber: row.week_number ?? null,
     sentAt: row.sent_at ?? null,
-    sentByUserName: (row as any).sent_by?.full_name ?? null,
-    createdByUserName: (row as any).created_by?.full_name ?? null,
-    updatedByUserName: (row as any).updated_by?.full_name ?? null,
-    lockedByUserName: (row as any).locked_by?.full_name ?? null,
+    sentByUserName: row.sent_by?.full_name ?? null,
+    createdByUserName: row.created_by?.full_name ?? null,
+    updatedByUserName: row.updated_by?.full_name ?? null,
+    lockedByUserName: row.locked_by?.full_name ?? null,
   };
 
   const { data: stopsRows } = await supabase
