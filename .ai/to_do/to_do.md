@@ -1,77 +1,29 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-04 (sesja 29 — Redesign wizualny widoku magazynowego + selektor oddziałów)
-
----
-
-## W trakcie — Widok magazynowy
-
-### WM-01. ~~Faza 1: Aktualizacja specyfikacji~~ — DONE (sesja 26)
-- Zaktualizowano `.ai/widok-magazyn-specyfikacja.md` o wszystkie 10 decyzji użytkownika i 15 rozwiązań problemów
-- Dodano sekcję 3.2 w PRD (`prd.md`) z pełnym opisem widoku magazynowego
-- Dodano user stories US-090..US-093 w sekcji 5.9 PRD
-- Dodano widok magazynowy do zakresu MVP (sekcja 4.1)
-
-### WM-02. ~~Faza 2: Migracja DB~~ — DONE (sesja 26)
-- `supabase/migrations/20260303200000_warehouse_view_fields.sql`
-- `user_profiles.location_id` (FK → locations)
-- Dane awizacji z pola `notification_details` (textarea, nie 5 osobnych kolumn)
-- Indeks `idx_order_stops_location_date` na `order_stops(location_id, date_local)`
-
-### WM-03. ~~Faza 3: Types + API~~ — DONE (sesja 26, poprawione sesja 28)
-- `src/types.ts`: locationId w AuthMeDto, nowe warehouse DTOs (4 interfejsy, notificationDetails zamiast 5 osobnych pól)
-- `src/lib/validators/order.validator.ts`: warehouseQuerySchema
-- `src/lib/services/auth.service.ts`: select location_id, map do locationId
-- `src/lib/services/warehouse.service.ts` (nowy): getWarehouseWeekOrders + getCurrentISOWeek
-- `src/pages/api/v1/warehouse/orders.ts` (nowy): GET endpoint
-- **Sesja 28 — poprawki:** Usunięto 5 osobnych pól awizacji (driverName/Phone, truckPlate, trailerPlate, bdoNumber) z 13 plików — dane awizacji z `notificationDetails` (textarea w Sekcji 3). Usunięto DispatchSection.tsx (Sekcja 7). DispatchInfoCell.tsx przepisany na notificationDetails.
-
-### WM-04. ~~Faza 4: Frontend warehouse~~ — DONE (sesja 26)
-- `src/pages/warehouse.astro` (nowy)
-- `src/hooks/useWarehouseWeek.ts` (nowy)
-- `src/components/warehouse/` (11 nowych plików): WarehouseApp, WeekNavigation, DayCard, OperationsTable, OperationRow, OperationTypeBadge, CargoCell, DispatchInfoCell, WeekSummaryFooter, EmptyDayMessage, NoDateSection
-- `src/components/orders/AppSidebar.tsx`: nawigacja "Magazyn" z ikoną Warehouse
-- Badge kolory: Zał=niebieski (blue), Roz=zielony (emerald) — odwrotnie niż w widoku planisty
-
-### WM-05. ~~Faza 5: Testy~~ — DONE (sesja 27)
-- `src/lib/services/__tests__/warehouse.service.test.ts` — 6 testów getCurrentISOWeek (typowe daty, granice lat, tydzień ISO przechodzący na nowy rok)
-- `src/lib/validators/__tests__/warehouse.validator.test.ts` — 10 testów warehouseQuerySchema (valid, coerce, invalid, missing fields)
-- Wynik: 388/388 testów, 0 failures
-
-### WM-06. ~~Faza 6: Aktualizacja dokumentacji~~ — DONE (sesja 27)
-- `api-plan.md`: dodano locationId w AuthMeDto (sekcja 2.1), 5 pól dispatch w sekcjach 2.3/2.4/2.5, nowa sekcja 2.16 (GET /api/v1/warehouse/orders)
-- `db-plan.md`: dodano location_id w user_profiles (sekcja 1.12), 5 pól awizacji + vehicle_type_text + vehicle_capacity_volume_m3 w transport_orders (sekcja 1.1), relacja 13 user_profiles→locations, indeks idx_order_stops_location_date (sekcja 3.2)
-- `ui-plan.md`: nowa sekcja 2.6 — widok magazynowy (layout, kolumny, komponenty, hook, druk, DispatchSection)
-
----
-
-## Do zrobienia — CRITICAL
-
-### CR-01. Brak testów endpointów API (22 z 24 bez testów)
-- **Źródło:** Audyt testów
-- **Opis:** Tylko `/auth/me` ma testy. Brak testów dla: orders CRUD, status transitions, lock/unlock, duplicate, prepare-email, history, dictionary endpoints. Handlery zawierają logikę auth guard, walidację UUID, obsługę błędów 403/404/422.
-- **Pliki:** `src/pages/api/v1/**/*.ts`
-
-### CR-02. Brak testów middleware (rate limiting, idempotency, CORS)
-- **Źródło:** Audyt testów
-- **Opis:** `middleware.ts` zawiera rate limiting, idempotency cache, JWT parsing, CORS — zero testów. Scenariusze: rate limit po 100/1000 req/min, cache eviction, OPTIONS preflight, CORS headers.
-- **Plik:** `src/middleware.ts`
-
-### ~~CR-03. Brak testów access control (role-based)~~ — CZĘŚCIOWO DONE (sesja 24)
-- **Źródło:** Audyt testów
-- **Opis:** `requireWriteAccess` i `requireAdmin` nie mają ani jednego testu weryfikującego: READ_ONLY → 403, PLANNER → 403 na admin-only, brak tokenu → 401.
-- **Plik:** `src/lib/api-helpers.ts`
-- **Status:** 8 testów dodanych w `src/lib/__tests__/access-control.test.ts` (ADMIN ok, PLANNER ok/403, READ_ONLY 403, Content-Type, brak details). Brak tokenu → 401 wymaga testów endpointów (CR-01).
-
-### CR-04. `search_vector` tsvector nigdy nie jest populowany
-- **Źródło:** Audyt architektury
-- **Opis:** Kolumna `search_vector` z indeksem GIN istnieje w DB, ale żaden trigger ani kod aplikacji jej nie wypełnia. Aplikacja używa `search_text` z `ILIKE` (O(n)). Indeks GIN jest zmarnowany.
-- **Plik:** `supabase/migrations/...consolidated_schema.sql:442`
-- **Rekomendacja:** Dodaj trigger DB lub usuń nieużywaną kolumnę/indeks.
+> Ostatnia aktualizacja: 2026-03-05 (sesja 31 — 233 nowych testów: ViewModels, hooki React, 7 grup endpointów API + DRY buildSaveBody)
 
 ---
 
 ## Do zrobienia — HIGH
+
+### CR-01. ~~Brak testów endpointów API (22 z 24 bez testów)~~ — CZĘŚCIOWO DONE (sesja 31)
+- **Status:** 93 testy w 7 plikach pokrywają: orders CRUD (GET/POST/PUT/DELETE), status, lock/unlock, duplicate, prepare-email, restore + warehouse.
+- **Pozostało (8 z 24):** stops/{stopId} (HIGH — logika trasy), carrier-color, entry-fixed (MEDIUM), history/status, history/changes (LOW), 5 słownikowych (POMIŃ)
+- **Pliki z testami:** `src/pages/api/v1/orders/__tests__/`, `src/pages/api/v1/orders/[orderId]/__tests__/`
+
+### CR-02. Brak testów middleware (rate limiting, idempotency, CORS)
+- **Źródło:** Audyt testów (obniżone z CRITICAL — nie blokuje rozwoju)
+- **Opis:** `middleware.ts` zawiera rate limiting, idempotency cache, JWT parsing, CORS — zero testów. Scenariusze: rate limit po 100/1000 req/min, cache eviction, OPTIONS preflight, CORS headers.
+- **Plik:** `src/middleware.ts`
+
+### ~~CR-03. Brak testów access control (role-based)~~ — DONE (sesja 24, zamknięte sesja 30)
+- **Status:** 8 testów w `src/lib/__tests__/access-control.test.ts`. Reszta (401 bez tokenu) wchodzi w zakres CR-01.
+
+### ~~NEW-01. Testy mapperów OrderView~~ — DONE (sesja 31)
+- 63 testy w `src/components/orders/order-view/__tests__/types.test.ts`
+
+### ~~NEW-02. Testy endpoint `warehouse/orders.ts`~~ — DONE (sesja 31)
+- 20 testów w `src/pages/api/v1/warehouse/__tests__/orders.test.ts`
 
 ### ~~H-NEW-01. Implementacja OrderView (podgląd A4 z edycją inline)~~ — DONE (sesja 23)
 - Zrealizowane: migracja DB, 8 nowych plików w order-view/, integracja z drawerem, PreviewUnsavedDialog.
@@ -103,11 +55,8 @@
 - **Plik:** `src/components/orders/drawer/OrderForm.tsx:158`
 - **Rekomendacja:** Flaga `isDirty = true` przy każdym `patch()` lub shallow compare.
 
-### H-05. Zduplikowane ciało save w OrderDrawer (POST vs PUT)
-- **Źródło:** Audyt kodu
-- **Opis:** ~30 linii zduplikowanych pól w `handleSave` (create vs update). Zmiana pola wymaga edycji w 2 miejscach.
-- **Plik:** `src/components/orders/drawer/OrderDrawer.tsx:230-314`
-- **Rekomendacja:** Wydziel `buildSaveBody(formData, isNew)`.
+### ~~H-05. Zduplikowane ciało save w OrderDrawer (POST vs PUT)~~ — DONE (sesja 31)
+- Wydzielono `buildSaveBody(formData)` w `OrderDrawer.tsx` — 20 pól, jedna funkcja zamiast 2x duplikacji.
 
 ### H-06. Fetch requests bez AbortController w hookach
 - **Źródło:** Audyt kodu
@@ -125,15 +74,16 @@
   - `generate_next_order_no` — guard roli
   - errcode `42501` → PostgREST HTTP 403
 
-### H-09. Brak testów hooków React
-- **Źródło:** Audyt testów
-- **Opis:** Żaden z 4 hooków (`useOrders`, `useOrderDetail`, `useOrderHistory`, `useDictionarySync`) nie ma testu. Zawierają logikę auto-lock, unlock, polling, error handling.
-- **Pliki:** `src/hooks/`
+### ~~H-09. Brak testów hooków React~~ — DONE (sesja 31)
+- 87 testów w 5 plikach: `src/hooks/__tests__/` (useOrders 19, useOrderDetail 13, useOrderHistory 15, useDictionarySync 18, useWarehouseWeek 22)
 
-### H-10. Brak testów ViewModels (`view-models.ts`)
-- **Źródło:** Audyt testów
-- **Opis:** ViewModels transformują DTO → dane wyświetlane. Błąd mappingu jest cichy. Zero testów.
-- **Plik:** `src/lib/view-models.ts`
+### ~~H-10. Brak testów ViewModels (`view-models.ts`)~~ — DONE (sesja 31)
+- 53 testy w `src/lib/__tests__/view-models.test.ts` (matryca przejść statusów, domyślne filtry, typy unii, spójność danych)
+
+### NEW-03. Brak testów `PATCH /orders/{id}/stops/{stopId}`
+- **Źródło:** Audyt sesja 31
+- **Opis:** Endpoint ma logikę walidacji kolejności trasy (LOADING pierwsza, UNLOADING ostatnia) + 5 ścieżek błędów (READONLY, FORBIDDEN_EDIT, LOCKED, INVALID_ROUTE_ORDER). Bez testów ryzyko regresji przy zmianach w routingu stopów.
+- **Plik:** `src/pages/api/v1/orders/[orderId]/stops/[stopId].ts`
 
 ### H-11. Brak CI/CD pipeline i pre-commit hooków
 - **Źródło:** Audyt testów
@@ -203,6 +153,25 @@
 ### ~~M-13. `entry-fixed.ts` endpoint nieudokumentowany~~ — DONE (sesja 22)
 - Naprawione: Dodano sekcję `2.10b` w `api-plan.md` dokumentującą `PATCH /orders/{orderId}/entry-fixed`.
 
+### M-NEW-01. Rozbieżności dokumentacji wykryte w audycie sesji 30 (18 pozycji)
+- **Źródło:** Audyt docs↔kod (sesja 30, 4 agenty)
+- **Opis:** 10 brakujących + 8 nieaktualnych informacji w docs:
+  - **db-plan.md**: brak `is_entry_fixed`, `confidentiality_clause`; stary FK `vehicle_variant_code`
+  - **prd.md §3.2.1**: mówi "brak selektora oddziałów" (jest BranchSelector); brak `locationId` w API
+  - **ui-plan.md**: stary opis vehicleVariantCode w drawerze; brak BranchSelector/OperationLegend; AppHeader nie deprecated; brak `/warehouse` w mapowaniu tras
+  - **widok-magazyn-specyfikacja.md**: "5 kolumn awizacji" i "Sekcja 7" w dwóch miejscach
+  - **api-plan.md**: brak `locationId` w warehouse; brak `carrierCellColor`/`isEntryFixed`/`mainProductName` w sekcji 2.2; `weekEnd` niedziela vs piątek; brak `kind` w PATCH stop
+- **Rekomendacja:** Jednorazowa sesja aktualizacji 5 plików docs.
+
+### NEW-04. Brak testów `PATCH carrier-color` i `PATCH entry-fixed` endpoints
+- **Źródło:** Audyt sesja 31
+- **Opis:** Identyczna struktura co pokryte endpointy — kopiowanie wzorca. Wchodzi w zakres CR-01.
+- **Pliki:** `src/pages/api/v1/orders/[orderId]/carrier-color.ts`, `entry-fixed.ts`
+
+### NEW-05. `makeContext()` zduplikowany w 7 plikach testowych API
+- **Źródło:** Audyt sesja 31
+- **Opis:** Każdy plik testowy endpointów definiuje własny `makeContext()` (~30 linii boilerplate). Wydzielić do `src/test/helpers/api-context.ts`.
+
 ### M-14. Brak health check endpoint
 - **Źródło:** Audyt architektury
 - **Rekomendacja:** Dodaj `GET /api/v1/health` sprawdzający DB connectivity.
@@ -219,6 +188,12 @@
 ---
 
 ## Do zrobienia — LOW
+
+### CR-04. `search_vector` tsvector nigdy nie jest populowany
+- **Źródło:** Audyt architektury (obniżone z CRITICAL — indeks GIN kosztuje ~0, aplikacja używa ILIKE)
+- **Opis:** Kolumna `search_vector` z indeksem GIN istnieje w DB, ale żaden trigger ani kod aplikacji jej nie wypełnia.
+- **Plik:** `supabase/migrations/...consolidated_schema.sql:442`
+- **Rekomendacja:** Dodaj trigger DB lub usuń nieużywaną kolumnę/indeks.
 
 ### L-01. Lock możliwy na anulowanych/zrealizowanych
 - **Plik:** `order-lock.service.ts`
@@ -289,12 +264,10 @@
 
 ---
 
-## Do weryfikacji
+## ~~Do weryfikacji~~ — DONE
 
-### V-01. L-16: listOrders 5 filtrów — prawdopodobnie ZROBIONE
-- **Źródło:** Audyt architektury (H-04)
-- **Opis:** Arch-analyst znalazł, że filtry `productId`, `loadingLocationId`, `loadingCompanyId`, `unloadingLocationId`, `unloadingCompanyId` SĄ zaimplementowane (sub-queries na liniach 162-258 w `order.service.ts`). Komentarz na liniach 118-119 jest prawdopodobnie stary.
-- **Akcja:** Zweryfikuj ręcznie i przenieś do "Zrobione" jeśli potwierdzone.
+### ~~V-01. L-16: listOrders 5 filtrów~~ — POTWIERDZONE DONE (sesja 30)
+- Filtry SĄ zaimplementowane (sub-queries na liniach 162-258 w `order.service.ts`). Komentarz na liniach 118-119 jest przestarzały — do usunięcia.
 
 ---
 
@@ -443,6 +416,39 @@
 - [x] Aktualizacja to_do.md
 - [x] Wynik: 372/372 testów, 0 nowych błędów TypeScript, build OK
 - [x] AppHeader.tsx i OrderTabs.tsx zachowane jako dead code (decyzja użytkownika)
+
+### Sesja 31 — 233 nowych testów + DRY buildSaveBody
+- [x] NEW-01: 63 testy mapperów OrderView — roundtrip, null handling, carrier resolve
+- [x] NEW-02: 20 testów warehouse endpoint — auth, locationId, walidacja
+- [x] H-05: DRY `buildSaveBody(formData)` w OrderDrawer.tsx
+- [x] H-10: 53 testy ViewModels — matryca przejść, domyślne filtry, typy unii, spójność
+- [x] H-09: 87 testów hooków React — useOrders (19), useOrderDetail (13), useOrderHistory (15), useDictionarySync (18), useWarehouseWeek (22)
+- [x] CR-01 (częściowo): 93 testy endpointów API — orders CRUD, status, lock/unlock, duplicate, prepare-email, restore
+- [x] Audyt: code reviewer + thought partner — zidentyfikowano NEW-03..05
+- [x] Wynik: 704/704 testów (36 plików), 0 błędów TypeScript
+
+### Sesja 30 — Audyt API (4 agenty) + fix bugów
+- [x] Audyt API: 4 równoległe agenty (audyt endpointów, kontrakt frontend↔API, spójność docs, przegląd TODO)
+- [x] Fix Bug A+B: `notificationDetails`/`confidentialityClause` `.optional()` → `.default(null)` w `order.validator.ts`
+- [x] Fix Bug C: Dodanie pól do `TransportOrderRowExtended` w `order.service.ts`
+- [x] Fix Bug D: Usunięcie `(row as any)` castów w `getOrderDetail`
+- [x] Fix Bug E: Usunięcie `(params as any)` castów w `createOrder`, `updateOrder`, `businessFieldMap`
+- [x] Fix Bug F: Usunięcie `(detail.order as any)` + fix `notification_details: null` → kopiowanie w `duplicateOrder`
+- [x] Fix: Dodanie `confidentiality_clause` do SELECT/type assertion w `updateOrder`
+- [x] Fix: Dodanie pól do `fixtures.ts` (`makeCreateOrderParams`)
+- [x] Aktualizacja TODO: przeniesienie WM-xx do Zrobione, obniżenie CR-01/02→HIGH, CR-04→LOW, zamknięcie V-01 i CR-03
+- [x] Weryfikacja: agent tester (388/388 PASS) + agent reviewer (APPROVED po fix duplicateOrder)
+- [x] Wynik: 388/388 testów, 0 błędów TypeScript
+
+### Sesje 26-29 — Widok magazynowy (WM-01..WM-08) — wszystkie DONE
+- [x] WM-01: Aktualizacja specyfikacji (sesja 26)
+- [x] WM-02: Migracja DB — location_id, notification_details, indeks (sesja 26)
+- [x] WM-03: Types + API — warehouse DTOs, warehouseQuerySchema, warehouse.service (sesja 26, poprawki sesja 28)
+- [x] WM-04: Frontend — 13 komponentów warehouse, nawigacja w sidebarze (sesja 26)
+- [x] WM-05: Testy — 16 testów warehouse (sesja 27)
+- [x] WM-06: Aktualizacja dokumentacji (sesja 27)
+- [x] WM-07: BranchSelector + locationId w API (sesja 29)
+- [x] WM-08: Redesign wizualny — 18 punktów (sesja 29)
 
 ### Sesja 29 — Redesign wizualny widoku magazynowego + selektor oddziałów
 - [x] WM-07a: Backend — opcjonalny query param `locationId` w endpoint `warehouse/orders.ts`

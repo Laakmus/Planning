@@ -121,6 +121,8 @@ export function makeCreateOrderParams(overrides?: Record<string, unknown>) {
     specialRequirements: null,
     requiredDocumentsText: null,
     generalNotes: null,
+    notificationDetails: null,
+    confidentialityClause: null,
     senderContactName: null,
     senderContactPhone: null,
     senderContactEmail: null,

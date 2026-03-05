@@ -1,5 +1,22 @@
 # Backend Agent — Pamięć
 
+## Sesja 30 (2026-03-04) — Fix bugów API (audyt 4 agentów)
+
+### Naprawione bugi w `order.service.ts`
+- Dodano `notification_details` i `confidentiality_clause` do `TransportOrderRowExtended` — eliminuje `(row as any)` casty
+- Usunięto 5x `as any` castów: `getOrderDetail`, `createOrder`, `updateOrder`, `duplicateOrder`, `businessFieldMap`
+- Fix `duplicateOrder`: `notification_details: null` → `detail.order.notificationDetails ?? null` (kopiowanie z oryginału)
+- Dodano `confidentiality_clause` do `.select()` i inline type w `updateOrder`
+
+### Naprawione bugi w `order.validator.ts`
+- `notificationDetails` i `confidentialityClause`: `.nullable().optional()` → `.nullable().default(null)`
+- Eliminuje bug: gdy frontend nie wysyła pola, Zod zwraca `null` zamiast `undefined` → poprawne INSERT/UPDATE
+
+### Wzorce — LEKCJE
+- Po dodaniu kolumn do DB migracji, ZAWSZE dodaj je też do `TransportOrderRowExtended` — unikaj `(row as any)`
+- Nowe pola w walidatorze: użyj `.nullable().default(null)` zamiast `.nullable().optional()` jeśli pole ma być zawsze obecne w wyniku parse
+- `businessFieldMap` wymaga `keyof UpdateOrderParams` — upewnij się że nowe pola są w typie Zod
+
 ## Sesja 25 (2026-03-03) — Widok magazynowy (warehouse)
 
 ### Nowe pliki

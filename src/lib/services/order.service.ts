@@ -384,6 +384,8 @@ type TransportOrderRowExtended = Database["public"]["Tables"]["transport_orders"
   week_number?: number | null;
   sent_at?: string | null;
   sent_by_user_id?: string | null;
+  notification_details?: string | null;
+  confidentiality_clause?: string | null;
 };
 
 /**
@@ -455,8 +457,8 @@ export async function getOrderDetail(
     specialRequirements: row.special_requirements ?? null,
     requiredDocumentsText: row.required_documents_text,
     generalNotes: row.general_notes,
-    notificationDetails: (row as any).notification_details ?? null,
-    confidentialityClause: (row as any).confidentiality_clause ?? null,
+    notificationDetails: row.notification_details ?? null,
+    confidentialityClause: row.confidentiality_clause ?? null,
     complaintReason: row.complaint_reason,
     senderContactName: row.sender_contact_name,
     senderContactPhone: row.sender_contact_phone,
@@ -907,8 +909,8 @@ export async function duplicateOrder(
     special_requirements: detail.order.specialRequirements ?? null,
     required_documents_text: detail.order.requiredDocumentsText ?? null,
     general_notes: detail.order.generalNotes ?? null,
-    notification_details: null,
-    confidentiality_clause: (detail.order as any).confidentialityClause ?? null,
+    notification_details: detail.order.notificationDetails ?? null,
+    confidentiality_clause: detail.order.confidentialityClause ?? null,
     sender_contact_name: detail.order.senderContactName ?? null,
     sender_contact_phone: detail.order.senderContactPhone ?? null,
     sender_contact_email: detail.order.senderContactEmail ?? null,
@@ -1178,7 +1180,7 @@ export async function createOrder(
     required_documents_text: requiredDocumentsText,
     general_notes: params.generalNotes ?? null,
     notification_details: params.notificationDetails ?? null,
-    confidentiality_clause: (params as any).confidentialityClause ?? null,
+    confidentiality_clause: params.confidentialityClause ?? null,
     sender_contact_name: params.senderContactName ?? null,
     sender_contact_phone: params.senderContactPhone ?? null,
     sender_contact_email: params.senderContactEmail ?? null,
@@ -1310,7 +1312,7 @@ export async function updateOrder(
     .select(`id, order_no, status_code, locked_by_user_id,
       transport_type_code, carrier_company_id, vehicle_type_text, vehicle_capacity_volume_m3,
       price_amount, currency_code, payment_term_days, payment_method,
-      general_notes, notification_details, complaint_reason, required_documents_text,
+      general_notes, notification_details, confidentiality_clause, complaint_reason, required_documents_text,
       special_requirements, total_load_tons, total_load_volume_m3,
       shipper_location_id, receiver_location_id,
       sender_contact_name, sender_contact_phone, sender_contact_email`)
@@ -1322,7 +1324,7 @@ export async function updateOrder(
         vehicle_type_text: string | null; vehicle_capacity_volume_m3: number | null;
         price_amount: number | null; currency_code: string;
         payment_term_days: number | null; payment_method: string | null;
-        general_notes: string | null; notification_details: string | null; complaint_reason: string | null;
+        general_notes: string | null; notification_details: string | null; confidentiality_clause: string | null; complaint_reason: string | null;
         required_documents_text: string | null; special_requirements: string | null;
         total_load_tons: number | null; total_load_volume_m3: number | null;
         shipper_location_id: string | null; receiver_location_id: string | null;
@@ -1496,7 +1498,7 @@ export async function updateOrder(
     required_documents_text: params.requiredDocumentsText ?? null,
     general_notes: params.generalNotes ?? null,
     notification_details: params.notificationDetails ?? null,
-    confidentiality_clause: (params as any).confidentialityClause ?? null,
+    confidentiality_clause: params.confidentialityClause ?? null,
     // Spread warunkowy — nie nadpisuj complaint_reason gdy frontend nie wysyła pola
     ...(params.complaintReason !== undefined ? { complaint_reason: params.complaintReason } : {}),
     sender_contact_name: params.senderContactName ?? null,
@@ -1827,8 +1829,8 @@ export async function updateOrder(
     { key: "paymentTermDays", dbField: "payment_term_days" },
     { key: "paymentMethod", dbField: "payment_method" },
     { key: "generalNotes", dbField: "general_notes" },
-    { key: "notificationDetails" as any, dbField: "notification_details" },
-    { key: "confidentialityClause" as any, dbField: "confidentiality_clause" },
+    { key: "notificationDetails", dbField: "notification_details" },
+    { key: "confidentialityClause", dbField: "confidentiality_clause" },
     { key: "complaintReason", dbField: "complaint_reason" },
     { key: "requiredDocumentsText", dbField: "required_documents_text" },
     { key: "shipperLocationId", dbField: "shipper_location_id" },
