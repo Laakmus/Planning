@@ -13,6 +13,7 @@ import {
   isValidUUID,
   parseJsonBody,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { changeStatus } from "../../../../../lib/services/order-status.service";
 import { changeStatusSchema } from "../../../../../lib/validators/order.validator";
@@ -73,7 +74,7 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
         "Niedozwolone przejście statusu dla tego zlecenia."
       );
     }
-    console.error("[POST /api/v1/orders/{orderId}/status]", err);
+    logError("[POST /api/v1/orders/{orderId}/status]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas zmiany statusu.");
   }
 };

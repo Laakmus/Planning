@@ -184,8 +184,8 @@ describe("HistoryPanel rendering", () => {
     setupHookReturn([], [c1]);
     renderPanel();
 
-    // Polska etykieta pola
-    expect(screen.getByText("Stawka")).toBeInTheDocument();
+    // Nazwa pola (surowa — TimelineEntry wyświetla entry.fieldName bezpośrednio)
+    expect(screen.getByText("price_amount")).toBeInTheDocument();
     // Stara i nowa wartość
     expect(screen.getByText("5000")).toBeInTheDocument();
     expect(screen.getByText("8000")).toBeInTheDocument();
@@ -277,49 +277,52 @@ describe("HistoryPanel rendering", () => {
 // ===========================================================================
 
 describe("TimelineEntry field labels", () => {
-  it("displays Polish labels for business fields", () => {
-    const fields: Array<{ fieldName: string; label: string }> = [
-      { fieldName: "carrier_company_id", label: "Firma transportowa" },
-      { fieldName: "price_amount", label: "Stawka" },
-      { fieldName: "vehicle_type_text", label: "Typ pojazdu" },
-      { fieldName: "general_notes", label: "Uwagi" },
+  it("displays raw field names for business fields", () => {
+    // TimelineEntry wyświetla entry.fieldName bezpośrednio (surowa nazwa DB)
+    const fields = [
+      "carrier_company_id",
+      "price_amount",
+      "vehicle_type_text",
+      "general_notes",
     ];
 
-    for (const { fieldName, label } of fields) {
+    for (const fieldName of fields) {
       vi.clearAllMocks();
       setupHookReturn([], [makeChangeLog({ id: 1, fieldName })]);
       const { unmount } = renderPanel();
 
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getByText(fieldName)).toBeInTheDocument();
       unmount();
     }
   });
 
-  it("displays Polish labels for item fields", () => {
-    const fields: Array<{ fieldName: string; label: string }> = [
-      { fieldName: "item[1].product_name", label: "Towar #1 — nazwa" },
-      { fieldName: "item[2].quantity_tons", label: "Towar #2 — ilość (t)" },
+  it("displays raw field names for item fields", () => {
+    // TimelineEntry wyświetla entry.fieldName bezpośrednio
+    const fields = [
+      "item[1].product_name",
+      "item[2].quantity_tons",
     ];
 
-    for (const { fieldName, label } of fields) {
+    for (const fieldName of fields) {
       vi.clearAllMocks();
       setupHookReturn([], [makeChangeLog({ id: 1, fieldName })]);
       const { unmount } = renderPanel();
 
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getByText(fieldName)).toBeInTheDocument();
       unmount();
     }
   });
 
-  it("displays Polish labels for stop events", () => {
-    const fields: Array<{ fieldName: string; label: string }> = [
-      { fieldName: "stop_added", label: "Dodano przystanek" },
-      { fieldName: "stop_removed", label: "Usunięto przystanek" },
-      { fieldName: "item_added", label: "Dodano pozycję towarową" },
-      { fieldName: "item_removed", label: "Usunięto pozycję towarową" },
+  it("displays raw field names for stop events", () => {
+    // TimelineEntry wyświetla entry.fieldName bezpośrednio
+    const fields = [
+      "stop_added",
+      "stop_removed",
+      "item_added",
+      "item_removed",
     ];
 
-    for (const { fieldName, label } of fields) {
+    for (const fieldName of fields) {
       vi.clearAllMocks();
       setupHookReturn(
         [],
@@ -334,7 +337,7 @@ describe("TimelineEntry field labels", () => {
       );
       const { unmount } = renderPanel();
 
-      expect(screen.getByText(label)).toBeInTheDocument();
+      expect(screen.getByText(fieldName)).toBeInTheDocument();
       unmount();
     }
   });
@@ -345,21 +348,19 @@ describe("TimelineEntry field labels", () => {
 // ===========================================================================
 
 describe("TimelineEntry action descriptions", () => {
-  it("shows correct action text for different entry types", () => {
-    const cases: Array<{ fieldName: string; expected: string }> = [
-      { fieldName: "stop_added", expected: "dodał(a) przystanek" },
-      { fieldName: "stop_removed", expected: "usunął/ęła przystanek" },
-      { fieldName: "item_added", expected: "dodał(a) pozycję towarową" },
-      { fieldName: "item_removed", expected: "usunął/ęła pozycję towarową" },
-      {
-        fieldName: "item[1].product_name",
-        expected: "zmienił(a) pozycję towarową",
-      },
-      { fieldName: "stop.date_local", expected: "zmienił(a) przystanek" },
-      { fieldName: "price_amount", expected: "zmienił(a) dane" },
+  it("shows 'zmienił(a) dane' for all field_change entries", () => {
+    // TimelineEntry wyświetla zawsze "zmienił(a) dane" dla type=field_change
+    const fieldNames = [
+      "stop_added",
+      "stop_removed",
+      "item_added",
+      "item_removed",
+      "item[1].product_name",
+      "stop.date_local",
+      "price_amount",
     ];
 
-    for (const { fieldName, expected } of cases) {
+    for (const fieldName of fieldNames) {
       vi.clearAllMocks();
       setupHookReturn(
         [],
@@ -374,7 +375,7 @@ describe("TimelineEntry action descriptions", () => {
       );
       const { unmount } = renderPanel();
 
-      expect(screen.getByText(expected)).toBeInTheDocument();
+      expect(screen.getByText("zmienił(a) dane")).toBeInTheDocument();
       unmount();
     }
   });
@@ -402,7 +403,7 @@ describe("TimelineEntry action descriptions", () => {
 // ===========================================================================
 
 describe("TimelineEntry visual indicators", () => {
-  it("shows Plus icon for added entries", () => {
+  it("shows Edit icon for added entries (field_change type)", () => {
     setupHookReturn(
       [],
       [
@@ -416,13 +417,13 @@ describe("TimelineEntry visual indicators", () => {
     );
     renderPanel();
 
-    // Ikona Plus widoczna (przynajmniej jedna — avatar systemowy + ikona w treści)
-    expect(screen.getAllByTestId("icon-plus").length).toBeGreaterThanOrEqual(1);
+    // IconBadge renderuje Edit2 (icon-edit) dla field_change
+    expect(screen.getAllByTestId("icon-edit").length).toBeGreaterThanOrEqual(1);
     // Nowa wartość wyświetlona
     expect(screen.getByText("Magazyn Centralny")).toBeInTheDocument();
   });
 
-  it("shows Plus icon for item_added entries", () => {
+  it("shows Edit icon for item_added entries (field_change type)", () => {
     setupHookReturn(
       [],
       [
@@ -436,11 +437,11 @@ describe("TimelineEntry visual indicators", () => {
     );
     renderPanel();
 
-    expect(screen.getAllByTestId("icon-plus").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByTestId("icon-edit").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Stal nierdzewna")).toBeInTheDocument();
   });
 
-  it("shows Minus icon for removed entries", () => {
+  it("shows Edit icon for removed entries (field_change type)", () => {
     setupHookReturn(
       [],
       [
@@ -454,12 +455,13 @@ describe("TimelineEntry visual indicators", () => {
     );
     renderPanel();
 
-    expect(screen.getAllByTestId("icon-minus").length).toBeGreaterThanOrEqual(1);
+    // IconBadge renderuje Edit2 (icon-edit) dla field_change
+    expect(screen.getAllByTestId("icon-edit").length).toBeGreaterThanOrEqual(1);
     // Stara wartość widoczna z line-through
     expect(screen.getByText("Magazyn Centralny")).toBeInTheDocument();
   });
 
-  it("shows Minus icon for item_removed entries", () => {
+  it("shows Edit icon for item_removed entries (field_change type)", () => {
     setupHookReturn(
       [],
       [
@@ -473,7 +475,7 @@ describe("TimelineEntry visual indicators", () => {
     );
     renderPanel();
 
-    expect(screen.getAllByTestId("icon-minus").length).toBeGreaterThanOrEqual(1);
+    expect(screen.getAllByTestId("icon-edit").length).toBeGreaterThanOrEqual(1);
     expect(screen.getByText("Stal nierdzewna")).toBeInTheDocument();
   });
 

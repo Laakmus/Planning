@@ -12,7 +12,7 @@ export const STATUS_ROBOCZE = "robocze";
 export const MAX_LOADING_STOPS = 8;
 export const MAX_UNLOADING_STOPS = 3;
 
-/** Pobiera snapshot przewoźnika (firma) na podstawie companyId. */
+/** Pobiera snapshot przewoźnika (firma + adres z głównej lokalizacji). */
 export async function buildSnapshotsForCarrier(
   supabase: SupabaseClient<Database>,
   companyId: string
@@ -27,10 +27,25 @@ export async function buildSnapshotsForCarrier(
     .eq("id", companyId)
     .maybeSingle();
 
+  // Pobierz pierwszą lokalizację przewoźnika (adres + nazwa lokalizacji)
+  const { data: location } = await supabase
+    .from("locations")
+    .select("name, street_and_number, postal_code, city, country")
+    .eq("company_id", companyId)
+    .limit(1)
+    .maybeSingle();
+
+  let carrierAddress: string | null = null;
+  if (location) {
+    carrierAddress = [location.street_and_number, `${location.postal_code} ${location.city}`, location.country]
+      .filter(Boolean)
+      .join(", ") || null;
+  }
+
   return {
     carrier_name_snapshot: company?.name ?? null,
-    carrier_address_snapshot: null,
-    carrier_location_name_snapshot: null,
+    carrier_address_snapshot: carrierAddress,
+    carrier_location_name_snapshot: location?.name ?? null,
   };
 }
 

@@ -68,8 +68,6 @@ export function createApiClient(config: ApiClientConfig) {
       params?: Record<string, string | string[] | number | boolean | undefined | null>;
       /** Jeśli true, zwraca Response zamiast parsować JSON (np. dla PDF blob). */
       raw?: boolean;
-      /** Zewnętrzny AbortSignal — łączony z wewnętrznym timeout signal. */
-      signal?: AbortSignal;
     }
   ): Promise<T> {
     const url = new URL(`${baseUrl}${path}`, window.location.origin);
@@ -107,16 +105,6 @@ export function createApiClient(config: ApiClientConfig) {
     let response: Response;
     const controller = new AbortController();
     const timeoutId = setTimeout(() => controller.abort(), 30_000);
-    // Łączenie zewnętrznego signal z wewnętrznym timeout
-    const externalSignal = options?.signal;
-    if (externalSignal) {
-      if (externalSignal.aborted) {
-        clearTimeout(timeoutId);
-        controller.abort();
-      } else {
-        externalSignal.addEventListener("abort", () => controller.abort(), { once: true });
-      }
-    }
     try {
       response = await fetch(url.toString(), {
         method,
@@ -127,10 +115,6 @@ export function createApiClient(config: ApiClientConfig) {
     } catch (err) {
       clearTimeout(timeoutId);
       if (err instanceof DOMException && err.name === "AbortError") {
-        // Rozróżnij anulowanie zewnętrzne od timeout
-        if (externalSignal?.aborted) {
-          throw err; // Propaguj AbortError bez zamiany na tekst
-        }
         throw new Error("Przekroczono limit czasu żądania (30s). Sprawdź połączenie sieciowe.");
       }
       throw new Error("Brak połączenia z serwerem. Sprawdź połączenie sieciowe.");
@@ -154,11 +138,13 @@ export function createApiClient(config: ApiClientConfig) {
         const errorBody = await parseErrorBody(response);
         throw new ApiError(errorBody);
       }
+      // Zaufanie do API response — frontend i backend w jednym repo
       return response as unknown as T;
     }
 
     // Odpowiedź 204 No Content — brak ciała
     if (response.status === 204) {
+      // Rzutowanie konieczne — 204 nie ma ciała, T może być void/undefined
       return undefined as T;
     }
 
@@ -168,6 +154,7 @@ export function createApiClient(config: ApiClientConfig) {
     if (!response.ok) {
       // Próbuj sparsować strukturę błędu API
       try {
+        // Rzutowanie konieczne — JSON.parse zwraca unknown
         const errorBody = JSON.parse(text) as ApiErrorResponse;
         throw new ApiError(errorBody);
       } catch (e) {
@@ -183,12 +170,15 @@ export function createApiClient(config: ApiClientConfig) {
 
     // Parsowanie sukcesu
     if (!text.trim()) {
+      // Rzutowanie konieczne — puste ciało przy 200, T może być void/undefined
       return undefined as T;
     }
 
     try {
+      // Rzutowanie konieczne — JSON.parse zwraca unknown
       return JSON.parse(text) as T;
     } catch {
+      // Ignorujemy — niepoprawny JSON powoduje rzucenie czytelnego Error poniżej
       throw new Error(`Nieprawidłowa odpowiedź serwera (nie JSON): ${text.substring(0, 200)}`);
     }
   }
@@ -197,8 +187,10 @@ export function createApiClient(config: ApiClientConfig) {
   async function parseErrorBody(response: Response): Promise<ApiErrorResponse> {
     try {
       const text = await response.text();
+      // Rzutowanie konieczne — JSON.parse zwraca unknown
       return JSON.parse(text) as ApiErrorResponse;
     } catch {
+      // Ignorujemy — niepoprawne ciało odpowiedzi; zwracamy generyczny fallback poniżej
       return {
         statusCode: response.status,
         error: response.statusText || "Error",
@@ -208,9 +200,9 @@ export function createApiClient(config: ApiClientConfig) {
   }
 
   return {
-    /** GET z opcjonalnymi parametrami zapytania i opcjonalnym AbortSignal. */
-    get<T>(path: string, params?: Record<string, string | string[] | number | boolean | undefined | null>, signal?: AbortSignal): Promise<T> {
-      return request<T>("GET", path, { params, signal });
+    /** GET z opcjonalnymi parametrami zapytania. */
+    get<T>(path: string, params?: Record<string, string | string[] | number | boolean | undefined | null>): Promise<T> {
+      return request<T>("GET", path, { params });
     },
 
     /** POST z opcjonalnym ciałem JSON. */

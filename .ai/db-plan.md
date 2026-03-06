@@ -101,8 +101,8 @@ Tabela główna, centralna dla całego systemu.
   - przy ponownym wysłaniu (korekta wysłane) wartość jest **nadpisywana** na aktualną datę i użytkownika
 - **search_text**: `text`
   - zdenormalizowany tekst do globalnego wyszukiwania (numer, firmy, lokalizacje, uwagi itd.)
-- **search_vector**: `tsvector`  
-  - opcjonalny wektor pełnotekstowy wygenerowany z `search_text`
+- ~~**search_vector**~~: *USUNIĘTA* (migracja `20260306000001_drop_search_vector.sql`)
+  - kolumna `tsvector` i indeks GIN były martwe (nigdy nie populowane); `search_text` z ILIKE wystarczy dla MVP
 - **created_at**: `timestamptz`  
   - `DEFAULT now()`, `NOT NULL`
 - **created_by_user_id**: `uuid`  
@@ -504,7 +504,7 @@ PK:
 - `INDEX` na `carrier_company_id`.  
 - `INDEX` na `(first_loading_date, order_no)` – domyślne sortowanie w widoku „aktualne”.  
 - (opcjonalnie) `INDEX` na `(transport_type_code, first_loading_date)` – filtrowanie po typie transportu i dacie.  
-- (opcjonalnie) `GIN INDEX` na `search_vector` – do pełnotekstowego wyszukiwania (wymaga rozszerzeń `pg_trgm`/`unaccent`/konfiguracji FTS).
+- ~~`GIN INDEX` na `search_vector`~~ — *USUNIĘTY* (migracja `20260306000001_drop_search_vector.sql`; kolumna i indeks były martwe).
 - (opcjonalnie) `INDEX` na `sent_at` – sortowanie / filtrowanie po dacie wysłania.
 - `INDEX` na `order_seq_no` – sortowanie numeryczne w widoku listy.
 
@@ -696,9 +696,9 @@ Przy zmianie pola `transport_type_code` system automatycznie ustawia wartość p
   - Schemat jest zasadniczo w 3NF dla głównych encji (zlecenia, punkty, pozycje, słowniki).
   - Wprowadzono świadome denormalizacje (np. `summary_route`, pierwsze daty załadunku/rozładunku, snapshoty tekstowe firm/lokalizacji/towarów, `search_text`) w celu uproszczenia zapytań i przyspieszenia widoku planistycznego oraz raportów.
 
-- **Wyszukiwanie tekstowe**:  
-  - W MVP globalne wyszukiwanie może działać przez `ILIKE`/`LOWER()` na `search_text`, z wykorzystaniem rozszerzenia `unaccent`, aby ignorować polskie znaki diakrytyczne.  
-  - Docelowo można zbudować `search_vector` jako `tsvector` i indeks GIN, aby uzyskać pełnotekstowe wyszukiwanie.
+- **Wyszukiwanie tekstowe**:
+  - W MVP globalne wyszukiwanie działa przez `ILIKE`/`LOWER()` na `search_text`, z wykorzystaniem rozszerzenia `unaccent`, aby ignorować polskie znaki diakrytyczne.
+  - Kolumna `search_vector` (tsvector) i indeks GIN zostały usunięte (nigdy nie były populowane). Docelowo, przy potrzebie wydajniejszego wyszukiwania, można je odtworzyć z triggerem populującym.
 
 - **Integracja z ERP**:  
   - Kolumny `erp_id` w słownikach firm, lokalizacji i towarów pozwalają później powiązać rekordy z ERP bez zmiany lokalnych kluczy głównych.  

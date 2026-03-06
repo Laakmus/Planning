@@ -10,6 +10,7 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   parseQueryParams,
+  logError,
 } from "../../../lib/api-helpers";
 import { getCompanies } from "../../../lib/services/dictionary.service";
 
@@ -24,7 +25,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
     const result = await getCompanies(locals.supabase, search);
     return jsonResponse(result, 200, { "Cache-Control": "private, max-age=3600" });
   } catch (err) {
-    console.error("[GET /api/v1/companies]", err);
+    logError("[GET /api/v1/companies]", err);
     return errorResponse(500, "Internal Server Error", "Błąd pobierania listy firm.");
   }
 };

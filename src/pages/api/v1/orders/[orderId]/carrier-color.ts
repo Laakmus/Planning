@@ -13,6 +13,7 @@ import {
   isValidUUID,
   parseJsonBody,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { updateCarrierCellColor } from "../../../../../lib/services/order.service";
 import { carrierCellColorSchema } from "../../../../../lib/validators/order.validator";
@@ -52,7 +53,7 @@ export const PATCH: APIRoute = async ({ params, locals, request }) => {
     }
     return jsonResponse(result, 200);
   } catch (err) {
-    console.error("[PATCH /api/v1/orders/{orderId}/carrier-color]", err);
+    logError("[PATCH /api/v1/orders/{orderId}/carrier-color]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas ustawiania koloru.");
   }
 };

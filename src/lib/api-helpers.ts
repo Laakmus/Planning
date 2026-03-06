@@ -15,15 +15,22 @@ import { getCurrentUser } from "./services/auth.service";
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Zwraca skonfigurowany CORS origin (env lub domyślny localhost). */
+export function getCorsOrigin(): string {
+  return import.meta.env.CORS_ORIGIN ?? "http://localhost:4321";
+}
+
 /** Security + CORS headers dołączane do każdej odpowiedzi API. */
 const COMMON_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
+  "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "http://localhost:4321",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Access-Control-Allow-Origin": getCorsOrigin(),
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
 };
@@ -155,22 +162,8 @@ export function parseQueryParams(url: URL): Record<string, string | string[]> {
  * @param request — obiekt Request
  * @returns zparsowany obiekt (bez walidacji typów — do walidacji Zod)
  */
-const MAX_BODY_SIZE = 1_048_576; // 1 MB
-
 export async function parseJsonBody<T>(request: Request): Promise<T> {
-  // Sprawdź Content-Length header (szybkie odrzucenie przed czytaniem body)
-  const contentLength = request.headers.get("content-length");
-  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
-    throw new SyntaxError("Request body too large (max 1MB)");
-  }
-
   const text = await request.text();
-
-  // Backup: sprawdź rzeczywisty rozmiar tekstu
-  if (text.length > MAX_BODY_SIZE) {
-    throw new SyntaxError("Request body too large (max 1MB)");
-  }
-
   if (!text.trim()) {
     throw new SyntaxError("Empty body");
   }
@@ -185,4 +178,30 @@ export async function parseJsonBody<T>(request: Request): Promise<T> {
  */
 export function isValidUUID(value: string): boolean {
   return UUID_REGEX.test(value);
+}
+
+/**
+ * Strukturalny log błędu w formacie JSON.
+ * Prosty wrapper na console.error — bez zewnętrznych bibliotek (MVP).
+ *
+ * @param context — identyfikator endpointu/operacji (np. "[GET /api/v1/orders]")
+ * @param error — przechwycony błąd
+ * @param requestId — opcjonalny identyfikator żądania
+ */
+export function logError(context: string, error: unknown, requestId?: string): void {
+  const entry: Record<string, unknown> = {
+    level: "error",
+    timestamp: new Date().toISOString(),
+    context,
+  };
+  if (requestId) {
+    entry.requestId = requestId;
+  }
+  if (error instanceof Error) {
+    entry.message = error.message;
+    entry.stack = error.stack;
+  } else {
+    entry.message = String(error);
+  }
+  console.error(JSON.stringify(entry));
 }

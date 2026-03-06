@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-06 (sesja 34 — 15 tasków DONE: security, DRY, hooks, tests, docs)
+> Ostatnia aktualizacja: 2026-03-06 (sesja 36 — 18 tasków LOW/MEDIUM DONE)
 
 ---
 
@@ -14,71 +14,14 @@
 
 ## Do zrobienia — MEDIUM
 
-### M-16. Brak testów komponentów React (64+ pliki, 0 testów)
-- **Opis:** OrderRow, OrdersTable, StatusBadge, FilterBar — zero testów poza tymczasowymi drawer-e2e.
+(brak otwartych)
 
 ---
 
 ## Do zrobienia — LOW
 
-### CR-04. `search_vector` tsvector nigdy nie jest populowany
-- **Opis:** Kolumna `search_vector` z indeksem GIN istnieje w DB, ale żaden trigger ani kod aplikacji jej nie wypełnia.
-- **Plik:** `supabase/migrations/...consolidated_schema.sql:442`
-- **Rekomendacja:** Dodaj trigger DB lub usuń nieużywaną kolumnę/indeks.
-
-### L-01. Lock możliwy na anulowanych/zrealizowanych
-- **Plik:** `order-lock.service.ts`
-
 ### L-02. Brak paginacji w endpointach słownikowych
 - **Pliki:** companies, locations, products
-
-### L-04. buildSnapshotsForCarrier nie pobiera address/location name
-- **Plik:** `order-snapshot.service.ts` (funkcja `buildSnapshotsForCarrier`)
-
-### L-10. Unsafe type casts w api-client.ts
-
-### L-11. week-utils.ts regex fałszywie akceptuje format
-
-### L-15. Brak testów: postRaw Accept header + AbortController timeout
-
-### L-17. JWT bez weryfikacji podpisu w `extractSubFromJwt`
-- **Plik:** `middleware.ts:92-103`
-- **Dodatkowy kontekst:** Atakujący może sfałszować JWT z `sub` ofiary → wyczerpanie rate limit ofiary (429). Sam auth jest bezpieczny (Supabase weryfikuje server-side).
-
-### L-18. Brak `dark:` na etykietach w CarrierSection i EmptyState
-
-### L-19. `span[role=button]` bez obsługi Space w AutocompleteField
-
-### L-20. Puste `catch {}` bez komentarza w wielu miejscach
-- **Pliki:** `OrderDrawer.tsx:148,195`, `AuthContext.tsx:110`, `api-client.ts:175,185`
-- **Rekomendacja:** Dodaj komentarze wyjaśniające dlaczego catch jest pusty.
-
-### L-21. `key={idx}` na liście items w OrderRow — brak stabilnego klucza
-- **Plik:** `src/components/orders/OrderRow.tsx:193-194`
-
-### L-22. Timezone w `TimelineEntry.tsx` — `new Date(iso)` zależy od przeglądarki
-- **Plik:** `src/components/orders/history/TimelineEntry.tsx:31-35`
-
-### L-23. Brak `aria-label` na paginacji
-- **Plik:** `src/components/orders/OrdersPage.tsx:364-383`
-
-### L-24. `@types/react` i `@types/react-dom` w dependencies zamiast devDependencies
-- **Plik:** `package.json:25-26`
-
-### L-25. Brak `Cache-Control: no-store` na wrażliwych API responses
-- **Plik:** `src/lib/api-helpers.ts:94-98`
-
-### L-26. Brak `Permissions-Policy` header
-- **Plik:** `src/lib/api-helpers.ts:25`
-- **Rekomendacja:** Dodaj `Permissions-Policy: camera=(), microphone=(), geolocation=()`.
-
-### L-27. CORS config zduplikowany w 2 plikach
-- **Pliki:** `src/lib/api-helpers.ts:27`, `src/middleware.ts:134`
-
-### L-28. Brak dokumentacji strategii migracji DB
-
-### L-29. Verbose `console.error` w API routes — brak structured logging
-- **Opis:** 21 wystąpień `console.error` bez structured JSON, request ID, log levels. Akceptowalne dla MVP.
 
 ---
 
@@ -101,6 +44,32 @@
 ---
 
 ## Zrobione
+
+### Sesja 36 — 16x LOW + M-16 + L-15 DONE (18 tasków)
+- [x] L-01: Lock na anulowanych/zrealizowanych — walidacja statusu w `lockOrder()` + error `LOCK_TERMINAL_STATUS` + 3 testy
+- [x] L-04: `buildSnapshotsForCarrier` pobiera address/location name z tabeli `locations`
+- [x] L-10: Komentarze przy `as T` castach w `api-client.ts` (wyjaśnienie konieczności)
+- [x] L-11: `week-utils.ts` regex — separator `W`/`-` wymagany (nie opcjonalny)
+- [x] L-15: Testy postRaw Accept header + AbortController timeout (`api-client-extra.test.ts`, 229 linii)
+- [x] L-17: JWT `extractSubFromJwt` — walidacja UUID + komentarz o ryzyku
+- [x] L-18: `dark:` klasy w CarrierSection (4 labele) i EmptyState (2 paragrafy)
+- [x] L-19: AutocompleteField + AutocompleteFilter — obsługa Space/Enter na `span[role=button]`
+- [x] L-20: Komentarze przy pustych `catch {}` (AuthContext, api-client)
+- [x] L-21: `key={idx}` → `key={productNameSnapshot-idx}` w OrderRow
+- [x] L-22: TimelineEntry timezone — explicit `Europe/Warsaw` via `toLocaleTimeString`
+- [x] L-23: `aria-label` na paginacji (navigation + buttony prev/next)
+- [x] L-24: `@types/react` + `@types/react-dom` przeniesione do devDependencies
+- [x] L-25: `Cache-Control: no-store` w COMMON_HEADERS
+- [x] L-26: `Permissions-Policy: camera=(), microphone=(), geolocation=()` w COMMON_HEADERS
+- [x] L-27: CORS origin wyekstrahowany do `getCorsOrigin()` (DRY — api-helpers + middleware)
+- [x] L-29: Structured logging — `logError()` helper + zamiana 21x `console.error` w 15 API routes
+- [x] M-16: Testy komponentów React — 7 plików (EmptyState, FilterBar, LockIndicator, OrderRow, OrderRowContextMenu, OrderTable, StatusBadge)
+- Dodatkowe: uproszczenie TimelineEntry (inline rendering), revert AbortSignal z api-client, revert limitu 1MB body
+- Wynik: 909/909 testów, 0 błędów
+
+### Sesja 35 — CR-04 + L-28
+- [x] CR-04: Usunięcie kolumny `search_vector` i indeksu GIN (migracja + typy + db-plan.md)
+- [x] L-28: Dokumentacja strategii migracji DB (`.ai/db-migration-strategy.md`)
 
 ### Sesja 34 — security, DRY, hooks, tests, docs (15 tasków)
 - [x] M-10: CORS headers na odpowiedzi 429 (middleware.ts)

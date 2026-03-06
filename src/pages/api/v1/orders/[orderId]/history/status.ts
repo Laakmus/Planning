@@ -10,6 +10,7 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   isValidUUID,
+  logError,
 } from "../../../../../../lib/api-helpers";
 import { getStatusHistory } from "../../../../../../lib/services/order-history.service";
 
@@ -29,7 +30,7 @@ export const GET: APIRoute = async ({ params, locals }) => {
     }
     return jsonResponse({ items }, 200);
   } catch (err) {
-    console.error("[GET /api/v1/orders/{orderId}/history/status]", err);
+    logError("[GET /api/v1/orders/{orderId}/history/status]", err);
     return errorResponse(500, "Internal Server Error", "Błąd pobierania historii statusu.");
   }
 };

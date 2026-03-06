@@ -75,6 +75,7 @@ export function AuthProvider({
   const handleUnauthorized = useCallback(() => {
     setUser(null);
     // Wyloguj z Supabase (fire-and-forget)
+    // Ignorujemy — signOut jest best-effort przy wylogowaniu wymuszoym przez 401
     supabase.auth.signOut().catch(() => {});
     window.location.href = "/";
   }, [supabase]);
@@ -108,6 +109,7 @@ export function AuthProvider({
         if (!response.ok) return null;
         return (await response.json()) as AuthMeDto;
       } catch {
+        // Ignorujemy — brak profilu to normalny stan (błąd sieci lub niezalogowany użytkownik)
         return null;
       }
     },

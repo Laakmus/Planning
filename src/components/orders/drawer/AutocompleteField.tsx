@@ -97,7 +97,12 @@ export function AutocompleteField<T extends { id: string }>({
                   role="button"
                   tabIndex={0}
                   onClick={handleClear}
-                  onKeyDown={(e) => e.key === "Enter" && handleClear(e as unknown as React.MouseEvent)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      handleClear(e as unknown as React.MouseEvent);
+                    }
+                  }}
                   className="p-0.5 rounded hover:bg-slate-200 dark:hover:bg-slate-700"
                   aria-label="Wyczyść"
                 >

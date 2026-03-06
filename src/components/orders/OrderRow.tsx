@@ -183,7 +183,7 @@ export function OrderRow({
           return (
             <div className="space-y-0.5">
               {validItems.map((item, idx) => (
-                <div key={idx} className="text-xs whitespace-nowrap">
+                <div key={`${item.productNameSnapshot}-${idx}`} className="text-xs whitespace-nowrap">
                   {validItems.length > 1 ? `${idx + 1}. ` : ""}
                   <span className="font-medium">{item.productNameSnapshot}</span>
                   {(item.quantityTons != null || item.loadingMethodCode) && (

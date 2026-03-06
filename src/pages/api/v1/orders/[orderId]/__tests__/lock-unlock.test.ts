@@ -28,6 +28,7 @@ vi.mock("@/lib/api-helpers", () => ({
   errorResponse: vi.fn(),
   requireWriteAccess: vi.fn(),
   isValidUUID: vi.fn(),
+  logError: vi.fn(),
 }));
 
 vi.mock("@/lib/services/order-lock.service", () => ({

@@ -11,6 +11,7 @@ import {
   jsonResponse,
   parseQueryParams,
   isValidUUID,
+  logError,
 } from "../../../lib/api-helpers";
 import { getLocations } from "../../../lib/services/dictionary.service";
 
@@ -29,7 +30,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
     const result = await getLocations(locals.supabase, { search, companyId });
     return jsonResponse(result, 200, { "Cache-Control": "private, max-age=3600" });
   } catch (err) {
-    console.error("[GET /api/v1/locations]", err);
+    logError("[GET /api/v1/locations]", err);
     return errorResponse(500, "Internal Server Error", "Błąd pobierania listy lokalizacji.");
   }
 };

@@ -5,6 +5,7 @@
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types";
+import { getCorsOrigin } from "./lib/api-helpers";
 
 // ---------------------------------------------------------------------------
 // Rate limiter (in-memory, per userId or IP)
@@ -89,14 +90,24 @@ function cleanupIfNeeded(): void {
 // JWT helper
 // ---------------------------------------------------------------------------
 
-/** Wyciąga user ID (sub claim) z JWT bez walidacji podpisu. */
+/**
+ * Dekodujemy JWT bez weryfikacji podpisu — używane TYLKO do rate-limitingu.
+ * Auth jest weryfikowany server-side przez Supabase.
+ * Ryzyko: atakujący może sfabrykować JWT z cudzym sub → wyczerpanie
+ * rate limitu ofiary (429).
+ */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 function extractSubFromJwt(authHeader: string): string | null {
   try {
     const token = authHeader.replace(/^Bearer\s+/i, "");
     const parts = token.split(".");
     if (parts.length !== 3) return null;
     const payload = JSON.parse(atob(parts[1]));
-    return typeof payload.sub === "string" ? payload.sub : null;
+    if (typeof payload.sub !== "string") return null;
+    // Walidacja formatu UUID — odrzucamy sfabrykowane wartości
+    if (!UUID_PATTERN.test(payload.sub)) return null;
+    return payload.sub;
   } catch {
     return null;
   }
@@ -131,7 +142,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
     return new Response(null, {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "http://localhost:4321",
+        "Access-Control-Allow-Origin": getCorsOrigin(),
         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
         "Access-Control-Max-Age": "86400",
@@ -149,7 +160,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const rate = checkRateLimit(rateKey, limit);
 
   if (!rate.allowed) {
-    const corsOrigin = import.meta.env.CORS_ORIGIN ?? "http://localhost:4321";
     return new Response(
       JSON.stringify({
         error: "Too Many Requests",
@@ -163,9 +173,6 @@ export const onRequest = defineMiddleware(async (context, next) => {
           "Retry-After": String(Math.ceil((rate.resetAt - Date.now()) / 1000)),
           "X-RateLimit-Limit": String(limit),
           "X-RateLimit-Remaining": "0",
-          "Access-Control-Allow-Origin": corsOrigin,
-          "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
-          "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
         },
       }
     );

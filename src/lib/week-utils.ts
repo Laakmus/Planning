@@ -39,7 +39,9 @@ export function weekNumberToDateRange(
   let week: number;
 
   // Format z rokiem: "2026-07" lub "2026-W07"
-  const fullMatch = trimmed.match(/^(\d{4})[W-]?(\d{1,2})$/);
+  // Wymagamy separatora '-' lub 'W' między rokiem a numerem tygodnia
+  // (np. "2026-05", "2026W05" OK; "2026007" odrzucony)
+  const fullMatch = trimmed.match(/^(\d{4})[W-](\d{1,2})$/);
   if (fullMatch) {
     year = parseInt(fullMatch[1], 10);
     week = parseInt(fullMatch[2], 10);

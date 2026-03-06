@@ -38,6 +38,7 @@ vi.mock("@/lib/api-helpers", () => ({
   isValidUUID: vi.fn(),
   parseJsonBody: vi.fn(),
   parseQueryParams: vi.fn(),
+  logError: vi.fn(),
 }));
 
 vi.mock("@/lib/services/order.service", () => ({

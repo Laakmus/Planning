@@ -405,7 +405,7 @@ export type Database = {
           receiver_name_snapshot: string | null
           required_documents_text: string | null
           search_text: string | null
-          search_vector: unknown
+
           sender_contact_email: string | null
           sender_contact_name: string | null
           sender_contact_phone: string | null
@@ -464,7 +464,6 @@ export type Database = {
           receiver_name_snapshot?: string | null
           required_documents_text?: string | null
           search_text?: string | null
-          search_vector?: unknown
           sender_contact_email?: string | null
           sender_contact_name?: string | null
           sender_contact_phone?: string | null
@@ -523,7 +522,6 @@ export type Database = {
           receiver_name_snapshot?: string | null
           required_documents_text?: string | null
           search_text?: string | null
-          search_vector?: unknown
           sender_contact_email?: string | null
           sender_contact_name?: string | null
           sender_contact_phone?: string | null

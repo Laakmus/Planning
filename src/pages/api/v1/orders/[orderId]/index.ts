@@ -17,6 +17,7 @@ import {
   isValidUUID,
   parseJsonBody,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { getOrderDetail, updateOrder } from "../../../../../lib/services/order.service";
 import { cancelOrder } from "../../../../../lib/services/order-status.service";
@@ -111,7 +112,7 @@ export const PUT: APIRoute = async ({ params, locals, request }) => {
       const details = (err as Error & { details?: Record<string, string> }).details ?? {};
       return errorResponse(400, "Bad Request", "Nieprawidłowe referencje w danych zlecenia.", details);
     }
-    console.error("[PUT /api/v1/orders/{orderId}]", err);
+    logError("[PUT /api/v1/orders/{orderId}]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas aktualizacji zlecenia.");
   }
 };
@@ -145,7 +146,7 @@ export const DELETE: APIRoute = async ({ params, locals }) => {
         "Nie można anulować zlecenia w statusie „zrealizowane”."
       );
     }
-    console.error("[DELETE /api/v1/orders/{orderId}]", err);
+    logError("[DELETE /api/v1/orders/{orderId}]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas anulowania zlecenia.");
   }
 };

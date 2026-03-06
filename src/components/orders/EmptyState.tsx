@@ -28,7 +28,7 @@ export function EmptyState({
         <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">
           Brak wyników dla zastosowanych filtrów
         </h3>
-        <p className="text-sm text-slate-500 mb-6">
+        <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
           Spróbuj zmienić kryteria wyszukiwania.
         </p>
         {onClearFilters && (
@@ -49,7 +49,7 @@ export function EmptyState({
       <h3 className="text-lg font-bold text-slate-700 dark:text-slate-300 mb-2">
         Brak zleceń
       </h3>
-      <p className="text-sm text-slate-500 mb-6">
+      <p className="text-sm text-slate-500 dark:text-slate-400 mb-6">
         Nie masz jeszcze żadnych zleceń w tej zakładce.
       </p>
       {showAddButton && onAddOrder && (

@@ -204,10 +204,11 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
 
       {/* Prosta paginacja */}
       {totalPages > 1 && (
-        <div className="shrink-0 flex items-center justify-center gap-2 py-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div role="navigation" aria-label="Paginacja" className="shrink-0 flex items-center justify-center gap-2 py-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
+            aria-label="Poprzednia strona"
             className="text-xs px-3 py-1 rounded border border-slate-200 dark:border-slate-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Poprzednia
@@ -218,6 +219,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
+            aria-label="Następna strona"
             className="text-xs px-3 py-1 rounded border border-slate-200 dark:border-slate-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Następna

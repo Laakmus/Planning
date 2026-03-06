@@ -17,6 +17,7 @@ import {
   isValidUUID,
   parseJsonBody,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { prepareEmailForOrder } from "../../../../../lib/services/order.service";
 import { prepareEmailSchema } from "../../../../../lib/validators/order.validator";
@@ -92,7 +93,7 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
         "Status zlecenia zmienił się w trakcie operacji. Odśwież dane i spróbuj ponownie."
       );
     }
-    console.error("[POST /api/v1/orders/{orderId}/prepare-email]", err);
+    logError("[POST /api/v1/orders/{orderId}/prepare-email]", err);
     return errorResponse(
       500,
       "Internal Server Error",

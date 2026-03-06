@@ -68,6 +68,10 @@ async function loadMiddleware() {
   vi.doMock("@supabase/supabase-js", () => ({
     createClient: vi.fn(() => ({ from: vi.fn() })),
   }));
+  // Mock api-helpers — middleware importuje getCorsOrigin
+  vi.doMock("@/lib/api-helpers", () => ({
+    getCorsOrigin: () => "http://localhost:4321",
+  }));
 
   const mod = await import("../middleware");
   // defineMiddleware (stub) zwraca surową funkcję — onRequest to async (ctx, next).
@@ -128,7 +132,7 @@ describe("middleware — rate limiting", () => {
 
   it("identifies client by JWT sub when Authorization header present", async () => {
     const next = makeNext();
-    const jwt = makeJwt({ sub: "user-123" });
+    const jwt = makeJwt({ sub: "a0000000-0000-0000-0000-000000000123" });
     const headers = new Headers({ Authorization: `Bearer ${jwt}` });
     // Dwa żądania z tym samym JWT ale różnych IP — dzielą bucket
     await onRequest(makeContext({ clientAddress: "10.0.0.1", headers }), next);
@@ -297,7 +301,7 @@ describe("middleware — idempotency-key", () => {
     const key = "shared-key";
 
     // Użytkownik A
-    const jwtA = makeJwt({ sub: "user-A" });
+    const jwtA = makeJwt({ sub: "a0000000-0000-0000-0000-00000000000a" });
     const headersA = new Headers({ "Idempotency-Key": key, Authorization: `Bearer ${jwtA}` });
     await onRequest(makeContext({ method: "POST", headers: headersA }), next);
 
@@ -305,7 +309,7 @@ describe("middleware — idempotency-key", () => {
     const nextB = makeNext(() =>
       new Response(JSON.stringify({ data: "second" }), { status: 200 })
     );
-    const jwtB = makeJwt({ sub: "user-B" });
+    const jwtB = makeJwt({ sub: "b0000000-0000-0000-0000-00000000000b" });
     const headersB = new Headers({ "Idempotency-Key": key, Authorization: `Bearer ${jwtB}` });
     const res = await onRequest(makeContext({ method: "POST", headers: headersB }), nextB);
     expect(nextB).toHaveBeenCalledOnce();
@@ -327,7 +331,7 @@ describe("middleware — JWT parsing", () => {
 
   it("extracts sub from valid JWT — same user shares bucket across IPs", async () => {
     const next = makeNext();
-    const jwt = makeJwt({ sub: "abc-123" });
+    const jwt = makeJwt({ sub: "a0000000-0000-0000-0000-0000000abc23" });
     const headers = new Headers({ Authorization: `Bearer ${jwt}` });
     await onRequest(makeContext({ clientAddress: "10.0.0.1", headers }), next);
     await onRequest(makeContext({ clientAddress: "10.0.0.50", headers }), next);

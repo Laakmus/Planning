@@ -74,7 +74,7 @@ export function CarrierSection({
       <div className="flex gap-2">
         {/* Firma transportowa (autocomplete) */}
         <div className="basis-1/2 min-w-0">
-          <label className="text-xs font-semibold text-slate-400 block mb-1">
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
             Nazwa firmy (przewoźnik) *
           </label>
           <AutocompleteField
@@ -95,7 +95,7 @@ export function CarrierSection({
 
         {/* Typ auta — 30% */}
         <div className="basis-[30%] min-w-0">
-          <label className="text-xs font-semibold text-slate-400 block mb-1">
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
             Typ auta *
           </label>
           <Select
@@ -118,7 +118,7 @@ export function CarrierSection({
 
         {/* Objętość m³ — 20% */}
         <div className="basis-[20%] min-w-0">
-          <label className="text-xs font-semibold text-slate-400 block mb-1">
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
             m³ *
           </label>
           <Input
@@ -136,7 +136,7 @@ export function CarrierSection({
 
       {/* Row 2: Wymagane dokumenty — full width */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 block mb-1">
+        <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
           Wymagane dokumenty
         </label>
         <Select

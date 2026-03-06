@@ -3,12 +3,10 @@
  * Typy: status_change | field_change | order_created
  */
 
-import { ArrowRight, Edit2, Minus, Plus, RefreshCw } from "lucide-react";
+import { ArrowRight, Edit2, Plus, RefreshCw } from "lucide-react";
 
-import { getFieldLabel } from "@/lib/field-labels";
 import { formatDate } from "@/lib/format-utils";
-import { STATUS_NAMES } from "@/lib/view-models";
-import type { OrderStatusCode, TimelineEntryViewModel } from "@/lib/view-models";
+import type { TimelineEntryViewModel } from "@/lib/view-models";
 
 interface TimelineEntryProps {
   entry: TimelineEntryViewModel;
@@ -27,12 +25,14 @@ function getInitials(name: string | null, userId: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-/** Formatuje czas: HH:MM z ISO timestamp */
+/** Formatuje czas: HH:MM z ISO timestamp (explicit timezone Europe/Warsaw) */
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  const h = String(d.getHours()).padStart(2, "0");
-  const m = String(d.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
+  return d.toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Warsaw",
+  });
 }
 
 /** StatusBadge dla historii — uproszczone kolory */
@@ -48,7 +48,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function StatusPill({ code }: { code: string }) {
   const colors = STATUS_COLORS[code] ?? "bg-slate-100 text-slate-600";
-  const label = STATUS_NAMES[code as OrderStatusCode] ?? code;
+  const label = code.charAt(0).toUpperCase() + code.slice(1);
   return (
     <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full ${colors}`}>
       {label}
@@ -109,22 +109,6 @@ function IconBadge({ type }: { type: TimelineEntryViewModel["type"] }) {
   );
 }
 
-/** Kontekstowy opis akcji w naglowku wpisu historii */
-function getActionDescription(entry: TimelineEntryViewModel): string {
-  if (entry.type === "status_change") return "zmienił(a) status";
-  if (entry.type === "order_created") return "— zlecenie utworzone";
-
-  // field_change — kontekstowy opis
-  const fn = entry.fieldName ?? "";
-  if (fn === "stop_added") return "dodał(a) przystanek";
-  if (fn === "stop_removed") return "usunął/ęła przystanek";
-  if (fn === "item_added") return "dodał(a) pozycję towarową";
-  if (fn === "item_removed") return "usunął/ęła pozycję towarową";
-  if (fn.startsWith("item[")) return "zmienił(a) pozycję towarową";
-  if (fn.startsWith("stop.")) return "zmienił(a) przystanek";
-  return "zmienił(a) dane";
-}
-
 // ---------------------------------------------------------------------------
 // Główny komponent
 // ---------------------------------------------------------------------------
@@ -148,7 +132,9 @@ export function TimelineEntry({ entry }: TimelineEntryProps) {
             {entry.changedByUserName ?? "System"}
           </span>
           <span className="ml-1.5 text-xs text-slate-500 dark:text-slate-400">
-            {getActionDescription(entry)}
+            {entry.type === "status_change" && "zmienił(a) status"}
+            {entry.type === "field_change" && "zmienił(a) dane"}
+            {entry.type === "order_created" && "— zlecenie utworzone"}
           </span>
         </div>
         <span className="text-[11px] font-mono text-slate-500 dark:text-slate-400 bg-slate-100 dark:bg-slate-800 px-1.5 py-0.5 rounded shrink-0 ml-2">
@@ -168,45 +154,22 @@ export function TimelineEntry({ entry }: TimelineEntryProps) {
       {entry.type === "field_change" && entry.fieldName && (
         <div className="bg-slate-50 dark:bg-slate-800/50 rounded-lg p-3 border border-slate-100 dark:border-slate-800">
           <p className="text-[9px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-1.5 tracking-wide">
-            {getFieldLabel(entry.fieldName)}
+            {entry.fieldName}
           </p>
-          {/* Dodanie/usuniecie przystanku lub pozycji towarowej */}
-          {(entry.fieldName === "stop_added" || entry.fieldName === "item_added") && (
-            <div className="flex items-center gap-2">
-              <Plus className="w-3.5 h-3.5 text-emerald-600 shrink-0" />
-              <p className="text-xs text-emerald-700 dark:text-emerald-400 font-semibold">
-                {entry.newValue || "—"}
-              </p>
-            </div>
-          )}
-          {(entry.fieldName === "stop_removed" || entry.fieldName === "item_removed") && (
-            <div className="flex items-center gap-2">
-              <Minus className="w-3.5 h-3.5 text-red-500 shrink-0" />
-              <p className="text-xs text-red-500 dark:text-red-400 line-through">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-0.5">Było</p>
+              <p className="text-xs text-slate-500 dark:text-slate-400 line-through opacity-70">
                 {entry.oldValue || "—"}
               </p>
             </div>
-          )}
-          {/* Standardowa zmiana pola — siatka "Bylo" / "Jest" */}
-          {entry.fieldName !== "stop_added" &&
-           entry.fieldName !== "stop_removed" &&
-           entry.fieldName !== "item_added" &&
-           entry.fieldName !== "item_removed" && (
-            <div className="grid grid-cols-2 gap-3">
-              <div>
-                <p className="text-[10px] uppercase font-bold text-slate-400 dark:text-slate-500 mb-0.5">Było</p>
-                <p className="text-xs text-slate-500 dark:text-slate-400 line-through opacity-70">
-                  {entry.oldValue || "—"}
-                </p>
-              </div>
-              <div>
-                <p className="text-[10px] uppercase font-bold text-primary mb-0.5">Jest</p>
-                <p className="text-xs text-slate-800 dark:text-slate-200 font-semibold">
-                  {entry.newValue || "—"}
-                </p>
-              </div>
+            <div>
+              <p className="text-[10px] uppercase font-bold text-primary mb-0.5">Jest</p>
+              <p className="text-xs text-slate-800 dark:text-slate-200 font-semibold">
+                {entry.newValue || "—"}
+              </p>
             </div>
-          )}
+          </div>
         </div>
       )}
 

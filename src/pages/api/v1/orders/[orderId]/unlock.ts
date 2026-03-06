@@ -12,6 +12,7 @@ import {
   jsonResponse,
   isValidUUID,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { unlockOrder } from "../../../../../lib/services/order-lock.service";
 
@@ -49,7 +50,7 @@ export const POST: APIRoute = async ({ params, locals }) => {
         "Możesz odblokować tylko własną blokadę. Odblokowanie cudzej wymaga roli ADMIN."
       );
     }
-    console.error("[POST /api/v1/orders/{orderId}/unlock]", err);
+    logError("[POST /api/v1/orders/{orderId}/unlock]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas odblokowywania zlecenia.");
   }
 };
