@@ -11,9 +11,6 @@
 - **Pozostało:** history/status, history/changes (LOW), 5 słownikowych (POMIŃ)
 - **Pliki z testami:** `src/pages/api/v1/orders/__tests__/`, `src/pages/api/v1/orders/[orderId]/__tests__/`
 
-### ~~H-02. `order.service.ts` — god service~~ → DONE (sesja 33)
-- Przeniesione do sekcji "Zrobione"
-
 ### H-11. Brak CI/CD pipeline i pre-commit hooków
 - **Źródło:** Audyt testów
 - **Opis:** Brak `.github/`, brak husky/lint-staged. Testy uruchamiane tylko ręcznie.
