@@ -1,15 +1,10 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-05 (sesja 33 — H-02 DONE: rozbicie order.service.ts na 6 sub-serwisów)
+> Ostatnia aktualizacja: 2026-03-06 (sesja 34 — 15 tasków DONE: security, DRY, hooks, tests, docs)
 
 ---
 
 ## Do zrobienia — HIGH
-
-### CR-01. Brak testów endpointów API — pozostałe (3 z 24)
-- **Status:** 136 testów w 10 plikach pokrywają: orders CRUD, status, lock/unlock, duplicate, prepare-email, restore, warehouse, stops, carrier-color, entry-fixed.
-- **Pozostało:** history/status, history/changes (LOW), 5 słownikowych (POMIŃ)
-- **Pliki z testami:** `src/pages/api/v1/orders/__tests__/`, `src/pages/api/v1/orders/[orderId]/__tests__/`
 
 ### H-11. Brak CI/CD pipeline i pre-commit hooków
 - **Źródło:** Audyt testów
@@ -18,66 +13,6 @@
 ---
 
 ## Do zrobienia — MEDIUM
-
-### M-01. DRY: `hasActiveFilters` zduplikowane w 2 plikach
-- **Pliki:** `OrdersPage.tsx:93-103`, `FilterBar.tsx:93-103`
-- **Rekomendacja:** Wydziel do `view-models.ts`.
-
-### M-02. DRY: `STATUS_NAMES` zduplikowane w 2 plikach
-- **Pliki:** `OrderRowContextMenu.tsx:29-37`, `StatusSection.tsx:27-35`
-- **Rekomendacja:** Wydziel do `view-models.ts`.
-
-### M-03. DRY: status name capitalization powtórzona 2x
-- **Pliki:** `OrderForm.tsx:182-185`, `OrderDrawer.tsx:381-386`
-- **Rekomendacja:** Użyj `STATUS_NAMES[code]` zamiast runtime transformacji.
-
-### M-04. Dead code: `SORTABLE_COLUMNS` w OrderTable.tsx
-- **Plik:** `src/components/orders/OrderTable.tsx:37-42`
-
-### M-05. Identity mapping `TRANSPORT_CODE_DISPLAY` — do usunięcia
-- **Pliki:** `OrderRow.tsx:22-27`, `FilterBar.tsx:25-27`
-- **Rekomendacja:** Użyj `order.transportTypeCode` bezpośrednio.
-
-### M-06. `OrderDrawer.tsx` — 742 linii, za dużo odpowiedzialności
-- **Plik:** `src/components/orders/drawer/OrderDrawer.tsx`
-- **Rekomendacja:** Wydziel `useOrderDrawer(orderId, isOpen)` hook. (Powiązane z D-05)
-
-### M-07. `OrdersPage.tsx` — 433 linii, powtarzalne handlery
-- **Plik:** `src/components/orders/OrdersPage.tsx`
-- **Rekomendacja:** Wydziel `useOrderActions()` hook lub helper `try/catch/toast/refetch`.
-
-### M-08. `TimeCombobox` nie wydzielony z RoutePointCard
-- **Plik:** `src/components/orders/drawer/RoutePointCard.tsx:36-203`
-- **Rekomendacja:** Wydziel do `components/orders/drawer/TimeCombobox.tsx`.
-
-### M-10. Brak CORS headers na odpowiedzi 429 (rate limit)
-- **Plik:** `src/middleware.ts:153`
-- **Rekomendacja:** Dodaj CORS headers do odpowiedzi 429.
-
-### M-11. Brak limitu rozmiaru request body
-- **Plik:** `src/lib/api-helpers.ts:158-164` (`parseJsonBody`)
-- **Rekomendacja:** Reject bodies > 1MB via `Content-Length` check.
-
-### M-NEW-01. Rozbieżności dokumentacji wykryte w audycie sesji 30 (18 pozycji)
-- **Opis:** 10 brakujących + 8 nieaktualnych informacji w docs:
-  - **db-plan.md**: brak `is_entry_fixed`, `confidentiality_clause`; stary FK `vehicle_variant_code`
-  - **prd.md §3.2.1**: mówi "brak selektora oddziałów" (jest BranchSelector); brak `locationId` w API
-  - **ui-plan.md**: stary opis vehicleVariantCode w drawerze; brak BranchSelector/OperationLegend; AppHeader nie deprecated; brak `/warehouse` w mapowaniu tras
-  - **widok-magazyn-specyfikacja.md**: "5 kolumn awizacji" i "Sekcja 7" w dwóch miejscach
-  - **api-plan.md**: brak `locationId` w warehouse; brak `carrierCellColor`/`isEntryFixed`/`mainProductName` w sekcji 2.2; `weekEnd` niedziela vs piątek; brak `kind` w PATCH stop
-- **Rekomendacja:** Jednorazowa sesja aktualizacji 5 plików docs.
-
-### ~~NEW-04.~~ (DONE — sesja 32, wchłonięte do CR-01)
-
-### NEW-05. `makeContext()` zduplikowany w 7 plikach testowych API
-- **Opis:** Każdy plik testowy endpointów definiuje własny `makeContext()` (~30 linii boilerplate). Wydzielić do `src/test/helpers/api-context.ts`.
-
-### M-14. Brak health check endpoint
-- **Rekomendacja:** Dodaj `GET /api/v1/health` sprawdzający DB connectivity.
-
-### M-15. Brak coverage konfiguracji w vitest.config.ts
-- **Opis:** Nie można zobaczyć % pokrycia. Brak reporters, brak testTimeout.
-- **Plik:** `vitest.config.ts`
 
 ### M-16. Brak testów komponentów React (64+ pliki, 0 testów)
 - **Opis:** OrderRow, OrdersTable, StatusBadge, FilterBar — zero testów poza tymczasowymi drawer-e2e.
@@ -166,6 +101,24 @@
 ---
 
 ## Zrobione
+
+### Sesja 34 — security, DRY, hooks, tests, docs (15 tasków)
+- [x] M-10: CORS headers na odpowiedzi 429 (middleware.ts)
+- [x] M-11: Limit rozmiaru request body 1MB (api-helpers.ts)
+- [x] M-01: `hasActiveFilters()` wydzielony do view-models.ts
+- [x] M-02: `STATUS_NAMES` wydzielony do view-models.ts
+- [x] M-03: Runtime capitalization → STATUS_NAMES lookup (OrderForm, OrderDrawer, TimelineEntry)
+- [x] M-04: Usunięto dead code `SORTABLE_COLUMNS` (OrderTable.tsx)
+- [x] M-05: Usunięto identity mapping `TRANSPORT_CODE_DISPLAY` (OrderRow, FilterBar)
+- [x] M-08: `TimeCombobox` wydzielony z RoutePointCard do osobnego pliku
+- [x] M-06: `useOrderDrawer` hook — OrderDrawer.tsx 742→185 linii + fix duplikacji saveToApi/buildSaveBody
+- [x] M-07: `useOrderActions` hook — OrdersPage.tsx 443→245 linii
+- [x] CR-01 (dokończenie): 11 testów history/status + history/changes
+- [x] NEW-05: Wspólny `makeApiContext()` helper w `src/test/helpers/api-context.ts`
+- [x] M-14: `GET /api/v1/health` endpoint (DB connectivity check)
+- [x] M-15: vitest coverage config (v8 provider) + testTimeout 10s
+- [x] M-NEW-01: Aktualizacja 5 plików docs (db-plan, api-plan, prd, ui-plan, widok-magazyn)
+- Wynik: 793/793 testów, 19 pre-existing TS errors (bez zmian)
 
 ### Sesja 33 — H-02 DONE: rozbicie order.service.ts
 - [x] H-02: Rozbicie `order.service.ts` (2400 linii) na 6 sub-serwisów + re-export hub (17 linii)
