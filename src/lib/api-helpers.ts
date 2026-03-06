@@ -155,8 +155,22 @@ export function parseQueryParams(url: URL): Record<string, string | string[]> {
  * @param request — obiekt Request
  * @returns zparsowany obiekt (bez walidacji typów — do walidacji Zod)
  */
+const MAX_BODY_SIZE = 1_048_576; // 1 MB
+
 export async function parseJsonBody<T>(request: Request): Promise<T> {
+  // Sprawdź Content-Length header (szybkie odrzucenie przed czytaniem body)
+  const contentLength = request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > MAX_BODY_SIZE) {
+    throw new SyntaxError("Request body too large (max 1MB)");
+  }
+
   const text = await request.text();
+
+  // Backup: sprawdź rzeczywisty rozmiar tekstu
+  if (text.length > MAX_BODY_SIZE) {
+    throw new SyntaxError("Request body too large (max 1MB)");
+  }
+
   if (!text.trim()) {
     throw new SyntaxError("Empty body");
   }

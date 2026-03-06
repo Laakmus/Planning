@@ -149,6 +149,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const rate = checkRateLimit(rateKey, limit);
 
   if (!rate.allowed) {
+    const corsOrigin = import.meta.env.CORS_ORIGIN ?? "http://localhost:4321";
     return new Response(
       JSON.stringify({
         error: "Too Many Requests",
@@ -162,6 +163,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
           "Retry-After": String(Math.ceil((rate.resetAt - Date.now()) / 1000)),
           "X-RateLimit-Limit": String(limit),
           "X-RateLimit-Remaining": "0",
+          "Access-Control-Allow-Origin": corsOrigin,
+          "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
+          "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
         },
       }
     );

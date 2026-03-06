@@ -8,6 +8,13 @@ export default defineConfig({
     setupFiles: ["./src/test/setup.ts"],
     include: ["src/**/*.{test,spec}.{ts,tsx}"],
     exclude: ["node_modules", "dist", ".astro"],
+    testTimeout: 10_000,
+    coverage: {
+      provider: "v8",
+      reporter: ["text", "text-summary"],
+      include: ["src/lib/**", "src/pages/api/**", "src/middleware.ts"],
+      exclude: ["src/**/__tests__/**", "src/test/**"],
+    },
   },
   resolve: {
     alias: {

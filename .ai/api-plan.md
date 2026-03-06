@@ -134,7 +134,9 @@
           "createdByUserName": "string | null",
           "updatedAt": "timestamp",
           "updatedByUserId": "uuid | null",
-          "updatedByUserName": "string | null"
+          "updatedByUserName": "string | null",
+          "carrierCellColor": "string | null (hex kolor tła komórki przewoźnika, np. #48A111)",
+          "isEntryFixed": "boolean | null (flaga Fix — zafiksowany wjazd)"
         }
       ],
       "page": 1,
@@ -492,6 +494,7 @@
   - **Body żądania**:
     ```json
     {
+      "kind": "LOADING | UNLOADING",
       "dateLocal": "YYYY-MM-DD",
       "timeLocal": "HH:MM:SS",
       "locationId": "uuid",
@@ -672,7 +675,7 @@ Wszystkie te endpointy używają standardowego formatu:
       "week": 12,
       "year": 2026,
       "weekStart": "2026-03-16",
-      "weekEnd": "2026-03-22",
+      "weekEnd": "2026-03-20",
       "locationName": "NORD Główny",
       "days": [
         {
@@ -714,6 +717,23 @@ Wszystkie te endpointy używają standardowego formatu:
   - **Sekcja noDateEntries**: Stopy bez przypisanej daty (date_local IS NULL) wyświetlane w osobnej sekcji na dole widoku.
   - **Sukces**: `200 OK`
   - **Błędy**: `400 Bad Request` (nieprawidłowe parametry), `401 Unauthorized`, `403 Forbidden` (brak oddziału), `500 Internal Server Error`
+
+---
+
+### 2.17 Health check
+
+- **GET** `/api/v1/health`
+  - **Opis**: Sprawdza dostępność serwera i połączenie z bazą danych. Nie wymaga uwierzytelniania.
+  - **Body odpowiedzi (sukces)**:
+    ```json
+    {
+      "status": "ok",
+      "timestamp": "ISO 8601 timestamp",
+      "db": "connected"
+    }
+    ```
+  - **Sukces**: `200 OK`
+  - **Błędy**: `503 Service Unavailable` (brak połączenia z DB)
 
 ---
 

@@ -32,15 +32,6 @@ interface OrderTableProps {
   onSetEntryFixed: (orderId: string, value: boolean | null) => void;
 }
 
-type SortableColumn = { label: string; sortKey: OrderSortBy };
-
-const SORTABLE_COLUMNS: Record<string, SortableColumn> = {
-  orderNo: { label: "Nr zlecenia", sortKey: "ORDER_NO" },
-  loadingDate: { label: "Data zał.", sortKey: "FIRST_LOADING_DATETIME" },
-  unloadingDate: { label: "Data rozł.", sortKey: "FIRST_UNLOADING_DATETIME" },
-  carrier: { label: "Firma transp.", sortKey: "CARRIER_NAME" },
-};
-
 function SortIcon({
   column,
   sortBy,

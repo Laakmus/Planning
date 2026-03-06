@@ -18,14 +18,6 @@ import { OrderRowContextMenu } from "./OrderRowContextMenu";
 import { RouteSummaryCell } from "./RouteSummaryCell";
 import { StatusBadge } from "./StatusBadge";
 
-/** Mapowanie kodów transportu na skróty wyświetlane w tabeli (PRD §3.1.2a). */
-const TRANSPORT_CODE_DISPLAY: Record<string, string> = {
-  PL: "PL",
-  EXP: "EXP",
-  EXP_K: "EXP_K",
-  IMP: "IMP",
-};
-
 /** Tło wiersza wg statusCode — tylko wysłane i korekta wysłane mają kolor (zielony). */
 const ROW_BG: Record<string, string> = {
   wysłane: "bg-emerald-100/70 dark:bg-emerald-900/40",
@@ -121,7 +113,7 @@ export function OrderRow({
 
       {/* Rodzaj transportu */}
       <td className="py-1 px-4 text-[12px] min-w-[80px]">
-        {TRANSPORT_CODE_DISPLAY[order.transportTypeCode] ?? order.transportTypeCode}
+        {order.transportTypeCode}
       </td>
 
       {/* Trasa lub Miejsca załadunku/rozładunku */}

@@ -19,13 +19,12 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
-import type { CarrierColorResponseDto, CreateOrderResponseDto, DuplicateOrderResponseDto, EntryFixedResponseDto, PrepareEmailResponseDto } from "@/types";
 import { useOrders } from "@/hooks/useOrders";
-import { DEFAULT_FILTERS } from "@/lib/view-models";
+import { useOrderActions } from "@/hooks/useOrderActions";
+import { DEFAULT_FILTERS, hasActiveFilters } from "@/lib/view-models";
 import type {
   ListViewMode,
   OrderListFilters,
-  OrderStatusCode,
   ViewGroup,
 } from "@/lib/view-models";
 
@@ -56,13 +55,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Stan tworzenia nowego zlecenia (blokada przycisku + spinner)
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const isCreatingRef = useRef(false);
   const tableScrollRef = useRef<HTMLDivElement>(null);
-
-  // Stan dialogu potwierdzenia anulowania
-  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
 
   // Stan panelu historii
   const [historyOrderId, setHistoryOrderId] = useState<string | null>(null);
@@ -78,6 +71,22 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   // Pobierz listę zleceń
   const { data, isLoading, error, refetch } = useOrders(filters, page);
 
+  // Akcje na zleceniach (wyekstrahowane do osobnego hooka)
+  const {
+    isCreatingOrder,
+    cancelOrderId,
+    setCancelOrderId,
+    handleAddOrder,
+    handleSendEmail,
+    handleChangeStatus,
+    handleCancelRequest,
+    handleCancelConfirm,
+    handleRestore,
+    handleSetCarrierColor,
+    handleSetEntryFixed,
+    handleDuplicate,
+  } = useOrderActions({ api, refetch, tableScrollRef });
+
   useEffect(() => {
     if (data) {
       setLastUpdateTime(new Date().toISOString());
@@ -90,18 +99,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     }
   }, [error]);
 
-  // Pomocnicza funkcja do sprawdzenia aktywnych filtrów
-  const hasActiveFilters =
-    !!filters.transportType ||
-    !!filters.status ||
-    !!filters.carrierId ||
-    !!filters.productId ||
-    !!filters.loadingCompanyId ||
-    !!filters.loadingLocationId ||
-    !!filters.unloadingCompanyId ||
-    !!filters.unloadingLocationId ||
-    !!filters.weekNumber ||
-    !!filters.search;
+  const filtersActive = hasActiveFilters(filters);
 
   // Uprawnienia
   const canWrite = user?.role !== "READ_ONLY";
@@ -134,52 +132,11 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     setPage(1);
   }
 
-  // --- Handlery akcji ---
+  // --- Handlery nawigacji ---
   function handleRowClick(orderId: string) {
     setSelectedOrderId(orderId);
     setDrawerOpen(true);
   }
-
-  const handleAddOrder = useCallback(async () => {
-    if (isCreatingRef.current) return;
-    isCreatingRef.current = true;
-    setIsCreatingOrder(true);
-    try {
-      const result = await api.post<CreateOrderResponseDto>("/api/v1/orders", {
-        transportTypeCode: "PL",
-        currencyCode: "PLN",
-        carrierCompanyId: null,
-        shipperLocationId: null,
-        receiverLocationId: null,
-        vehicleTypeText: null,
-        vehicleCapacityVolumeM3: null,
-        priceAmount: null,
-        paymentTermDays: null,
-        paymentMethod: null,
-        totalLoadTons: null,
-        totalLoadVolumeM3: null,
-        specialRequirements: null,
-        requiredDocumentsText: null,
-        generalNotes: null,
-        senderContactName: null,
-        senderContactPhone: null,
-        senderContactEmail: null,
-        stops: [],
-        items: [],
-      });
-      toast.success(`Utworzono zlecenie ${result.orderNo}.`);
-      await refetch();
-      // Auto-scroll na dół po wyrenderowaniu nowego wiersza
-      requestAnimationFrame(() => {
-        tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Błąd tworzenia zlecenia.");
-    } finally {
-      isCreatingRef.current = false;
-      setIsCreatingOrder(false);
-    }
-  }, [api, refetch]);
 
   const handleDrawerClose = useCallback(() => {
     setDrawerOpen(false);
@@ -192,122 +149,6 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     setHistoryOrderNo(resolvedNo);
     setHistoryPanelOpen(true);
   }
-
-  const handleSendEmail = useCallback(
-    async (orderId: string) => {
-      try {
-        const result = await api.post<PrepareEmailResponseDto>(
-          `/api/v1/orders/${orderId}/prepare-email`,
-          {}
-        );
-        if (result.emailOpenUrl) {
-          window.open(result.emailOpenUrl, "_blank", "noopener,noreferrer");
-        }
-        toast.success("Email przygotowany — otwórz klienta pocztowego.");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd wysyłki maila.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleChangeStatus = useCallback(
-    async (orderId: string, newStatus: OrderStatusCode) => {
-      try {
-        await api.post(`/api/v1/orders/${orderId}/status`, { newStatusCode: newStatus });
-        toast.success("Status zmieniony.");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd zmiany statusu.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleCancelRequest = useCallback((orderId: string) => {
-    setCancelOrderId(orderId);
-  }, []);
-
-  const handleCancelConfirm = useCallback(async () => {
-    if (!cancelOrderId) return;
-    const orderId = cancelOrderId;
-    setCancelOrderId(null);
-    try {
-      await api.delete(`/api/v1/orders/${orderId}`);
-      toast.success("Zlecenie anulowane.");
-      refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Błąd anulowania zlecenia.");
-    }
-  }, [api, cancelOrderId, refetch]);
-
-  const handleRestore = useCallback(
-    async (orderId: string) => {
-      try {
-        await api.post(`/api/v1/orders/${orderId}/restore`, {});
-        toast.success("Zlecenie przywrócone do Aktualnych (status: Korekta).");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd przywracania zlecenia.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleSetCarrierColor = useCallback(
-    async (orderId: string, color: string | null) => {
-      try {
-        await api.patch<CarrierColorResponseDto>(
-          `/api/v1/orders/${orderId}/carrier-color`,
-          { color }
-        );
-        toast.success(color ? "Kolor ustawiony." : "Kolor usunięty.");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd ustawiania koloru.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleSetEntryFixed = useCallback(
-    async (orderId: string, value: boolean | null) => {
-      try {
-        await api.patch<EntryFixedResponseDto>(
-          `/api/v1/orders/${orderId}/entry-fixed`,
-          { isEntryFixed: value }
-        );
-        toast.success(
-          value === true ? "Fix: Tak" : value === false ? "Fix: Nie" : "Fix usunięty."
-        );
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd ustawiania pola Fix.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleDuplicate = useCallback(
-    async (orderId: string) => {
-      try {
-        const result = await api.post<DuplicateOrderResponseDto>(
-          `/api/v1/orders/${orderId}/duplicate`,
-          { includeStops: true, includeItems: true, resetStatusToDraft: true }
-        );
-        toast.success(`Zlecenie skopiowane jako ${result.orderNo}.`);
-        await refetch();
-        // Auto-scroll na dół — kopia trafia na koniec listy (null dates, ASC nulls last)
-        requestAnimationFrame(() => {
-          tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
-        });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd kopiowania zlecenia.");
-      }
-    },
-    [api, refetch]
-  );
 
   const orders = data?.items ?? [];
   const totalItems = data?.totalItems ?? 0;
@@ -333,7 +174,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
       {/* Tabela / EmptyState */}
       {isEmpty ? (
         <EmptyState
-          hasFilters={hasActiveFilters}
+          hasFilters={filtersActive}
           showAddButton={showAddButton}
           isAddingOrder={isCreatingOrder}
           onAddOrder={handleAddOrder}

@@ -12,6 +12,7 @@ import { Label } from "@/components/ui/label";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { useDictionaries } from "@/contexts/DictionaryContext";
+import { STATUS_NAMES } from "@/lib/view-models";
 import type { CurrencyCode, OrderFormData, OrderFormItem, OrderFormStop, OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
 
 /** Mapowanie starych kodów transportu na aktualne (dane seed/historyczne). */
@@ -187,11 +188,7 @@ export function OrderForm({
     formDataRef.current = formData;
   }, [formData, formDataRef]);
 
-  // Status name lookup
-  const statusName = order.statusCode
-    .split(" ")
-    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-    .join(" ");
+  const statusName = STATUS_NAMES[order.statusCode as OrderStatusCode] ?? order.statusCode;
 
   return (
     <ScrollArea className="flex-1 min-h-0">

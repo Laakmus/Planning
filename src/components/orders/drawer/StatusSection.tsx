@@ -9,6 +9,7 @@ import { AlertTriangle, CheckCircle, Info, XCircle } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import {
   ALLOWED_MANUAL_STATUS_TRANSITIONS,
+  STATUS_NAMES,
   type OrderStatusCode,
 } from "@/lib/view-models";
 
@@ -23,16 +24,6 @@ interface StatusSectionProps {
   onStatusChange: (code: OrderStatusCode | null) => void;
   onComplaintReasonChange: (reason: string | null) => void;
 }
-
-const STATUS_NAMES: Record<OrderStatusCode, string> = {
-  robocze: "Robocze",
-  wysłane: "Wysłane",
-  korekta: "Korekta",
-  "korekta wysłane": "Korekta_w",
-  zrealizowane: "Zrealizowane",
-  reklamacja: "Reklamacja",
-  anulowane: "Anulowane",
-};
 
 /** Style per status button */
 const STATUS_BUTTON_STYLES: Partial<Record<OrderStatusCode, { base: string; ring: string; icon: React.ReactNode }>> = {

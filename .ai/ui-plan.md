@@ -37,6 +37,7 @@ Aplikacja składa się z dwóch głównych stanów: niezalogowany (ekran logowan
 |---|---|---|
 | `/` | Strona Astro | Logowanie lub przekierowanie do listy |
 | `/orders` | Strona Astro + wyspy React | Widok główny z listą zleceń |
+| `/warehouse` | Strona Astro + wyspy React | Widok magazynowy — tygodniowy plan operacji |
 | `/api/v1/*` | Endpointy API | Backend REST (istniejący) |
 
 Nawigacja między logowaniem a widokiem głównym realizowana jest przez standardowe przekierowania HTTP/Astro. Wewnątrz widoku głównego całość obsługiwana jest przez React (zakładki, filtry, drawer, panele) bez przeładowywania strony.
@@ -226,7 +227,7 @@ Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z dan
 - Nazwa firmy (przewoźnik)* — autocomplete z `companies` (typ carrier).
 - NIP — wyświetlany jako tekst 11px pod polem autocomplete (nie osobne pole input).
 - Typ auta* — select z unikalnych `vehicleType` z `vehicle_variants`.
-- Objętość m³* — **pole tekstowe** (type=number, wolne wpisywanie). Wpisana wartość jest dopasowywana do istniejącego `vehicleVariantCode` (typ + objętość). Jeśli brak dopasowania — `vehicleVariantCode` pusty.
+- Objętość m³* — **pole tekstowe** (type=number, wolne wpisywanie). Pole `vehicleCapacityVolumeM3` — niezależne od typu auta (dwa osobne pola, brak FK do `vehicle_variants`).
 - Wymagane dokumenty — select (**2 opcje**): „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR". **Automatyczny wybór** przy zmianie Rodzaju transportu (Sekcja 1): eksport/eksport kontener/import → „WZE, Aneks VII, CMR"; kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić.
 - Brak ikon per pole (usunięte Truck, IdCard, Car, Ruler, FileText).
 
@@ -380,9 +381,11 @@ Przyciski akcji (sticky na dole draweru):
 
 ---
 
-### 2.5 Nagłówek aplikacji (AppHeader)
+### 2.5 Nagłówek aplikacji (AppHeader) — DEPRECATED
 
-- **Cel**: Stały element nawigacyjny widoczny na wszystkich stronach po zalogowaniu. Jeden blok: logo, tytuł, zakładki (OrderTabs), SyncButton, blok użytkownika.
+> **Uwaga:** AppHeader.tsx i OrderTabs.tsx to dead code od sesji 25 — zastąpione przez AppSidebar (shadcn/ui Sidebar). Pliki zachowane w repozytorium decyzją użytkownika, ale nie są importowane nigdzie. Funkcjonalność (nawigacja widoków, SyncButton, UserInfo, ThemeToggle) przeniesiona do AppSidebar (sekcja 2.2 punkt 1).
+
+- **Cel**: ~~Stały element nawigacyjny widoczny na wszystkich stronach po zalogowaniu.~~ Zastąpiony przez AppSidebar. Jeden blok: logo, tytuł, zakładki (OrderTabs), SyncButton, blok użytkownika.
 - **Powiązane API**: `GET /api/v1/auth/me`, `POST /api/v1/dictionary-sync/run`, `GET /api/v1/dictionary-sync/jobs/{jobId}`.
 
 #### Kluczowe komponenty
@@ -413,6 +416,7 @@ Przyciski akcji (sticky na dole draweru):
 - **Kluczowe informacje**: Karty dzienne (pon-pt) z operacjami chronologicznie, dane awizacyjne, podsumowanie tygodniowe.
 - **Powiązane API**: `GET /api/v1/warehouse/orders?week=12&year=2026`
 - **Warunki dostępu**: Zalogowany użytkownik z przypisanym oddziałem (`locationId` w profilu). Nawigacja przez sidebar: link "Magazyn" z ikoną `Warehouse`.
+- **BranchSelector** — dropdown w nagłówku widoku, pozwala przełączać się między oddziałami tej samej firmy. Ukryty gdy firma ma tylko 1 oddział. Domyślna wartość: oddział użytkownika z profilu.
 
 #### Nawigacja tygodniowa (sticky top)
 - Strzałki ← → do przełączania tygodni
@@ -467,6 +471,8 @@ Przyciski akcji (sticky na dole draweru):
 | WeekSummaryFooter | `src/components/warehouse/WeekSummaryFooter.tsx` | Footer z podsumowaniem |
 | EmptyDayMessage | `src/components/warehouse/EmptyDayMessage.tsx` | Komunikat pustego dnia |
 | NoDateSection | `src/components/warehouse/NoDateSection.tsx` | Sekcja stopów bez daty |
+| BranchSelector | `src/components/warehouse/BranchSelector.tsx` | Dropdown oddziałów firmy użytkownika |
+| OperationLegend | `src/components/warehouse/OperationLegend.tsx` | Legenda typów operacji (Zał/Roz) |
 
 #### Hook
 

@@ -237,3 +237,36 @@ export const DEFAULT_FILTERS: OrderListFilters = {
 };
 
 export const DEFAULT_PAGE_SIZES = [50, 100, 200] as const;
+
+// ---------------------------------------------------------------------------
+// Mapowanie kodów statusów → nazwy wyświetlane (DRY — M-02, M-03)
+// ---------------------------------------------------------------------------
+
+export const STATUS_NAMES: Record<OrderStatusCode, string> = {
+  robocze: "Robocze",
+  wysłane: "Wysłane",
+  korekta: "Korekta",
+  "korekta wysłane": "Korekta_w",
+  zrealizowane: "Zrealizowane",
+  reklamacja: "Reklamacja",
+  anulowane: "Anulowane",
+};
+
+// ---------------------------------------------------------------------------
+// Sprawdzenie aktywnych filtrów (DRY — M-01)
+// ---------------------------------------------------------------------------
+
+export function hasActiveFilters(filters: OrderListFilters): boolean {
+  return (
+    !!filters.transportType ||
+    !!filters.status ||
+    !!filters.carrierId ||
+    !!filters.productId ||
+    !!filters.loadingCompanyId ||
+    !!filters.loadingLocationId ||
+    !!filters.unloadingCompanyId ||
+    !!filters.unloadingLocationId ||
+    !!filters.weekNumber ||
+    !!filters.search
+  );
+}

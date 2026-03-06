@@ -10,21 +10,14 @@ import { Plus, Search, X } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 
 import { useDictionaries } from "@/contexts/DictionaryContext";
-import type { OrderListFilters } from "@/lib/view-models";
-import type { ListViewMode } from "@/lib/view-models";
-
-import type { OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
+import { hasActiveFilters } from "@/lib/view-models";
+import type { OrderListFilters, ListViewMode, OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
 
 import { AutocompleteFilter } from "./AutocompleteFilter";
 import { ListSettings } from "./ListSettings";
 
 /** Dozwolone kody rodzajów transportu (PRD §3.1.2a). */
 const VALID_TRANSPORT_CODES = new Set(["PL", "EXP", "EXP_K", "IMP"]);
-
-/** Mapowanie na skróty wyświetlane w filtrze. */
-const TRANSPORT_DISPLAY: Record<string, string> = {
-  PL: "PL", EXP: "EXP", EXP_K: "EXP_K", IMP: "IMP",
-};
 
 /** Dozwolone kody statusów (PRD §5). */
 const VALID_STATUS_CODES = new Set<OrderStatusCode>([
@@ -90,17 +83,7 @@ export function FilterBar({
   const companyItems = companies.map((c) => ({ id: c.id, label: c.name }));
   const productItems = products.map((p) => ({ id: p.id, label: p.name }));
 
-  const hasActiveFilters =
-    !!filters.transportType ||
-    !!filters.status ||
-    !!filters.carrierId ||
-    !!filters.productId ||
-    !!filters.loadingCompanyId ||
-    !!filters.loadingLocationId ||
-    !!filters.unloadingCompanyId ||
-    !!filters.unloadingLocationId ||
-    !!filters.weekNumber ||
-    !!filters.search;
+  const filtersActive = hasActiveFilters(filters);
 
   return (
     <div className="shrink-0 px-4 py-2 border-b border-slate-200 dark:border-slate-800 bg-slate-50 dark:bg-slate-900/50 flex flex-wrap items-center gap-2">
@@ -117,7 +100,7 @@ export function FilterBar({
           .filter((t) => VALID_TRANSPORT_CODES.has(t.code))
           .map((t) => (
             <option key={t.code} value={t.code}>
-              {TRANSPORT_DISPLAY[t.code] ?? t.code}
+              {t.code}
             </option>
           ))}
       </select>
@@ -196,7 +179,7 @@ export function FilterBar({
       </div>
 
       {/* 9. Wyczyść filtry */}
-      {hasActiveFilters && (
+      {filtersActive && (
         <button
           onClick={onClearFilters}
           className="h-8 text-xs text-slate-500 hover:text-slate-700 dark:hover:text-slate-300 px-2 flex items-center gap-1 transition-colors"

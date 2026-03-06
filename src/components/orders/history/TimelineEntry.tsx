@@ -7,7 +7,8 @@ import { ArrowRight, Edit2, Minus, Plus, RefreshCw } from "lucide-react";
 
 import { getFieldLabel } from "@/lib/field-labels";
 import { formatDate } from "@/lib/format-utils";
-import type { TimelineEntryViewModel } from "@/lib/view-models";
+import { STATUS_NAMES } from "@/lib/view-models";
+import type { OrderStatusCode, TimelineEntryViewModel } from "@/lib/view-models";
 
 interface TimelineEntryProps {
   entry: TimelineEntryViewModel;
@@ -47,7 +48,7 @@ const STATUS_COLORS: Record<string, string> = {
 
 function StatusPill({ code }: { code: string }) {
   const colors = STATUS_COLORS[code] ?? "bg-slate-100 text-slate-600";
-  const label = code.charAt(0).toUpperCase() + code.slice(1);
+  const label = STATUS_NAMES[code as OrderStatusCode] ?? code;
   return (
     <span className={`inline-flex items-center text-[11px] font-semibold px-2 py-0.5 rounded-full ${colors}`}>
       {label}

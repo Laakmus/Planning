@@ -21,20 +21,10 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ALLOWED_MANUAL_STATUS_TRANSITIONS,
+  STATUS_NAMES,
   type OrderStatusCode,
   type ViewGroup,
 } from "@/lib/view-models";
-
-/** Mapowanie kodu statusu → czytelna nazwa do wyświetlenia. */
-const STATUS_NAMES: Record<OrderStatusCode, string> = {
-  robocze: "Robocze",
-  wysłane: "Wysłane",
-  korekta: "Korekta",
-  "korekta wysłane": "Korekta_w",
-  zrealizowane: "Zrealizowane",
-  reklamacja: "Reklamacja",
-  anulowane: "Anulowane",
-};
 
 /** Carrier cell color options. */
 const CARRIER_COLORS = [

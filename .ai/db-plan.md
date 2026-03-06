@@ -75,8 +75,7 @@ Tabela główna, centralna dla całego systemu.
 - **receiver_address_snapshot**: `varchar(500)`
   - snapshot adresu odbiorcy; **immutable**
 - **vehicle_variant_code**: `text`
-  - wybrany wariant pojazdu (typ + pojemność), `NOT NULL`
-  - FK → `vehicle_variants.code`
+  - dawny wariant pojazdu (typ + pojemność); kolumna zachowana w bazie, ale **nieużywana przez aplikację** od sesji 21. Ograniczenie FK do `vehicle_variants.code` zostało usunięte migracją `20260301000000_decouple_vehicle_fields.sql`. Może być `NULL`
 - **special_requirements**: `varchar(500)`
   - wymagania specjalne (np. ADR, chłodnia); może być `NULL`
 - **required_documents_text**: `varchar(500)`
@@ -132,6 +131,12 @@ Tabela główna, centralna dla całego systemu.
 - **vehicle_capacity_volume_m3**: `numeric(12,1)`
   - objętość ładunkowa pojazdu w m³ jako wolne pole numeryczne; opcjonalne
   - niezależne od `vehicle_type_text` (dwa osobne pola w UI)
+- **is_entry_fixed**: `boolean`
+  - flaga „zafiksowany wjazd" — czysto informacyjna dla planistów; `DEFAULT NULL`
+  - dodana migracją `20260228000001_add_is_entry_fixed.sql`
+- **confidentiality_clause**: `text`
+  - klauzula poufności wyświetlana na podglądzie A4 / PDF zlecenia; opcjonalna, `DEFAULT NULL`
+  - dodana migracją `20260302000000_add_confidentiality_clause.sql`
 
 Klucz główny:  
 - PK(`id`)
@@ -470,9 +475,9 @@ PK:
     - `transport_orders.status_code` FK → `order_statuses.code`  
     - `order_status_history.old_status_code` / `new_status_code` FK → `order_statuses.code`
 
-12. **`transport_orders` → `vehicle_variants`**  
-    - relacja N:1  
-    - `transport_orders.vehicle_variant_code` FK → `vehicle_variants.code`
+12. **`transport_orders` → `vehicle_variants`** *(NIEAKTYWNA)*
+    - kolumna `vehicle_variant_code` pozostaje w tabeli, ale ograniczenie FK zostało usunięte (sesja 21)
+    - aplikacja używa teraz pól `vehicle_type_text` i `vehicle_capacity_volume_m3` (niezależnych od `vehicle_variants`)
 
 13. **`user_profiles` → `locations`**
     - relacja N:1 (opcjonalna — oddział magazynowy)

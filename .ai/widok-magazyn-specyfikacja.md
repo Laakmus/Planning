@@ -331,7 +331,7 @@ src/hooks/
 - Umożliwia powiązanie użytkownika z oddziałem
 
 ### 16.2 Tabela `transport_orders`
-- 5 nowych kolumn awizacji (patrz §9.1)
+- Kolumna `notification_details` (TEXT, max 500 znaków) — jedno pole textarea na dane awizacji (patrz §9)
 
 ### 16.3 Indeksy
 - `CREATE INDEX idx_order_stops_location_date ON order_stops(location_id, date_local)`
@@ -371,7 +371,7 @@ src/hooks/
 | Oddział L+U | Dwa osobne wiersze (Zał + Roz) w tej samej tabeli |
 | Multi-day stops | Zlecenie w każdym dniu gdzie ma stop w oddziale |
 | Paginacja | Bez paginacji – scroll + sticky headers |
-| Formularz awizacji | Nowa Sekcja 7 w OrderDrawer (5 pól opcjonalnych) |
+| Formularz awizacji | Pole `notification_details` (textarea, max 500) w Sekcji 3 OrderDrawer (Firma transportowa) |
 | Druk | Print CSS: A4 landscape, `@media print`, Tailwind `print:` |
 | Kliknięcie wiersza | Brak akcji – tylko podgląd |
 | API endpoint | Dedykowany `GET /api/v1/warehouse/orders` |
