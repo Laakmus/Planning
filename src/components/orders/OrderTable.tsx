@@ -118,6 +118,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
         className="orders-table w-full border-collapse text-left"
         role="table"
         style={{ minWidth }}
+        data-testid="order-table"
       >
         <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800">
           <tr className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">

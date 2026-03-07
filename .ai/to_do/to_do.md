@@ -1,14 +1,14 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-07 (sesja 37 — naprawy H-12, H-13, H-14, M-17, M-18, M-19)
+> Ostatnia aktualizacja: 2026-03-07 (sesja 38 — E2E Playwright: 25 testów, Page Objects, CI)
 
 ---
 
 ## Do zrobienia — HIGH
 
-### H-11. Brak CI/CD pipeline i pre-commit hooków
+### H-11. ~~Brak CI/CD pipeline i pre-commit hooków~~ → CZĘŚCIOWO DONE
 - **Źródło:** Audyt testów
-- **Opis:** Brak `.github/`, brak husky/lint-staged. Testy uruchamiane tylko ręcznie.
+- **Opis:** ~~Brak `.github/`~~ — GitHub Actions E2E workflow dodany (`.github/workflows/e2e.yml`). Brak husky/lint-staged (pre-commit hooks) — odroczone.
 
 ---
 
@@ -66,6 +66,18 @@
 ---
 
 ## Zrobione
+
+### Sesja 38 — E2E Playwright (25 testów, 5 Page Objects, CI)
+- [x] Faza 0: Infrastruktura — `playwright.config.ts`, `e2e/global-setup.ts`, `e2e/helpers/test-data.ts`, `e2e/fixtures/pages.ts`, `e2e/.gitignore`, @playwright/test + 5 skryptów npm
+- [x] Faza 1: data-testid — 14 atrybutów w 8 komponentach (LoginCard, OrdersApp, FilterBar, OrderTable, OrderDrawer, DrawerFooter, HistoryPanel, EmptyState)
+- [x] Faza 2: LoginPage PO + `auth.spec.ts` (3 testy: login, błędne hasło, redirect bez sesji)
+- [x] Faza 3: OrdersPage PO + `sidebar.spec.ts` (3 testy) + `order-list.spec.ts` (3 testy)
+- [x] Faza 4: `filters.spec.ts` (3 testy: filtr transportu, wyszukiwanie, czyszczenie)
+- [x] Faza 5: OrderDrawerPage, ContextMenuComponent, HistoryPanelPage PO + `context-menu.spec.ts` (3), `drawer.spec.ts` (4), `history.spec.ts` (2)
+- [x] Faza 6: `order-actions.spec.ts` (4 testy: duplikacja, anulowanie, przywracanie, zmiana statusu)
+- [x] Faza 7: `.github/workflows/e2e.yml` — GitHub Actions (Supabase + Playwright Chromium)
+- [x] Faza 8: Stabilizacja — poprawiono 2x waitForTimeout → waitForResponse. TypeScript 0 błędów, Vitest 909/909
+- Wynik: 25 testów E2E w 8 plikach, 5 Page Objects, Vitest 909/909
 
 ### Sesja 37 — 3x HIGH + 3x MEDIUM DONE (6 tasków)
 - [x] H-12: try/catch w GET /orders/{orderId} — `logError()` + `errorResponse(500)`

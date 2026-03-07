@@ -107,6 +107,7 @@ export function DrawerFooter({
           onClick={onSave}
           disabled={isSaving || !isDirty}
           className="px-8 py-2 text-sm font-bold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid="drawer-save"
         >
           {isSaving ? (
             <span className="flex items-center gap-1.5">

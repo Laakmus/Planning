@@ -83,6 +83,7 @@ export function OrderDrawer({
           side="right"
           className={`w-full p-0 flex flex-col ${showOrderView ? "sm:max-w-[65vw]" : "sm:max-w-[800px]"}`}
           showCloseButton={false}
+          data-testid="order-drawer"
           onInteractOutside={(e) => {
             e.preventDefault();
             handleCloseRequest();

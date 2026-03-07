@@ -92,6 +92,7 @@ function OrdersAppInner() {
 
 export default function OrdersApp() {
   return (
+    <div data-testid="orders-app">
     <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
       <ErrorBoundary>
         <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
@@ -103,5 +104,6 @@ export default function OrdersApp() {
         </AuthProvider>
       </ErrorBoundary>
     </ThemeProvider>
+    </div>
   );
 }

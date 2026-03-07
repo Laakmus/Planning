@@ -1,5 +1,21 @@
 # Tester Agent — Pamięć
 
+## Sesja 38 (2026-03-07) — Playwright E2E infrastruktura (Faza 0)
+
+### Wykonane
+- Zainstalowano `@playwright/test` + Chromium browser
+- `playwright.config.ts` — konfiguracja: testDir=`e2e/tests`, setup project (global-setup.ts) + chromium project z storageState
+- `e2e/global-setup.ts` — logowanie przez Supabase GoTrue API, zapis storageState do `e2e/.auth/admin.json`
+- `e2e/helpers/test-data.ts` — stale testowe (TEST_USER, ORDERS z seed.sql, CURRENT_STATUSES, EXPECTED_CURRENT_COUNT)
+- `e2e/fixtures/pages.ts` — starter z re-exportem base test + expect
+- `e2e/.gitignore` — ignoruje `.auth/`, `test-results/`, `playwright-report/`
+- `package.json` — dodano skrypty: `e2e`, `e2e:ui`, `e2e:headed`, `e2e:debug`, `e2e:report`
+
+### Learningi
+- **Supabase localStorage key**: Konwencja SDK v2: `sb-${new URL(url).hostname.split(".")[0]}-auth-token`. Dla `127.0.0.1` = `sb-127-auth-token`
+- **Playwright setup project**: `testMatch: /global-setup\.ts/` w projekcie "setup", inne projekty z `dependencies: ["setup"]`
+- **storageState format**: `{ cookies: [], origins: [{ origin, localStorage: [{ name, value }] }] }`
+
 ## Sesja 37 (2026-03-07) — naprawa 20+ błędów TS w testach
 
 ### Wykonane

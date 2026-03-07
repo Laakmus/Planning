@@ -104,6 +104,7 @@ export function HistoryPanel({ orderId, orderNo, isOpen, onClose }: HistoryPanel
       <SheetContent
         side="right"
         className="w-full sm:max-w-[450px] p-0 flex flex-col"
+        data-testid="history-panel"
         onInteractOutside={() => onClose()}
         onEscapeKeyDown={() => onClose()}
       >

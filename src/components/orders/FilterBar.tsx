@@ -94,6 +94,7 @@ export function FilterBar({
           onFiltersChange({ transportType: (e.target.value as OrderListFilters["transportType"]) || undefined })
         }
         className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 text-slate-700 dark:text-slate-300"
+        data-testid="filter-transport-type"
       >
         <option value="">Rodzaj transportu</option>
         {transportTypes
@@ -110,6 +111,7 @@ export function FilterBar({
         value={filters.status ?? ""}
         onChange={(e) => onFiltersChange({ status: e.target.value || undefined })}
         className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 text-slate-700 dark:text-slate-300"
+        data-testid="filter-status"
       >
         <option value="">Status</option>
         {orderStatuses
@@ -164,6 +166,7 @@ export function FilterBar({
         value={weekInput}
         onChange={(e) => handleWeekChange(e.target.value)}
         className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 w-16 text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
+        data-testid="filter-week"
       />
 
       {/* 8. Wyszukiwanie pełnotekstowe */}
@@ -175,6 +178,7 @@ export function FilterBar({
           value={searchInput}
           onChange={(e) => handleSearchChange(e.target.value)}
           className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded pl-7 pr-2 w-28 text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
+          data-testid="filter-search"
         />
       </div>
 
