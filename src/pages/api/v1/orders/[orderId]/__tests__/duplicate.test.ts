@@ -197,7 +197,7 @@ describe("POST /api/v1/orders/{orderId}/duplicate", () => {
   });
 
   it("returns 201 with duplicated order on success", async () => {
-    const fakeDuplicated = { id: "new-order-uuid", orderNo: "Z/2026/002" };
+    const fakeDuplicated = { id: "new-order-uuid", orderNo: "Z/2026/002", statusCode: "nowe", statusName: "Nowe", createdAt: "2026-03-07T10:00:00Z" };
     mockDuplicateOrder.mockResolvedValue(fakeDuplicated);
 
     const response = await POST(makeContext());

@@ -67,6 +67,8 @@ const MOCK_DETAIL: OrderDetailResponseDto = {
     specialRequirements: null,
     requiredDocumentsText: null,
     generalNotes: null,
+    notificationDetails: null,
+    confidentialityClause: null,
     complaintReason: null,
     senderContactName: null,
     senderContactPhone: null,

@@ -80,11 +80,9 @@ function makeContext(overrides?: {
   locals?: Record<string, unknown>;
 }): AnyAPIContext {
   return {
-    locals: { supabase: { from: vi.fn() } },
     request: new Request(`http://localhost:4321/api/v1/orders/${VALID_ORDER_ID}/lock`, {
       method: "POST",
     }),
-    params: { orderId: VALID_ORDER_ID },
     url: new URL(`http://localhost:4321/api/v1/orders/${VALID_ORDER_ID}/lock`),
     redirect: vi.fn(),
     rewrite: vi.fn(),
@@ -164,7 +162,7 @@ describe("POST /api/v1/orders/{orderId}/lock", () => {
   });
 
   it("returns 200 on successful lock", async () => {
-    const fakeResult = { orderId: VALID_ORDER_ID, lockedBy: MOCK_USER_PLANNER.id };
+    const fakeResult = { id: VALID_ORDER_ID, lockedByUserId: MOCK_USER_PLANNER.id, lockedAt: "2026-03-07T10:00:00Z" };
     mockLockOrder.mockResolvedValue(fakeResult);
 
     const response = await LockPOST(makeContext());
@@ -233,7 +231,7 @@ describe("POST /api/v1/orders/{orderId}/unlock", () => {
 
   it("returns 200 on successful unlock for PLANNER (canUnlockOther = false)", async () => {
     mockGetAuth.mockResolvedValue(MOCK_USER_PLANNER);
-    const fakeResult = { orderId: VALID_ORDER_ID, unlockedAt: new Date().toISOString() };
+    const fakeResult = { id: VALID_ORDER_ID, lockedByUserId: null, lockedAt: null };
     mockUnlockOrder.mockResolvedValue(fakeResult);
 
     const response = await UnlockPOST(makeContext());
@@ -251,7 +249,7 @@ describe("POST /api/v1/orders/{orderId}/unlock", () => {
 
   it("passes canUnlockOther = true when user is ADMIN", async () => {
     mockGetAuth.mockResolvedValue(MOCK_USER_ADMIN);
-    const fakeResult = { orderId: VALID_ORDER_ID, unlockedAt: new Date().toISOString() };
+    const fakeResult = { id: VALID_ORDER_ID, lockedByUserId: null, lockedAt: null };
     mockUnlockOrder.mockResolvedValue(fakeResult);
 
     const response = await UnlockPOST(makeContext());

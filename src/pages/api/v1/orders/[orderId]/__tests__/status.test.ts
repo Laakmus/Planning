@@ -155,7 +155,7 @@ describe("POST /api/v1/orders/{orderId}/status", () => {
     mockIsValidUUID.mockReturnValue(false);
 
     const ctx = makeContext();
-    (ctx as Record<string, unknown>).params = { orderId: "invalid-uuid" };
+    (ctx as unknown as Record<string, unknown>).params = { orderId: "invalid-uuid" };
 
     const response = await POST(ctx);
     expect(mockErrorResponse).toHaveBeenCalledWith(400, "Bad Request", expect.any(String));
@@ -208,7 +208,7 @@ describe("POST /api/v1/orders/{orderId}/status", () => {
   });
 
   it("returns 200 on success", async () => {
-    const fakeResult = { id: VALID_ORDER_ID, statusCode: "zrealizowane" };
+    const fakeResult = { id: VALID_ORDER_ID, oldStatusCode: "nowe", newStatusCode: "zrealizowane" };
     mockChangeStatus.mockResolvedValue(fakeResult);
 
     const response = await POST(makeContext());

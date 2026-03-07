@@ -11,6 +11,7 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   isValidUUID,
+  logError,
   parseJsonBody,
   requireWriteAccess,
 } from "../../../../../lib/api-helpers";
@@ -53,7 +54,7 @@ export const PATCH: APIRoute = async ({ params, locals, request }) => {
     }
     return jsonResponse(result, 200);
   } catch (err) {
-    console.error("[PATCH /api/v1/orders/{orderId}/entry-fixed]", err);
+    logError("[PATCH /api/v1/orders/{orderId}/entry-fixed]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas ustawiania pola Fix.");
   }
 };

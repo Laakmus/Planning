@@ -126,7 +126,7 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
    - Prawy klik na wiersz → menu kontekstowe (`ContextMenu`).
    - Widok Trasa: kolumna Trasa jako node-string z linią łączącą (patrz sekcja 6.2). Widok Kolumny: osobne kolumny Miejsce załadunku, Miejsce rozładunku, Data załadunku, Data rozładunku — format i kolejność kolumn według PRD 3.1.2a.
    - Typ auta w tabeli: rodzaj + objętość (wybierane w formularzu oddzielnie, wyświetlane łącznie np. „firanka (90m³)").
-   - Wirtualizacja listy (np. `@tanstack/react-virtual`) przy dużej liczbie wierszy.
+   - *(Planowane)* Wirtualizacja listy przy dużej liczbie wierszy — nie zaimplementowana w bieżącej wersji.
 
 5. **OrderRowContextMenu** — menu kontekstowe (prawy klik na wierszu; na razie **tylko prawy klik**, bez skrótu klawiaturowego).
    - Opcje: „Wyślij maila", „Zmień status" (podmenu), „Kolor" (podmenu z 4 kolorami + „Usuń kolor"), „Skopiuj zlecenie", „Anuluj zlecenie"; w zakładkach Zrealizowane/Anulowane: „Przywróć do aktualnych"; „Historia zmian" (na dole, widoczna dla wszystkich).
@@ -262,7 +262,7 @@ Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z dan
 Przyciski akcji (sticky na dole draweru):
 - **Zapisz** (primary) → `PUT /api/v1/orders/{id}`.
 - **Anuluj** (secondary) → zamknięcie draweru (z ostrzeżeniem o niezapisanych zmianach).
-- **Generuj PDF** → `POST /api/v1/orders/{id}/pdf` → pobranie pliku.
+- **Podgląd** (ikona Eye) → otwarcie OrderView (podgląd A4 zlecenia). Widoczny dla istniejących zleceń.
 - **Wyślij maila** → `POST /api/v1/orders/{id}/prepare-email`.
 - **Historia zmian** (link/ikona) → otwarcie panelu historii.
 
@@ -383,7 +383,7 @@ Przyciski akcji (sticky na dole draweru):
 
 ### 2.5 Nagłówek aplikacji (AppHeader) — DEPRECATED
 
-> **Uwaga:** AppHeader.tsx i OrderTabs.tsx to dead code od sesji 25 — zastąpione przez AppSidebar (shadcn/ui Sidebar). Pliki zachowane w repozytorium decyzją użytkownika, ale nie są importowane nigdzie. Funkcjonalność (nawigacja widoków, SyncButton, UserInfo, ThemeToggle) przeniesiona do AppSidebar (sekcja 2.2 punkt 1).
+> **Uwaga:** AppHeader.tsx to dead code od sesji 25 — zastąpiony przez AppSidebar (shadcn/ui Sidebar). Plik zachowany w repozytorium decyzją użytkownika, ale nie jest importowany nigdzie. **OrderTabs.tsx NIE jest dead code** — jest aktywnie używany w inline headerze w `OrdersApp.tsx` (obok SidebarTrigger). Nawigacja w 2 miejscach (sidebar + inline tabs) jest **celowa** — decyzja użytkownika. Funkcjonalność SyncButton, UserInfo, ThemeToggle przeniesiona do AppSidebar (sekcja 2.2 punkt 1).
 
 - **Cel**: ~~Stały element nawigacyjny widoczny na wszystkich stronach po zalogowaniu.~~ Zastąpiony przez AppSidebar. Jeden blok: logo, tytuł, zakładki (OrderTabs), SyncButton, blok użytkownika.
 - **Powiązane API**: `GET /api/v1/auth/me`, `POST /api/v1/dictionary-sync/run`, `GET /api/v1/dictionary-sync/jobs/{jobId}`.
@@ -757,7 +757,7 @@ Wszystkie przejścia wewnątrz widoku głównego (`/orders`) odbywają się bez 
 | US-040 (Podpowiedź firm) | AutocompleteField (companies, locations) |
 | US-041 (Podpowiedź towarów) | AutocompleteField (products) |
 | US-042 (Aktualizacja słowników) | SyncButton, useDictionarySync |
-| US-050 (Generowanie PDF) | Przycisk „Generuj PDF" w stopce draweru |
+| US-050 (Podgląd zlecenia) | Przycisk „Podgląd" w stopce draweru → OrderView |
 | US-051 (Otwarcie Outlooka) | Przycisk „Wyślij maila" w stopce draweru i w wierszu listy |
 | US-070 (Historia zmian) | HistoryPanel, TimelineEntry |
 | US-071 (Autor i data) | OrderForm sekcja nagłówek (readonly) |

@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-06 (sesja 36 — 18 tasków LOW/MEDIUM DONE)
+> Ostatnia aktualizacja: 2026-03-07 (sesja 37 — naprawy H-12, H-13, H-14, M-17, M-18, M-19)
 
 ---
 
@@ -14,7 +14,7 @@
 
 ## Do zrobienia — MEDIUM
 
-(brak otwartych)
+(brak)
 
 ---
 
@@ -40,10 +40,41 @@
 
 ### D-07. Job czyszczący anulowane zlecenia po 24h
 - PRD wymaga usunięcia anulowanych po 24h. Wymaga `pg_cron` (infrastructure).
+- **Powiązane:** "Wygasa za X h" w UI (wymagane w ui-plan.md, brak implementacji)
+
+### D-08. parseJsonBody — limit rozmiaru body (revert z sesji 36)
+- Było M-11 w sesji 34 (1MB limit), cofnięte w sesji 36.
+- Debata sesja 37: Security (8/10), Architect (4/10), Tech Lead (overthinking dla intranetu).
+- **Konsensus:** Odłożone — intranet za VPN, zaufani użytkownicy. Naprawić przed wystawieniem publicznym.
+
+### D-09. Rate limiting — fallback na IP dla niezweryfikowanych tokenów
+- Middleware dekoduje JWT bez weryfikacji podpisu (atob). Atakujący mógłby sfabrykować JWT z sub innego użytkownika.
+- **Konsensus debaty:** Odłożone — na intranecie IP-based wystarczy, ryzyko minimalne.
+
+### D-10. Health endpoint — usunięcie error.message z odpowiedzi
+- GET /api/v1/health ujawnia `error.message` z PostgreSQL w odpowiedzi 503.
+- **Konsensus debaty:** Odłożone — intranet, health check dla monitoringu wewnętrznego.
+
+### D-11. N+1 queries w updateOrder
+- Do 33+50 sekwencyjnych zapytań DB przy zapisie z pełną trasą i itemami (typowo 15-20).
+- **Konsensus debaty:** Premature optimization przy kilkudziesięciu użytkownikach. Naprawić przy skalowaniu.
+
+### D-12. Brak limitu długości pola search w walidatorach
+- `orderListQuerySchema` i dictionary endpoints nie mają `.max()` na polu search.
+- **Konsensus debaty:** Odłożone — intranet, niskie ryzyko slow query DoS.
 
 ---
 
 ## Zrobione
+
+### Sesja 37 — 3x HIGH + 3x MEDIUM DONE (6 tasków)
+- [x] H-12: try/catch w GET /orders/{orderId} — `logError()` + `errorResponse(500)`
+- [x] H-13: Usunięcie 3. parametru signal z hooków (opcja A) — useOrders, useOrderHistory. Guard AbortController zachowany.
+- [x] H-14: setTimeout(100ms) → pendingPreviewRef (ref-based flag) + useEffect w useOrderDrawer. Wyekstrahowano `buildFormDataFromDetail()` (DRY).
+- [x] M-17: Aktualizacja ui-plan.md — stopka "Podgląd" zamiast "Generuj PDF", wirtualizacja oznaczona jako planowana
+- [x] M-18: console.error → logError w warehouse/orders.ts i entry-fixed.ts + dodanie logError do mocków testowych
+- [x] M-19: 20+ błędów TS w 8 plikach testowych — zaktualizowane mocki DTO o brakujące pola
+- Wynik: 909/909 testów, 0 błędów TypeScript
 
 ### Sesja 36 — 16x LOW + M-16 + L-15 DONE (18 tasków)
 - [x] L-01: Lock na anulowanych/zrealizowanych — walidacja statusu w `lockOrder()` + error `LOCK_TERMINAL_STATUS` + 3 testy

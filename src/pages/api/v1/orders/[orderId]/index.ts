@@ -34,12 +34,16 @@ export const GET: APIRoute = async ({ params, locals }) => {
     return errorResponse(400, "Bad Request", "Nieprawidłowy identyfikator zlecenia (UUID).");
   }
 
-  const result = await getOrderDetail(locals.supabase, orderId);
-  if (!result) {
-    return errorResponse(404, "Not Found", "Zlecenie nie zostało znalezione.");
+  try {
+    const result = await getOrderDetail(locals.supabase, orderId);
+    if (!result) {
+      return errorResponse(404, "Not Found", "Zlecenie nie zostało znalezione.");
+    }
+    return jsonResponse(result, 200);
+  } catch (err) {
+    logError("[GET /api/v1/orders/{orderId}]", err);
+    return errorResponse(500, "Internal Server Error", "Błąd podczas pobierania szczegółów zlecenia.");
   }
-
-  return jsonResponse(result, 200);
 };
 
 export const PUT: APIRoute = async ({ params, locals, request }) => {

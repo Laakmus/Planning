@@ -95,7 +95,6 @@ function makeContext(overrides?: {
   request?: Request;
 }): Parameters<typeof GET>[0] {
   return {
-    locals: { supabase: { from: vi.fn() } },
     request: new Request("http://localhost:4321/api/v1/orders"),
     params: {},
     url: new URL("http://localhost:4321/api/v1/orders"),
@@ -158,7 +157,7 @@ beforeEach(() => {
   mockCreateOrderSchema.safeParse.mockReturnValue({
     success: true,
     data: { transportTypeCode: "PL", stops: [], items: [] },
-  } as ReturnType<typeof orderValidator.createOrderSchema.safeParse>);
+  } as unknown as ReturnType<typeof orderValidator.createOrderSchema.safeParse>);
 });
 
 // ---------------------------------------------------------------------------
@@ -208,7 +207,7 @@ describe("GET /api/v1/orders", () => {
   });
 
   it("returns 200 and calls listOrders on success", async () => {
-    const fakeResult = { data: [], total: 0, page: 1, pageSize: 50 };
+    const fakeResult = { items: [], totalItems: 0, totalPages: 0, page: 1, pageSize: 50 };
     mockListOrders.mockResolvedValue(fakeResult);
 
     const ctx = makeContext();
@@ -294,7 +293,7 @@ describe("POST /api/v1/orders", () => {
 
   it("returns 201 and result on success", async () => {
     mockParseJsonBody.mockResolvedValue({});
-    const fakeOrder = { id: "order-uuid-1", orderNo: "Z/2026/001" };
+    const fakeOrder = { id: "order-uuid-1", orderNo: "Z/2026/001", statusCode: "nowe", statusName: "Nowe", createdAt: "2026-03-07T10:00:00Z" };
     mockCreateOrder.mockResolvedValue(fakeOrder);
 
     const ctx = makeContext();

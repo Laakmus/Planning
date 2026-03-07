@@ -193,6 +193,8 @@ export function useOrderDrawer({
   const [showOrderView, setShowOrderView] = useState(false);
   const [orderViewInitialData, setOrderViewInitialData] = useState<OrderViewData | null>(null);
   const [showPreviewUnsavedDialog, setShowPreviewUnsavedDialog] = useState(false);
+  // Flaga: po save+reload otwórz podgląd gdy detail się zaktualizuje (zamiast setTimeout)
+  const pendingPreviewRef = useRef(false);
 
   const { companies, locations, products } = useDictionaries();
 
@@ -423,6 +425,56 @@ export function useOrderDrawer({
   // Handlery OrderView (podgląd A4)
   // ---------------------------------------------------------------------------
 
+  /** Buduje OrderFormData z detali — helper do podglądu bez polegania na formDataRef */
+  const buildFormDataFromDetail = useCallback((d: OrderDetailResponseDto): OrderFormData => {
+    return {
+      transportTypeCode: (d.order.transportTypeCode as any) ?? "PL",
+      currencyCode: (d.order.currencyCode as any) ?? "PLN",
+      priceAmount: d.order.priceAmount,
+      paymentTermDays: d.order.paymentTermDays,
+      paymentMethod: d.order.paymentMethod,
+      totalLoadTons: d.order.totalLoadTons,
+      totalLoadVolumeM3: d.order.totalLoadVolumeM3,
+      carrierCompanyId: d.order.carrierCompanyId,
+      shipperLocationId: d.order.shipperLocationId,
+      receiverLocationId: d.order.receiverLocationId,
+      vehicleTypeText: d.order.vehicleTypeText,
+      vehicleCapacityVolumeM3: d.order.vehicleCapacityVolumeM3,
+      specialRequirements: d.order.specialRequirements,
+      requiredDocumentsText: d.order.requiredDocumentsText,
+      generalNotes: d.order.generalNotes,
+      notificationDetails: d.order.notificationDetails,
+      confidentialityClause: d.order.confidentialityClause,
+      complaintReason: d.order.complaintReason,
+      senderContactName: d.order.senderContactName,
+      senderContactPhone: d.order.senderContactPhone,
+      senderContactEmail: d.order.senderContactEmail,
+      stops: d.stops.map((s) => ({
+        id: s.id,
+        kind: s.kind as "LOADING" | "UNLOADING",
+        sequenceNo: s.sequenceNo,
+        dateLocal: s.dateLocal,
+        timeLocal: s.timeLocal,
+        locationId: s.locationId,
+        locationNameSnapshot: s.locationNameSnapshot,
+        companyNameSnapshot: s.companyNameSnapshot,
+        addressSnapshot: s.addressSnapshot,
+        notes: s.notes,
+        _deleted: false,
+      })),
+      items: d.items.map((it) => ({
+        id: it.id,
+        productId: it.productId,
+        productNameSnapshot: it.productNameSnapshot,
+        defaultLoadingMethodSnapshot: it.defaultLoadingMethodSnapshot,
+        loadingMethodCode: it.loadingMethodCode,
+        quantityTons: it.quantityTons,
+        notes: it.notes,
+        _deleted: false,
+      })),
+    };
+  }, []);
+
   /** Otwiera OrderView — helper wewnętrzny */
   const openOrderView = useCallback((formData: OrderFormData) => {
     if (!detail) return;
@@ -453,78 +505,38 @@ export function useOrderDrawer({
     }
   }, [isDirty, openOrderView]);
 
-  /** Dialog "Zapisz i przejdź" */
+  /** Dialog "Zapisz i przejdź" — po save+reload ustawia pending flag,
+   *  useEffect poniżej otworzy podgląd gdy detail się zaktualizuje. */
   const handlePreviewSaveAndGo = useCallback(async () => {
     const currentFormData = formDataRef.current;
     if (!currentFormData) return;
     const ok = await saveToApi(currentFormData);
     setShowPreviewUnsavedDialog(false);
     if (ok && orderId) {
-      // Re-fetch detali po zapisie
+      // Ustaw flagę — useEffect otworzy podgląd po aktualizacji detail
+      pendingPreviewRef.current = true;
       await loadDetail(orderId);
-      // Odczytaj świeże formData po re-fetch (useEffect w OrderForm zaktualizuje formDataRef)
-      setTimeout(() => {
-        const freshFormData = formDataRef.current;
-        if (freshFormData) openOrderView(freshFormData);
-      }, 100);
       setIsDirty(false);
     }
-  }, [saveToApi, orderId, loadDetail, openOrderView]);
+  }, [saveToApi, orderId, loadDetail]);
+
+  // Efekt: otwórz podgląd gdy detail się zaktualizuje po save (zamiast setTimeout)
+  useEffect(() => {
+    if (pendingPreviewRef.current && detail) {
+      pendingPreviewRef.current = false;
+      const freshFormData = buildFormDataFromDetail(detail);
+      openOrderView(freshFormData);
+    }
+  }, [detail, openOrderView, buildFormDataFromDetail]);
 
   /** Dialog "Odrzuć zmiany i przejdź" */
   const handlePreviewDiscardAndGo = useCallback(() => {
     setShowPreviewUnsavedDialog(false);
     // Użyj oryginalne dane z detali (nie zmienionych formData)
     if (detail) {
-      const originalFormData: OrderFormData = {
-        transportTypeCode: (detail.order.transportTypeCode as any) ?? "PL",
-        currencyCode: (detail.order.currencyCode as any) ?? "PLN",
-        priceAmount: detail.order.priceAmount,
-        paymentTermDays: detail.order.paymentTermDays,
-        paymentMethod: detail.order.paymentMethod,
-        totalLoadTons: detail.order.totalLoadTons,
-        totalLoadVolumeM3: detail.order.totalLoadVolumeM3,
-        carrierCompanyId: detail.order.carrierCompanyId,
-        shipperLocationId: detail.order.shipperLocationId,
-        receiverLocationId: detail.order.receiverLocationId,
-        vehicleTypeText: detail.order.vehicleTypeText,
-        vehicleCapacityVolumeM3: detail.order.vehicleCapacityVolumeM3,
-        specialRequirements: detail.order.specialRequirements,
-        requiredDocumentsText: detail.order.requiredDocumentsText,
-        generalNotes: detail.order.generalNotes,
-        notificationDetails: detail.order.notificationDetails,
-        confidentialityClause: detail.order.confidentialityClause,
-        complaintReason: detail.order.complaintReason,
-        senderContactName: detail.order.senderContactName,
-        senderContactPhone: detail.order.senderContactPhone,
-        senderContactEmail: detail.order.senderContactEmail,
-        stops: detail.stops.map((s) => ({
-          id: s.id,
-          kind: s.kind as "LOADING" | "UNLOADING",
-          sequenceNo: s.sequenceNo,
-          dateLocal: s.dateLocal,
-          timeLocal: s.timeLocal,
-          locationId: s.locationId,
-          locationNameSnapshot: s.locationNameSnapshot,
-          companyNameSnapshot: s.companyNameSnapshot,
-          addressSnapshot: s.addressSnapshot,
-          notes: s.notes,
-          _deleted: false,
-        })),
-        items: detail.items.map((it) => ({
-          id: it.id,
-          productId: it.productId,
-          productNameSnapshot: it.productNameSnapshot,
-          defaultLoadingMethodSnapshot: it.defaultLoadingMethodSnapshot,
-          loadingMethodCode: it.loadingMethodCode,
-          quantityTons: it.quantityTons,
-          notes: it.notes,
-          _deleted: false,
-        })),
-      };
-      openOrderView(originalFormData);
+      openOrderView(buildFormDataFromDetail(detail));
     }
-  }, [detail, openOrderView]);
+  }, [detail, openOrderView, buildFormDataFromDetail]);
 
   /** Zapis z OrderView */
   const handleOrderViewSave = useCallback(async (viewData: OrderViewData) => {

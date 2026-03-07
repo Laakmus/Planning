@@ -51,14 +51,10 @@ export function useOrderHistory(orderId: string | null): UseOrderHistoryResult {
     try {
       const [statusResult, changesResult] = await Promise.all([
         api.get<ListResponse<StatusHistoryItemDto>>(
-          `/api/v1/orders/${orderId}/history/status`,
-          undefined,
-          controller.signal
+          `/api/v1/orders/${orderId}/history/status`
         ),
         api.get<ListResponse<ChangeLogItemDto>>(
-          `/api/v1/orders/${orderId}/history/changes`,
-          undefined,
-          controller.signal
+          `/api/v1/orders/${orderId}/history/changes`
         ),
       ]);
 

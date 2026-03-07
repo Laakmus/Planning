@@ -102,9 +102,7 @@ function makeContext(overrides?: {
   request?: Request;
 }): Parameters<typeof GET>[0] {
   return {
-    locals: { supabase: { from: vi.fn() } },
     request: new Request(`http://localhost:4321/api/v1/orders/${VALID_ORDER_ID}`),
-    params: { orderId: VALID_ORDER_ID },
     url: new URL(`http://localhost:4321/api/v1/orders/${VALID_ORDER_ID}`),
     redirect: vi.fn(),
     rewrite: vi.fn(),
@@ -202,7 +200,7 @@ describe("GET /api/v1/orders/{orderId}", () => {
   });
 
   it("returns 200 with order detail on success", async () => {
-    const fakeOrder = { id: VALID_ORDER_ID, orderNo: "Z/2026/001" };
+    const fakeOrder = { order: { id: VALID_ORDER_ID, orderNo: "Z/2026/001" } as any, stops: [], items: [] };
     mockGetOrderDetail.mockResolvedValue(fakeOrder);
 
     const ctx = makeContext();
@@ -275,7 +273,7 @@ describe("PUT /api/v1/orders/{orderId}", () => {
 
   it("returns 200 with updated order on success", async () => {
     mockParseJsonBody.mockResolvedValue({});
-    const fakeResult = { id: VALID_ORDER_ID, orderNo: "Z/2026/001" };
+    const fakeResult = { id: VALID_ORDER_ID, orderNo: "Z/2026/001", statusCode: "nowe", updatedAt: "2026-03-07T10:00:00Z" };
     mockUpdateOrder.mockResolvedValue(fakeResult);
 
     const ctx = makeContext();

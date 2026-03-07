@@ -72,7 +72,7 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
     }
 
     try {
-      const result = await api.get<OrderListResponseDto>("/api/v1/orders", params, controller.signal);
+      const result = await api.get<OrderListResponseDto>("/api/v1/orders", params);
       setData(result);
     } catch (err) {
       if (controller.signal.aborted) return; // Anulowane — ignoruj

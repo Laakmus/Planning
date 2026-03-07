@@ -23,6 +23,7 @@ vi.mock("@/lib/api-helpers", () => ({
   getAuthenticatedUser: vi.fn(),
   jsonResponse: vi.fn(),
   errorResponse: vi.fn(),
+  logError: vi.fn(),
 }));
 
 vi.mock("@/lib/services/warehouse.service", () => ({

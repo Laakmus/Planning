@@ -20,6 +20,7 @@ import {
   errorResponse,
   getAuthenticatedUser,
   jsonResponse,
+  logError,
 } from "../../../../lib/api-helpers";
 import {
   getCurrentISOWeek,
@@ -151,7 +152,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
 
     return jsonResponse(result, 200);
   } catch (err) {
-    console.error("[GET /api/v1/warehouse/orders]", err);
+    logError("[GET /api/v1/warehouse/orders]", err);
     return errorResponse(
       500,
       "Internal Server Error",

@@ -1,5 +1,23 @@
 # Tester Agent — Pamięć
 
+## Sesja 37 (2026-03-07) — naprawa 20+ błędów TS w testach
+
+### Wykonane
+- Zaktualizowano mocki DTO w 8 plikach testowych o brakujące pola:
+  - `useOrderDetail.test.ts` — dodano `notificationDetails`, `confidentialityClause`
+  - `duplicate.test.ts` — dodano `statusCode`, `statusName`, `createdAt`
+  - `index.test.ts` (orderId) — usunięto duplikaty property, dodano brakujące pola w mockach OrderDetailResponseDto, UpdateOrderResponseDto
+  - `lock-unlock.test.ts` — usunięto duplikaty, dodano `id`, `lockedByUserId`, `lockedAt`
+  - `prepare-email.test.ts` — dodano `orderId`, `statusBefore`, `statusAfter`
+  - `status.test.ts` — poprawiono cast APIContext, dodano `oldStatusCode`, `newStatusCode`
+  - `index.test.ts` (orders) — usunięto duplikaty, poprawiono PaginatedResponse (items/totalItems/totalPages), dodano `as unknown as` cast
+  - `entry-fixed.test.ts` + `warehouse/orders.test.ts` — dodano `logError` do mocków api-helpers
+
+### Learningi
+- Gdy dodajesz nowy import do pliku produkcyjnego (np. `logError`), MUSISZ dodać go też do odpowiedniego `vi.mock()` w testach — inaczej testy failują z "logError is not a function"
+- Duplikaty property w object literals (TS1117) — to zwykle sprawka `...overrides` spread + explicit property w tym samym obiekcie. Usuń explicit property jeśli jest w spread.
+- `as unknown as SomeType` cast jest OK w testach gdy mock nie potrzebuje pełnej struktury DTO
+
 ## Sesja 32 (2026-03-05) — 77 nowych testów (API endpoints + middleware)
 
 ### Wykonane

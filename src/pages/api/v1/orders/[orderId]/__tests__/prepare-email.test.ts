@@ -199,6 +199,9 @@ describe("POST /api/v1/orders/{orderId}/prepare-email", () => {
 
   it("returns 200 on success when result.success = true", async () => {
     const fakeData = {
+      orderId: VALID_ORDER_ID,
+      statusBefore: "nowe",
+      statusAfter: "wysłane",
       emailOpenUrl: "mailto:carrier@example.com?subject=Zlecenie&body=...",
       pdfFileName: "zlecenie-Z-2026-001.pdf",
     };
@@ -268,6 +271,9 @@ describe("POST /api/v1/orders/{orderId}/prepare-email", () => {
   it("handles empty body gracefully (uses default empty object)", async () => {
     // Puste body — handler powinien użyć {} jako body
     const fakeData = {
+      orderId: VALID_ORDER_ID,
+      statusBefore: "nowe",
+      statusAfter: "wysłane",
       emailOpenUrl: "mailto:carrier@example.com",
       pdfFileName: "test.pdf",
     };

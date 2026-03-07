@@ -1,5 +1,19 @@
 # Frontend Agent — Pamięć
 
+## Sesja 37 (2026-03-07) — setTimeout race condition fix
+
+### Wykonane
+- `src/hooks/useOrderDrawer.ts` — usunięcie `setTimeout(100ms)` w `handlePreviewSaveAndGo`
+  - Nowy mechanizm: `pendingPreviewRef` (useRef) + useEffect reagujący na zmianę `detail`
+  - Po save+loadDetail: flaga `pendingPreviewRef.current = true` → useEffect buduje formData z `detail` i otwiera podgląd
+  - Wyekstrahowano `buildFormDataFromDetail()` — helper budujący OrderFormData z OrderDetailResponseDto (DRY)
+  - `handlePreviewDiscardAndGo` teraz też używa `buildFormDataFromDetail()` zamiast ~45 linii duplikowanego kodu
+
+### Learningi
+- Gdy komponent-dziecko (OrderForm) aktualizuje ref async (useEffect), parent nie powinien polegać na timing hacku (setTimeout) — zamiast tego używaj ref-based flag + useEffect na state który jest źródłem danych
+- Po save, dane w `detail` (po loadDetail) = to co user zapisał → można bezpiecznie budować formData z detail zamiast czekać na formDataRef z komponentu-dziecka
+- `buildFormDataFromDetail()` jako helper eliminuje duplikację między save-and-go a discard-and-go
+
 ## Sesja 24 (2026-03-03) — ErrorBoundary
 
 ### Wykonane
