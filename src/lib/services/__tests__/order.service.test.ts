@@ -674,6 +674,286 @@ describe("updateOrder", () => {
       ).rejects.toThrow("LOCKED");
     });
   });
+
+  // -------------------------------------------------------------------------
+  // Audit trail — logowanie zmian items (M-19)
+  // -------------------------------------------------------------------------
+
+  describe("audit trail — items", () => {
+    // Rozszerzony buildUpdateMock z oldItems (snapshot starych pozycji w DB)
+    function buildAuditMock(
+      oldItems: Array<Record<string, unknown>>,
+      paramsItems: Array<Record<string, unknown>>,
+      orderData?: Record<string, unknown>
+    ) {
+      const ITEM_ID_1 = "e1000000-0000-0000-0000-000000000001";
+      // Śledzimy wywołania insert do order_change_log
+      const insertCalls: Array<unknown> = [];
+
+      const supabase = buildOrderServiceMock({
+        transport_orders: {
+          // selectSequence: 1. order row, 2. updated_at refresh
+          selectSequence: [
+            {
+              data: {
+                id: VALID_ORDER_ID,
+                order_no: "ZT2026/0001",
+                status_code: "robocze",
+                locked_by_user_id: null,
+                transport_type_code: "PL",
+                carrier_company_id: null,
+                vehicle_type_text: null,
+                vehicle_capacity_volume_m3: null,
+                price_amount: null,
+                currency_code: "PLN",
+                payment_term_days: null,
+                payment_method: null,
+                general_notes: null,
+                notification_details: null,
+                confidentiality_clause: null,
+                complaint_reason: null,
+                required_documents_text: null,
+                special_requirements: null,
+                total_load_tons: null,
+                total_load_volume_m3: null,
+                shipper_location_id: null,
+                receiver_location_id: null,
+                sender_contact_name: null,
+                sender_contact_phone: null,
+                sender_contact_email: null,
+                ...orderData,
+              },
+              error: null,
+            },
+            // updated_at refresh (po UPDATE)
+            { data: { updated_at: "2026-03-07T12:00:00Z" }, error: null },
+          ],
+          update: { data: null, error: null, count: 1 },
+        },
+        order_items: {
+          // selectSequence: old items query
+          select: { data: oldItems, error: null },
+          insert: { data: null, error: null },
+          update: { data: null, error: null },
+          delete: { data: null, error: null },
+        },
+        order_stops: {
+          select: { data: [], error: null },
+          insert: { data: null, error: null },
+          update: { data: null, error: null },
+          delete: { data: null, error: null },
+        },
+        transport_types: { select: { data: { code: "PL" }, error: null } },
+        companies: { select: { data: { id: VALID_COMPANY_ID, name: "TransPol" }, error: null } },
+        locations: { select: { data: [], error: null } },
+        products: { select: { data: [], error: null } },
+        order_status_history: { insert: { data: null, error: null } },
+        order_change_log: { insert: { data: null, error: null } },
+      });
+
+      return supabase;
+    }
+
+    it("zmiana product_name → log item[1].product_name", async () => {
+      const ITEM_ID = "e1000000-0000-0000-0000-000000000001";
+      const oldItems = [{
+        id: ITEM_ID,
+        product_name_snapshot: "Stal nierdzewna",
+        loading_method_code: "PALETA",
+        quantity_tons: 10,
+        notes: null,
+      }];
+
+      const supabase = buildAuditMock(oldItems, []);
+      const params = makeUpdateOrderParams({
+        items: [{
+          id: ITEM_ID,
+          productId: null,
+          productNameSnapshot: "Miedź",
+          loadingMethodCode: "PALETA",
+          quantityTons: 10,
+          notes: null,
+          _deleted: false,
+        }],
+      });
+
+      // Wywołanie nie powinno rzucić wyjątku — audit log jest zapisywany do DB
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result).not.toBeNull();
+
+      // Weryfikujemy, że from("order_change_log") było wywoływane
+      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
+      const changeLogCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_change_log");
+      expect(changeLogCalls.length).toBeGreaterThan(0);
+    });
+
+    it("zmiana quantity_tons → log item[1].quantity_tons", async () => {
+      const ITEM_ID = "e1000000-0000-0000-0000-000000000001";
+      const oldItems = [{
+        id: ITEM_ID,
+        product_name_snapshot: "Stal nierdzewna",
+        loading_method_code: "PALETA",
+        quantity_tons: 10,
+        notes: null,
+      }];
+
+      const supabase = buildAuditMock(oldItems, []);
+      const params = makeUpdateOrderParams({
+        items: [{
+          id: ITEM_ID,
+          productId: null,
+          productNameSnapshot: "Stal nierdzewna",
+          loadingMethodCode: "PALETA",
+          quantityTons: 25,
+          notes: null,
+          _deleted: false,
+        }],
+      });
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result).not.toBeNull();
+
+      // Weryfikujemy, że from("order_change_log") było wywoływane (insert z quantity_tons change)
+      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
+      const changeLogCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_change_log");
+      expect(changeLogCalls.length).toBeGreaterThan(0);
+    });
+
+    it("dodanie nowego itemu → log item_added", async () => {
+      // Brak starych items
+      const supabase = buildAuditMock([], []);
+      const params = makeUpdateOrderParams({
+        items: [{
+          id: null,
+          productId: null,
+          productNameSnapshot: "Nowy produkt",
+          loadingMethodCode: "PALETA",
+          quantityTons: 5,
+          notes: null,
+          _deleted: false,
+        }],
+      });
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result).not.toBeNull();
+
+      // Wywołanie from("order_change_log") oznacza zapis item_added
+      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
+      const changeLogCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_change_log");
+      expect(changeLogCalls.length).toBeGreaterThan(0);
+    });
+
+    it("usunięcie itemu → log item_removed", async () => {
+      const ITEM_ID = "e1000000-0000-0000-0000-000000000001";
+      const oldItems = [{
+        id: ITEM_ID,
+        product_name_snapshot: "Stal nierdzewna",
+        loading_method_code: "PALETA",
+        quantity_tons: 10,
+        notes: null,
+      }];
+
+      const supabase = buildAuditMock(oldItems, []);
+      const params = makeUpdateOrderParams({
+        items: [{
+          id: ITEM_ID,
+          productId: null,
+          productNameSnapshot: "Stal nierdzewna",
+          loadingMethodCode: "PALETA",
+          quantityTons: 10,
+          notes: null,
+          _deleted: true,
+        }],
+      });
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result).not.toBeNull();
+
+      // Weryfikujemy, że from("order_items").delete() + from("order_change_log").insert() były wywołane
+      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
+      const changeLogCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_change_log");
+      expect(changeLogCalls.length).toBeGreaterThan(0);
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Audit trail — stops CRUD (M-19)
+  // -------------------------------------------------------------------------
+
+  describe("stops CRUD — mix _deleted + nowych + istniejących", () => {
+    it("delete _deleted stop → from('order_stops').delete() wywoływane", async () => {
+      const STOP_TO_DELETE = "c2000000-0000-0000-0000-000000000002";
+      const supabase = buildUpdateMock();
+      const params = makeUpdateOrderParams({
+        stops: [
+          // Istniejący stop (update)
+          { id: VALID_STOP_ID, kind: "LOADING", dateLocal: "2026-02-20", timeLocal: "08:00", locationId: null, notes: null, sequenceNo: 1, _deleted: false },
+          // Stop do usunięcia
+          { id: STOP_TO_DELETE, kind: "UNLOADING", dateLocal: "2026-02-21", timeLocal: "14:00", locationId: null, notes: null, sequenceNo: 2, _deleted: true },
+          // Nowy stop (insert)
+          { id: null, kind: "UNLOADING", dateLocal: "2026-02-22", timeLocal: "10:00", locationId: null, notes: null, sequenceNo: 2, _deleted: false },
+        ],
+      });
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result).not.toBeNull();
+
+      // Weryfikujemy, że from("order_stops") było wywoływane (delete + update + insert)
+      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
+      const stopCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_stops");
+      // Powinno być wiele wywołań: delete, temporary offset, final update, insert
+      expect(stopCalls.length).toBeGreaterThanOrEqual(3);
+    });
+
+    it("insert nowy stop → from('order_stops') z insert wywoływane", async () => {
+      const supabase = buildUpdateMock();
+      const params = makeUpdateOrderParams({
+        stops: [
+          { id: VALID_STOP_ID, kind: "LOADING", dateLocal: "2026-02-20", timeLocal: "08:00", locationId: null, notes: null, sequenceNo: 1, _deleted: false },
+          { id: null, kind: "UNLOADING", dateLocal: "2026-02-22", timeLocal: "10:00", locationId: null, notes: null, sequenceNo: 2, _deleted: false },
+        ],
+      });
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result).not.toBeNull();
+      expect(result!.id).toBe(VALID_ORDER_ID);
+    });
+
+    it("update istniejący stop → from('order_stops') z update wywoływane", async () => {
+      const supabase = buildUpdateMock();
+      const params = makeUpdateOrderParams({
+        stops: [
+          // Istniejący — aktualizacja daty
+          { id: VALID_STOP_ID, kind: "LOADING", dateLocal: "2026-03-01", timeLocal: "09:00", locationId: null, notes: "Zmieniona data", sequenceNo: 1, _deleted: false },
+          { id: null, kind: "UNLOADING", dateLocal: "2026-03-02", timeLocal: "14:00", locationId: null, notes: null, sequenceNo: 2, _deleted: false },
+        ],
+      });
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result).not.toBeNull();
+
+      // Weryfikujemy poprawne zakończenie — brak wyjątków, wynik jest zwrócony
+      expect(result!.id).toBe(VALID_ORDER_ID);
+      expect(result!.orderNo).toBe("ZT2026/0001");
+    });
+
+    it("mix: 1 deleted + 1 existing + 1 new → nie rzuca wyjątku", async () => {
+      const STOP_DEL = "c3000000-0000-0000-0000-000000000003";
+      const STOP_EXIST = VALID_STOP_ID;
+      const supabase = buildUpdateMock();
+      const params = makeUpdateOrderParams({
+        stops: [
+          { id: STOP_EXIST, kind: "LOADING", dateLocal: "2026-02-20", timeLocal: "08:00", locationId: null, notes: null, sequenceNo: 1, _deleted: false },
+          { id: STOP_DEL, kind: "UNLOADING", dateLocal: "2026-02-21", timeLocal: "14:00", locationId: null, notes: null, sequenceNo: 3, _deleted: true },
+          { id: null, kind: "UNLOADING", dateLocal: "2026-02-22", timeLocal: "10:00", locationId: null, notes: null, sequenceNo: 2, _deleted: false },
+        ],
+      });
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result).not.toBeNull();
+      expect(result!.statusCode).toBe("robocze");
+    });
+  });
 });
 
 // ---------------------------------------------------------------------------

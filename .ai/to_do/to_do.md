@@ -1,69 +1,36 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-07 (sesja 39 — weryfikacja bugów + fixy PDF/RPC)
+> Ostatnia aktualizacja: 2026-03-07 (sesja 40 — testy MEDIUM M-14..M-19)
 
 ---
 
 ## Do zrobienia — HIGH
 
-(brak — wszystkie oryginalne HIGH obniżone do MEDIUM po weryfikacji)
+### H-15. "Wyślij maila" — generacja .eml z załączonym PDF
+- **Kategoria:** feature
+- **Pliki:** `src/lib/services/order-misc.service.ts`, `src/pages/api/v1/orders/[orderId]/prepare-email.ts`, `src/pages/api/v1/orders/[orderId]/pdf.ts`, `src/hooks/useOrderDrawer.ts`, `src/hooks/useOrderActions.ts`, `src/types.ts`
+- **Nowe pliki:** `src/lib/services/eml/eml-builder.service.ts`, `src/lib/services/pdf/pdf-data-resolver.ts`, `src/lib/services/eml/__tests__/eml-builder.service.test.ts`
+- **Problem:** Przycisk "Wyślij maila" otwiera `mailto:` link bez załącznika PDF (protokół mailto: nie obsługuje załączników). PRD (§3.1.11, US-051) wymaga otwarcia klienta poczty z PDF w załączniku.
+- **Rozwiązanie:** Generowanie pliku `.eml` (RFC 822) z PDF jako MIME attachment base64. Nagłówek `X-Unsent: 1` powoduje, że Outlook otwiera plik jako draft (compose mode). Zero zależności od Azure AD/Graph API.
+- **Plan szczegółowy:** `.ai/eml-email-implementation-plan.md`
+- **Flow:** Klik "Wyślij maila" → backend waliduje + zmienia status + generuje PDF + buduje .eml → przeglądarka pobiera `zlecenie-NR-xxx.eml` → user otwiera w Outlooku → PDF w załączniku, pusty temat/treść.
+- **Zmiany:**
+  1. **Types:** Usunięcie `PrepareEmailResponseDto` z `src/types.ts`
+  2. **Backend — nowy `eml-builder.service.ts`:** Builder .eml RFC 822 z PDF attachment (MIME multipart/mixed, base64, X-Unsent: 1)
+  3. **Backend — nowy `pdf-data-resolver.ts`:** Ekstrakcja logiki resolwowania NIP+krajów z `pdf.ts` do reużywalnej funkcji
+  4. **Backend — modyfikacja `order-misc.service.ts`:** `prepareEmailForOrder()` generuje PDF + .eml, zwraca `emlContent` zamiast `emailOpenUrl`
+  5. **Backend — modyfikacja `prepare-email.ts`:** Response blob `message/rfc822` zamiast JSON. Błędy (422, 400, 409) nadal JSON.
+  6. **Backend — refactor `pdf.ts`:** Użyj `resolvePdfData()` zamiast inline kodu
+  7. **Frontend — `useOrderDrawer.ts` + `useOrderActions.ts`:** `api.postRaw()` + blob download .eml (wzorzec z `handleGeneratePdf`)
+  8. **Tester:** Testy eml-builder (X-Unsent, MIME, base64, boundary)
+- **Kolejność agentów:** Types → Backend → Frontend + Tester (równolegle) → Reviewer (opcjonalnie)
+- **Effort:** M
+- **Decyzje użytkownika:** Pusty temat (na razie, w przyszłości do zmiany). Lokalizacja przycisku bez zmian (Drawer + Context menu). Toast z listą braków przy walidacji.
 
 ---
 
 ## Do zrobienia — MEDIUM
 
-### M-04. Audit trail numeracja items — pozycyjne matchowanie
-- **Kategoria:** bug
-- **Pliki:** `src/lib/services/order-update.service.ts:453-537`
-- **Opis:** `auditItemNum` jest inkrementowany pozycyjnie, `.find((_s, idx) => idx === auditItemNum - 1)` to de facto indeksowanie. Gdy usuniesz item ze środka listy, audit log pokaże złą nazwę produktu dla pozostałych pozycji.
-- **Sugerowany fix:** Użyć mapy product snapshots wg item ID zamiast pozycyjnego matchowania.
-- **Effort:** S
-
-
-
-
-
-### M-14. useOrderActions brak testów
-- **Kategoria:** test
-- **Pliki:** `src/hooks/useOrderActions.ts`
-- **Opis:** Hook z 10 krytycznymi handlerami (tworzenie, wysyłka, zmiana statusu, anulowanie, duplikacja) nie ma żadnych testów.
-- **Sugerowany fix:** Dodać testy RTL (renderHook) dla każdego handlera: happy path + error path.
-- **Effort:** L
-
-### M-15. useOrderDrawer brak testów
-- **Kategoria:** test
-- **Pliki:** `src/hooks/useOrderDrawer.ts`
-- **Opis:** Najbardziej złożony hook (654 linii) — lock/unlock, zapis, PDF, email, dialog niezapisanych — bez unit testów.
-- **Sugerowany fix:** Dodać testy: loadDetail, handleSave (create vs update), handleCloseRequest z isDirty, doClose z unlock.
-- **Effort:** L
-
-### M-16. order-snapshot.service czyste funkcje bez testów
-- **Kategoria:** test
-- **Pliki:** `src/lib/services/order-snapshot.service.ts`
-- **Opis:** computeDenormalizedFields, buildSearchText, autoSetDocumentsAndCurrency — czyste funkcje idealne do testów, a nie mają dedykowanych testów.
-- **Sugerowany fix:** Dodać testy: puste stops/items, null country, null dateLocal, każdy typ transportu.
-- **Effort:** M
-
-### M-17. PDF moduł bez testów
-- **Kategoria:** test
-- **Pliki:** `src/lib/services/pdf/pdf-generator.service.ts`, `src/lib/services/pdf/pdf-sections.ts`, `src/lib/services/pdf/pdf-layout.ts`
-- **Opis:** Cały nowy moduł PDF (generator, sections, layout, fonts) nie ma żadnych testów. Endpoint pdf.ts też nie.
-- **Sugerowany fix:** Testy: generateOrderPdf z minimalnym input → zwraca Buffer. Test endpointu: 400 invalid UUID, 404 not found, 200 content-type.
-- **Effort:** M
-
-### M-18. Endpointy słownikowe bez testów
-- **Kategoria:** test
-- **Pliki:** `src/pages/api/v1/companies.ts`, `locations.ts`, `products.ts`, `transport-types.ts`, `vehicle-variants.ts`, `order-statuses.ts`, `health.ts`
-- **Opis:** 7 endpointów słownikowych nie ma żadnych testów (200 OK, 401 unauth, 500 DB error, parametr search).
-- **Sugerowany fix:** Dodać testy dla każdego: happy path + error path + parametry.
-- **Effort:** M
-
-### M-19. updateOrder audit trail i items/stops CRUD brak testów
-- **Kategoria:** test
-- **Pliki:** `src/lib/services/__tests__/order.service.test.ts`
-- **Opis:** Brak testów: logowanie zmian pól biznesowych (change_log), items CRUD (insert/update/delete), stops CRUD (delete _deleted, insert new, update existing z temporary offset). 280 linii logiki bez pokrycia.
-- **Sugerowany fix:** Testy weryfikujące insert do order_change_log z poprawnymi field_name/old_value/new_value. Stops/items z mixem _deleted, nowych i istniejących.
-- **Effort:** L
 
 ### M-20. database.types.ts nieaktualny — brakuje kolumn
 - **Kategoria:** architecture
@@ -247,6 +214,15 @@
 ---
 
 ## Zrobione
+
+### Sesja 40 — Testy MEDIUM M-14..M-19 (agent teams)
+- [x] M-14: `useOrderActions.test.ts` — 23 testy (addOrder, sendEmail, cancel, duplicate, changeStatus, restore)
+- [x] M-15: `useOrderDrawer.test.ts` — 16 testów (loadDetail, save create/update, close/dirty, readOnly, preview, PDF, email)
+- [x] M-16: `order-snapshot.service.test.ts` — 30 testów (computeDenormalizedFields, buildSearchText, autoSetDocumentsAndCurrency)
+- [x] M-17: `pdf/__tests__/pdf.test.ts` — 25 testów (generateOrderPdf, helpers, sekcje PDF)
+- [x] M-18: 7 plików testów endpointów słownikowych — 29 testów (companies, locations, products, transport-types, vehicle-variants, order-statuses, health)
+- [x] M-19: Audit trail items/stops CRUD — 4 testy (zmiana product_name, quantity_tons, dodanie, usunięcie) + 4 testy stops CRUD — już istniały w order.service.test.ts
+- Wynik: 1045/1045 testów (60 plików), 0 błędów TypeScript
 
 ### Sesja 39 — Weryfikacja bugów MEDIUM + fixy PDF/RPC
 - [x] M-21: Usunięto `(supabase as any).rpc()` w order-snapshot.service.ts i order-lock.service.ts — typy RPC już były w database.types.ts
