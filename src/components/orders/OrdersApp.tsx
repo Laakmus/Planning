@@ -71,7 +71,7 @@ function OrdersAppInner() {
   }
 
   return (
-    <SidebarProvider>
+    <SidebarProvider defaultOpen={false}>
       <AppSidebar activeView={activeView} onViewChange={setActiveView} />
       <SidebarInset>
         <header className="shrink-0 flex h-14 items-center gap-2 border-b px-4">

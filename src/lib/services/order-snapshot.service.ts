@@ -337,10 +337,7 @@ export async function validateForeignKeys(
 export async function generateOrderNo(
   supabase: SupabaseClient<Database>
 ): Promise<string> {
-  // Cast needed: generated Supabase types don't include custom RPC functions.
-  // RPC zdefiniowane w supabase/migrations/20260207000000_consolidated_schema.sql (sekcja 7.2).
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any).rpc("generate_next_order_no");
+  const { data, error } = await supabase.rpc("generate_next_order_no");
 
   if (error) throw error;
   if (!data || typeof data !== "string") {

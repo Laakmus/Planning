@@ -70,7 +70,7 @@ Nowy produkt ma przede wszystkim poprawić:
 - System definiuje trzy role użytkowników:
   - ADMIN: pełny dostęp do wszystkich funkcji, w tym synchronizacji słowników i zarządzania użytkownikami,
   - PLANNER: pełny dostęp do planowania zleceń (tworzenie, edycja, wysyłka, zmiana statusów) oraz synchronizacji słowników,
-  - READ_ONLY: podgląd listy zleceń, szczegółów i historii zmian bez możliwości edycji, tworzenia ani zmiany statusów.
+  - READ_ONLY: podgląd listy zleceń, szczegółów, historii zmian i generowanie PDF — bez możliwości edycji, tworzenia ani zmiany statusów.
 - Rola przypisywana jest na poziomie konta użytkownika w systemie.
 
   3.1.2 Widok planistyczny aktualnych zleceń
@@ -245,7 +245,8 @@ Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowan
     - typ auta (rodzaj auta — select z listy typów pojazdów z bazy, np. „Firanka", „Hakowiec", „Wywrotka", „Bus") + objętość w m³ (osobne pole liczbowe, dowolna wartość) — dwa niezależne pola, nie powiązane FK z tabelą wariantów pojazdów,
     - wymagania specjalne (np. ADR, chłodnia),
   - trasa:
-    - minimalnie 1 punkt załadunku i 1 punkt rozładunku,
+    - **do wysłania zlecenia (email/PDF)** wymagane minimalnie 1 punkt załadunku i 1 punkt rozładunku,
+    - **w trakcie planowania** (status robocze/korekta) zlecenie może mieć dowolną liczbę stopów (0, tylko załadunki, tylko rozładunki) — planista może nie znać jeszcze wszystkich punktów trasy (np. wie kto kupuje towar, ale nie wie z którego magazynu wyśle),
     - przyciski dodaj miejsce załadunku i dodaj miejsce rozładunku,
     - maksymalnie 8 punktów załadunku i 3 punkty rozładunku,
     - każdy punkt zawiera:
@@ -386,7 +387,7 @@ Stopka jest stałym elementem na dole drawera z przyciskami akcji:
 - **Zapisz** (primary) — zapisuje wszystkie zmiany (dane formularza + ewentualną zmianę statusu) → `PUT /orders/{id}`. Po zapisie odświeżenie danych zlecenia (GET lub z odpowiedzi), żeby status (np. Korekta) i Sekcja 6 były aktualne. Toast sukcesu.
 - **Zamknij** — zamyka drawer; przy niezapisanych zmianach: modal „Zapisać?" z opcjami (Zapisz i zamknij / Odrzuć i zamknij / Zostań).
 - **Podgląd** (ikona Eye) — otwiera widok OrderView (podgląd A4 z edycją inline) wewnątrz tego samego panelu Sheet. Zastępuje dawny przycisk „Generuj PDF". Widoczny tylko dla istniejących zleceń w trybie edycji (nie przy nowym zleceniu, nie w readonly). Szczegóły: patrz sekcja 3.1.5b.
-- **Wyślij maila** — `POST /orders/{id}/prepare-email`. Przed wysyłką system sprawdza kompletność pól wymaganych. Przy brakach (422) — alert na górze formularza z listą brakujących pól; Outlook nie jest otwierany. Przy sukcesie — otwarcie Outlooka z załączonym PDF; status zmienia się automatycznie (robocze→wysłane, korekta→korekta wysłane).
+- **Wyślij maila** — `POST /orders/{id}/prepare-email`. Przed wysyłką system sprawdza kompletność pól wymaganych. Przy brakach (422) — alert na górze formularza z listą brakujących pól; Outlook nie jest otwierany. Przy sukcesie — otwarcie Outlooka z załączonym PDF; status zmienia się automatycznie (robocze→wysłane, korekta→korekta wysłane). **Ponowna wysyłka:** opcja dostępna także dla zleceń w statusie wysłane/korekta wysłane (w zakładce Aktualne) — status nie zmienia się, aktualizowana jest data wysyłki (`sent_at`).
 - **Historia zmian** (link) — otwiera panel historii zmian obok drawera. Alternatywnie dostępne z nagłówka drawera.
 
 Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 6 formularza i zapisywana razem z innymi zmianami przez „Zapisz".

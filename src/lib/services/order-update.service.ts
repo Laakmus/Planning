@@ -449,13 +449,23 @@ export async function updateOrder(
     changed_by_user_id: string;
   }> = [];
 
-  // Numeracja aktywnych items (1-based)
-  let auditItemNum = 0;
+  // Mapa snapshoty wg item.id (istniejące) lub specjalnego klucza (nowe)
+  // activeItems i itemsWithSnapshots mają tę samą kolejność — budujemy mapę po id
+  const snapshotByItemId = new Map<string, typeof itemsWithSnapshots[number]>();
+  let newItemSnapIdx = 0;
+  for (const snap of itemsWithSnapshots) {
+    if (snap.id) {
+      snapshotByItemId.set(snap.id, snap);
+    }
+  }
+
+  // Numeracja aktywnych items w UI (1-based) — do czytelnych nazw pól w audit trail
+  let displayItemNum = 0;
   for (const item of params.items) {
     if (item._deleted && !item.id) continue;
 
     if (item._deleted && item.id) {
-      // Usunięta pozycja
+      // Usunięta pozycja — matchowanie po id
       const oldItem = oldItemsMap.get(item.id);
       itemChangeLogRows.push({
         order_id: orderId,
@@ -465,11 +475,10 @@ export async function updateOrder(
         changed_by_user_id: userId,
       });
     } else if (item.id == null) {
-      // Nowa pozycja
-      auditItemNum++;
-      const snap = itemsWithSnapshots.find(
-        (_s, idx) => idx === auditItemNum - 1
-      );
+      // Nowa pozycja — snapshot z kolejności nowych itemów
+      displayItemNum++;
+      const snap = itemsWithSnapshots[newItemSnapIdx] ?? null;
+      newItemSnapIdx++;
       itemChangeLogRows.push({
         order_id: orderId,
         field_name: "item_added",
@@ -478,20 +487,18 @@ export async function updateOrder(
         changed_by_user_id: userId,
       });
     } else {
-      // Istniejąca pozycja — porównanie pól
-      auditItemNum++;
+      // Istniejąca pozycja — matchowanie snapshot po item.id
+      displayItemNum++;
       const oldItem = oldItemsMap.get(item.id);
       if (oldItem) {
-        const snap = itemsWithSnapshots.find(
-          (_s, idx) => idx === auditItemNum - 1
-        );
+        const snap = snapshotByItemId.get(item.id);
         const productName = snap?.productNameSnapshot ?? item.productNameSnapshot ?? null;
 
         // product_name
         if ((oldItem.product_name_snapshot ?? null) !== (productName)) {
           itemChangeLogRows.push({
             order_id: orderId,
-            field_name: `item[${auditItemNum}].product_name`,
+            field_name: `item[${displayItemNum}].product_name`,
             old_value: oldItem.product_name_snapshot ?? null,
             new_value: productName,
             changed_by_user_id: userId,
@@ -503,7 +510,7 @@ export async function updateOrder(
         if (oldMethod !== newMethod) {
           itemChangeLogRows.push({
             order_id: orderId,
-            field_name: `item[${auditItemNum}].loading_method_code`,
+            field_name: `item[${displayItemNum}].loading_method_code`,
             old_value: oldMethod,
             new_value: newMethod,
             changed_by_user_id: userId,
@@ -515,7 +522,7 @@ export async function updateOrder(
         if (oldQty !== newQty) {
           itemChangeLogRows.push({
             order_id: orderId,
-            field_name: `item[${auditItemNum}].quantity_tons`,
+            field_name: `item[${displayItemNum}].quantity_tons`,
             old_value: oldQty,
             new_value: newQty,
             changed_by_user_id: userId,
@@ -527,7 +534,7 @@ export async function updateOrder(
         if (oldNotes !== newNotes) {
           itemChangeLogRows.push({
             order_id: orderId,
-            field_name: `item[${auditItemNum}].notes`,
+            field_name: `item[${displayItemNum}].notes`,
             old_value: oldNotes,
             new_value: newNotes,
             changed_by_user_id: userId,

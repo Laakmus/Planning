@@ -31,6 +31,19 @@ export function formatDateFromTimestamp(timestamp: string | null | undefined): s
   return formatDate(datePart);
 }
 
+/**
+ * Formatuje timestamp ISO 8601 (np. "2026-02-17T14:32:01.000Z") → DD.MM.YYYY HH:MM.
+ * Wyciąga datę i czas z timestampa. Zwraca "—" gdy brak.
+ */
+export function formatDateTimeFromTimestamp(timestamp: string | null | undefined): string {
+  if (!timestamp) return "—";
+  const [datePart, timePart] = timestamp.split("T");
+  const d = formatDate(datePart);
+  if (d === "—") return "—";
+  const t = timePart ? formatTime(timePart) : "";
+  return t ? `${d} ${t}` : d;
+}
+
 /** Formatuje czas ISO (HH:MM:SS) → HH:MM. Zwraca "" gdy brak. */
 export function formatTime(time: string | null | undefined): string {
   if (!time) return "";

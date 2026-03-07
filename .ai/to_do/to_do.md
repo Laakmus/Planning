@@ -1,31 +1,212 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-07 (sesja 38 — E2E Playwright: 25 testów, Page Objects, CI)
+> Ostatnia aktualizacja: 2026-03-07 (sesja 39 — weryfikacja bugów + fixy PDF/RPC)
 
 ---
 
 ## Do zrobienia — HIGH
 
-### H-11. ~~Brak CI/CD pipeline i pre-commit hooków~~ → CZĘŚCIOWO DONE
-- **Źródło:** Audyt testów
-- **Opis:** ~~Brak `.github/`~~ — GitHub Actions E2E workflow dodany (`.github/workflows/e2e.yml`). Brak husky/lint-staged (pre-commit hooks) — odroczone.
+(brak — wszystkie oryginalne HIGH obniżone do MEDIUM po weryfikacji)
 
 ---
 
 ## Do zrobienia — MEDIUM
 
-(brak)
+### M-04. Audit trail numeracja items — pozycyjne matchowanie
+- **Kategoria:** bug
+- **Pliki:** `src/lib/services/order-update.service.ts:453-537`
+- **Opis:** `auditItemNum` jest inkrementowany pozycyjnie, `.find((_s, idx) => idx === auditItemNum - 1)` to de facto indeksowanie. Gdy usuniesz item ze środka listy, audit log pokaże złą nazwę produktu dla pozostałych pozycji.
+- **Sugerowany fix:** Użyć mapy product snapshots wg item ID zamiast pozycyjnego matchowania.
+- **Effort:** S
 
----
 
-## Do zrobienia — LOW
 
-### L-02. Brak paginacji w endpointach słownikowych
-- **Pliki:** companies, locations, products
+
+
+### M-14. useOrderActions brak testów
+- **Kategoria:** test
+- **Pliki:** `src/hooks/useOrderActions.ts`
+- **Opis:** Hook z 10 krytycznymi handlerami (tworzenie, wysyłka, zmiana statusu, anulowanie, duplikacja) nie ma żadnych testów.
+- **Sugerowany fix:** Dodać testy RTL (renderHook) dla każdego handlera: happy path + error path.
+- **Effort:** L
+
+### M-15. useOrderDrawer brak testów
+- **Kategoria:** test
+- **Pliki:** `src/hooks/useOrderDrawer.ts`
+- **Opis:** Najbardziej złożony hook (654 linii) — lock/unlock, zapis, PDF, email, dialog niezapisanych — bez unit testów.
+- **Sugerowany fix:** Dodać testy: loadDetail, handleSave (create vs update), handleCloseRequest z isDirty, doClose z unlock.
+- **Effort:** L
+
+### M-16. order-snapshot.service czyste funkcje bez testów
+- **Kategoria:** test
+- **Pliki:** `src/lib/services/order-snapshot.service.ts`
+- **Opis:** computeDenormalizedFields, buildSearchText, autoSetDocumentsAndCurrency — czyste funkcje idealne do testów, a nie mają dedykowanych testów.
+- **Sugerowany fix:** Dodać testy: puste stops/items, null country, null dateLocal, każdy typ transportu.
+- **Effort:** M
+
+### M-17. PDF moduł bez testów
+- **Kategoria:** test
+- **Pliki:** `src/lib/services/pdf/pdf-generator.service.ts`, `src/lib/services/pdf/pdf-sections.ts`, `src/lib/services/pdf/pdf-layout.ts`
+- **Opis:** Cały nowy moduł PDF (generator, sections, layout, fonts) nie ma żadnych testów. Endpoint pdf.ts też nie.
+- **Sugerowany fix:** Testy: generateOrderPdf z minimalnym input → zwraca Buffer. Test endpointu: 400 invalid UUID, 404 not found, 200 content-type.
+- **Effort:** M
+
+### M-18. Endpointy słownikowe bez testów
+- **Kategoria:** test
+- **Pliki:** `src/pages/api/v1/companies.ts`, `locations.ts`, `products.ts`, `transport-types.ts`, `vehicle-variants.ts`, `order-statuses.ts`, `health.ts`
+- **Opis:** 7 endpointów słownikowych nie ma żadnych testów (200 OK, 401 unauth, 500 DB error, parametr search).
+- **Sugerowany fix:** Dodać testy dla każdego: happy path + error path + parametry.
+- **Effort:** M
+
+### M-19. updateOrder audit trail i items/stops CRUD brak testów
+- **Kategoria:** test
+- **Pliki:** `src/lib/services/__tests__/order.service.test.ts`
+- **Opis:** Brak testów: logowanie zmian pól biznesowych (change_log), items CRUD (insert/update/delete), stops CRUD (delete _deleted, insert new, update existing z temporary offset). 280 linii logiki bez pokrycia.
+- **Sugerowany fix:** Testy weryfikujące insert do order_change_log z poprawnymi field_name/old_value/new_value. Stops/items z mixem _deleted, nowych i istniejących.
+- **Effort:** L
+
+### M-20. database.types.ts nieaktualny — brakuje kolumn
+- **Kategoria:** architecture
+- **Pliki:** `src/db/database.types.ts`
+- **Opis:** Brakuje: `notification_details`, `confidentiality_clause` (transport_orders), `location_id` (user_profiles). Zawiera usuniętą FK `vehicle_variant_code_fkey`. Root cause `as any` castów w auth.service i warehouse.service.
+- **Sugerowany fix:** Uruchomić `npx supabase gen types typescript --local > src/db/database.types.ts`. Po regeneracji usunąć zbędne `as any` casts.
+- **Effort:** S
+
+### L-03. Aktualizacja PRD i docs — 13 rozbieżności
+- **Kategoria:** docs
+- **Pliki:** `.ai/prd.md`, `.ai/api-plan.md`, `.ai/ui-plan.md`, `.ai/db-plan.md`
+- **Opis:** Nieaktualne fragmenty dokumentacji: (1) PRD: carrier bez kontaktu (świadoma decyzja), ikona email w wierszu, historia zmian w stopce, kolory per zakładka, sposoby załadunku, layout CarrierSection 2→3 wiersze, brak kolumny Fix, format daty wysłania, bg-emerald wartość. (2) api-plan: duplicate "(etap 2)". (3) ui-plan: "dwa stany" → trzy trasy, AppHeader dead code opis. (4) db-plan: vehicle_type_text varchar(200) vs 100, order_seq_no NOT NULL vs nullable.
+- **Sugerowany fix:** Jednorazowa aktualizacja 4 plików docs.
+- **Effort:** M
+
+### L-04. A11y improvements — aria-label, scope, role
+- **Kategoria:** a11y
+- **Pliki:** `FilterBar.tsx`, `ListSettings.tsx`, `OrderDrawer.tsx`, `RoutePointCard.tsx`, `OrderTable.tsx`
+- **Opis:** (1) Przełącznik Trasa/Kolumny bez role="group" i aria-pressed. (2) Przycisk X drawera bez aria-label. (3) Przyciski "Usuń punkt" bez aria-label. (4) `<th>` bez scope="col".
+- **Sugerowany fix:** Dodać brakujące atrybuty ARIA i scope.
+- **Effort:** S
+
+### L-05. Frontend performance — React.memo, useCallback
+- **Kategoria:** performance
+- **Pliki:** `src/components/orders/OrderRow.tsx`, `src/components/orders/OrdersPage.tsx`
+- **Opis:** OrderRow bez React.memo (re-render 200 wierszy). Handlery filtrów bez useCallback (nowe referencje).
+- **Sugerowany fix:** React.memo na OrderRow, useCallback na handlery w OrdersPage. Profilować przed wdrożeniem.
+- **Effort:** S
+
+### L-06. FilterBar debounce cleanup przy unmount
+- **Kategoria:** bug
+- **Pliki:** `src/components/orders/FilterBar.tsx:57-58`
+- **Opis:** searchDebounceRef i weekDebounceRef nie czyszczone w useEffect cleanup. Timeout może się wykonać po unmount.
+- **Sugerowany fix:** Dodać useEffect cleanup: `clearTimeout(searchDebounceRef.current)`.
+- **Effort:** S
+
+### L-07. CargoSection key={idx} → stabilny key
+- **Kategoria:** bug
+- **Pliki:** `src/components/orders/drawer/CargoSection.tsx:92-93`
+- **Opis:** Pozycje towarowe mają `key={idx}`. Usunięcie ze środka listy może pomylić React state.
+- **Sugerowany fix:** Użyć item.id lub generować tymczasowy UUID przy addItem.
+- **Effort:** S
+
+### L-08. Frontend drobne UX
+- **Kategoria:** ux
+- **Pliki:** `RoutePointCard.tsx`, `OrderDrawer.tsx`, `useWarehouseWeek.ts`, `FinanceSection.tsx`
+- **Opis:** (1) Firma w RoutePointCard wyszukiwana po nazwie zamiast UUID. (2) onInteractOutside preventDefault — brak animacji zamknięcia gdy !isDirty. (3) Non-atomic week/year state (2 setState, React batching łagodzi). (4) "Forma płatności" bez opcji pustej.
+- **Sugerowany fix:** Indywidualne fixy per punkt.
+- **Effort:** M
+
+### L-09. Frontend minor
+- **Kategoria:** ux
+- **Pliki:** `TimeCombobox.tsx`, `LockIndicator.tsx`, `StatusFooter.tsx`, `OrderRowContextMenu.tsx`
+- **Opis:** (1) TimeCombobox globalny document.querySelector. (2) LockIndicator zagnieżdżony TooltipProvider. (3) StatusFooter "System Status: OK" hardcoded. (4) "Anuluj zlecenie" widoczne dla zrealizowanych (backend blokuje). (5) useOrders aborted check może ukryć błąd sieciowy (edge case). (6) Brak auto-set dokumentów/waluty we frontendzie przy zmianie transportTypeCode.
+- **Sugerowany fix:** Indywidualne fixy per punkt. Priorytet niski.
+- **Effort:** M
+
+### L-10. Backend minor bugs
+- **Kategoria:** bug
+- **Pliki:** `order-misc.service.ts:393`, `order-snapshot.service.ts:241`, `order-update.service.ts:240`, `warehouse.service.ts:148`
+- **Opis:** (1) updateEntryFixed nie sprawdza błędu insertu do change_log. (2) autoSetDocumentsAndCurrency nigdy nie zmienia currencyCode — mylący komentarz. (3) updateOrder nie wywołuje autoSet przy zmianie transportTypeCode. (4) Warehouse stopy bez daty — brak limitu (obniżone z MEDIUM).
+- **Sugerowany fix:** (1) Dodać `{ error }` destructuring + throw. (2) Poprawić komentarz lub zaimplementować. (3/4) Rozważyć implementację.
+- **Effort:** S
+
+### L-11. Backend minor — performance i edge cases
+- **Kategoria:** performance
+- **Pliki:** `order-update.service.ts:600`, `api-helpers.ts:24`, `order.validator.ts:143`, `companies.ts:26`
+- **Opis:** (1) resolveFkName w pętli — cache old FK names. (2) CORS origin cached at import — OK w praktyce. (3) Zod .max(11) na stops liczy deleted. (4) Companies 1h cache stale data.
+- **Sugerowany fix:** Indywidualne fixy. Niski priorytet.
+- **Effort:** S
+
+### L-12. Security minor — defense-in-depth
+- **Kategoria:** security
+- **Pliki:** `middleware.ts`, `companies.ts`, `transport-types.ts`, `order.validator.ts`, `order-create.service.ts`, `order-misc.service.ts`
+- **Opis:** (1) Cache-Control `public` → `private` na authenticated endpoints. (2) Middleware auth flow (Supabase client z raw header). (3) mailto brak email odbiorcy. (4) logError stack traces w prod. (5) Empty string validation (min(1)). (6) Rate limiter FIFO eviction. (7) Non-transactional cleanup createOrder. (8) duplicateOrder resetStatusToDraft.
+- **Sugerowany fix:** Indywidualne fixy. Wszystkie defense-in-depth, nie krytyczne.
+- **Effort:** M
+
+### L-13. Test pokrycie — komponenty i endpointy
+- **Kategoria:** test
+- **Pliki:** `DictionaryContext.tsx`, `OrdersPage.tsx`, `HistoryPanel.tsx`, `LoginCard.tsx`, `WarehouseApp.tsx`, `dictionary-sync/run.ts`, drawer components
+- **Opis:** Brakujące unit testy: DictionaryContext, drawer sekcje (Route, Cargo, Carrier, Finance, Notes, Status), OrdersPage, HistoryPanel, LoginCard, Warehouse UI, dictionary-sync endpoints. E2E pokrywają happy path.
+- **Sugerowany fix:** Dodać przynajmniej renderowanie + basic interaction test per komponent.
+- **Effort:** L
+
+### L-14. Test jakość — act warnings, weak assertions, slow tests
+- **Kategoria:** test
+- **Pliki:** `useDictionarySync.test.ts`, `order.service.test.ts:491`, `order.service.test.ts:375`, drawer-e2e
+- **Opis:** (1) "not wrapped in act" warnings. (2) toBeDefined zamiast toThrow. (3) autoSetDocuments — brak weryfikacji payload. (4) drawer-e2e testy 3.6-4s (tymczasowe, do usunięcia).
+- **Sugerowany fix:** (1) waitFor + act. (2) rejects.toThrow(). (3) spy na insert payload. (4) Zastąpić lżejszymi testami.
+- **Effort:** M
+
+### L-15. DB constraints i docs
+- **Kategoria:** architecture
+- **Pliki:** `supabase/migrations/`, `.ai/db-plan.md`
+- **Opis:** (1) notificationDetails/confidentialityClause — Zod max bez CHECK constraint w DB. (2) search_text ILIKE bez indeksu pg_trgm GIN. (3) db-plan: vehicle_type_text varchar(200) vs varchar(100). (4) db-plan: order_seq_no NOT NULL vs nullable.
+- **Sugerowany fix:** (1) Rozważyć CHECK constraints. (2) pg_trgm GIN index przy skalowaniu. (3/4) Aktualizacja db-plan.md.
+- **Effort:** M
+
+### L-16. Brak paginacji w endpointach słownikowych
+- **Kategoria:** performance
+- **Pliki:** `src/pages/api/v1/companies.ts`, `locations.ts`, `products.ts`
+- **Opis:** Endpointy słownikowe zwracają wszystkie rekordy bez paginacji.
+- **Sugerowany fix:** Dodać limit/offset lub cursor-based pagination.
+- **Effort:** M
 
 ---
 
 ## Odroczone (user decision: zostawić)
+
+### D-13. M-01 — Walidacja 1 stop to NIE jest bug (zamierzone zachowanie)
+- W trakcie planowania (status robocze/korekta) zlecenie może mieć dowolną liczbę stopów: 0, tylko załadunki, tylko rozładunki.
+- Planista może nie znać jeszcze wszystkich punktów trasy (np. wie kto kupuje towar, ale nie wie z którego magazynu wyśle).
+- Walidacja min. 1 LOADING + 1 UNLOADING dotyczy **wysyłki** (email/PDF), nie zapisu draftu.
+- PRD zaktualizowany o tę informację (§3.1.5, sekcja "trasa").
+
+### D-14. M-02 — Nie-atomowe operacje na stopach — NIE jest bug
+- Zweryfikowano: każde zapytanie DB MA `if (err) throw` guard. Error handling jest poprawny.
+- Brak transakcji DB to trade-off wydajności, nie bug — przy kilkudziesięciu użytkownikach ryzyko minimalne.
+- Powiązane z D-11 (N+1 queries w updateOrder).
+
+### D-15. M-03 — Snapshot items pozycyjne matchowanie — NIE jest bug
+- Zweryfikowano: indeksowanie jest prawidłowe. Deleted items są pomijane spójnie w obu pętlach.
+- Kod jest mylący ale działa poprawnie. Refaktoring na matchowanie po ID byłby czytelniejszy, ale nie naprawia buga.
+
+### D-16. M-05 — duplicateOrder niespójna denormalizacja — nieosiągalny z UI
+- Frontend ZAWSZE wysyła `{ includeStops: true, includeItems: true }` (hardcoded w `useOrderActions.ts:194`).
+- Parametr `includeStops=false` jest osiągalny tylko przez bezpośredni request API (curl/Postman).
+- Ryzyko minimalne — defense-in-depth, nie realny bug.
+
+### D-17. M-06 — robocze→reklamacja — celowe ograniczenie
+- Reklamacja dotyczy zleceń już wysłanych (wysłane, korekta, korekta wysłane), nie draftów (robocze).
+- Brak tranzycji robocze→reklamacja jest logicznie poprawny — nie można reklamować czegoś co nie zostało wysłane.
+
+### D-18. M-12 — handleCloseRequest stale closure — NIE jest bug
+- Zweryfikowano: `isDirty` jest z `useState` → closure bierze aktualną wartość przy każdym renderze.
+- `handleCloseRequest` jest zwykłą funkcją (nie useCallback) → tworzona na nowo przy każdym renderze → zawsze ma aktualny `isDirty`.
+- Brak `useCallback` to co najwyżej mikro-optimizacja (nowa referencja per render), nie bug poprawności.
+
+### D-19. M-07 — Race condition lockOrder (TOCTOU)
+- SELECT statusu i RPC try_lock_order to osobne operacje. Między nimi inny użytkownik może zmienić status.
+- Wymaga migracji SQL: `AND status_code NOT IN ('anulowane','zrealizowane')` w RPC.
+- Ryzyko niskie — wymaga precyzyjnego timingu dwóch użytkowników. Aplikacja wewnętrzna, kilkudziesięciu użytkowników.
 
 ### D-03. PDF endpoint — stub 501 po stronie serwera
 - Wymaga generatora PDF (np. Puppeteer, jsPDF, Reportlab).
@@ -66,6 +247,26 @@
 ---
 
 ## Zrobione
+
+### Sesja 39 — Weryfikacja bugów MEDIUM + fixy PDF/RPC
+- [x] M-21: Usunięto `(supabase as any).rpc()` w order-snapshot.service.ts i order-lock.service.ts — typy RPC już były w database.types.ts
+- [x] M-08: PDF endpoint — owinięto cały blok w try/catch z logError + errorResponse(500)
+- [x] M-09: PDF security headers — spread COMMON_HEADERS (wyeksportowany z api-helpers.ts) + nadpisanie Content-Type
+- [x] L-01: PDF filename sanityzacja — `orderNo.replace(/["\r\n/]/g, "-")`
+- [x] L-02: PDF console.error → `logError("[POST /api/v1/orders/{orderId}/pdf]", err)`
+- [x] M-01 → D-13: Przeniesione do odroczonych — zamierzone zachowanie (planista może nie znać wszystkich punktów trasy)
+- [x] M-02 → D-14: Przeniesione do odroczonych — nierealny bug (error handling jest poprawny)
+- [x] M-03 → D-15: Przeniesione do odroczonych — nierealny bug (indeksowanie prawidłowe)
+- [x] M-05 → D-16: Przeniesione do odroczonych — nieosiągalny z UI (frontend hardcoded includeStops: true)
+- [x] M-06 → D-17: Przeniesione do odroczonych — celowe ograniczenie (reklamacja tylko dla wysłanych)
+- [x] M-12 → D-18: Przeniesione do odroczonych — nierealny bug (isDirty z useState, closure poprawna)
+- [x] M-10: PDF autoryzacja — READ_ONLY MOŻE generować PDF (decyzja biznesowa, udokumentowane w PRD §3.1.1)
+- [x] M-11: FilterBar aria-label — niepotrzebne (aplikacja wewnętrzna, a11y nie wymagane)
+- [x] M-13: Ponowna wysyłka maila — zamierzone zachowanie, udokumentowane w PRD §5 (stopka drawera)
+- [x] M-22: Podwójny dialog przy "Podgląd" z niezapisanymi zmianami — guard `closest('[role="alertdialog"]')` w `onInteractOutside`
+- [x] M-04: Audit trail items — matchowanie snapshot po item.id zamiast pozycyjnego indeksu
+- [x] PRD zaktualizowany — §3.1.5 trasa: planowanie z częściowymi stopami jest zamierzone
+- Wynik: 914/914 testów, 0 błędów TypeScript
 
 ### Sesja 38 — E2E Playwright (25 testów, 5 Page Objects, CI)
 - [x] Faza 0: Infrastruktura — `playwright.config.ts`, `e2e/global-setup.ts`, `e2e/helpers/test-data.ts`, `e2e/fixtures/pages.ts`, `e2e/.gitignore`, @playwright/test + 5 skryptów npm
@@ -142,7 +343,7 @@
   - `order-misc.service.ts` — duplicateOrder, prepareEmailForOrder, updateCarrierCellColor, updateEntryFixed
 - 782 testów PASS, 0 błędów TS, Reviewer PASS 8/8
 
-### Sesja 32 — naprawiono 5 HIGH (CR-01 dokończone, CR-02, NEW-03, H-03, H-04, H-06)
+### Sesja 32 — naprawiono 5 HIGH (CR-01 dokończenie, CR-02, NEW-03, H-03, H-04, H-06)
 - [x] CR-01 (dokończenie): 43 nowe testy — stops (23), carrier-color (10), entry-fixed (10)
 - [x] CR-02: 34 testy middleware — rate limiting (10), idempotency (8), JWT (5), CORS (3), cleanup (2), integration (6)
 - [x] NEW-03: Pokryte przez CR-01 (stops.test.ts — 23 testy)

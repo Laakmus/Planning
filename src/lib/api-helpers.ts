@@ -21,7 +21,7 @@ export function getCorsOrigin(): string {
 }
 
 /** Security + CORS headers dołączane do każdej odpowiedzi API. */
-const COMMON_HEADERS: Record<string, string> = {
+export const COMMON_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
   "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",

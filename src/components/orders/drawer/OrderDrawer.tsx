@@ -14,7 +14,7 @@ import {
   SheetTitle,
 } from "@/components/ui/sheet";
 import { useOrderDrawer } from "@/hooks/useOrderDrawer";
-import { formatDateFromTimestamp } from "@/lib/format-utils";
+import { formatDateTimeFromTimestamp } from "@/lib/format-utils";
 
 import { StatusBadge } from "../StatusBadge";
 import OrderView from "../order-view/OrderView";
@@ -81,11 +81,14 @@ export function OrderDrawer({
       <Sheet open={isOpen} onOpenChange={(open) => !open && handleCloseRequest()}>
         <SheetContent
           side="right"
-          className={`w-full p-0 flex flex-col ${showOrderView ? "sm:max-w-[65vw]" : "sm:max-w-[800px]"}`}
+          className={`w-full p-0 flex flex-col overflow-hidden ${showOrderView ? "sm:max-w-[65vw]" : "sm:max-w-[800px]"}`}
           showCloseButton={false}
           data-testid="order-drawer"
           onInteractOutside={(e) => {
             e.preventDefault();
+            // Nie zamykaj drawera gdy kliknięto w nasz AlertDialog (renderowany w Portal poza Sheet)
+            const target = e.target as HTMLElement;
+            if (target?.closest?.('[role="alertdialog"]')) return;
             handleCloseRequest();
           }}
           onEscapeKeyDown={(e) => {
@@ -123,7 +126,7 @@ export function OrderDrawer({
                 </div>
                 {detail && (
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Utworzono: {formatDateFromTimestamp(detail.order.createdAt)}
+                    Utworzono: {formatDateTimeFromTimestamp(detail.order.createdAt)}
                   </p>
                 )}
               </div>
