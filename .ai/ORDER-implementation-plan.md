@@ -179,7 +179,7 @@ order-view/
 | OrderFormData | OrderViewData | Kierunek | Logika |
 |---------------|---------------|----------|--------|
 | — (z `detail.order.orderNo`) | `orderNo` | → readonly | Bezpośrednio |
-| — (z `detail.order.createdAt`) | `createdAt` | → readonly | Bezpośrednio (YYYY-MM-DD) |
+| — (z `detail.order.createdAt`) | `createdAt` | → readonly | Bezpośrednio (pełny timestamp ISO z API, wyświetlany jako DD.MM.YYYY — tylko data, bez godziny) |
 | `carrierCompanyId` | `carrierName` | ↔ | Forward: `companies.find(c => c.id === carrierCompanyId)?.name ?? ""`. Reverse: `companies.find(c => c.name === carrierName)?.id ?? null` |
 | — | `carrierAddress` | → readonly | Patrz sekcja "Carrier address resolution" |
 | — | `carrierNip` | → readonly | `companies.find(c => c.id === carrierCompanyId)?.taxId ?? ""` |

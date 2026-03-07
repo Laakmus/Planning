@@ -2,6 +2,7 @@
 
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useDictionaries } from "@/contexts/DictionaryContext";
+import { formatDateFromTimestamp } from "@/lib/format-utils";
 import type { OrderViewData, OrderViewItem, PackagingType } from "./types";
 import {
   CELL,
@@ -205,7 +206,7 @@ export default function OrderDocument({
               WYST
             </span>
             <span className="text-[7px]" style={{ letterSpacing: "0.21px" }}>
-              {data.createdAt}
+              {formatDateFromTimestamp(data.createdAt)}
             </span>
           </div>
         </div>

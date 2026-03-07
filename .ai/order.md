@@ -72,7 +72,7 @@ Poniżej szczegółowy opis każdej sekcji widoku, z mapowaniem na pola modelu O
 | 2 | Data wystawienia | Data | `createdAt` z modelu Order | **Readonly** |
 
 - Layout: etykieta „ZLECENIE NR:" (szare tło) + pole NUMER + pole DATA WYST.
-- Format daty: YYYY-MM-DD (jak w mockupie).
+- Format daty wystawienia: DD.MM.YYYY (tylko data, bez godziny). API zwraca `createdAt` jako pełny timestamp ISO — frontend/PDF wyciąga część datową i formatuje na DD.MM.YYYY.
 
 ---
 
