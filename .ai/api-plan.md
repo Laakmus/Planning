@@ -646,16 +646,7 @@ Wszystkie te endpointy używają standardowego formatu:
     - Ustawienie `sent_by_user_id` na bieżącego użytkownika i `sent_at` na `now()` (nadpisywane przy każdej wysyłce, w tym ponownej).
     - Zmiana statusu: robocze → wysłane, korekta → korekta wysłane.
     - Aktualizacja `main_product_name` (jeśli jeszcze puste).
-  - **Sukces (przykład)**:
-    ```json
-    {
-      "orderId": "uuid",
-      "statusBefore": "robocze | korekta",
-      "statusAfter": "wysłane | korekta wysłane",
-      "emailOpenUrl": "string",
-      "pdfFileName": "ZT2026-0001.pdf"
-    }
-    ```
+  - **Sukces**: `200 OK` — zwraca plik `.eml` (Content-Type: `message/rfc822`, Content-Disposition: `attachment; filename="zlecenie-ZT2026-0001.eml"`). Plik .eml RFC 822 z PDF w załączniku MIME base64. Frontend pobiera blob.
   - **Błędy**: `401`, `403`, `404`, `422` (lista braków do wysyłki)
 
 ---

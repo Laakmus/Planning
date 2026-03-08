@@ -13,7 +13,6 @@ import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
 import type {
   CreateOrderResponseDto,
   OrderDetailResponseDto,
-  PrepareEmailResponseDto,
 } from "@/types";
 
 import { formDataToViewData, viewDataToFormData } from "@/components/orders/order-view/types";
@@ -595,19 +594,22 @@ export function useOrderDrawer({
   const handleSendEmailFromDrawer = useCallback(async () => {
     if (!orderId) return;
     try {
-      const result = await api.post<PrepareEmailResponseDto>(
-        `/api/v1/orders/${orderId}/prepare-email`,
-        {}
-      );
-      if (result.emailOpenUrl) {
-        window.open(result.emailOpenUrl, "_blank", "noopener,noreferrer");
-      }
-      toast.success("Email przygotowany — otwórz klienta pocztowego.");
+      const response = await api.postRaw(`/api/v1/orders/${orderId}/prepare-email`, {});
+      const blob = await response.blob();
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = `zlecenie-${(detail?.order.orderNo ?? orderId).replace(/\//g, "-")}.eml`;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+      toast.success("Plik .eml pobrany — otwórz go w programie pocztowym.");
       onOrderUpdated();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Błąd przygotowania maila.");
     }
-  }, [orderId, api, onOrderUpdated]);
+  }, [orderId, detail, api, onOrderUpdated]);
 
   // ---------------------------------------------------------------------------
   // Wartości obliczane

@@ -2,20 +2,19 @@
  * POST /api/v1/orders/{orderId}/prepare-email
  *
  * Walidacja biznesowa, zmiana statusu (robocze→wysłane, korekta→korekta wysłane),
- * ustawienie sent_by_user_id i sent_at, zwrot mailto linku i nazwy PDF.
+ * ustawienie sent_by_user_id i sent_at, generacja PDF, zwrot pliku .eml z załącznikiem.
  *
- * Odpowiedź: 200 + PrepareEmailResponseDto.
+ * Odpowiedź: 200 + plik .eml (message/rfc822).
  * Błędy: 400 (status nie pozwala na wysyłkę), 401, 403, 404, 422 (walidacja biznesowa).
  */
 
 import type { APIRoute } from "astro";
 
 import {
+  COMMON_HEADERS,
   errorResponse,
   getAuthenticatedUser,
-  jsonResponse,
   isValidUUID,
-  parseJsonBody,
   requireWriteAccess,
   logError,
 } from "../../../../../lib/api-helpers";
@@ -76,7 +75,16 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
       );
     }
 
-    return jsonResponse(result.data, 200);
+    const sanitizedName = (result.orderNo || orderId).replace(/["\r\n/]/g, "-");
+    const fileName = `zlecenie-${sanitizedName}.eml`;
+    return new Response(result.emlContent, {
+      status: 200,
+      headers: {
+        ...COMMON_HEADERS,
+        "Content-Type": "message/rfc822",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+      },
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
     if (msg === "NOT_ALLOWED_STATUS") {

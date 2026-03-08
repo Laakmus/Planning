@@ -153,9 +153,11 @@ describe("useOrderActions", () => {
   // -------------------------------------------------------------------------
 
   describe("handleSendEmail", () => {
-    it("POST sukces → window.open + toast.success + refetch", async () => {
-      const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
-      mockApi.post.mockResolvedValue({ emailOpenUrl: "mailto:test@example.com" });
+    it("postRaw sukces → blob download .eml + toast.success + refetch", async () => {
+      const mockBlob = new Blob(["mock-eml"], { type: "message/rfc822" });
+      mockApi.postRaw.mockResolvedValue({
+        blob: vi.fn().mockResolvedValue(mockBlob),
+      });
 
       const { result } = renderActions();
 
@@ -163,23 +165,16 @@ describe("useOrderActions", () => {
         await result.current.handleSendEmail(ORDER_ID);
       });
 
-      expect(mockApi.post).toHaveBeenCalledWith(
+      expect(mockApi.postRaw).toHaveBeenCalledWith(
         `/api/v1/orders/${ORDER_ID}/prepare-email`,
         {}
       );
-      expect(openSpy).toHaveBeenCalledWith(
-        "mailto:test@example.com",
-        "_blank",
-        "noopener,noreferrer"
-      );
       expect(mockToast.success).toHaveBeenCalled();
       expect(refetchFn).toHaveBeenCalled();
-
-      openSpy.mockRestore();
     });
 
-    it("POST error → toast.error", async () => {
-      mockApi.post.mockRejectedValue(new Error("Email error"));
+    it("postRaw error → toast.error", async () => {
+      mockApi.postRaw.mockRejectedValue(new Error("Email error"));
 
       const { result } = renderActions();
 
@@ -189,23 +184,6 @@ describe("useOrderActions", () => {
 
       expect(mockToast.error).toHaveBeenCalledWith("Email error");
       expect(refetchFn).not.toHaveBeenCalled();
-    });
-
-    it("brak emailOpenUrl → nie wywołuje window.open", async () => {
-      const openSpy = vi.spyOn(window, "open").mockImplementation(() => null);
-      mockApi.post.mockResolvedValue({ emailOpenUrl: null });
-
-      const { result } = renderActions();
-
-      await act(async () => {
-        await result.current.handleSendEmail(ORDER_ID);
-      });
-
-      expect(openSpy).not.toHaveBeenCalled();
-      // Ale toast.success nadal powinien być wywołany
-      expect(mockToast.success).toHaveBeenCalled();
-
-      openSpy.mockRestore();
     });
   });
 

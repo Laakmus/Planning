@@ -1,31 +1,10 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-08 (audyt 42 — 6 agentów + debata, 3 HIGH confirmed)
+> Ostatnia aktualizacja: 2026-03-08 (sesja 43 — H-15 .eml z PDF)
 
 ---
 
 ## Do zrobienia — HIGH
-
-### H-15. "Wyślij maila" — generacja .eml z załączonym PDF
-- **Kategoria:** feature
-- **Pliki:** `src/lib/services/order-misc.service.ts`, `src/pages/api/v1/orders/[orderId]/prepare-email.ts`, `src/pages/api/v1/orders/[orderId]/pdf.ts`, `src/hooks/useOrderDrawer.ts`, `src/hooks/useOrderActions.ts`, `src/types.ts`
-- **Nowe pliki:** `src/lib/services/eml/eml-builder.service.ts`, `src/lib/services/pdf/pdf-data-resolver.ts`, `src/lib/services/eml/__tests__/eml-builder.service.test.ts`
-- **Problem:** Przycisk "Wyślij maila" otwiera `mailto:` link bez załącznika PDF (protokół mailto: nie obsługuje załączników). PRD (§3.1.11, US-051) wymaga otwarcia klienta poczty z PDF w załączniku.
-- **Rozwiązanie:** Generowanie pliku `.eml` (RFC 822) z PDF jako MIME attachment base64. Nagłówek `X-Unsent: 1` powoduje, że Outlook otwiera plik jako draft (compose mode). Zero zależności od Azure AD/Graph API.
-- **Plan szczegółowy:** `.ai/eml-email-implementation-plan.md`
-- **Flow:** Klik "Wyślij maila" → backend waliduje + zmienia status + generuje PDF + buduje .eml → przeglądarka pobiera `zlecenie-NR-xxx.eml` → user otwiera w Outlooku → PDF w załączniku, pusty temat/treść.
-- **Zmiany:**
-  1. **Types:** Usunięcie `PrepareEmailResponseDto` z `src/types.ts`
-  2. **Backend — nowy `eml-builder.service.ts`:** Builder .eml RFC 822 z PDF attachment (MIME multipart/mixed, base64, X-Unsent: 1)
-  3. **Backend — nowy `pdf-data-resolver.ts`:** Ekstrakcja logiki resolwowania NIP+krajów z `pdf.ts` do reużywalnej funkcji
-  4. **Backend — modyfikacja `order-misc.service.ts`:** `prepareEmailForOrder()` generuje PDF + .eml, zwraca `emlContent` zamiast `emailOpenUrl`
-  5. **Backend — modyfikacja `prepare-email.ts`:** Response blob `message/rfc822` zamiast JSON. Błędy (422, 400, 409) nadal JSON.
-  6. **Backend — refactor `pdf.ts`:** Użyj `resolvePdfData()` zamiast inline kodu
-  7. **Frontend — `useOrderDrawer.ts` + `useOrderActions.ts`:** `api.postRaw()` + blob download .eml (wzorzec z `handleGeneratePdf`)
-  8. **Tester:** Testy eml-builder (X-Unsent, MIME, base64, boundary)
-- **Kolejność agentów:** Types → Backend → Frontend + Tester (równolegle) → Reviewer (opcjonalnie)
-- **Effort:** M
-- **Decyzje użytkownika:** Pusty temat (na razie, w przyszłości do zmiany). Lokalizacja przycisku bez zmian (Drawer + Context menu). Toast z listą braków przy walidacji.
 
 ### H-16. Sub-query filters w listOrders — ciche obcięcie wyników powyżej 1000
 - **Kategoria:** bug
@@ -169,6 +148,12 @@
 ---
 
 ## Zrobione
+
+### Sesja 43 — H-15 "Wyślij maila" (.eml z PDF)
+- [x] H-15: Generacja .eml z PDF — `eml-builder.service.ts`, `pdf-data-resolver.ts`, modyfikacja `order-misc.service.ts`, `prepare-email.ts`, `pdf.ts`, `useOrderDrawer.ts`, `useOrderActions.ts`
+- [x] Nowe testy: eml-builder (10), pdf-data-resolver (5), zaktualizowane prepare-email.test.ts, order.service.test.ts, useOrderActions.test.ts
+- [x] Usunięcie PrepareEmailResponseDto i PrepareEmailCommand z types.ts
+- Wynik: 1070/1070 testów, 0 błędów TypeScript
 
 ### Audyt 42 — pełny audyt 6 agentów + debata (2026-03-08)
 - 6 agentów: Security, Backend, Frontend, Docs, Tests, DB&Types

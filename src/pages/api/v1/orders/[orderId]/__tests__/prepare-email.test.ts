@@ -27,6 +27,10 @@ vi.mock("@/lib/api-helpers", () => ({
   requireWriteAccess: vi.fn(),
   isValidUUID: vi.fn(),
   logError: vi.fn(),
+  COMMON_HEADERS: {
+    "X-Content-Type-Options": "nosniff",
+    "Cache-Control": "no-store",
+  },
 }));
 
 vi.mock("@/lib/services/order.service", () => ({
@@ -197,21 +201,23 @@ describe("POST /api/v1/orders/{orderId}/prepare-email", () => {
     expect(response.status).toBe(400);
   });
 
-  it("returns 200 on success when result.success = true", async () => {
-    const fakeData = {
-      orderId: VALID_ORDER_ID,
-      statusBefore: "nowe",
-      statusAfter: "wysłane",
-      emailOpenUrl: "mailto:carrier@example.com?subject=Zlecenie&body=...",
-      pdfFileName: "zlecenie-Z-2026-001.pdf",
-    };
-    mockPrepareEmailForOrder.mockResolvedValue({ success: true, data: fakeData });
+  it("returns 200 with .eml blob on success when result.success = true", async () => {
+    const emlContent = "MIME-Version: 1.0\r\nX-Unsent: 1\r\n\r\nmock-eml";
+    mockPrepareEmailForOrder.mockResolvedValue({
+      success: true,
+      emlContent,
+      orderNo: "Z/2026/001",
+    });
 
     const response = await POST(makeContext());
 
     expect(mockPrepareEmailForOrder).toHaveBeenCalledOnce();
-    expect(mockJsonResponse).toHaveBeenCalledWith(fakeData, 200);
     expect(response.status).toBe(200);
+    expect(response.headers.get("Content-Type")).toBe("message/rfc822");
+    expect(response.headers.get("Content-Disposition")).toContain("zlecenie-");
+    expect(response.headers.get("Content-Disposition")).toContain(".eml");
+    const body = await response.text();
+    expect(body).toContain("X-Unsent: 1");
   });
 
   it("returns 422 when result.success = false (business validation errors)", async () => {
@@ -270,14 +276,11 @@ describe("POST /api/v1/orders/{orderId}/prepare-email", () => {
 
   it("handles empty body gracefully (uses default empty object)", async () => {
     // Puste body — handler powinien użyć {} jako body
-    const fakeData = {
-      orderId: VALID_ORDER_ID,
-      statusBefore: "nowe",
-      statusAfter: "wysłane",
-      emailOpenUrl: "mailto:carrier@example.com",
-      pdfFileName: "test.pdf",
-    };
-    mockPrepareEmailForOrder.mockResolvedValue({ success: true, data: fakeData });
+    mockPrepareEmailForOrder.mockResolvedValue({
+      success: true,
+      emlContent: "mock-eml",
+      orderNo: "Z/2026/001",
+    });
 
     const response = await POST(makeContext(""));
 

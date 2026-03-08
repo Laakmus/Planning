@@ -13,7 +13,6 @@ import type {
   CreateOrderResponseDto,
   DuplicateOrderResponseDto,
   EntryFixedResponseDto,
-  PrepareEmailResponseDto,
 } from "@/types";
 
 interface UseOrderActionsOptions {
@@ -93,14 +92,17 @@ export function useOrderActions({
   const handleSendEmail = useCallback(
     async (orderId: string) => {
       try {
-        const result = await api.post<PrepareEmailResponseDto>(
-          `/api/v1/orders/${orderId}/prepare-email`,
-          {}
-        );
-        if (result.emailOpenUrl) {
-          window.open(result.emailOpenUrl, "_blank", "noopener,noreferrer");
-        }
-        toast.success("Email przygotowany — otwórz klienta pocztowego.");
+        const response = await api.postRaw(`/api/v1/orders/${orderId}/prepare-email`, {});
+        const blob = await response.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = `zlecenie-${orderId}.eml`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+        toast.success("Plik .eml pobrany — otwórz go w programie pocztowym.");
         refetch();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Błąd wysyłki maila.");

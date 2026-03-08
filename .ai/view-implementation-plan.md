@@ -637,10 +637,10 @@ function isValidUUID(value: string): boolean
 
 **Plik:** `src/pages/api/v1/orders/[orderId]/prepare-email.ts`
 
-**Cel:** Walidacja biznesowa, generacja PDF, przygotowanie danych do otwarcia Outlooka, zmiana statusu.
+**Cel:** Walidacja biznesowa, generacja PDF, budowa pliku .eml (RFC 822) z PDF w załączniku, zmiana statusu.
 
-**Typ żądania:** `PrepareEmailCommand`
-**Typ odpowiedzi:** `PrepareEmailResponseDto`
+**Typ żądania:** `{}` (pusty obiekt lub brak body)
+**Typ odpowiedzi:** blob `message/rfc822` (.eml z PDF attachment MIME base64)
 
 **Walidacja biznesowa (422 jeśli niespełniona):**
 - Wymagany `transport_type_code`
@@ -665,7 +665,7 @@ function isValidUUID(value: string): boolean
 6. Ustaw `sent_by_user_id = current_user`, `sent_at = now()` (nadpisywane przy każdej wysyłce, w tym ponownej).
 7. Aktualizuj `main_product_name` jeśli puste.
 8. INSERT do `order_status_history`.
-9. Zwróć 200 z `PrepareEmailResponseDto` (w tym `emailOpenUrl` — mailto: link, `pdfFileName`).
+9. Zwróć 200 z plikiem `.eml` (Content-Type: `message/rfc822`, Content-Disposition: attachment). Frontend pobiera blob i inicjuje download.
 
 **Błędy:**
 - 400, 401, 403, 404, 422

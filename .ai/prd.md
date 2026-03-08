@@ -576,9 +576,9 @@ Pole „Fix" (is_entry_fixed) NIE jest widoczne w OrderView — jest dostępne t
 - Po kliknięciu tego przycisku:
   - aplikacja korzysta z aktualnego pliku PDF danego zlecenia (w razie potrzeby generując go na nowo),
   - system w pierwszej kolejności sprawdza kompletność pól wymaganych (zgodnie z sekcją o walidacji danych); w przypadku braków wyświetlany jest komunikat z listą brakujących pól, a Outlook nie jest otwierany,
-  - jeśli wszystkie pola wymagane są uzupełnione, otwierany jest domyślny klient poczty (np. Outlook) z nową wiadomością, do której automatycznie dodany jest wyłącznie ten plik PDF jako załącznik,
+  - jeśli wszystkie pola wymagane są uzupełnione, plik `.eml` (RFC 822) z PDF w załączniku zostaje pobrany; użytkownik otwiera go w kliencie poczty (np. Outlook), który wyświetla wiadomość jako draft (nagłówek `X-Unsent: 1`),
   - użytkownik samodzielnie uzupełnia adresy e-mail, temat oraz treść wiadomości i wysyła ją z poziomu Outlooka,
-  - po poprawnym uruchomieniu akcji wysyłki (otwarciu Outlooka z przygotowaną wiadomością i załączonym PDF):
+  - po poprawnym uruchomieniu akcji wysyłki (pobraniu pliku .eml z załączonym PDF):
     - jeśli zlecenie miało status robocze, status zlecenia w systemie zmienia się automatycznie na wysłane,
     - jeśli zlecenie miało status korekta, status zlecenia w systemie zmienia się automatycznie na korekta wysłane.
 - Sam proces wysyłki maila oraz zapis wysłanych maili pozostaje w Outlooku (brak wysyłki bezpośrednio z aplikacji w MVP).

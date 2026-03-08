@@ -6,19 +6,22 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../../db/database.types";
-import type { DuplicateOrderResponseDto, PrepareEmailResponseDto } from "../../types";
+import type { DuplicateOrderResponseDto } from "../../types";
 import type { DuplicateOrderParams, PrepareEmailParams } from "../validators/order.validator";
 
 import { getOrderDetail } from "./order-detail.service";
+import { buildEmlWithPdfAttachment } from "./eml/eml-builder.service";
 import {
   buildSearchText,
   generateOrderNo,
   STATUS_ROBOCZE,
   validateForeignKeys,
 } from "./order-snapshot.service";
+import { resolvePdfData } from "./pdf/pdf-data-resolver";
+import { generateOrderPdf } from "./pdf/pdf-generator.service";
 
 export type PrepareEmailResult =
-  | { success: true; data: PrepareEmailResponseDto }
+  | { success: true; emlContent: string; orderNo: string }
   | { success: false; validationErrors: string[] }
   | null;
 
@@ -314,18 +317,17 @@ export async function prepareEmailForOrder(
     if (logErr) throw logErr;
   }
 
-  const subject = encodeURIComponent(`Zlecenie ${order.orderNo}`);
-  const emailOpenUrl = `mailto:?subject=${subject}`;
+  // Generowanie PDF i budowanie pliku .eml z załącznikiem
+  const pdfInput = await resolvePdfData(supabase, detail);
+  const pdfBuffer = generateOrderPdf(pdfInput);
+  const sanitizedName = (order.orderNo || orderId).replace(/["\r\n/]/g, "-");
+  const pdfFileName = `zlecenie-${sanitizedName}.pdf`;
+  const emlContent = buildEmlWithPdfAttachment({ pdfBuffer, pdfFileName });
 
   return {
     success: true,
-    data: {
-      orderId,
-      statusBefore: order.statusCode,
-      statusAfter: newStatusCode,
-      emailOpenUrl,
-      pdfFileName: null,
-    },
+    emlContent,
+    orderNo: order.orderNo,
   };
 }
 

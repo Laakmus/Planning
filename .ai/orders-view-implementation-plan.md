@@ -839,7 +839,7 @@ Wszystkie typy DTO są już zdefiniowane i gotowe do użycia:
 - **Blokada**: `LockOrderResponseDto`, `UnlockOrderResponseDto`
 - **Duplikacja**: `DuplicateOrderCommand`, `DuplicateOrderResponseDto`
 - **PDF**: `GeneratePdfCommand`
-- **Email**: `PrepareEmailCommand`, `PrepareEmailResponseDto`
+- **Email**: endpoint `prepare-email` zwraca blob `message/rfc822` (.eml z PDF attachment)
 - **Historia**: `StatusHistoryItemDto`, `ChangeLogItemDto`
 - **Słowniki**: `CompanyDto`, `LocationDto`, `ProductDto`, `TransportTypeDto`, `OrderStatusDto`, `VehicleVariantDto`
 - **Sync**: `DictionarySyncCommand`, `DictionarySyncResponseDto`, `DictionarySyncJobDto`
@@ -1042,7 +1042,7 @@ Parametry zapytań zgodne z **api-plan** sekcja 2.2. GET `/api/v1/orders`: `view
 | Odblokuj | POST | `/api/v1/orders/{id}/unlock` | — | `UnlockOrderResponseDto` | Zamknięcie draweru |
 | Duplikuj | POST | `/api/v1/orders/{id}/duplicate` | Body: `DuplicateOrderCommand` | `DuplicateOrderResponseDto` | Menu → „Skopiuj" (etap 2) |
 | Generuj PDF | POST | `/api/v1/orders/{id}/pdf` | Body?: `{ regenerate }` | Blob (application/pdf) | Klik „Generuj PDF" |
-| Przygotuj email | POST | `/api/v1/orders/{id}/prepare-email` | Body?: `PrepareEmailCommand` | `PrepareEmailResponseDto` | Klik „Wyślij maila" |
+| Przygotuj email | POST | `/api/v1/orders/{id}/prepare-email` | Body?: `{}` | blob `message/rfc822` (.eml) | Klik „Wyślij maila" |
 | Historia statusów | GET | `/api/v1/orders/{id}/history/status` | — | `ListResponse<StatusHistoryItemDto>` | Otwarcie panelu historii |
 | Historia zmian | GET | `/api/v1/orders/{id}/history/changes` | — | `ListResponse<ChangeLogItemDto>` | Otwarcie panelu historii |
 | Firmy | GET | `/api/v1/companies` | Query?: `search`, `activeOnly` | `ListResponse<CompanyDto>` | Load dictionaries |

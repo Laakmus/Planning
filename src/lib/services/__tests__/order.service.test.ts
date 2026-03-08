@@ -33,6 +33,19 @@ import {
   makeUpdateOrderParams,
 } from "@/test/helpers/fixtures";
 
+// Mocki modułów używanych przez prepareEmailForOrder (generowanie .eml z PDF)
+vi.mock("../pdf/pdf-data-resolver", () => ({
+  resolvePdfData: vi.fn().mockResolvedValue({
+    order: {}, stops: [], items: [],
+  }),
+}));
+vi.mock("../pdf/pdf-generator.service", () => ({
+  generateOrderPdf: vi.fn().mockReturnValue(new ArrayBuffer(8)),
+}));
+vi.mock("../eml/eml-builder.service", () => ({
+  buildEmlWithPdfAttachment: vi.fn().mockReturnValue("MIME-Version: 1.0\r\nX-Unsent: 1\r\n\r\nmock-eml"),
+}));
+
 // ---------------------------------------------------------------------------
 // Typy pomocnicze
 // ---------------------------------------------------------------------------
@@ -996,7 +1009,7 @@ describe("prepareEmailForOrder", () => {
     });
   }
 
-  it('"robocze" → statusAfter: "wysłane", emailOpenUrl zawiera mailto:', async () => {
+  it('"robocze" → success z emlContent i orderNo', async () => {
     const supabase = buildEmailMock({ status_code: "robocze" });
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
@@ -1006,12 +1019,12 @@ describe("prepareEmailForOrder", () => {
     expect(result).not.toBeNull();
     expect(result!.success).toBe(true);
     if (result!.success) {
-      expect(result!.data.statusAfter).toBe("wysłane");
-      expect(result!.data.emailOpenUrl).toContain("mailto:");
+      expect(result!.emlContent).toContain("X-Unsent: 1");
+      expect(result!.orderNo).toBeTruthy();
     }
   });
 
-  it('"korekta" → statusAfter: "korekta wysłane"', async () => {
+  it('"korekta" → success z emlContent', async () => {
     const supabase = buildEmailMock({ status_code: "korekta" });
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
@@ -1020,7 +1033,7 @@ describe("prepareEmailForOrder", () => {
 
     expect(result!.success).toBe(true);
     if (result!.success) {
-      expect(result!.data.statusAfter).toBe("korekta wysłane");
+      expect(result!.emlContent).toBeTruthy();
     }
   });
 

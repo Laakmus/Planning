@@ -38,7 +38,7 @@ POST   /api/v1/orders/:id/duplicate              → CreateOrderResponseDto
 POST   /api/v1/orders/:id/restore                → OrderDetailDto
 GET    /api/v1/orders/:id/history/status          → StatusHistoryDto[]
 GET    /api/v1/orders/:id/history/changes         → ChangeHistoryDto[]
-POST   /api/v1/orders/:id/prepare-email           → PrepareEmailResponseDto
+POST   /api/v1/orders/:id/prepare-email           → blob (message/rfc822)
 POST   /api/v1/orders/:id/pdf                     → blob (stub 501)
 PUT    /api/v1/orders/:id/carrier-color           → { success }
 GET    /api/v1/orders/:id/stops/:stopId           → StopDetailDto
