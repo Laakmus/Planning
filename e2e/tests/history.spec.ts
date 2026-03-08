@@ -30,8 +30,7 @@ test.describe("Historia zmian", () => {
     await contextMenu.clickItem("Historia zmian");
     await historyPanel.waitForLoaded();
 
-    // Panel powinien zawierac tytul "Historia zmian"
-    const title = await historyPanel.getTitle();
-    expect(title).toContain("Historia zmian");
+    // Auto-retry asercja na tytul panelu
+    await historyPanel.expectTitle("Historia zmian");
   });
 });

@@ -26,7 +26,7 @@ test.describe("Lista zlecen", () => {
     await expect(headers.filter({ hasText: "Nr" }).first()).toBeVisible();
     await expect(headers.filter({ hasText: "Status" }).first()).toBeVisible();
     await expect(
-      headers.filter({ hasText: "Transport" }).first(),
+      headers.filter({ hasText: "Rodzaj" }).first(),
     ).toBeVisible();
   });
 });

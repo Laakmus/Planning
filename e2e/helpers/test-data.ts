@@ -81,5 +81,5 @@ export const CURRENT_STATUSES = [
 ] as const;
 
 // Oczekiwana liczba zlecen w widoku "Aktualne" z seed.sql
-// 4 robocze + 1 wyslane + 1 korekta + 1 korekta_w + 1 reklamacja = 8
-export const EXPECTED_CURRENT_COUNT = 8;
+// 7 robocze + 6 wyslane + 3 korekta + 2 korekta_w + 3 reklamacja = 21
+export const EXPECTED_CURRENT_COUNT = 21;

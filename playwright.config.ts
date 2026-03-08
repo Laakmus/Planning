@@ -8,10 +8,14 @@ export default defineConfig({
   workers: process.env.CI ? 1 : undefined,
   reporter: "html",
   timeout: process.env.CI ? 60_000 : 30_000,
+  expect: {
+    timeout: 10_000,
+  },
   use: {
     baseURL: "http://localhost:4321",
     trace: "on-first-retry",
     screenshot: "only-on-failure",
+    actionTimeout: 10_000,
   },
   projects: [
     {
@@ -23,6 +27,7 @@ export default defineConfig({
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
+        viewport: { width: 1920, height: 1080 },
         storageState: "e2e/.auth/admin.json",
       },
       dependencies: ["setup"],

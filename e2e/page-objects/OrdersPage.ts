@@ -1,4 +1,5 @@
 import type { Page, Locator } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 export class OrdersPage {
   readonly page: Page;
@@ -30,13 +31,28 @@ export class OrdersPage {
     await this.ordersApp.waitFor({ state: "visible" });
     // Poczekaj az tabela sie zaladuje
     await this.table.waitFor({ state: "visible", timeout: 10_000 });
+    // Poczekaj az dane sie wyrenderuja — przynajmniej 1 wiersz z data-order-id
+    await this.table.locator("tbody tr[data-order-id]").first().waitFor({ state: "visible", timeout: 15_000 });
+  }
+
+  // Upewnij sie ze sidebar jest rozwiniety (w CI moze byc collapsed)
+  async ensureSidebarOpen() {
+    const sidebar = this.page.locator('[data-slot="sidebar"]');
+    const state = await sidebar.getAttribute("data-state");
+    if (state === "collapsed") {
+      await this.page.locator('[data-sidebar="trigger"]').click();
+      await expect(sidebar).toHaveAttribute("data-state", "expanded", { timeout: 5_000 });
+    }
   }
 
   // Poczekaj az tabela sie ustabilizuje po odpowiedzi API
   async waitForTableUpdate() {
-    await this.table.locator("tbody").waitFor({ state: "visible" });
-    // Krotka stabilizacja — DOM moze potrzebowac chwili na re-render
-    await this.page.waitForTimeout(200);
+    await this.table.locator("tbody tr[data-order-id]").first().waitFor({ state: "visible", timeout: 10_000 });
+  }
+
+  // Locator do wierszy tabeli — do uzytku z toHaveCount() (auto-retry)
+  getOrderRows() {
+    return this.table.locator("tbody tr[data-order-id]");
   }
 
   async getOrderCount() {
@@ -59,6 +75,8 @@ export class OrdersPage {
 
   // Nawigacja sidebar — SidebarMenuButton renderuje <button data-sidebar="menu-button">
   async navigateSidebar(view: "Aktualne" | "Zrealizowane" | "Anulowane") {
+    await this.ensureSidebarOpen();
+
     // Rejestruj listener PRZED akcja (unikniecie race condition)
     const responsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,

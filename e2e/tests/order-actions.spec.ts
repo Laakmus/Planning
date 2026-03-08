@@ -35,8 +35,8 @@ test.describe.serial("Akcje na zleceniach", () => {
     await getPromise;
     await ordersPage.waitForTableUpdate();
 
-    const newCount = await ordersPage.getOrderCount();
-    expect(newCount).toBe(initialCount + 1);
+    // Auto-retry asercja na liczbe wierszy
+    await expect(ordersPage.getOrderRows()).toHaveCount(initialCount + 1);
   });
 
   test("cancels order with confirmation dialog", async ({
@@ -59,10 +59,11 @@ test.describe.serial("Akcje na zleceniach", () => {
     await expect(confirmButton).toBeVisible();
 
     // Rejestruj listenery PRZED potwierdzeniem
-    const putPromise = ordersPage.page.waitForResponse(
+    // handleCancelConfirm uzywa api.delete() (HTTP DELETE), nie PUT
+    const deletePromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
-        resp.request().method() === "PUT",
+        resp.request().method() === "DELETE",
       { timeout: 15_000 },
     );
     const getPromise = ordersPage.page.waitForResponse(
@@ -76,13 +77,12 @@ test.describe.serial("Akcje na zleceniach", () => {
     await confirmButton.click();
 
     // Poczekaj na API response + odswiezenie listy
-    await putPromise;
+    await deletePromise;
     await getPromise;
     await ordersPage.waitForTableUpdate();
 
-    // Zlecenie powinno zniknac z widoku Aktualne
-    const newCount = await ordersPage.getOrderCount();
-    expect(newCount).toBe(initialCount - 1);
+    // Auto-retry asercja na liczbe wierszy
+    await expect(ordersPage.getOrderRows()).toHaveCount(initialCount - 1);
   });
 
   test("restores order from Anulowane", async ({
@@ -101,10 +101,11 @@ test.describe.serial("Akcje na zleceniach", () => {
     await contextMenu.isVisible();
 
     // Rejestruj listenery PRZED kliknieciem przywrocenia
-    const putPromise = ordersPage.page.waitForResponse(
+    // handleRestore uzywa api.post('/restore') (HTTP POST), nie PUT
+    const postPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
-        resp.request().method() === "PUT",
+        resp.request().method() === "POST",
       { timeout: 15_000 },
     );
     const getPromise = ordersPage.page.waitForResponse(
@@ -118,12 +119,12 @@ test.describe.serial("Akcje na zleceniach", () => {
     await contextMenu.clickItem("Przywróć do aktualnych");
 
     // Poczekaj na API response + odswiezenie
-    await putPromise;
+    await postPromise;
     await getPromise;
     await ordersPage.waitForTableUpdate();
 
-    const newCount = await ordersPage.getOrderCount();
-    expect(newCount).toBe(cancelledCount - 1);
+    // Auto-retry asercja na liczbe wierszy
+    await expect(ordersPage.getOrderRows()).toHaveCount(cancelledCount - 1);
   });
 
   test("auto-changes status on wyslane to korekta", async ({
@@ -132,8 +133,8 @@ test.describe.serial("Akcje na zleceniach", () => {
   }) => {
     await ordersPage.goto();
 
-    // ZT2026/0002 ma status "wyslane" — zmien na "korekta"
-    // Dozwolone tranzycje z "wyslane": korekta, zrealizowane
+    // ZT2026/0002 ma status "wyslane" — zmien na "reklamacja"
+    // Dozwolone tranzycje z "wyslane": zrealizowane, reklamacja, anulowane
     await ordersPage.rightClickRow("ZT2026/0002");
     await contextMenu.isVisible();
 
@@ -154,14 +155,14 @@ test.describe.serial("Akcje na zleceniach", () => {
       { timeout: 15_000 },
     );
 
-    await contextMenu.selectStatus("Korekta");
+    await contextMenu.selectStatus("Reklamacja");
 
     // Poczekaj na API response + odswiezenie tabeli
     await putPromise;
     await getPromise;
     await ordersPage.waitForTableUpdate();
 
-    // Sprawdz czy wiersz wciaz widoczny (korekta jest w Aktualne)
+    // Sprawdz czy wiersz wciaz widoczny (reklamacja jest w Aktualne)
     const row = ordersPage.getRowByOrderNo("ZT2026/0002");
     await expect(row).toBeVisible();
   });

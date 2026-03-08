@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-08 (sesja 43 — H-15 .eml z PDF)
+> Ostatnia aktualizacja: 2026-03-08 (sesja 44 — naprawa E2E CI)
 
 ---
 
@@ -148,6 +148,16 @@
 ---
 
 ## Zrobione
+
+### Sesja 44 — Naprawa E2E Playwright w CI (GitHub Actions)
+- [x] `playwright.config.ts`: viewport 1920x1080, actionTimeout 10s, expect.timeout 10s
+- [x] `OrdersPage.ts`: `ensureSidebarOpen()` (collapsed sidebar w CI), `waitForTableUpdate()` bez `waitForTimeout`, `getOrderRows()` locator
+- [x] `OrderDrawerPage.ts`: `waitForLoaded()` auto-retry (nie zawiera "Ładowanie"), `expectTitle()` z auto-retry
+- [x] `ContextMenuComponent.ts`: `openStatusSubmenu()` z timeout 5s + walidacja menuitem
+- [x] `HistoryPanelPage.ts`: `waitForLoaded()` czeka na "Historia zmian", `expectTitle()` z auto-retry
+- [x] 6 plików spec: eliminacja `waitForTimeout()`, `.count()`+`toBe()` → `toHaveCount()`, `expect().toPass()` pattern
+- [x] 0 pozostałych `waitForTimeout()`, 0 pozostałych `.count()`+`toBe()` bez auto-retry
+- Zmienione pliki: 12 (1 config + 4 Page Objects + 7 spec files)
 
 ### Sesja 43 — H-15 "Wyślij maila" (.eml z PDF)
 - [x] H-15: Generacja .eml z PDF — `eml-builder.service.ts`, `pdf-data-resolver.ts`, modyfikacja `order-misc.service.ts`, `prepare-email.ts`, `pdf.ts`, `useOrderDrawer.ts`, `useOrderActions.ts`

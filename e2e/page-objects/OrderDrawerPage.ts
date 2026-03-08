@@ -1,4 +1,5 @@
 import type { Page, Locator } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 export class OrderDrawerPage {
   readonly page: Page;
@@ -26,6 +27,11 @@ export class OrderDrawerPage {
     return this.drawer.locator("h1").first().textContent();
   }
 
+  // Auto-retry asercja na tytul drawera
+  async expectTitle(text: string) {
+    await expect(this.drawer.locator("h1").first()).toContainText(text, { timeout: 10_000 });
+  }
+
   async save() {
     await this.saveButton.click();
   }
@@ -36,9 +42,9 @@ export class OrderDrawerPage {
 
   async waitForLoaded() {
     await this.drawer.waitFor({ state: "visible", timeout: 10_000 });
-    // Poczekaj na zaladowanie danych — h1 powinien miec tekst (nr zlecenia lub "Nowe zlecenie")
-    await this.drawer.locator("h1").first().waitFor({ state: "visible", timeout: 10_000 });
-    // Krotka stabilizacja formularza
-    await this.page.waitForTimeout(300);
+    // Poczekaj az h1 nie zawiera "Ladowanie" — dane zaladowane (auto-retry)
+    const h1 = this.drawer.locator("h1").first();
+    await expect(h1).toBeVisible({ timeout: 10_000 });
+    await expect(h1).not.toContainText("Ładowanie", { timeout: 10_000 });
   }
 }

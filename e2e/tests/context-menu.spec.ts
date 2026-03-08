@@ -25,13 +25,12 @@ test.describe.serial("Context menu", () => {
   }) => {
     await ordersPage.goto();
 
-    // ZT2026/0001 ma status "robocze" — dozwolona tranzycja to "wyslane"
-    await ordersPage.rightClickRow("ZT2026/0001");
+    // ZT2026/0010 ma status "robocze" — dozwolone tranzycje: zrealizowane, anulowane
+    // Uzyj 0010 zamiast 0001 — 0001 jest uzywane w wielu innych testach
+    await ordersPage.rightClickRow("ZT2026/0010");
     await contextMenu.isVisible();
 
-    await contextMenu.openStatusSubmenu();
-
-    // Rejestruj listenery PRZED kliknieciem statusu
+    // Rejestruj listenery PRZED otwarciem submenu (submenu Radix moze sie zamknac)
     const putPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") && resp.request().method() === "PUT",
@@ -45,7 +44,8 @@ test.describe.serial("Context menu", () => {
       { timeout: 15_000 },
     );
 
-    await contextMenu.selectStatus("Wysłane");
+    // Otworz submenu i kliknij status szybko (minimalizacja ryzyka zamkniecia submenu)
+    await contextMenu.changeStatus("Zrealizowane");
 
     // Poczekaj na response API (zmiana statusu) + odswiezenie tabeli
     await putPromise;
@@ -87,7 +87,7 @@ test.describe.serial("Context menu", () => {
     await getPromise;
     await ordersPage.waitForTableUpdate();
 
-    const newCount = await ordersPage.getOrderCount();
-    expect(newCount).toBe(initialCount + 1);
+    // Auto-retry asercja na liczbe wierszy
+    await expect(ordersPage.getOrderRows()).toHaveCount(initialCount + 1);
   });
 });
