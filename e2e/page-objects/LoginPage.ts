@@ -1,4 +1,5 @@
 import type { Page, Locator } from "@playwright/test";
+import { expect } from "@playwright/test";
 
 export class LoginPage {
   readonly page: Page;
@@ -24,8 +25,25 @@ export class LoginPage {
   }
 
   async login(email: string, password: string) {
-    await this.emailInput.fill(email);
-    await this.passwordInput.fill(password);
+    // Czekaj az React zhydruje formularz.
+    // Astro renderuje HTML serwerowo (formularz widoczny od razu), ale React hydruje
+    // asynchronicznie. fill() przed hydracja ustawia wartosc DOM, ale React resetuje
+    // ja do "" przy mount (kontrolowane inputy: value={email}).
+    // Rozwiazanie: fill + krótki wait + sprawdz czy wartosc przetrwala.
+    // Jesli React zresetowal — powtórz (tym razem React juz zhydrowal).
+    await expect(async () => {
+      await this.emailInput.fill(email);
+      // Daj React 200ms na potencjalny reset (hydracja nadpisuje wartosc DOM)
+      await this.page.waitForTimeout(200);
+      await expect(this.emailInput).toHaveValue(email);
+    }).toPass({ timeout: 15_000 });
+
+    await expect(async () => {
+      await this.passwordInput.fill(password);
+      await this.page.waitForTimeout(200);
+      await expect(this.passwordInput).toHaveValue(password);
+    }).toPass({ timeout: 5_000 });
+
     await this.submitButton.click();
   }
 

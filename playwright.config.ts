@@ -24,6 +24,16 @@ export default defineConfig({
       testMatch: /global-setup\.ts/,
     },
     {
+      // Projekt dla testów logowania — BEZ storageState (brak sesji w localStorage)
+      name: "auth",
+      testMatch: /auth\.spec\.ts/,
+      use: {
+        ...devices["Desktop Chrome"],
+        viewport: { width: 1920, height: 1080 },
+      },
+      dependencies: ["setup"],
+    },
+    {
       name: "chromium",
       use: {
         ...devices["Desktop Chrome"],
@@ -31,6 +41,8 @@ export default defineConfig({
         storageState: "e2e/.auth/admin.json",
       },
       dependencies: ["setup"],
+      // Pomiń auth.spec.ts — uruchamiany w projekcie "auth" bez sesji
+      testIgnore: /auth\.spec\.ts/,
     },
   ],
   webServer: {

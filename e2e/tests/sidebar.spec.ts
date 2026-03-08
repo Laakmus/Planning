@@ -39,8 +39,11 @@ test.describe("Nawigacja sidebar", () => {
     // Wroc do Aktualne
     await ordersPage.navigateSidebar("Aktualne");
 
-    // Sprawdz ze wraca ta sama liczba wierszy co na poczatku
-    // (nie uzywa EXPECTED_CURRENT_COUNT bo serial testy moga zmienic stan bazy)
-    await expect(ordersPage.getOrderRows()).toHaveCount(initialCount);
+    // Sprawdz ze wraca co najmniej taka sama liczba wierszy co na poczatku
+    // (uzyj >= — inne testy w trybie parallel moga dodac zlecenia do DB)
+    await expect(async () => {
+      const currentCount = await ordersPage.getOrderCount();
+      expect(currentCount).toBeGreaterThanOrEqual(initialCount);
+    }).toPass({ timeout: 10_000 });
   });
 });

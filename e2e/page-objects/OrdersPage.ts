@@ -153,4 +153,29 @@ export class OrdersPage {
     await responsePromise;
     await this.waitForTableUpdate();
   }
+
+  // Helper: pobierz access token z localStorage (Supabase SDK przechowuje tam sesje)
+  async getAccessToken(): Promise<string> {
+    return this.page.evaluate(() => {
+      const raw = localStorage.getItem("sb-127-auth-token");
+      if (!raw) throw new Error("Brak tokenu auth w localStorage");
+      const parsed = JSON.parse(raw);
+      return parsed.access_token as string;
+    });
+  }
+
+  // Helper: zmien status zlecenia przez API (omija UI submenu Radix)
+  async changeStatusViaApi(orderId: string, newStatusCode: string, complaintReason?: string) {
+    const token = await this.getAccessToken();
+    const body: Record<string, string> = { newStatusCode };
+    if (complaintReason) body.complaintReason = complaintReason;
+
+    return this.page.request.post(
+      `http://localhost:4321/api/v1/orders/${orderId}/status`,
+      {
+        data: body,
+        headers: { Authorization: `Bearer ${token}` },
+      },
+    );
+  }
 }

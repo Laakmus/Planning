@@ -21,40 +21,50 @@ export class ContextMenuComponent {
   }
 
   async openStatusSubmenu() {
-    // Radix ContextMenuSub otwiera submenu na pointerMove z pointerType='mouse'.
-    // W headless Chromium Playwright hover() bywa zawodny — stosujemy kilka metod.
+    // Radix ContextMenu w headless Chromium nie otwiera submenu na hover.
+    // Radix nasluchuje keyboard events na rodzicu [role="menu"], nie na poszczegolnych itemach.
+    // Dlatego uzywamy page.keyboard (natywny input) zamiast element.press() (syntetyczny event).
     const trigger = this.menu.first().getByText("Zmień status");
+    await expect(trigger).toBeVisible({ timeout: 5_000 });
+
     const submenu = this.page.locator("[role='menu']").nth(1);
 
-    // Metoda 1: hover z naturalnym ruchem myszy (steps symuluje ruch kursora)
-    const box = await trigger.boundingBox();
-    if (box) {
-      // Rusz mysz z lewej strony menu DO srodka triggera (Radix sprawdza zmiane pozycji)
-      await this.page.mouse.move(box.x - 10, box.y + box.height / 2);
-      await this.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
-    } else {
-      await trigger.hover();
-    }
+    // Metoda 1: hover ustawia active item w Radix, page.keyboard otwiera submenu
+    await trigger.hover();
+    await this.page.keyboard.press("ArrowRight");
 
-    // Daj Radix czas na otwarcie (ma wewnetrzny delay)
     let opened = false;
     try {
-      await submenu.waitFor({ state: "visible", timeout: 1_500 });
+      await submenu.waitFor({ state: "visible", timeout: 2_000 });
       opened = true;
     } catch { /* fallback ponizej */ }
 
     if (!opened) {
-      // Metoda 2: dispatchEvent pointerenter na DOM (omija Playwright mouse layer)
-      await trigger.dispatchEvent("pointerenter", { pointerType: "mouse" });
-      await trigger.dispatchEvent("pointermove", { pointerType: "mouse" });
+      // Metoda 2: mouse.move z krokami (symuluje naturalny ruch kursora)
+      const box = await trigger.boundingBox();
+      if (box) {
+        await this.page.mouse.move(box.x - 20, box.y + box.height / 2);
+        await this.page.mouse.move(box.x + box.width / 2, box.y + box.height / 2, { steps: 5 });
+      }
+      await this.page.keyboard.press("ArrowRight");
       try {
-        await submenu.waitFor({ state: "visible", timeout: 1_500 });
+        await submenu.waitFor({ state: "visible", timeout: 2_000 });
         opened = true;
       } catch { /* fallback ponizej */ }
     }
 
     if (!opened) {
-      // Metoda 3: click na subtrigger (niektorzy klienci Radix otwieraja na click)
+      // Metoda 3: dispatchEvent pointerenter + pointermove (omija Playwright mouse layer)
+      await trigger.dispatchEvent("pointerenter", { pointerType: "mouse" });
+      await trigger.dispatchEvent("pointermove", { pointerType: "mouse" });
+      try {
+        await submenu.waitFor({ state: "visible", timeout: 2_000 });
+        opened = true;
+      } catch { /* fallback ponizej */ }
+    }
+
+    if (!opened) {
+      // Metoda 4: click na subtrigger (backup)
       await trigger.click();
     }
 

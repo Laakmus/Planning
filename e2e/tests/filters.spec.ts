@@ -54,7 +54,11 @@ test.describe("Filtry", () => {
     // Wyczysc filtr
     await ordersPage.clearTransportType();
 
-    // Sprawdz ze wraca poczatkowa liczba (relative assertion)
-    await expect(ordersPage.getOrderRows()).toHaveCount(initialCount);
+    // Sprawdz ze wraca co najmniej poczatkowa liczba
+    // (uzyj >= — inne testy w trybie parallel moga dodac zlecenia do DB)
+    await expect(async () => {
+      const clearedCount = await ordersPage.getOrderCount();
+      expect(clearedCount).toBeGreaterThanOrEqual(initialCount);
+    }).toPass({ timeout: 10_000 });
   });
 });
