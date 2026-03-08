@@ -35,8 +35,10 @@ export class OrderDrawerPage {
   }
 
   async waitForLoaded() {
-    await this.drawer.waitFor({ state: "visible" });
-    // Poczekaj na zaladowanie danych (formularz)
-    await this.page.waitForLoadState("networkidle");
+    await this.drawer.waitFor({ state: "visible", timeout: 10_000 });
+    // Poczekaj na zaladowanie danych — h1 powinien miec tekst (nr zlecenia lub "Nowe zlecenie")
+    await this.drawer.locator("h1").first().waitFor({ state: "visible", timeout: 10_000 });
+    // Krotka stabilizacja formularza
+    await this.page.waitForTimeout(300);
   }
 }

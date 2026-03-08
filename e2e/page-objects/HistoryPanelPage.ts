@@ -24,7 +24,8 @@ export class HistoryPanelPage {
   }
 
   async waitForLoaded() {
-    await this.panel.waitFor({ state: "visible" });
-    await this.page.waitForLoadState("networkidle");
+    await this.panel.waitFor({ state: "visible", timeout: 10_000 });
+    // Krotka stabilizacja zamiast networkidle (ktory moze zawisnac w CI)
+    await this.page.waitForTimeout(500);
   }
 }

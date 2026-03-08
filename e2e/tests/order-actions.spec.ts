@@ -11,23 +11,29 @@ test.describe.serial("Akcje na zleceniach", () => {
 
     await ordersPage.rightClickRow("ZT2026/0009");
     await contextMenu.isVisible();
-    await contextMenu.clickItem("Skopiuj zlecenie");
 
-    // Poczekaj na POST + GET (odswiezenie listy)
-    await ordersPage.page.waitForResponse(
+    // Rejestruj listenery PRZED kliknieciem duplikacji
+    const postPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "POST" &&
         resp.status() === 201,
-      { timeout: 10_000 },
+      { timeout: 15_000 },
     );
-    await ordersPage.page.waitForResponse(
+    const getPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "GET" &&
         resp.status() === 200,
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
+
+    await contextMenu.clickItem("Skopiuj zlecenie");
+
+    // Poczekaj na POST + GET (odswiezenie listy)
+    await postPromise;
+    await getPromise;
+    await ordersPage.waitForTableUpdate();
 
     const newCount = await ordersPage.getOrderCount();
     expect(newCount).toBe(initialCount + 1);
@@ -51,24 +57,28 @@ test.describe.serial("Akcje na zleceniach", () => {
       name: /tak, anuluj/i,
     });
     await expect(confirmButton).toBeVisible();
-    await confirmButton.click();
 
-    // Poczekaj na API response
-    await ordersPage.page.waitForResponse(
+    // Rejestruj listenery PRZED potwierdzeniem
+    const putPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "PUT",
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
-
-    // Poczekaj na odswiezenie listy
-    await ordersPage.page.waitForResponse(
+    const getPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "GET" &&
         resp.status() === 200,
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
+
+    await confirmButton.click();
+
+    // Poczekaj na API response + odswiezenie listy
+    await putPromise;
+    await getPromise;
+    await ordersPage.waitForTableUpdate();
 
     // Zlecenie powinno zniknac z widoku Aktualne
     const newCount = await ordersPage.getOrderCount();
@@ -89,24 +99,28 @@ test.describe.serial("Akcje na zleceniach", () => {
     // Przywroc zlecenie
     await ordersPage.rightClickRow("ZT2026/0007");
     await contextMenu.isVisible();
-    await contextMenu.clickItem("Przywróć do aktualnych");
 
-    // Poczekaj na API response
-    await ordersPage.page.waitForResponse(
+    // Rejestruj listenery PRZED kliknieciem przywrocenia
+    const putPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "PUT",
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
-
-    // Poczekaj na odswiezenie
-    await ordersPage.page.waitForResponse(
+    const getPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "GET" &&
         resp.status() === 200,
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
+
+    await contextMenu.clickItem("Przywróć do aktualnych");
+
+    // Poczekaj na API response + odswiezenie
+    await putPromise;
+    await getPromise;
+    await ordersPage.waitForTableUpdate();
 
     const newCount = await ordersPage.getOrderCount();
     expect(newCount).toBe(cancelledCount - 1);
@@ -124,24 +138,28 @@ test.describe.serial("Akcje na zleceniach", () => {
     await contextMenu.isVisible();
 
     await contextMenu.openStatusSubmenu();
-    await contextMenu.selectStatus("Korekta");
 
-    // Poczekaj na API response
-    await ordersPage.page.waitForResponse(
+    // Rejestruj listenery PRZED kliknieciem statusu
+    const putPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "PUT",
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
-
-    // Poczekaj na odswiezenie tabeli
-    await ordersPage.page.waitForResponse(
+    const getPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "GET" &&
         resp.status() === 200,
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
+
+    await contextMenu.selectStatus("Korekta");
+
+    // Poczekaj na API response + odswiezenie tabeli
+    await putPromise;
+    await getPromise;
+    await ordersPage.waitForTableUpdate();
 
     // Sprawdz czy wiersz wciaz widoczny (korekta jest w Aktualne)
     const row = ordersPage.getRowByOrderNo("ZT2026/0002");

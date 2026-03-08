@@ -26,15 +26,18 @@ test.describe("Drawer zlecenia", () => {
 
       // Przycisk Zapisz powinien byc aktywny
       await expect(drawerPage.saveButton).toBeEnabled();
-      await drawerPage.save();
 
-      // Poczekaj na response API
-      await ordersPage.page.waitForResponse(
+      // Rejestruj listener PRZED kliknieciem Zapisz
+      const responsePromise = ordersPage.page.waitForResponse(
         (resp) =>
           resp.url().includes("/api/v1/orders") &&
           resp.request().method() === "PUT",
-        { timeout: 5_000 },
+        { timeout: 15_000 },
       );
+      await drawerPage.save();
+
+      // Poczekaj na response API
+      await responsePromise;
     }
 
     await drawerPage.close();
@@ -43,18 +46,21 @@ test.describe("Drawer zlecenia", () => {
   test("creates new order via button", async ({ ordersPage, drawerPage }) => {
     await ordersPage.goto();
 
+    // Rejestruj listener PRZED kliknieciem "Nowe zlecenie"
+    const responsePromise = ordersPage.page.waitForResponse(
+      (resp) =>
+        resp.url().includes("/api/v1/orders") &&
+        resp.request().method() === "POST",
+      { timeout: 15_000 },
+    );
+
     // Kliknij "Nowe zlecenie"
     await ordersPage.page
       .getByRole("button", { name: /nowe zlecenie/i })
       .click();
 
     // Poczekaj na POST tworzacy puste zlecenie
-    await ordersPage.page.waitForResponse(
-      (resp) =>
-        resp.url().includes("/api/v1/orders") &&
-        resp.request().method() === "POST",
-      { timeout: 10_000 },
-    );
+    await responsePromise;
 
     await drawerPage.waitForLoaded();
 

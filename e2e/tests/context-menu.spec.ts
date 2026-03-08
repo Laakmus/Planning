@@ -30,23 +30,27 @@ test.describe.serial("Context menu", () => {
     await contextMenu.isVisible();
 
     await contextMenu.openStatusSubmenu();
-    await contextMenu.selectStatus("Wysłane");
 
-    // Poczekaj na response API (zmiana statusu)
-    await ordersPage.page.waitForResponse(
+    // Rejestruj listenery PRZED kliknieciem statusu
+    const putPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") && resp.request().method() === "PUT",
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
-
-    // Poczekaj na odswiezenie tabeli
-    await ordersPage.page.waitForResponse(
+    const getPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "GET" &&
         resp.status() === 200,
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
+
+    await contextMenu.selectStatus("Wysłane");
+
+    // Poczekaj na response API (zmiana statusu) + odswiezenie tabeli
+    await putPromise;
+    await getPromise;
+    await ordersPage.waitForTableUpdate();
   });
 
   test("duplicates order via context menu", async ({
@@ -60,25 +64,28 @@ test.describe.serial("Context menu", () => {
     await ordersPage.rightClickRow("ZT2026/0003");
     await contextMenu.isVisible();
 
-    await contextMenu.clickItem("Skopiuj zlecenie");
-
-    // Poczekaj na POST (duplikacja tworzy nowe zlecenie)
-    await ordersPage.page.waitForResponse(
+    // Rejestruj listenery PRZED kliknieciem duplikacji
+    const postPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "POST" &&
         resp.status() === 201,
-      { timeout: 10_000 },
+      { timeout: 15_000 },
     );
-
-    // Poczekaj na odswiezenie tabeli
-    await ordersPage.page.waitForResponse(
+    const getPromise = ordersPage.page.waitForResponse(
       (resp) =>
         resp.url().includes("/api/v1/orders") &&
         resp.request().method() === "GET" &&
         resp.status() === 200,
-      { timeout: 5_000 },
+      { timeout: 15_000 },
     );
+
+    await contextMenu.clickItem("Skopiuj zlecenie");
+
+    // Poczekaj na POST (duplikacja) + GET (odswiezenie)
+    await postPromise;
+    await getPromise;
+    await ordersPage.waitForTableUpdate();
 
     const newCount = await ordersPage.getOrderCount();
     expect(newCount).toBe(initialCount + 1);

@@ -21,7 +21,8 @@ export class ContextMenuComponent {
 
   async openStatusSubmenu() {
     // "Zmien status" to submenu trigger (ContextMenuSubTrigger)
-    await this.menu.first().getByText("Zmień status").hover();
+    // Uzyj click() zamiast hover() — hover jest zawodny w headless Chromium
+    await this.menu.first().getByText("Zmień status").click();
     // Poczekaj na podmenu
     await this.page.locator("[role='menu']").nth(1).waitFor({ state: "visible" });
   }

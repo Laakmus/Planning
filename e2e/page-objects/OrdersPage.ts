@@ -32,6 +32,13 @@ export class OrdersPage {
     await this.table.waitFor({ state: "visible", timeout: 10_000 });
   }
 
+  // Poczekaj az tabela sie ustabilizuje po odpowiedzi API
+  async waitForTableUpdate() {
+    await this.table.locator("tbody").waitFor({ state: "visible" });
+    // Krotka stabilizacja — DOM moze potrzebowac chwili na re-render
+    await this.page.waitForTimeout(200);
+  }
+
   async getOrderCount() {
     return this.table.locator("tbody tr[data-order-id]").count();
   }
@@ -52,57 +59,80 @@ export class OrdersPage {
 
   // Nawigacja sidebar — SidebarMenuButton renderuje <button data-sidebar="menu-button">
   async navigateSidebar(view: "Aktualne" | "Zrealizowane" | "Anulowane") {
+    // Rejestruj listener PRZED akcja (unikniecie race condition)
+    const responsePromise = this.page.waitForResponse(
+      (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
+      { timeout: 15_000 },
+    );
     await this.page
       .locator('[data-sidebar="menu-button"]')
       .filter({ hasText: view })
       .click();
     // Poczekaj na przeladowanie tabeli
-    await this.page.waitForResponse(
-      (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
-    );
+    await responsePromise;
+    await this.waitForTableUpdate();
   }
 
   // Filtry
   async searchByText(query: string) {
+    // Rejestruj listener PRZED akcja (unikniecie race condition)
+    const responsePromise = this.page.waitForResponse(
+      (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
+      { timeout: 15_000 },
+    );
     await this.filterSearch.fill(query);
     // Debounce 300ms + response
-    await this.page.waitForResponse(
-      (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
-    );
+    await responsePromise;
+    await this.waitForTableUpdate();
   }
 
   async clearSearch() {
-    await this.filterSearch.clear();
-    await this.page.waitForResponse(
+    const responsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
+      { timeout: 15_000 },
     );
+    await this.filterSearch.clear();
+    await responsePromise;
+    await this.waitForTableUpdate();
   }
 
   async selectTransportType(value: string) {
-    await this.filterTransportType.selectOption(value);
-    await this.page.waitForResponse(
+    const responsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
+      { timeout: 15_000 },
     );
+    await this.filterTransportType.selectOption(value);
+    await responsePromise;
+    await this.waitForTableUpdate();
   }
 
   async selectStatus(value: string) {
-    await this.filterStatus.selectOption(value);
-    await this.page.waitForResponse(
+    const responsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
+      { timeout: 15_000 },
     );
+    await this.filterStatus.selectOption(value);
+    await responsePromise;
+    await this.waitForTableUpdate();
   }
 
   async clearTransportType() {
-    await this.filterTransportType.selectOption("");
-    await this.page.waitForResponse(
+    const responsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
+      { timeout: 15_000 },
     );
+    await this.filterTransportType.selectOption("");
+    await responsePromise;
+    await this.waitForTableUpdate();
   }
 
   async clearStatus() {
-    await this.filterStatus.selectOption("");
-    await this.page.waitForResponse(
+    const responsePromise = this.page.waitForResponse(
       (resp) => resp.url().includes("/api/v1/orders") && resp.status() === 200,
+      { timeout: 15_000 },
     );
+    await this.filterStatus.selectOption("");
+    await responsePromise;
+    await this.waitForTableUpdate();
   }
 }

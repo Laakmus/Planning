@@ -30,8 +30,11 @@ test.describe("Autentykacja", () => {
 
     await page.goto("/orders");
 
-    // Oczekuj redirect na strone logowania
-    await page.waitForURL("**/");
+    // Oczekuj redirect na strone logowania — czekaj az URL nie zawiera /orders
+    await page.waitForURL(
+      (url) => !url.pathname.includes("/orders"),
+      { timeout: 15_000 },
+    );
     expect(page.url()).not.toContain("/orders");
 
     await context.close();
