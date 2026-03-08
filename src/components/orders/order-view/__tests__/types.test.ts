@@ -140,6 +140,7 @@ function makeFormItem(overrides?: Partial<OrderFormItem>): OrderFormItem {
     quantityTons: 12.5,
     notes: "Uwaga: kruchy materiał",
     _deleted: false,
+    _clientKey: "test-client-key",
     ...overrides,
   };
 }

@@ -372,7 +372,8 @@ describe("createOrder", () => {
       expect(result.statusCode).toBe("robocze");
     });
 
-    it("autoSetDocuments: PL → 'WZ, KPO, kwit wagowy'", async () => {
+    it("PL z pustym requiredDocumentsText → createOrder nie rzuca", async () => {
+      // Weryfikacja payload autoSet w order-snapshot.service.test.ts
       const supabase = buildCreateMock();
       const params = makeCreateOrderParams({
         transportTypeCode: "PL",
@@ -381,11 +382,10 @@ describe("createOrder", () => {
 
       const result = await createOrder(supabase, VALID_USER_ID, params);
       expect(result).not.toBeNull();
-      // Weryfikujemy, że insert do transport_orders zawiera requiredDocumentsText
-      // Niestety mock nie pozwala łatwo sprawdzić payload inserta, więc sprawdzamy że nie throws
     });
 
-    it("autoSetDocuments: EXP → 'WZE, Aneks VII, CMR'", async () => {
+    it("EXP z pustym requiredDocumentsText → createOrder nie rzuca", async () => {
+      // Weryfikacja payload autoSet w order-snapshot.service.test.ts
       const supabase = buildCreateMock();
       const params = makeCreateOrderParams({
         transportTypeCode: "EXP",
@@ -498,7 +498,7 @@ describe("createOrder", () => {
       );
       const params = makeCreateOrderParams({ stops: [] });
 
-      await expect(createOrder(supabase, VALID_USER_ID, params)).rejects.toBeDefined();
+      await expect(createOrder(supabase, VALID_USER_ID, params)).rejects.toThrow();
     });
   });
 });

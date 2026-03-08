@@ -455,40 +455,40 @@ describe("updateOrderSchema", () => {
     expect(result.stops).toHaveLength(0);
   });
 
-  it("stops: 11 elementów → OK (max 11)", () => {
+  it("stops: 22 elementów → OK (max 22, uwzględnia _deleted)", () => {
     const result = updateOrderSchema.parse({
       ...updateBase,
-      stops: Array.from({ length: 11 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
+      stops: Array.from({ length: 22 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
       items: [],
     });
-    expect(result.stops).toHaveLength(11);
+    expect(result.stops).toHaveLength(22);
   });
 
-  it("stops: 12 elementów → ZodError (powyżej max 11)", () => {
+  it("stops: 23 elementów → ZodError (powyżej max 22)", () => {
     expect(() =>
       updateOrderSchema.parse({
         ...updateBase,
-        stops: Array.from({ length: 12 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
+        stops: Array.from({ length: 23 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
         items: [],
       })
     ).toThrow(ZodError);
   });
 
-  it("items: 50 elementów → OK (max 50)", () => {
+  it("items: 100 elementów → OK (max 100, uwzględnia _deleted)", () => {
     const result = updateOrderSchema.parse({
       ...updateBase,
       stops: [updateStop],
-      items: Array.from({ length: 50 }, () => ({ ...updateItem })),
+      items: Array.from({ length: 100 }, () => ({ ...updateItem })),
     });
-    expect(result.items).toHaveLength(50);
+    expect(result.items).toHaveLength(100);
   });
 
-  it("items: 51 elementów → ZodError (powyżej max 50)", () => {
+  it("items: 101 elementów → ZodError (powyżej max 100)", () => {
     expect(() =>
       updateOrderSchema.parse({
         ...updateBase,
         stops: [updateStop],
-        items: Array.from({ length: 51 }, () => ({ ...updateItem })),
+        items: Array.from({ length: 101 }, () => ({ ...updateItem })),
       })
     ).toThrow(ZodError);
   });

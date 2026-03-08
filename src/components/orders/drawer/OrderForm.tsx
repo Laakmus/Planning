@@ -72,6 +72,7 @@ function mapItemsToForm(items: OrderItemDto[]): OrderFormItem[] {
     quantityTons: it.quantityTons,
     notes: it.notes,
     _deleted: false,
+    _clientKey: crypto.randomUUID(),
   }));
 }
 

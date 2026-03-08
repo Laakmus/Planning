@@ -122,10 +122,10 @@ Tabela główna, centralna dla całego systemu.
   - NIE kopiowany przy duplikacji zlecenia
   - edytowalny przez ADMIN i PLANNER; READ_ONLY widzi kolor, ale nie może zmieniać
 - **order_seq_no**: `integer`
-  - sekwencyjny numer porządkowy zlecenia (do sortowania numerycznego w widoku listy), `NOT NULL`
-  - generowany automatycznie przez trigger przy INSERT (kolejna wartość z sekwencji `order_seq_no_seq`)
+  - sekwencyjny numer porządkowy zlecenia (do sortowania numerycznego w widoku listy), nullable
+  - wypełniany automatycznie przez trigger `trg_set_order_seq_no` przy INSERT/UPDATE — wyciąga część numeryczną z `order_no` (np. `ZT2026/0010` → `10`)
   - używany w ORDER BY zamiast sortowania tekstowego po `order_no`
-- **vehicle_type_text**: `varchar(200)`
+- **vehicle_type_text**: `varchar(100)`
   - typ pojazdu jako tekst (np. "FIRANKA", "HAKOWIEC"); niezależne od `vehicle_variants`, opcjonalne
   - zastępuje FK do `vehicle_variants.code` (pole `vehicle_variant_code` zachowane w bazie, ale nieużywane przez aplikację)
 - **vehicle_capacity_volume_m3**: `numeric(12,1)`

@@ -471,6 +471,7 @@ export function useOrderDrawer({
         quantityTons: it.quantityTons,
         notes: it.notes,
         _deleted: false,
+        _clientKey: crypto.randomUUID(),
       })),
     };
   }, []);

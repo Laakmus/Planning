@@ -140,8 +140,10 @@ export const updateOrderItemSchema = createOrderItemSchema.extend({
 export const updateOrderSchema = createOrderSchema.extend({
   generalNotes: z.string().max(500).nullable(),
   complaintReason: z.string().max(500).nullable().optional(),
-  stops: z.array(updateOrderStopSchema).max(11),
-  items: z.array(updateOrderItemSchema).max(50),
+  // Limit 22 = max 11 aktywnych + 11 usuniętych (_deleted: true). Serwis waliduje aktywne stopy osobno.
+  stops: z.array(updateOrderStopSchema).max(22),
+  // Limit 100 = max 50 aktywnych + 50 usuniętych (_deleted: true). Serwis waliduje aktywne pozycje osobno.
+  items: z.array(updateOrderItemSchema).max(100),
 });
 
 export type UpdateOrderParams = z.infer<typeof updateOrderSchema>;

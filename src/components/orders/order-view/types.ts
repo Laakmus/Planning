@@ -275,6 +275,7 @@ function mapItemReverse(
     quantityTons: productChanged ? null : (original?.quantityTons ?? null),
     notes: viewItem.notes || null,
     _deleted: false,
+    _clientKey: crypto.randomUUID(),
   };
 }
 

@@ -271,25 +271,23 @@ describe("useDictionarySync", () => {
     });
 
     // Poll #1 → RUNNING → planuje nowy timeout
+    // advanceTimersByTimeAsync czeka na mikrotaski wewnątrz timera (brak act warning)
     await act(async () => {
-      vi.advanceTimersByTime(POLL_INTERVAL_MS);
-      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
     });
     expect(result.current.status).toBe("running");
     expect(mockGet).toHaveBeenCalledTimes(1);
 
     // Poll #2 → RUNNING → planuje nowy timeout
     await act(async () => {
-      vi.advanceTimersByTime(POLL_INTERVAL_MS);
-      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
     });
     expect(result.current.status).toBe("running");
     expect(mockGet).toHaveBeenCalledTimes(2);
 
     // Poll #3 → COMPLETED
     await act(async () => {
-      vi.advanceTimersByTime(POLL_INTERVAL_MS);
-      await flushMicrotasks();
+      await vi.advanceTimersByTimeAsync(POLL_INTERVAL_MS);
     });
     expect(result.current.status).toBe("success");
     expect(mockGet).toHaveBeenCalledTimes(3);

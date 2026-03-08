@@ -106,6 +106,7 @@ export function RoutePointCard({
             onClick={onRemove}
             className="text-slate-500 dark:text-slate-400 hover:text-red-500 transition-colors"
             title="Usuń punkt"
+            aria-label="Usuń punkt trasy"
           >
             <X className="w-4 h-4" />
           </button>

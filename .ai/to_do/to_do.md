@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-07 (sesja 40 — testy MEDIUM M-14..M-19)
+> Ostatnia aktualizacja: 2026-03-08 (sesja 41 — analiza + fixy LOW)
 
 ---
 
@@ -81,65 +81,42 @@
 - **Sugerowany fix:** Indywidualne fixy per punkt.
 - **Effort:** M
 
-### L-09. Frontend minor
-- **Kategoria:** ux
-- **Pliki:** `TimeCombobox.tsx`, `LockIndicator.tsx`, `StatusFooter.tsx`, `OrderRowContextMenu.tsx`
-- **Opis:** (1) TimeCombobox globalny document.querySelector. (2) LockIndicator zagnieżdżony TooltipProvider. (3) StatusFooter "System Status: OK" hardcoded. (4) "Anuluj zlecenie" widoczne dla zrealizowanych (backend blokuje). (5) useOrders aborted check może ukryć błąd sieciowy (edge case). (6) Brak auto-set dokumentów/waluty we frontendzie przy zmianie transportTypeCode.
-- **Sugerowany fix:** Indywidualne fixy per punkt. Priorytet niski.
-- **Effort:** M
-
-### L-10. Backend minor bugs
-- **Kategoria:** bug
-- **Pliki:** `order-misc.service.ts:393`, `order-snapshot.service.ts:241`, `order-update.service.ts:240`, `warehouse.service.ts:148`
-- **Opis:** (1) updateEntryFixed nie sprawdza błędu insertu do change_log. (2) autoSetDocumentsAndCurrency nigdy nie zmienia currencyCode — mylący komentarz. (3) updateOrder nie wywołuje autoSet przy zmianie transportTypeCode. (4) Warehouse stopy bez daty — brak limitu (obniżone z MEDIUM).
-- **Sugerowany fix:** (1) Dodać `{ error }` destructuring + throw. (2) Poprawić komentarz lub zaimplementować. (3/4) Rozważyć implementację.
-- **Effort:** S
-
-### L-11. Backend minor — performance i edge cases
-- **Kategoria:** performance
-- **Pliki:** `order-update.service.ts:600`, `api-helpers.ts:24`, `order.validator.ts:143`, `companies.ts:26`
-- **Opis:** (1) resolveFkName w pętli — cache old FK names. (2) CORS origin cached at import — OK w praktyce. (3) Zod .max(11) na stops liczy deleted. (4) Companies 1h cache stale data.
-- **Sugerowany fix:** Indywidualne fixy. Niski priorytet.
-- **Effort:** S
-
-### L-12. Security minor — defense-in-depth
-- **Kategoria:** security
-- **Pliki:** `middleware.ts`, `companies.ts`, `transport-types.ts`, `order.validator.ts`, `order-create.service.ts`, `order-misc.service.ts`
-- **Opis:** (1) Cache-Control `public` → `private` na authenticated endpoints. (2) Middleware auth flow (Supabase client z raw header). (3) mailto brak email odbiorcy. (4) logError stack traces w prod. (5) Empty string validation (min(1)). (6) Rate limiter FIFO eviction. (7) Non-transactional cleanup createOrder. (8) duplicateOrder resetStatusToDraft.
-- **Sugerowany fix:** Indywidualne fixy. Wszystkie defense-in-depth, nie krytyczne.
-- **Effort:** M
-
-### L-13. Test pokrycie — komponenty i endpointy
-- **Kategoria:** test
-- **Pliki:** `DictionaryContext.tsx`, `OrdersPage.tsx`, `HistoryPanel.tsx`, `LoginCard.tsx`, `WarehouseApp.tsx`, `dictionary-sync/run.ts`, drawer components
-- **Opis:** Brakujące unit testy: DictionaryContext, drawer sekcje (Route, Cargo, Carrier, Finance, Notes, Status), OrdersPage, HistoryPanel, LoginCard, Warehouse UI, dictionary-sync endpoints. E2E pokrywają happy path.
-- **Sugerowany fix:** Dodać przynajmniej renderowanie + basic interaction test per komponent.
-- **Effort:** L
-
-### L-14. Test jakość — act warnings, weak assertions, slow tests
-- **Kategoria:** test
-- **Pliki:** `useDictionarySync.test.ts`, `order.service.test.ts:491`, `order.service.test.ts:375`, drawer-e2e
-- **Opis:** (1) "not wrapped in act" warnings. (2) toBeDefined zamiast toThrow. (3) autoSetDocuments — brak weryfikacji payload. (4) drawer-e2e testy 3.6-4s (tymczasowe, do usunięcia).
-- **Sugerowany fix:** (1) waitFor + act. (2) rejects.toThrow(). (3) spy na insert payload. (4) Zastąpić lżejszymi testami.
-- **Effort:** M
-
-### L-15. DB constraints i docs
-- **Kategoria:** architecture
-- **Pliki:** `supabase/migrations/`, `.ai/db-plan.md`
-- **Opis:** (1) notificationDetails/confidentialityClause — Zod max bez CHECK constraint w DB. (2) search_text ILIKE bez indeksu pg_trgm GIN. (3) db-plan: vehicle_type_text varchar(200) vs varchar(100). (4) db-plan: order_seq_no NOT NULL vs nullable.
-- **Sugerowany fix:** (1) Rozważyć CHECK constraints. (2) pg_trgm GIN index przy skalowaniu. (3/4) Aktualizacja db-plan.md.
-- **Effort:** M
-
-### L-16. Brak paginacji w endpointach słownikowych
-- **Kategoria:** performance
-- **Pliki:** `src/pages/api/v1/companies.ts`, `locations.ts`, `products.ts`
-- **Opis:** Endpointy słownikowe zwracają wszystkie rekordy bez paginacji.
-- **Sugerowany fix:** Dodać limit/offset lub cursor-based pagination.
-- **Effort:** M
-
 ---
 
 ## Odroczone (user decision: zostawić)
+
+### D-20. L-03 — Aktualizacja PRD i docs (13 rozbieżności) — odłożone
+- Dokumentacja `.ai/` to wewnętrzne notatki. Aktualizować przy okazji zmian w danym obszarze, nie jako osobne zadanie.
+
+### D-21. L-05 — React.memo / useCallback — premature optimization
+- OrderRow przy 25-50 wierszach per page nie ma problemu wydajnościowego. React 19 batchuje setState.
+
+### D-22. L-08 — Frontend drobne UX — celowe decyzje lub nie-problemy
+- (1) Firma po nazwie = celowy design (snapshot). (2) onInteractOutside działa poprawnie. (3) React batching łagodzi. (4) Kosmetyka.
+
+### D-23. L-09 — Frontend minor — standardowe patterny
+- (1) cmdk standard. (2) Zagnieżdżony TooltipProvider nie szkodzi. (3) Kosmetyka. (4) Backend blokuje. (5) Poprawny wzorzec. (6) Backend robi autoSet.
+
+### D-24. L-10.1/3/4 — Backend minor bugs — niekrytyczne
+- (1) change_log insert to logi pomocnicze. (3) autoSet w PUT nadpisałby wybór użytkownika. (4) Edge case przy kilkudziesięciu zleceniach.
+
+### D-25. L-11.1/2/4 — Backend performance — premature optimization
+- (1) Max 3 zapytania FK. (2) CORS cached = poprawne. (4) 1h cache na słowniki = OK.
+
+### D-26. L-12.2-8 — Security defense-in-depth — intranet
+- (2) Standard Supabase SSR. (3) Wymaga nowego pola email. (4) Stack trace w logach serwera = feature. (5-8) Niski priorytet na intranecie.
+
+### D-27. L-13 — Test pokrycie komponentów — wystarczające
+- 1045 unit + 25 E2E + 97 drawer-e2e. Dodawać testy przy bugach, nie proaktywnie.
+
+### D-28. L-14.4 — Drawer-e2e wolne testy — akceptowalne
+- 97 testów w 5.24s (~54ms/test). Zostawić aż pojawi się decyzja o refactorze.
+
+### D-29. L-15.1/2 — DB constraints i indeksy — premature
+- (1) Zod waliduje na API, jedyny punkt wejścia. (2) pg_trgm GIN od setek tysięcy rekordów.
+
+### D-30. L-16 — Paginacja słowników — anty-pattern
+- Słowniki małe (dziesiątki rekordów). Frontend potrzebuje pełnej listy do autocomplete/select.
 
 ### D-13. M-01 — Walidacja 1 stop to NIE jest bug (zamierzone zachowanie)
 - W trakcie planowania (status robocze/korekta) zlecenie może mieć dowolną liczbę stopów: 0, tylko załadunki, tylko rozładunki.
@@ -214,6 +191,18 @@
 ---
 
 ## Zrobione
+
+### Sesja 41 — Analiza + fixy LOW (agent teams)
+- [x] L-04: A11y — `scope="col"` na 13 `<th>`, `aria-label` na X drawera i usuwaniu stopu, `role="group"` + `aria-pressed` na przełączniku widoku
+- [x] L-06: FilterBar debounce cleanup — `useEffect` cleanup przy unmount
+- [x] L-07: CargoSection stabilny key — `_clientKey: crypto.randomUUID()` w `OrderFormItem`, `key={item._clientKey || item.id || idx}`
+- [x] L-10.2: autoSetDocumentsAndCurrency — poprawiony mylący komentarz (waluta nie jest zmieniana)
+- [x] L-11.3: Zod `.max()` na stops/items — podwojone limity (22/100) żeby uwzględnić `_deleted`
+- [x] L-12.1: Cache-Control `public` → `private` na transport-types, vehicle-variants, order-statuses
+- [x] L-14.1/2/3: Testy — `advanceTimersByTimeAsync`, `rejects.toThrow()`, nazwy testów autoSet (już wcześniej naprawione)
+- [x] L-15.3/4: db-plan.md — `vehicle_type_text varchar(100)`, `order_seq_no` nullable (już zsynchronizowane)
+- [x] L-03, L-05, L-08, L-09, L-10.1/3/4, L-11.1/2/4, L-12.2-8, L-13, L-14.4, L-15.1/2, L-16 → odroczone (D-20..D-30)
+- Wynik: 1045/1045 testów, 0 błędów TypeScript
 
 ### Sesja 40 — Testy MEDIUM M-14..M-19 (agent teams)
 - [x] M-14: `useOrderActions.test.ts` — 23 testy (addOrder, sendEmail, cancel, duplicate, changeStatus, restore)

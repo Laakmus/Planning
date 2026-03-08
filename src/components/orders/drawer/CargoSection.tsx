@@ -68,6 +68,7 @@ export function CargoSection({
       quantityTons: null,
       notes: null,
       _deleted: false,
+      _clientKey: crypto.randomUUID(),
     };
     onChange({ items: [...formData.items, newItem] });
   }
@@ -90,7 +91,7 @@ export function CargoSection({
           const itemNo = formData.items.filter((it, i) => !it._deleted && i <= idx).length;
           return (
             <div
-              key={idx}
+              key={item._clientKey || item.id || idx}
               className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 p-3 space-y-0 hover:border-amber-500/50 transition-all"
             >
               <div className="flex items-center justify-between">

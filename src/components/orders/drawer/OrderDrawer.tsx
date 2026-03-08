@@ -112,6 +112,7 @@ export function OrderDrawer({
                 onClick={handleCloseRequest}
                 className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"
                 title="Zamknij (Escape)"
+                aria-label="Zamknij"
               >
                 <X className="w-5 h-5" />
               </button>

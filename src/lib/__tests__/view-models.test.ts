@@ -280,6 +280,7 @@ describe("Interface structural compatibility", () => {
       quantityTons: null,
       notes: null,
       _deleted: false,
+      _clientKey: "test-key-1",
     };
     expect(item._deleted).toBe(false);
     expect(item.id).toBeNull();
@@ -295,6 +296,7 @@ describe("Interface structural compatibility", () => {
       quantityTons: 24.5,
       notes: "Uwagi do towaru",
       _deleted: false,
+      _clientKey: "test-key-2",
     };
     expect(item.quantityTons).toBe(24.5);
     expect(item.loadingMethodCode).toBe("LUZEM");

@@ -66,6 +66,7 @@ function SortableTh({
 }) {
   return (
     <th
+      scope="col"
       className={`py-2 px-4 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200 ${className ?? ""}`}
       onClick={() => onSort(sortKey)}
       aria-sort={
@@ -122,7 +123,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
       >
         <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800">
           <tr className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            <th className="py-2 px-4 w-10" />
+            <th scope="col" className="py-2 px-4 w-10" />
             <SortableTh
               sortKey="ORDER_NO"
               label="Nr zlecenia"
@@ -131,14 +132,14 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
               sortDirection={sortDirection}
               onSort={onSort}
             />
-            <th className="py-2 px-4 min-w-[100px]">Status</th>
-            <th className="py-2 px-4 w-12 text-center">Tydz.</th>
-            <th className="py-2 px-4 min-w-[80px]">Rodzaj</th>
+            <th scope="col" className="py-2 px-4 min-w-[100px]">Status</th>
+            <th scope="col" className="py-2 px-4 w-12 text-center">Tydz.</th>
+            <th scope="col" className="py-2 px-4 min-w-[80px]">Rodzaj</th>
 
             {viewMode === "route" ? (
-              <th className="py-2 px-4 min-w-[220px]">Trasa</th>
+              <th scope="col" className="py-2 px-4 min-w-[220px]">Trasa</th>
             ) : (
-              <th className="py-2 px-4 min-w-[200px]">Miejsce załadunku</th>
+              <th scope="col" className="py-2 px-4 min-w-[200px]">Miejsce załadunku</th>
             )}
 
             <SortableTh
@@ -151,7 +152,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
             />
 
             {viewMode === "columns" && (
-              <th className="py-2 px-4 min-w-[200px]">Miejsce rozładunku</th>
+              <th scope="col" className="py-2 px-4 min-w-[200px]">Miejsce rozładunku</th>
             )}
 
             <SortableTh
@@ -163,9 +164,9 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
               onSort={onSort}
             />
 
-            <th className="py-2 px-4 w-14 text-center">Fix</th>
-            <th className="py-2 px-4 min-w-[160px]">Towar</th>
-            <th className="py-2 px-4 min-w-[120px]">Komentarz</th>
+            <th scope="col" className="py-2 px-4 w-14 text-center">Fix</th>
+            <th scope="col" className="py-2 px-4 min-w-[160px]">Towar</th>
+            <th scope="col" className="py-2 px-4 min-w-[120px]">Komentarz</th>
 
             <SortableTh
               sortKey="CARRIER_NAME"
@@ -176,9 +177,9 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
               onSort={onSort}
             />
 
-            <th className="py-2 px-4 min-w-[90px]">Typ auta</th>
-            <th className="py-2 px-4 w-20">Stawka</th>
-            <th className="py-2 px-4 min-w-[90px]">Data wysł.</th>
+            <th scope="col" className="py-2 px-4 min-w-[90px]">Typ auta</th>
+            <th scope="col" className="py-2 px-4 w-20">Stawka</th>
+            <th scope="col" className="py-2 px-4 min-w-[90px]">Data wysł.</th>
           </tr>
         </thead>
 

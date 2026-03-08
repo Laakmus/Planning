@@ -57,6 +57,14 @@ export function FilterBar({
   const searchDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const weekDebounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  // Cleanup debounce timerów przy odmontowaniu
+  useEffect(() => {
+    return () => {
+      if (searchDebounceRef.current) clearTimeout(searchDebounceRef.current);
+      if (weekDebounceRef.current) clearTimeout(weekDebounceRef.current);
+    };
+  }, []);
+
   // Sync gdy filtry zostają wyczyszczone z zewnątrz
   useEffect(() => {
     setSearchInput(filters.search ?? "");

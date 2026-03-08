@@ -235,8 +235,9 @@ export function buildSearchText(
 }
 
 /**
- * Automatyczne ustawienie required_documents_text i currency_code wg typu transportu.
- * Sekcja 5 db-plan: PL → PLN, EXP/EXP_K/IMP → EUR; dokumenty wg typu.
+ * Automatyczne ustawienie required_documents_text wg typu transportu.
+ * PL → "WZ, KPO, kwit wagowy", EXP/EXP_K/IMP → "WZE, Aneks VII, CMR".
+ * Waluta (currencyCode) NIE jest zmieniana — przekazywana jest wartość z frontendu (userCurrency) bez modyfikacji.
  */
 export function autoSetDocumentsAndCurrency(
   transportTypeCode: string,

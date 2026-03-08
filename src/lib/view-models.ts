@@ -128,6 +128,8 @@ export interface OrderFormItem {
   notes: string | null;
   /** Zaznaczony do usunięcia. */
   _deleted: boolean;
+  /** Klucz kliencki do stabilnego renderowania listy (nie wysyłany do API). */
+  _clientKey: string;
 }
 
 // ---------------------------------------------------------------------------
