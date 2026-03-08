@@ -194,7 +194,7 @@ Code review całości zmian.
 - **Temat maila:** Pusty (na razie, w przyszłości do zmiany)
 - **Lokalizacja przycisku:** Bez zmian — Drawer + Context menu
 - **Walidacja UX:** Toast z listą brakujących pól
-- **Metoda:** Plik .eml (bez Azure AD / Graph API)
+- **Metoda:** Plik .eml jako fallback; główny flow: Microsoft Graph API (sesja 46)
 
 ---
 
@@ -206,3 +206,53 @@ Code review całości zmian.
 4. **Walidacja**: klik na niekompletnym zleceniu → toast z listą brakujących pól (422 JSON)
 5. **Status**: po pobraniu .eml → status zmieniony (robocze→wysłane, korekta→korekta wysłane)
 6. **Context menu**: "Wyślij email" z tabeli → ten sam flow co drawer
+
+---
+
+## Aktualizacja: Microsoft Graph API integration (sesja 46)
+
+### Kontekst
+
+Dotychczasowy flow (pobieranie .eml) wymaga ręcznego otwarcia pliku w kliencie poczty. Nowy flow wykorzystuje Microsoft Graph API do tworzenia draftu wiadomości bezpośrednio w Outlook Web, co eliminuje krok pośredni.
+
+### Nowy flow (Graph API — główny)
+
+Gdy skonfigurowane zmienne środowiskowe `PUBLIC_MICROSOFT_CLIENT_ID` i `PUBLIC_MICROSOFT_TENANT_ID`:
+
+1. Frontend wysyła `POST /prepare-email` z `outputFormat: "pdf-base64"`
+2. Backend: walidacja + zmiana statusu + generacja PDF → zwraca JSON `{ pdfBase64, pdfFileName }`
+3. Frontend: uzyskuje token MSAL (popup logowania M365, scope `Mail.ReadWrite`)
+4. Frontend: `POST https://graph.microsoft.com/v1.0/me/messages` — tworzy draft z fileAttachment (PDF base64)
+5. Frontend: `window.open(webLink)` — otwiera Outlook Web z draftem do edycji
+6. Użytkownik uzupełnia adresatów, temat, treść i wysyła wiadomość
+
+### Fallback (.eml — bez zmian)
+
+Gdy brak konfiguracji M365 → stary flow: `POST /prepare-email` (domyślnie `outputFormat: "eml"`) → blob download .eml.
+
+### Nowe pliki
+
+| Plik | Opis |
+|------|------|
+| `src/lib/microsoft-auth.ts` | MSAL `PublicClientApplication` config (clientId, tenantId, redirect) |
+| `src/lib/graph-mail.ts` | `createGraphDraft()` — POST /me/messages z fileAttachment, zwraca webLink |
+| `src/contexts/MicrosoftAuthContext.tsx` | `MicrosoftAuthProvider` + hook `useMicrosoftAuth()` (isConfigured, getToken) |
+
+### Zmodyfikowane pliki
+
+| Plik | Zmiana |
+|------|--------|
+| `src/lib/validators/order.validator.ts` | `prepareEmailSchema` += `outputFormat: z.enum(["eml", "pdf-base64"]).default("eml")` |
+| `src/lib/services/order-misc.service.ts` | `PrepareEmailResult` union z format `"eml"` / `"pdf-base64"` |
+| `src/pages/api/v1/orders/[orderId]/prepare-email.ts` | Rozgałęzienie odpowiedzi: blob .eml vs JSON `{ pdfBase64, pdfFileName }` |
+| `src/hooks/useOrderActions.ts` | Graph API flow z popup blocker workaround (pre-open window) |
+| `src/hooks/useOrderDrawer.ts` | Graph API flow z popup blocker workaround |
+| `src/components/orders/OrdersApp.tsx` | `MicrosoftAuthProvider` wrapper |
+| `.env.example` | `PUBLIC_MICROSOFT_CLIENT_ID`, `PUBLIC_MICROSOFT_TENANT_ID` |
+
+### Popup blocker workaround
+
+Przeglądarki blokują `window.open()` gdy nie jest wywołane bezpośrednio z handlera kliknięcia. Ponieważ między kliknięciem a uzyskaniem `webLink` jest kilka async operacji (prepare-email, MSAL login, Graph API), workaround polega na:
+1. `const popup = window.open("about:blank")` — natychmiast w handlerze kliknięcia
+2. Po uzyskaniu webLink: `popup.location.href = webLink`
+3. Jeśli popup zablokowany → fallback na `window.open(webLink)` z komunikatem toast

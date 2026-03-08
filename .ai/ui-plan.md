@@ -263,7 +263,7 @@ Przyciski akcji (sticky na dole draweru):
 - **Zapisz** (primary) → `PUT /api/v1/orders/{id}`.
 - **Anuluj** (secondary) → zamknięcie draweru (z ostrzeżeniem o niezapisanych zmianach).
 - **Podgląd** (ikona Eye) → otwarcie OrderView (podgląd A4 zlecenia). Widoczny dla istniejących zleceń.
-- **Wyślij maila** → `POST /api/v1/orders/{id}/prepare-email`.
+- **Wyślij maila** → `POST /api/v1/orders/{id}/prepare-email` → Graph API draft w Outlook Web (gdy M365 skonfigurowane) lub blob download .eml (fallback).
 - **Historia zmian** (link/ikona) → otwarcie panelu historii.
 
 #### Kluczowe komponenty draweru
@@ -508,7 +508,7 @@ Przyciski akcji (sticky na dole draweru):
    ↓
 10. Klika „Wyślij maila" (POST /prepare-email)
     ↓ (422 → lista braków → użytkownik uzupełnia brakujące pola → ponowna próba)
-    ↓ (200 → status zmienia się na Wysłane → Outlook otwiera się z załączonym PDF)
+    ↓ (200 → status zmienia się na Wysłane → Graph API tworzy draft w Outlook Web / fallback: pobiera .eml z PDF)
     ↓
 11. Użytkownik wysyła mail z Outlooka
     ↓
@@ -527,7 +527,7 @@ Przyciski akcji (sticky na dole draweru):
 3. Klika „Zapisz" (PUT /orders/{id})
    ↓ → Serwer automatycznie zmienia status na Korekta
 4. Klika „Wyślij maila" (POST /prepare-email)
-   ↓ → Status zmienia się na Korekta wysłane → Outlook z nowym PDF
+   ↓ → Status zmienia się na Korekta wysłane → Graph API draft w Outlook Web / fallback: .eml z nowym PDF
 5. Zamknięcie draweru (POST /unlock)
 ```
 
@@ -727,6 +727,7 @@ Wszystkie przejścia wewnątrz widoku głównego (`/orders`) odbywają się bez 
 | Komponent / Hook | Opis |
 |---|---|
 | **AuthProvider / useAuth** | Kontekst sesji użytkownika (profil, rola, token). Obsługa 401 → wylogowanie. |
+| **MicrosoftAuthProvider / useMicrosoftAuth** | Kontekst MSAL (opcjonalny — aktywny gdy skonfigurowane `PUBLIC_MICROSOFT_CLIENT_ID` + `PUBLIC_MICROSOFT_TENANT_ID`). Udostępnia `isConfigured`, `getToken()` do uzyskania tokena Graph API. |
 | **DictionaryProvider / useDictionaries** | Globalny cache słowników (companies, locations, products, transport-types, order-statuses, vehicle-variants). Ładowane raz po zalogowaniu, odświeżane po synchronizacji. |
 | **useOrders** | Hook do pobierania listy zleceń z parametrami (view, filtry, sort, pageSize). Obsługa odświeżania po akcjach. |
 | **useOrderDetail** | Hook do pobierania szczegółów zlecenia, lock/unlock, aktualizacji. |

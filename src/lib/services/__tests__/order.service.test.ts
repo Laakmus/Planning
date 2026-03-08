@@ -1014,11 +1014,12 @@ describe("prepareEmailForOrder", () => {
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
       forceRegeneratePdf: false,
+      outputFormat: "eml" as const,
     });
 
     expect(result).not.toBeNull();
     expect(result!.success).toBe(true);
-    if (result!.success) {
+    if (result!.success && result!.format === "eml") {
       expect(result!.emlContent).toContain("X-Unsent: 1");
       expect(result!.orderNo).toBeTruthy();
     }
@@ -1029,10 +1030,11 @@ describe("prepareEmailForOrder", () => {
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
       forceRegeneratePdf: false,
+      outputFormat: "eml" as const,
     });
 
     expect(result!.success).toBe(true);
-    if (result!.success) {
+    if (result!.success && result!.format === "eml") {
       expect(result!.emlContent).toBeTruthy();
     }
   });
@@ -1042,6 +1044,7 @@ describe("prepareEmailForOrder", () => {
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
       forceRegeneratePdf: false,
+      outputFormat: "eml" as const,
     });
 
     expect(result).not.toBeNull();
@@ -1055,7 +1058,7 @@ describe("prepareEmailForOrder", () => {
     const supabase = buildEmailMock({ status_code: "zrealizowane" });
 
     await expect(
-      prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, { forceRegeneratePdf: false })
+      prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, { forceRegeneratePdf: false, outputFormat: "eml" as const })
     ).rejects.toThrow("NOT_ALLOWED_STATUS");
   });
 
@@ -1066,6 +1069,7 @@ describe("prepareEmailForOrder", () => {
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
       forceRegeneratePdf: false,
+      outputFormat: "eml" as const,
     });
     expect(result).toBeNull();
   });

@@ -29,6 +29,7 @@ import { Toaster } from "@/components/ui/sonner";
 import { TooltipProvider } from "@/components/ui/tooltip";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { DictionaryProvider } from "@/contexts/DictionaryContext";
+import { MicrosoftAuthProvider } from "@/contexts/MicrosoftAuthContext";
 import type { ViewGroup } from "@/lib/view-models";
 
 import { AppSidebar } from "./AppSidebar";
@@ -97,9 +98,11 @@ export default function OrdersApp() {
       <ErrorBoundary>
         <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
           <DictionaryProvider>
-            <TooltipProvider>
-              <OrdersAppInner />
-            </TooltipProvider>
+            <MicrosoftAuthProvider>
+              <TooltipProvider>
+                <OrdersAppInner />
+              </TooltipProvider>
+            </MicrosoftAuthProvider>
           </DictionaryProvider>
         </AuthProvider>
       </ErrorBoundary>

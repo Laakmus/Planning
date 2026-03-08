@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-08 (sesja 45 — fix 4 failujących testów E2E)
+> Ostatnia aktualizacja: 2026-03-08 (sesja 46 — Microsoft Graph API integration)
 
 ---
 
@@ -148,6 +148,16 @@
 ---
 
 ## Zrobione
+
+### Sesja 46 — Microsoft Graph API integration (email wysyłka)
+- [x] Nowy flow wysyłki maila przez Microsoft Graph API (tworzenie draftu w Outlook Web z PDF w załączniku)
+- [x] Fallback na .eml (RFC 822) gdy brak konfiguracji M365 (`PUBLIC_MICROSOFT_CLIENT_ID`, `PUBLIC_MICROSOFT_TENANT_ID`)
+- [x] Nowe pliki: `src/lib/microsoft-auth.ts` (MSAL config), `src/lib/graph-mail.ts` (createGraphDraft), `src/contexts/MicrosoftAuthContext.tsx` (Provider + hook)
+- [x] Backend: `prepareEmailSchema` += `outputFormat`, `order-misc.service.ts` zwraca PDF base64 dla nowego formatu, `prepare-email.ts` rozgałęzienie odpowiedzi (blob .eml vs JSON)
+- [x] Frontend: `useOrderActions.ts` + `useOrderDrawer.ts` — Graph API flow z popup blocker workaround (pre-open window)
+- [x] `OrdersApp.tsx` — `MicrosoftAuthProvider` wrapper
+- [x] `.env.example` — dodane `PUBLIC_MICROSOFT_CLIENT_ID`, `PUBLIC_MICROSOFT_TENANT_ID`
+- [x] Aktualizacja 6 plików dokumentacji (prd, ui-plan, api-plan, eml-plan, orders-view-implementation-plan, to_do)
 
 ### Sesja 45 — Fix 4 failujących testów E2E (+ parallel resilience)
 - [x] **Auth tests (2)**: Osobny projekt Playwright "auth" BEZ storageState — testy logowania nie kolidują z zalogowanym użytkownikiem

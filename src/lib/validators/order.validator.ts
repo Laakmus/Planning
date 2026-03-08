@@ -160,6 +160,7 @@ export type DuplicateOrderParams = z.infer<typeof duplicateOrderSchema>;
 /** Body POST /api/v1/orders/{orderId}/prepare-email. */
 export const prepareEmailSchema = z.object({
   forceRegeneratePdf: z.boolean().optional().default(false),
+  outputFormat: z.enum(["eml", "pdf-base64"]).optional().default("eml"),
 });
 
 export type PrepareEmailParams = z.infer<typeof prepareEmailSchema>;

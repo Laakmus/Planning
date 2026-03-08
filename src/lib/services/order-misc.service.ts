@@ -21,7 +21,8 @@ import { resolvePdfData } from "./pdf/pdf-data-resolver";
 import { generateOrderPdf } from "./pdf/pdf-generator.service";
 
 export type PrepareEmailResult =
-  | { success: true; emlContent: string; orderNo: string }
+  | { success: true; format: "eml"; emlContent: string; orderNo: string }
+  | { success: true; format: "pdf-base64"; pdfBase64: string; pdfFileName: string; orderNo: string }
   | { success: false; validationErrors: string[] }
   | null;
 
@@ -317,15 +318,36 @@ export async function prepareEmailForOrder(
     if (logErr) throw logErr;
   }
 
-  // Generowanie PDF i budowanie pliku .eml z załącznikiem
+  // Generowanie PDF
   const pdfInput = await resolvePdfData(supabase, detail);
   const pdfBuffer = generateOrderPdf(pdfInput);
   const sanitizedName = (order.orderNo || orderId).replace(/["\r\n/]/g, "-");
   const pdfFileName = `zlecenie-${sanitizedName}.pdf`;
+
+  // Format pdf-base64: zwróć PDF jako base64 (do Graph API na frontendzie)
+  if (_params.outputFormat === "pdf-base64") {
+    // pdfBuffer to ArrayBuffer z jsPDF — konwertujemy na base64
+    const uint8 = new Uint8Array(pdfBuffer);
+    let binary = "";
+    for (let i = 0; i < uint8.length; i++) {
+      binary += String.fromCharCode(uint8[i]);
+    }
+    const pdfBase64 = btoa(binary);
+    return {
+      success: true,
+      format: "pdf-base64" as const,
+      pdfBase64,
+      pdfFileName,
+      orderNo: order.orderNo,
+    };
+  }
+
+  // Format eml: buduj plik .eml z załącznikiem PDF
   const emlContent = buildEmlWithPdfAttachment({ pdfBuffer, pdfFileName });
 
   return {
     success: true,
+    format: "eml" as const,
     emlContent,
     orderNo: order.orderNo,
   };

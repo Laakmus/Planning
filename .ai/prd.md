@@ -50,6 +50,7 @@ Obecnie planowanie i zlecanie transportów odbywa się w rozbudowanym arkuszu Ex
 
 - Generowanie zlecenia i dodawanie go do Outlooka jest dziś ściśle związane z Excelem.
 - Chociaż PDF i wysyłka działają, brakuje lepszego, stabilniejszego środowiska do planowania, które następnie generuje zlecenia PDF.
+- Nowy system rozwiązuje problem wysyłki przez integrację z Microsoft Graph API (tworzenie draftu w Outlook Web z PDF w załączniku) z fallback na pobieranie pliku .eml dla środowisk bez konfiguracji M365.
 
 Nowy produkt ma przede wszystkim poprawić:
 
@@ -576,12 +577,16 @@ Pole „Fix" (is_entry_fixed) NIE jest widoczne w OrderView — jest dostępne t
 - Po kliknięciu tego przycisku:
   - aplikacja korzysta z aktualnego pliku PDF danego zlecenia (w razie potrzeby generując go na nowo),
   - system w pierwszej kolejności sprawdza kompletność pól wymaganych (zgodnie z sekcją o walidacji danych); w przypadku braków wyświetlany jest komunikat z listą brakujących pól, a Outlook nie jest otwierany,
-  - jeśli wszystkie pola wymagane są uzupełnione, plik `.eml` (RFC 822) z PDF w załączniku zostaje pobrany; użytkownik otwiera go w kliencie poczty (np. Outlook), który wyświetla wiadomość jako draft (nagłówek `X-Unsent: 1`),
-  - użytkownik samodzielnie uzupełnia adresy e-mail, temat oraz treść wiadomości i wysyła ją z poziomu Outlooka,
-  - po poprawnym uruchomieniu akcji wysyłki (pobraniu pliku .eml z załączonym PDF):
+  - jeśli wszystkie pola wymagane są uzupełnione, akcja wysyłki zależy od konfiguracji środowiska:
+    - **Flow główny (Microsoft Graph API):** gdy skonfigurowane są zmienne `PUBLIC_MICROSOFT_CLIENT_ID` i `PUBLIC_MICROSOFT_TENANT_ID`, backend zwraca PDF jako base64 (format `outputFormat: "pdf-base64"`). Frontend uzyskuje token MSAL (popup logowania M365), tworzy draft wiadomości z załącznikiem PDF przez Graph API (`POST /me/messages` + fileAttachment), a następnie otwiera Outlook Web z draftem do edycji (`window.open(webLink)`). Użytkownik uzupełnia adresy, temat i treść, po czym wysyła wiadomość z poziomu Outlook Web.
+    - **Fallback (.eml):** gdy zmienne M365 nie są skonfigurowane, plik `.eml` (RFC 822) z PDF w załączniku zostaje pobrany; użytkownik otwiera go w kliencie poczty (np. Outlook desktop), który wyświetla wiadomość jako draft (nagłówek `X-Unsent: 1`). Użytkownik samodzielnie uzupełnia adresy e-mail, temat oraz treść wiadomości i wysyła ją.
+  - po poprawnym uruchomieniu akcji wysyłki (utworzeniu draftu Graph API lub pobraniu pliku .eml):
     - jeśli zlecenie miało status robocze, status zlecenia w systemie zmienia się automatycznie na wysłane,
     - jeśli zlecenie miało status korekta, status zlecenia w systemie zmienia się automatycznie na korekta wysłane.
-- Sam proces wysyłki maila oraz zapis wysłanych maili pozostaje w Outlooku (brak wysyłki bezpośrednio z aplikacji w MVP).
+- Sam proces wysyłki maila oraz zapis wysłanych maili pozostaje w Outlooku (brak wysyłki bezpośrednio z aplikacji).
+- **Wymagane zmienne środowiskowe** (opcjonalne — bez nich działa fallback .eml):
+  - `PUBLIC_MICROSOFT_CLIENT_ID` — Application (client) ID z Azure AD App Registration,
+  - `PUBLIC_MICROSOFT_TENANT_ID` — Directory (tenant) ID organizacji M365.
 
   3.1.12 Widok zrealizowanych i anulowanych zleceń
 
@@ -695,7 +700,7 @@ Dane awizacji przechowywane są w polu `notification_details` (textarea, max 500
   - zapis po 2–3 sekundach bezczynności od ostatniej zmiany,
   - okresowe zapisy co określony interwał (np. 60 sekund),
   - komunikaty o powodzeniu/porażce autozapisu.
-- Zaawansowana wysyłka maili z poziomu aplikacji (integracja z Outlook/Exchange/SMTP).
+- Zaawansowana wysyłka maili z poziomu aplikacji (częściowo zrealizowana — integracja z Microsoft Graph API do tworzenia draftów w Outlook Web; pełna automatyzacja wysyłki SMTP/Exchange planowana na etap 2).
 - Zaawansowane raporty (koszty, ilości towarów, liczba transportów per przewoźnik i kierunek).
 - Granularne role i ograniczenia dostępu do danych finansowych lub raportów (w MVP dostępne są trzy podstawowe role: ADMIN, PLANNER, READ_ONLY; rozbudowa ról planowana na etap 2).
 
@@ -979,19 +984,21 @@ Kryteria akceptacji:
 - Generowanie nie wymaga żadnej ręcznej edycji układu po stronie użytkownika.
 - W etapie 1 układ może być uproszczony; docelowe odwzorowanie 1:1 zostanie zrealizowane w kolejnym etapie.
 
-ID: US-051  
-Tytuł: Otwarcie Outlooka z załączonym PDF zlecenia  
-Opis:  
-Jako planista chcę z poziomu listy zleceń jednym kliknięciem otworzyć w Outlooku nową wiadomość z automatycznie dołączonym PDF danego zlecenia, aby szybko wysłać je przewoźnikowi.  
+ID: US-051
+Tytuł: Otwarcie Outlooka z załączonym PDF zlecenia
+Opis:
+Jako planista chcę z poziomu listy zleceń jednym kliknięciem otworzyć w Outlooku nową wiadomość z automatycznie dołączonym PDF danego zlecenia, aby szybko wysłać je przewoźnikowi.
 Kryteria akceptacji:
 
 - W widoku planistycznym, obok każdego wiersza zlecenia, dostępny jest przycisk wyślij maila / otwórz w Outlooku.
 - Po kliknięciu przycisku system w pierwszej kolejności sprawdza, czy wszystkie pola wymagane do wysłania zlecenia (zgodnie z sekcją o walidacji danych) są uzupełnione; w przypadku braków wyświetla komunikat z listą brakujących pól i nie otwiera Outlooka.
-- Jeżeli wszystkie pola wymagane są uzupełnione, przeglądarka otwiera domyślny klient poczty (np. Outlook) z nową, pustą wiadomością (bez wypełnionego tematu i treści), do której automatycznie dodany jest PDF danego zlecenia jako załącznik.
+- Jeżeli wszystkie pola wymagane są uzupełnione, system realizuje wysyłkę w jednym z dwóch trybów:
+  - **Microsoft Graph API** (gdy skonfigurowane `PUBLIC_MICROSOFT_CLIENT_ID` + `PUBLIC_MICROSOFT_TENANT_ID`): frontend loguje użytkownika przez MSAL popup, tworzy draft w Outlook Web z PDF jako załącznikiem przez Graph API, a następnie otwiera Outlook Web z draftem wiadomości.
+  - **Fallback .eml** (brak konfiguracji M365): przeglądarka pobiera plik .eml (RFC 822) z PDF w załączniku; użytkownik otwiera go w kliencie poczty.
 - Użytkownik ręcznie uzupełnia adresy e-mail, temat i treść wiadomości, po czym wysyła ją z poziomu Outlooka; w tym momencie z perspektywy systemu:
   - jeżeli zlecenie miało status robocze, status automatycznie zmienia się na wysłane,
   - jeżeli zlecenie miało status korekta, status automatycznie zmienia się na korekta wysłane.
-- Aplikacja nie wysyła maili samodzielnie w MVP.
+- Aplikacja nie wysyła maili samodzielnie — tworzy draft do ręcznego wysłania przez użytkownika.
 
 ### 5.7 Historia zmian
 

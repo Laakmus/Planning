@@ -31,6 +31,7 @@ Strona `/orders` renderuje pojedynczą wyspę React (`<OrdersApp client:load />`
 
 ```
 OrdersApp (React island — korzenny komponent)
+├── MicrosoftAuthProvider (opcjonalny — gdy skonfigurowane PUBLIC_MICROSOFT_CLIENT_ID/TENANT_ID)
 ├── ThemeProvider
 │   └── ErrorBoundary
 │       └── AuthProvider
@@ -406,7 +407,7 @@ OrdersApp (React island — korzenny komponent)
 - **Opis**: Menu kontekstowe wyświetlane po prawym kliku na wierszu. Opcje zależą od statusu zlecenia i roli użytkownika.
 - **Główne elementy**: shadcn `<ContextMenu>` (lub `<DropdownMenu>` pozycjonowane programatycznie) z `<ContextMenuItem>` i `<ContextMenuSub>` dla statusu.
 - **Obsługiwane interakcje**:
-  - „Wyślij maila" → `POST /orders/{id}/prepare-email`
+  - „Wyślij maila" → `POST /orders/{id}/prepare-email` → Graph API draft w Outlook Web (M365) / blob .eml (fallback)
   - „Zmień status" → podmenu z dozwolonymi przejściami (z `ALLOWED_MANUAL_STATUS_TRANSITIONS`)
   - „Kolor" → podmenu z 4 kolorami + „Usuń kolor" → `PATCH /orders/{id}/carrier-color`; trigger z kolorowymi kwadracikami + tekst "Kolor"
   - „Skopiuj zlecenie" → `POST /orders/{id}/duplicate`
@@ -634,7 +635,7 @@ OrdersApp (React island — korzenny komponent)
   - „Zapisz" → walidacja techniczna → `PUT /orders/{id}` → toast sukcesu
   - „Zamknij" → zamknięcie draweru (z ostrzeżeniem jeśli dirty w trybie edycji)
   - „Generuj PDF" → `POST /orders/{id}/pdf` → pobranie pliku
-  - „Wyślij maila" → `POST /orders/{id}/prepare-email` → otwarcie `mailto:` URL / wyświetlenie 422
+  - „Wyślij maila" → `POST /orders/{id}/prepare-email` → Graph API draft w Outlook Web (M365) / blob .eml (fallback) / wyświetlenie 422
   - „Historia zmian" → otwarcie panelu `<HistoryPanel>`
 - **Walidacja**: Brak bezpośrednio — deleguje do handlera.
 - **Propsy**:
@@ -839,7 +840,7 @@ Wszystkie typy DTO są już zdefiniowane i gotowe do użycia:
 - **Blokada**: `LockOrderResponseDto`, `UnlockOrderResponseDto`
 - **Duplikacja**: `DuplicateOrderCommand`, `DuplicateOrderResponseDto`
 - **PDF**: `GeneratePdfCommand`
-- **Email**: endpoint `prepare-email` zwraca blob `message/rfc822` (.eml z PDF attachment)
+- **Email**: endpoint `prepare-email` zwraca blob `message/rfc822` (.eml z PDF attachment) LUB JSON `{ pdfBase64, pdfFileName }` (gdy `outputFormat: "pdf-base64"` — do użycia z Microsoft Graph API)
 - **Historia**: `StatusHistoryItemDto`, `ChangeLogItemDto`
 - **Słowniki**: `CompanyDto`, `LocationDto`, `ProductDto`, `TransportTypeDto`, `OrderStatusDto`, `VehicleVariantDto`
 - **Sync**: `DictionarySyncCommand`, `DictionarySyncResponseDto`, `DictionarySyncJobDto`
@@ -990,7 +991,7 @@ interface ContextMenuState {
 #### useOrderDetail
 - **Cel**: Pobieranie i zarządzanie szczegółami zlecenia w drawerze + lock/unlock.
 - **Stan**: `{ orderData: OrderDetailResponseDto | null; isLoading: boolean; isLocked: boolean; isReadOnly: boolean; lockError: string | null }`
-- **Akcje**: `openOrder(id)`, `closeOrder()`, `saveOrder(data)`, `generatePdf()`, `sendEmail()`
+- **Akcje**: `openOrder(id)`, `closeOrder()`, `saveOrder(data)`, `generatePdf()`, `sendEmail()` (Graph API draft / fallback .eml)
 - **Przepływ**: `openOrder` → POST lock → GET detail. `closeOrder` → POST unlock. `saveOrder` → PUT.
 
 #### useOrderHistory
@@ -1042,7 +1043,7 @@ Parametry zapytań zgodne z **api-plan** sekcja 2.2. GET `/api/v1/orders`: `view
 | Odblokuj | POST | `/api/v1/orders/{id}/unlock` | — | `UnlockOrderResponseDto` | Zamknięcie draweru |
 | Duplikuj | POST | `/api/v1/orders/{id}/duplicate` | Body: `DuplicateOrderCommand` | `DuplicateOrderResponseDto` | Menu → „Skopiuj" (etap 2) |
 | Generuj PDF | POST | `/api/v1/orders/{id}/pdf` | Body?: `{ regenerate }` | Blob (application/pdf) | Klik „Generuj PDF" |
-| Przygotuj email | POST | `/api/v1/orders/{id}/prepare-email` | Body?: `{}` | blob `message/rfc822` (.eml) | Klik „Wyślij maila" |
+| Przygotuj email | POST | `/api/v1/orders/{id}/prepare-email` | Body?: `{ outputFormat? }` | blob `.eml` lub JSON `{ pdfBase64, pdfFileName }` | Klik „Wyślij maila" |
 | Historia statusów | GET | `/api/v1/orders/{id}/history/status` | — | `ListResponse<StatusHistoryItemDto>` | Otwarcie panelu historii |
 | Historia zmian | GET | `/api/v1/orders/{id}/history/changes` | — | `ListResponse<ChangeLogItemDto>` | Otwarcie panelu historii |
 | Firmy | GET | `/api/v1/companies` | Query?: `search`, `activeOnly` | `ListResponse<CompanyDto>` | Load dictionaries |
@@ -1070,14 +1071,14 @@ Parametry zapytań zgodne z **api-plan** sekcja 2.2. GET `/api/v1/orders`: `view
 | Przełączenie widoku listy (Trasa/Kolumny) | Zmiana kolumn tabeli (bez nowego zapytania) |
 | Lewy klik na wiersz | POST lock → GET detail → otwarcie draweru edycji |
 | Prawy klik na wiersz | Otwarcie menu kontekstowego |
-| Klik ikony „Wyślij maila" w wierszu | POST prepare-email → otwarcie mailto: lub 422 z listą braków |
+| Klik ikony „Wyślij maila" w wierszu | POST prepare-email → Graph API draft / blob .eml (fallback) lub 422 z listą braków |
 | Klik „+ Dodaj nowy wiersz" | POST create → nowy wiersz na liście → otwarcie draweru |
 
 ### 8.2 Menu kontekstowe
 
 | Interakcja | Wynik |
 |---|---|
-| „Wyślij maila" | POST prepare-email → otwarcie mailto: lub 422 |
+| „Wyślij maila" | POST prepare-email → Graph API draft / blob .eml (fallback) lub 422 |
 | „Historia zmian" | Otwarcie panelu historii |
 | „Zmień status" → wybór statusu | POST status → odświeżenie listy (wiersz może zmienić zakładkę) |
 | „Zmień status" → Reklamacja | Panel na dole widoku lub modal z polem „Powód reklamacji" (wymagane) → POST status |
@@ -1099,7 +1100,7 @@ Parametry zapytań zgodne z **api-plan** sekcja 2.2. GET `/api/v1/orders`: `view
 | Klik „Zapisz" | Walidacja techniczna → PUT → toast sukcesu → isDirty=false |
 | Klik „Anuluj" / X / Escape | Sprawdzenie isDirty → modal „Odrzucić?" lub zamknięcie + unlock |
 | Klik „Generuj PDF" | POST pdf → pobranie pliku |
-| Klik „Wyślij maila" | POST prepare-email → mailto: URL lub 422 alert |
+| Klik „Wyślij maila" | POST prepare-email → Graph API draft / blob .eml (fallback) lub 422 alert |
 | Klik „Historia zmian" | Otwarcie panelu historii obok draweru |
 | Zmiana statusu w sekcji | POST status → aktualizacja badge'a statusu |
 | Klik backdrop | Jak „Anuluj" (z ostrzeżeniem o zmianach) |
@@ -1334,7 +1335,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 
 ### Faza 4: Drawer edycji zlecenia
 
-29. **Zaimplementować hook `useOrderDetail.ts`** — lock/unlock, GET detail, PUT update, PDF, email.
+29. **Zaimplementować hook `useOrderDetail.ts`** — lock/unlock, GET detail, PUT update, PDF, email (Graph API draft / fallback .eml).
 30. **Zaimplementować `OrderDrawer.tsx`** — Sheet z logiką lock/unlock i trybu readonly.
 31. **Zaimplementować `AutocompleteField.tsx`** — generyczny autocomplete formularza z debounce i auto-uzupełnianiem.
 32. **Zaimplementować `HeaderSection.tsx`** — nr zlecenia, data, typ transportu, waluta, status.
@@ -1361,7 +1362,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 47. **Zaimplementować hook `useDictionarySync.ts`** — start, polling, callback.
 48. **Zaimplementować `SyncButton.tsx`** — przycisk z obsługą stanu synchronizacji.
 49. **Zaimplementować pobieranie PDF** — POST `/orders/{id}/pdf` → blob → download file.
-50. **Zaimplementować wysyłkę maila** — POST `/orders/{id}/prepare-email` → otwarcie `mailto:` URL lub wyświetlenie 422.
+50. **Zaimplementować wysyłkę maila** — POST `/orders/{id}/prepare-email` → Graph API draft w Outlook Web (M365) / blob download .eml (fallback) lub wyświetlenie 422.
 
 ### Faza 7: Polerowanie wizualne i przypadki brzegowe
 

@@ -75,6 +75,25 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
       );
     }
 
+    // Format pdf-base64: JSON response z PDF w base64 (do Graph API na frontendzie)
+    if (result.format === "pdf-base64") {
+      return new Response(
+        JSON.stringify({
+          pdfBase64: result.pdfBase64,
+          pdfFileName: result.pdfFileName,
+          orderNo: result.orderNo,
+        }),
+        {
+          status: 200,
+          headers: {
+            ...COMMON_HEADERS,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    // Format eml: plik .eml jako blob
     const sanitizedName = (result.orderNo || orderId).replace(/["\r\n/]/g, "-");
     const fileName = `zlecenie-${sanitizedName}.eml`;
     return new Response(result.emlContent, {

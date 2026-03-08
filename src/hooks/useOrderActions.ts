@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { ApiError } from "@/lib/api-client";
 import type { ApiClient } from "@/lib/api-client";
+import { createGraphDraft } from "@/lib/graph-mail";
 import type { OrderStatusCode } from "@/lib/view-models";
 import type {
   CarrierColorResponseDto,
@@ -16,10 +17,16 @@ import type {
   EntryFixedResponseDto,
 } from "@/types";
 
+interface MicrosoftAuth {
+  isConfigured: boolean;
+  getToken: () => Promise<string>;
+}
+
 interface UseOrderActionsOptions {
   api: ApiClient;
   refetch: () => void | Promise<void>;
   tableScrollRef: React.RefObject<HTMLDivElement | null>;
+  microsoft?: MicrosoftAuth;
 }
 
 export interface UseOrderActionsReturn {
@@ -43,6 +50,7 @@ export function useOrderActions({
   api,
   refetch,
   tableScrollRef,
+  microsoft,
 }: UseOrderActionsOptions): UseOrderActionsReturn {
   // Stan tworzenia nowego zlecenia (blokada przycisku + spinner)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
@@ -98,20 +106,54 @@ export function useOrderActions({
 
   const handleSendEmail = useCallback(
     async (orderId: string) => {
+      // Otwórz pustą kartę PRZED async call — uniknięcie popup blocker
+      const useGraphApi = microsoft?.isConfigured ?? false;
+      const outlookTab = useGraphApi ? window.open("about:blank", "_blank") : null;
+
       try {
-        const response = await api.postRaw(`/api/v1/orders/${orderId}/prepare-email`, {});
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `zlecenie-${orderId}.eml`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        toast.success("Plik .eml pobrany — otwórz go w programie pocztowym.");
-        refetch();
+        if (useGraphApi) {
+          // Flow Graph API: pobierz PDF base64, utwórz draft w Outlook
+          const response = await api.postRaw(`/api/v1/orders/${orderId}/prepare-email`, {
+            outputFormat: "pdf-base64",
+          });
+          const data = await response.json();
+          const { pdfBase64, pdfFileName } = data as {
+            pdfBase64: string;
+            pdfFileName: string;
+          };
+
+          const token = await microsoft!.getToken();
+          const { webLink } = await createGraphDraft(token, pdfBase64, pdfFileName);
+
+          if (outlookTab) {
+            outlookTab.location.href = webLink;
+          } else {
+            // Fallback gdyby popup blocker zablokował kartę
+            window.open(webLink, "_blank");
+          }
+
+          toast.success("Draft email utworzony w Outlook — otwarto w nowej karcie.");
+          refetch();
+        } else {
+          // Fallback .eml: stary flow bez zmian
+          const response = await api.postRaw(`/api/v1/orders/${orderId}/prepare-email`, {});
+          const blob = await response.blob();
+          const url = URL.createObjectURL(blob);
+          const a = document.createElement("a");
+          a.href = url;
+          a.download = `zlecenie-${orderId}.eml`;
+          document.body.appendChild(a);
+          a.click();
+          a.remove();
+          URL.revokeObjectURL(url);
+          toast.success("Plik .eml pobrany — otwórz go w programie pocztowym.");
+          refetch();
+        }
       } catch (err) {
+        // Zamknij pustą kartę przy błędzie
+        if (outlookTab && !outlookTab.closed) {
+          outlookTab.close();
+        }
         // 422 z listą brakujących pól → pokaż dialog walidacji
         if (
           err instanceof ApiError &&
@@ -124,7 +166,7 @@ export function useOrderActions({
         toast.error(err instanceof Error ? err.message : "Błąd wysyłki maila.");
       }
     },
-    [api, refetch]
+    [api, refetch, microsoft]
   );
 
   const handleChangeStatus = useCallback(

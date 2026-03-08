@@ -205,6 +205,7 @@ describe("POST /api/v1/orders/{orderId}/prepare-email", () => {
     const emlContent = "MIME-Version: 1.0\r\nX-Unsent: 1\r\n\r\nmock-eml";
     mockPrepareEmailForOrder.mockResolvedValue({
       success: true,
+      format: "eml",
       emlContent,
       orderNo: "Z/2026/001",
     });
@@ -278,6 +279,7 @@ describe("POST /api/v1/orders/{orderId}/prepare-email", () => {
     // Puste body — handler powinien użyć {} jako body
     mockPrepareEmailForOrder.mockResolvedValue({
       success: true,
+      format: "eml",
       emlContent: "mock-eml",
       orderNo: "Z/2026/001",
     });

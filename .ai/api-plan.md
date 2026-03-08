@@ -634,8 +634,14 @@ Wszystkie te endpointy używają standardowego formatu:
   - **Opis**: Sprawdza kompletność danych wymaganych do wysyłki zlecenia, generuje/odświeża PDF i zwraca dane potrzebne do otwarcia Outlooka. Ustawia status **wysłane** (gdy poprzedni status to robocze) lub **korekta wysłane** (gdy poprzedni status to korekta).
   - **Body żądania**:
     ```json
-    { "forceRegeneratePdf": false }
+    {
+      "forceRegeneratePdf": false,
+      "outputFormat": "eml | pdf-base64"
+    }
     ```
+    - `outputFormat` (opcjonalny, domyślnie `"eml"`): określa format odpowiedzi.
+      - `"eml"` — zwraca plik .eml (RFC 822) z PDF w załączniku MIME base64 (dotychczasowy flow, fallback).
+      - `"pdf-base64"` — zwraca JSON z PDF zakodowanym w base64 (do użycia przez frontend z Microsoft Graph API).
   - **Walidacja biznesowa**:
     - wymagany typ transportu, przewoźnik, nadawca, odbiorca,
     - minimalny opis ładunku + ilość,
@@ -646,7 +652,15 @@ Wszystkie te endpointy używają standardowego formatu:
     - Ustawienie `sent_by_user_id` na bieżącego użytkownika i `sent_at` na `now()` (nadpisywane przy każdej wysyłce, w tym ponownej).
     - Zmiana statusu: robocze → wysłane, korekta → korekta wysłane.
     - Aktualizacja `main_product_name` (jeśli jeszcze puste).
-  - **Sukces**: `200 OK` — zwraca plik `.eml` (Content-Type: `message/rfc822`, Content-Disposition: `attachment; filename="zlecenie-ZT2026-0001.eml"`). Plik .eml RFC 822 z PDF w załączniku MIME base64. Frontend pobiera blob.
+  - **Sukces (outputFormat = "eml")**: `200 OK` — zwraca plik `.eml` (Content-Type: `message/rfc822`, Content-Disposition: `attachment; filename="zlecenie-ZT2026-0001.eml"`). Plik .eml RFC 822 z PDF w załączniku MIME base64. Frontend pobiera blob.
+  - **Sukces (outputFormat = "pdf-base64")**: `200 OK` — zwraca JSON:
+    ```json
+    {
+      "pdfBase64": "JVBERi0xLj... (base64-encoded PDF)",
+      "pdfFileName": "zlecenie-ZT2026-0001.pdf"
+    }
+    ```
+    Frontend używa tych danych do utworzenia draftu wiadomości przez Microsoft Graph API (`POST /me/messages` z fileAttachment) i otwarcia Outlook Web z draftem.
   - **Błędy**: `401`, `403`, `404`, `422` (lista braków do wysyłki)
 
 ---
