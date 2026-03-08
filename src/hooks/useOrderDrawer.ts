@@ -8,6 +8,7 @@ import { toast } from "sonner";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { useDictionaries } from "@/contexts/DictionaryContext";
+import { ApiError } from "@/lib/api-client";
 import { STATUS_NAMES } from "@/lib/view-models";
 import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
 import type {
@@ -160,6 +161,8 @@ export interface UseOrderDrawerReturn {
   handleOrderViewCancel: () => void;
   doClose: () => Promise<void>;
   historyHandler: (() => void) | undefined;
+  emailValidationErrors: string[];
+  clearEmailValidationErrors: () => void;
 }
 
 // ---------------------------------------------------------------------------
@@ -194,6 +197,10 @@ export function useOrderDrawer({
   const [showPreviewUnsavedDialog, setShowPreviewUnsavedDialog] = useState(false);
   // Flaga: po save+reload otwórz podgląd gdy detail się zaktualizuje (zamiast setTimeout)
   const pendingPreviewRef = useRef(false);
+
+  // Stan dialogu walidacji email (422 — brakujące pola)
+  const [emailValidationErrors, setEmailValidationErrors] = useState<string[]>([]);
+  const clearEmailValidationErrors = useCallback(() => setEmailValidationErrors([]), []);
 
   const { companies, locations, products } = useDictionaries();
 
@@ -607,6 +614,15 @@ export function useOrderDrawer({
       toast.success("Plik .eml pobrany — otwórz go w programie pocztowym.");
       onOrderUpdated();
     } catch (err) {
+      // 422 z listą brakujących pól → pokaż dialog walidacji
+      if (
+        err instanceof ApiError &&
+        err.statusCode === 422 &&
+        Array.isArray(err.details?.missing)
+      ) {
+        setEmailValidationErrors(err.details.missing as string[]);
+        return;
+      }
       toast.error(err instanceof Error ? err.message : "Błąd przygotowania maila.");
     }
   }, [orderId, detail, api, onOrderUpdated]);
@@ -653,5 +669,7 @@ export function useOrderDrawer({
     handleOrderViewCancel,
     doClose,
     historyHandler,
+    emailValidationErrors,
+    clearEmailValidationErrors,
   };
 }

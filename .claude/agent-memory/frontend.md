@@ -1,5 +1,19 @@
 # Frontend Agent — Pamięć
 
+## Sesja 46 (2026-03-08) — ValidationErrorDialog (422 prepare-email)
+
+### Wykonane
+- `src/components/orders/ValidationErrorDialog.tsx` — nowy komponent AlertDialog wyświetlający listę brakujących pól z backendu (422 z `details.missing`)
+- `src/hooks/useOrderActions.ts` — dodano `emailValidationErrors` stan + obsługa 422 w `handleSendEmail` catch block
+- `src/hooks/useOrderDrawer.ts` — analogiczna zmiana w `handleSendEmailFromDrawer`
+- `src/components/orders/OrdersPage.tsx` — render `<ValidationErrorDialog>` z useOrderActions
+- `src/components/orders/drawer/OrderDrawer.tsx` — render `<ValidationErrorDialog>` z useOrderDrawer
+
+### Learningi
+- `api.postRaw()` (raw: true) parsuje błędy do `ApiError` z `details` (linie 136-139 api-client.ts) — wystarczy `err instanceof ApiError` w catch
+- `ApiError.details?.missing` zawiera string[] z kluczami pól; pola "items"/"stops" są już po polsku z backendu
+- `AlertDialogDescription asChild` + `<div>` wrapper rozwiązuje problem list wewnątrz `<p>` (hydration mismatch)
+
 ## Sesja 37 (2026-03-07) — setTimeout race condition fix
 
 ### Wykonane

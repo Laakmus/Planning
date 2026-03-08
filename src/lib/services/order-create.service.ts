@@ -94,16 +94,6 @@ export async function createOrder(
     carrierSnapshots = await buildSnapshotsForCarrier(supabase, params.carrierCompanyId);
   }
 
-  // 5. Snapshoty shipper / receiver
-  let shipperSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
-  if (params.shipperLocationId) {
-    shipperSnapshots = await buildSnapshotsForShipperReceiver(supabase, params.shipperLocationId);
-  }
-  let receiverSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
-  if (params.receiverLocationId) {
-    receiverSnapshots = await buildSnapshotsForShipperReceiver(supabase, params.receiverLocationId);
-  }
-
   // 6. Batch snapshoty dla stops (1 query zamiast N)
   const stopLocationIds = params.stops.map((s) => s.locationId).filter(Boolean) as string[];
   const itemProductIds = params.items.map((i) => i.productId).filter(Boolean) as string[];
@@ -127,6 +117,21 @@ export async function createOrder(
       country: snap?.country ?? null,
     };
   });
+
+  // 5. Auto-derive shipper/receiver z pierwszego LOADING i ostatniego UNLOADING stop
+  const firstLoadingStop = stopsWithSnapshots.find((s) => s.kind === "LOADING");
+  const lastUnloadingStop = [...stopsWithSnapshots].reverse().find((s) => s.kind === "UNLOADING");
+  const derivedShipperLocationId = firstLoadingStop?.locationId ?? null;
+  const derivedReceiverLocationId = lastUnloadingStop?.locationId ?? null;
+
+  let shipperSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
+  if (derivedShipperLocationId) {
+    shipperSnapshots = await buildSnapshotsForShipperReceiver(supabase, derivedShipperLocationId);
+  }
+  let receiverSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
+  if (derivedReceiverLocationId) {
+    receiverSnapshots = await buildSnapshotsForShipperReceiver(supabase, derivedReceiverLocationId);
+  }
 
   // 7. Snapshoty items z batch mapy
   const itemsWithSnapshots = params.items.map((item) => {
@@ -167,10 +172,10 @@ export async function createOrder(
     carrier_name_snapshot: carrierSnapshots.carrier_name_snapshot,
     carrier_address_snapshot: carrierSnapshots.carrier_address_snapshot,
     carrier_location_name_snapshot: carrierSnapshots.carrier_location_name_snapshot,
-    shipper_location_id: params.shipperLocationId ?? null,
+    shipper_location_id: derivedShipperLocationId,
     shipper_name_snapshot: shipperSnapshots.nameSnapshot,
     shipper_address_snapshot: shipperSnapshots.addressSnapshot,
-    receiver_location_id: params.receiverLocationId ?? null,
+    receiver_location_id: derivedReceiverLocationId,
     receiver_name_snapshot: receiverSnapshots.nameSnapshot,
     receiver_address_snapshot: receiverSnapshots.addressSnapshot,
     price_amount: params.priceAmount ?? null,

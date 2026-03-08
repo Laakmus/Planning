@@ -6,6 +6,7 @@
 import { useCallback, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ApiError } from "@/lib/api-client";
 import type { ApiClient } from "@/lib/api-client";
 import type { OrderStatusCode } from "@/lib/view-models";
 import type {
@@ -34,6 +35,8 @@ export interface UseOrderActionsReturn {
   handleSetCarrierColor: (orderId: string, color: string | null) => Promise<void>;
   handleSetEntryFixed: (orderId: string, value: boolean | null) => Promise<void>;
   handleDuplicate: (orderId: string) => Promise<void>;
+  emailValidationErrors: string[];
+  clearEmailValidationErrors: () => void;
 }
 
 export function useOrderActions({
@@ -47,6 +50,10 @@ export function useOrderActions({
 
   // Stan dialogu potwierdzenia anulowania
   const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+
+  // Stan dialogu walidacji email (422 — brakujące pola)
+  const [emailValidationErrors, setEmailValidationErrors] = useState<string[]>([]);
+  const clearEmailValidationErrors = useCallback(() => setEmailValidationErrors([]), []);
 
   const handleAddOrder = useCallback(async () => {
     if (isCreatingRef.current) return;
@@ -105,6 +112,15 @@ export function useOrderActions({
         toast.success("Plik .eml pobrany — otwórz go w programie pocztowym.");
         refetch();
       } catch (err) {
+        // 422 z listą brakujących pól → pokaż dialog walidacji
+        if (
+          err instanceof ApiError &&
+          err.statusCode === 422 &&
+          Array.isArray(err.details?.missing)
+        ) {
+          setEmailValidationErrors(err.details.missing as string[]);
+          return;
+        }
         toast.error(err instanceof Error ? err.message : "Błąd wysyłki maila.");
       }
     },
@@ -221,5 +237,7 @@ export function useOrderActions({
     handleSetCarrierColor,
     handleSetEntryFixed,
     handleDuplicate,
+    emailValidationErrors,
+    clearEmailValidationErrors,
   };
 }

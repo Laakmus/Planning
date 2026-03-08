@@ -907,4 +907,63 @@ INSERT INTO public.order_status_history (order_id, old_status_code, new_status_c
   ('d0000000-0000-0000-0000-000000000025', 'wysłane',  'korekta',     'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-04T10:00:00Z'),
   ('d0000000-0000-0000-0000-000000000025', 'korekta',  'reklamacja',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-05T11:00:00Z');
 
+-- ====================================================================
+-- Backfill: shipper/receiver z pierwszego LOADING i ostatniego UNLOADING stop
+-- (migracja 20260308000000 robi to samo, ale uruchamia się PRZED seedem)
+-- ====================================================================
+
+-- Shipper = pierwszy LOADING stop
+WITH first_loading AS (
+  SELECT DISTINCT ON (os.order_id)
+    os.order_id,
+    os.location_id,
+    c.name AS company_name,
+    concat_ws(', ',
+      nullif(l.street_and_number, ''),
+      nullif(concat_ws(' ', l.postal_code, l.city), ' '),
+      nullif(l.country, '')
+    ) AS address
+  FROM public.order_stops os
+  LEFT JOIN public.locations l ON l.id = os.location_id
+  LEFT JOIN public.companies c ON c.id = l.company_id
+  WHERE os.kind = 'LOADING'
+    AND os.location_id IS NOT NULL
+  ORDER BY os.order_id, os.sequence_no ASC
+)
+UPDATE public.transport_orders t
+SET
+  shipper_location_id = fl.location_id,
+  shipper_name_snapshot = fl.company_name,
+  shipper_address_snapshot = fl.address
+FROM first_loading fl
+WHERE fl.order_id = t.id
+  AND t.shipper_location_id IS NULL;
+
+-- Receiver = ostatni UNLOADING stop
+WITH last_unloading AS (
+  SELECT DISTINCT ON (os.order_id)
+    os.order_id,
+    os.location_id,
+    c.name AS company_name,
+    concat_ws(', ',
+      nullif(l.street_and_number, ''),
+      nullif(concat_ws(' ', l.postal_code, l.city), ' '),
+      nullif(l.country, '')
+    ) AS address
+  FROM public.order_stops os
+  LEFT JOIN public.locations l ON l.id = os.location_id
+  LEFT JOIN public.companies c ON c.id = l.company_id
+  WHERE os.kind = 'UNLOADING'
+    AND os.location_id IS NOT NULL
+  ORDER BY os.order_id, os.sequence_no DESC
+)
+UPDATE public.transport_orders t
+SET
+  receiver_location_id = lu.location_id,
+  receiver_name_snapshot = lu.company_name,
+  receiver_address_snapshot = lu.address
+FROM last_unloading lu
+WHERE lu.order_id = t.id
+  AND t.receiver_location_id IS NULL;
+
 COMMIT;

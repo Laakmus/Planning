@@ -19,6 +19,7 @@ import { formatDateTimeFromTimestamp } from "@/lib/format-utils";
 import { StatusBadge } from "../StatusBadge";
 import OrderView from "../order-view/OrderView";
 
+import { ValidationErrorDialog } from "../ValidationErrorDialog";
 import { DrawerFooter } from "./DrawerFooter";
 import { OrderForm } from "./OrderForm";
 import { PreviewUnsavedDialog } from "./PreviewUnsavedDialog";
@@ -68,6 +69,8 @@ export function OrderDrawer({
     handleOrderViewCancel,
     doClose,
     historyHandler,
+    emailValidationErrors,
+    clearEmailValidationErrors,
   } = useOrderDrawer({
     orderId,
     isOpen,
@@ -213,6 +216,13 @@ export function OrderDrawer({
         onSave={handlePreviewSaveAndGo}
         onDiscard={handlePreviewDiscardAndGo}
         onCancel={() => setShowPreviewUnsavedDialog(false)}
+      />
+
+      {/* Dialog walidacji email — brakujące pola (422) */}
+      <ValidationErrorDialog
+        open={emailValidationErrors.length > 0}
+        onClose={clearEmailValidationErrors}
+        missingFields={emailValidationErrors}
       />
     </>
   );

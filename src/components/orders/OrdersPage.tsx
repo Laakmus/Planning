@@ -30,6 +30,7 @@ import type {
 
 import { OrderDrawer } from "./drawer/OrderDrawer";
 import { EmptyState } from "./EmptyState";
+import { ValidationErrorDialog } from "./ValidationErrorDialog";
 import { FilterBar } from "./FilterBar";
 import { HistoryPanel } from "./history/HistoryPanel";
 import { OrderTable } from "./OrderTable";
@@ -85,6 +86,8 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     handleSetCarrierColor,
     handleSetEntryFixed,
     handleDuplicate,
+    emailValidationErrors,
+    clearEmailValidationErrors,
   } = useOrderActions({ api, refetch, tableScrollRef });
 
   useEffect(() => {
@@ -280,6 +283,13 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog walidacji email — brakujące pola (422) */}
+      <ValidationErrorDialog
+        open={emailValidationErrors.length > 0}
+        onClose={clearEmailValidationErrors}
+        missingFields={emailValidationErrors}
+      />
     </div>
   );
 }

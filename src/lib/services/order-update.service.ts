@@ -168,14 +168,19 @@ export async function updateOrder(
     carrierSnapshots = await buildSnapshotsForCarrier(supabase, params.carrierCompanyId);
   }
 
-  // Snapshoty shipper / receiver
+  // Auto-derive shipper/receiver z pierwszego LOADING i ostatniego UNLOADING stop
+  const firstLoadingStop = stopsWithSnapshots.find((s) => s.kind === "LOADING");
+  const lastUnloadingStop = [...stopsWithSnapshots].reverse().find((s) => s.kind === "UNLOADING");
+  const derivedShipperLocationId = firstLoadingStop?.locationId ?? null;
+  const derivedReceiverLocationId = lastUnloadingStop?.locationId ?? null;
+
   let shipperSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
-  if (params.shipperLocationId) {
-    shipperSnapshots = await buildSnapshotsForShipperReceiver(supabase, params.shipperLocationId);
+  if (derivedShipperLocationId) {
+    shipperSnapshots = await buildSnapshotsForShipperReceiver(supabase, derivedShipperLocationId);
   }
   let receiverSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
-  if (params.receiverLocationId) {
-    receiverSnapshots = await buildSnapshotsForShipperReceiver(supabase, params.receiverLocationId);
+  if (derivedReceiverLocationId) {
+    receiverSnapshots = await buildSnapshotsForShipperReceiver(supabase, derivedReceiverLocationId);
   }
 
   // Batch snapshoty dla items (1 query zamiast N)
@@ -226,10 +231,10 @@ export async function updateOrder(
     carrier_name_snapshot: carrierSnapshots.carrier_name_snapshot,
     carrier_address_snapshot: carrierSnapshots.carrier_address_snapshot,
     carrier_location_name_snapshot: carrierSnapshots.carrier_location_name_snapshot,
-    shipper_location_id: params.shipperLocationId ?? null,
+    shipper_location_id: derivedShipperLocationId,
     shipper_name_snapshot: shipperSnapshots.nameSnapshot,
     shipper_address_snapshot: shipperSnapshots.addressSnapshot,
-    receiver_location_id: params.receiverLocationId ?? null,
+    receiver_location_id: derivedReceiverLocationId,
     receiver_name_snapshot: receiverSnapshots.nameSnapshot,
     receiver_address_snapshot: receiverSnapshots.addressSnapshot,
     price_amount: params.priceAmount ?? null,

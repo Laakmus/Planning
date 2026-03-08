@@ -1,5 +1,22 @@
 # Database Agent — Pamięć
 
+## Sesja 46 (2026-03-08) — Backfill shipper/receiver z stops
+
+### Wykonane
+- Migracja `20260308000000_backfill_shipper_receiver_from_stops.sql`:
+  - Uzupełnia `shipper_location_id` z pierwszego LOADING stop (`location_id`, `DISTINCT ON`, najniższy `sequence_no`)
+  - Uzupełnia `receiver_location_id` z ostatniego UNLOADING stop (`location_id`, `DISTINCT ON`, najwyższy `sequence_no`)
+  - Snapshoty (`name_snapshot`, `address_snapshot`) pobierane z `locations JOIN companies`
+  - Idempotentna: aktualizuje TYLKO rekordy z `IS NULL`
+- Dodano ten sam SQL na koniec `supabase/seed.sql` (przed `COMMIT`)
+
+### Learningi
+- **Migracje uruchamiają się PRZED seedem** — migracja backfillująca dane testowe nie zadziała na pustej bazie. Trzeba duplikować SQL w `seed.sql` na koniec
+- Migracja jest nadal potrzebna dla produkcji (gdzie dane już istnieją w momencie migracji)
+- `concat_ws(', ', nullif(..., ''))` — bezpieczny format adresu (pomija puste segmenty)
+- `DISTINCT ON (os.order_id) ... ORDER BY os.order_id, os.sequence_no ASC/DESC` — postgres idiom na "pierwszy/ostatni rekord w grupie"
+
+
 ## Sesja 24 (2026-03-03) — RPC role guard
 
 ### Wykonane
