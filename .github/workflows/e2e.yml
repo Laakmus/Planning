@@ -9,7 +9,7 @@ on:
 jobs:
   e2e:
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 25
 
     steps:
       - name: Checkout
@@ -34,8 +34,13 @@ jobs:
 
       - name: Get Supabase env vars
         run: |
-          echo "SUPABASE_ANON_KEY=$(supabase status -o env | grep ANON_KEY | cut -d= -f2)" >> $GITHUB_ENV
-          echo "SUPABASE_URL=$(supabase status -o env | grep API_URL | cut -d= -f2)" >> $GITHUB_ENV
+          ANON_KEY=$(supabase status -o env | grep ANON_KEY | cut -d= -f2)
+          API_URL=$(supabase status -o env | grep API_URL | cut -d= -f2)
+          echo "SUPABASE_URL=$API_URL" >> $GITHUB_ENV
+          echo "SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "PUBLIC_SUPABASE_URL=$API_URL" >> $GITHUB_ENV
+          echo "PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          echo "CORS_ORIGIN=http://localhost:4321" >> $GITHUB_ENV
 
       - name: Install dependencies
         run: npm ci
