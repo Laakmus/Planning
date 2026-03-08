@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-08 (sesja 41 — analiza + fixy LOW)
+> Ostatnia aktualizacja: 2026-03-08 (audyt 42 — 6 agentów + debata, 3 HIGH confirmed)
 
 ---
 
@@ -27,10 +27,30 @@
 - **Effort:** M
 - **Decyzje użytkownika:** Pusty temat (na razie, w przyszłości do zmiany). Lokalizacja przycisku bez zmian (Drawer + Context menu). Toast z listą braków przy walidacji.
 
+### H-16. Sub-query filters w listOrders — ciche obcięcie wyników powyżej 1000
+- **Kategoria:** bug
+- **Pliki:** `src/lib/services/order-list.service.ts:150-244`
+- **Opis:** Filtry sub-query (productId, loadingLocationId, loadingCompanyId itp.) pobierają WSZYSTKIE pasujące order_id z order_items/order_stops bez limitu. Supabase/PostgREST domyślnie limituje odpowiedź do 1000 wierszy (PGRST_MAX_ROWS). Jeśli więcej niż 1000 zleceń pasuje do filtra, część wyników zostanie cicho pominięta (false negatives). Użytkownik nie zobaczy wszystkich zleceń.
+- **Sugerowany fix:** Zastąpić client-side intersection Set na RPC (stored procedure) z JOINami i EXISTS subquery w jednym SQL zapytaniu. Alternatywa: dodać `.limit(10000)` z error handling gdy limit przekroczony.
+- **Effort:** L
+
+### H-17. duplicateOrder kopiuje notificationDetails wbrew PRD
+- **Kategoria:** bug (docs compliance)
+- **Pliki:** `src/lib/services/order-misc.service.ts:85`, `.ai/prd.md` (§3.1.5a)
+- **Opis:** PRD §3.1.5a explicite mówi: pole "Dane do awizacji" (notificationDetails) jest "**Nie kopiowane** przy duplikowaniu zlecenia". Jednak kod kopiuje wartość: `notification_details: detail.order.notificationDetails ?? null`. Powinno być `null`.
+- **Sugerowany fix:** Zmienić linię 85 na `notification_details: null`.
+- **Effort:** S
+
+### H-18. Brak testów API route dla endpointu PDF
+- **Kategoria:** test
+- **Pliki:** `src/pages/api/v1/orders/[orderId]/pdf.ts` (brak pliku testowego)
+- **Opis:** Endpoint POST /api/v1/orders/{orderId}/pdf jest w pełni zaimplementowany (auth, UUID validation, data fetch, NIP/kraje resolve, PDF generation, binary response). Nie ma żadnego testu API route. pdf-generator.service ma 25 testów unit, ale warstwa API route (auth, error handling, mapowanie detail→pdf input, Content-Disposition header) jest nieobjęta. Regresje w integracji nie zostaną wykryte.
+- **Sugerowany fix:** Dodać `src/pages/api/v1/orders/[orderId]/__tests__/pdf.test.ts` z testami: 401 (brak auth), 400 (invalid UUID), 404 (order not found), 200 (success z Content-Type application/pdf), 500 (error handling). Mock getOrderDetail + generateOrderPdf.
+- **Effort:** M
+
 ---
 
 ## Do zrobienia — MEDIUM
-
 
 ### M-20. database.types.ts nieaktualny — brakuje kolumn
 - **Kategoria:** architecture
@@ -38,48 +58,6 @@
 - **Opis:** Brakuje: `notification_details`, `confidentiality_clause` (transport_orders), `location_id` (user_profiles). Zawiera usuniętą FK `vehicle_variant_code_fkey`. Root cause `as any` castów w auth.service i warehouse.service.
 - **Sugerowany fix:** Uruchomić `npx supabase gen types typescript --local > src/db/database.types.ts`. Po regeneracji usunąć zbędne `as any` casts.
 - **Effort:** S
-
-### L-03. Aktualizacja PRD i docs — 13 rozbieżności
-- **Kategoria:** docs
-- **Pliki:** `.ai/prd.md`, `.ai/api-plan.md`, `.ai/ui-plan.md`, `.ai/db-plan.md`
-- **Opis:** Nieaktualne fragmenty dokumentacji: (1) PRD: carrier bez kontaktu (świadoma decyzja), ikona email w wierszu, historia zmian w stopce, kolory per zakładka, sposoby załadunku, layout CarrierSection 2→3 wiersze, brak kolumny Fix, format daty wysłania, bg-emerald wartość. (2) api-plan: duplicate "(etap 2)". (3) ui-plan: "dwa stany" → trzy trasy, AppHeader dead code opis. (4) db-plan: vehicle_type_text varchar(200) vs 100, order_seq_no NOT NULL vs nullable.
-- **Sugerowany fix:** Jednorazowa aktualizacja 4 plików docs.
-- **Effort:** M
-
-### L-04. A11y improvements — aria-label, scope, role
-- **Kategoria:** a11y
-- **Pliki:** `FilterBar.tsx`, `ListSettings.tsx`, `OrderDrawer.tsx`, `RoutePointCard.tsx`, `OrderTable.tsx`
-- **Opis:** (1) Przełącznik Trasa/Kolumny bez role="group" i aria-pressed. (2) Przycisk X drawera bez aria-label. (3) Przyciski "Usuń punkt" bez aria-label. (4) `<th>` bez scope="col".
-- **Sugerowany fix:** Dodać brakujące atrybuty ARIA i scope.
-- **Effort:** S
-
-### L-05. Frontend performance — React.memo, useCallback
-- **Kategoria:** performance
-- **Pliki:** `src/components/orders/OrderRow.tsx`, `src/components/orders/OrdersPage.tsx`
-- **Opis:** OrderRow bez React.memo (re-render 200 wierszy). Handlery filtrów bez useCallback (nowe referencje).
-- **Sugerowany fix:** React.memo na OrderRow, useCallback na handlery w OrdersPage. Profilować przed wdrożeniem.
-- **Effort:** S
-
-### L-06. FilterBar debounce cleanup przy unmount
-- **Kategoria:** bug
-- **Pliki:** `src/components/orders/FilterBar.tsx:57-58`
-- **Opis:** searchDebounceRef i weekDebounceRef nie czyszczone w useEffect cleanup. Timeout może się wykonać po unmount.
-- **Sugerowany fix:** Dodać useEffect cleanup: `clearTimeout(searchDebounceRef.current)`.
-- **Effort:** S
-
-### L-07. CargoSection key={idx} → stabilny key
-- **Kategoria:** bug
-- **Pliki:** `src/components/orders/drawer/CargoSection.tsx:92-93`
-- **Opis:** Pozycje towarowe mają `key={idx}`. Usunięcie ze środka listy może pomylić React state.
-- **Sugerowany fix:** Użyć item.id lub generować tymczasowy UUID przy addItem.
-- **Effort:** S
-
-### L-08. Frontend drobne UX
-- **Kategoria:** ux
-- **Pliki:** `RoutePointCard.tsx`, `OrderDrawer.tsx`, `useWarehouseWeek.ts`, `FinanceSection.tsx`
-- **Opis:** (1) Firma w RoutePointCard wyszukiwana po nazwie zamiast UUID. (2) onInteractOutside preventDefault — brak animacji zamknięcia gdy !isDirty. (3) Non-atomic week/year state (2 setState, React batching łagodzi). (4) "Forma płatności" bez opcji pustej.
-- **Sugerowany fix:** Indywidualne fixy per punkt.
-- **Effort:** M
 
 ---
 
@@ -152,9 +130,9 @@
 - Wymaga migracji SQL: `AND status_code NOT IN ('anulowane','zrealizowane')` w RPC.
 - Ryzyko niskie — wymaga precyzyjnego timingu dwóch użytkowników. Aplikacja wewnętrzna, kilkudziesięciu użytkowników.
 
-### D-03. PDF endpoint — stub 501 po stronie serwera
-- Wymaga generatora PDF (np. Puppeteer, jsPDF, Reportlab).
-- W przyszłości będzie powiązany z widokiem z order.md.
+### D-03. PDF endpoint — ZAIMPLEMENTOWANY (sesja 39-40)
+- PDF endpoint w pełni działa (pdf-generator.service.ts). Stub 501 zastąpiony implementacją.
+- Brakuje test API route (tracked jako H-18).
 
 ### D-05. hooks/useOrderDetail.ts — logika wbudowana w OrderDrawer
 - Czysto refaktoringowa zmiana (~290 linii logiki → osobny hook). Nie zmienia funkcjonalności.
@@ -191,6 +169,13 @@
 ---
 
 ## Zrobione
+
+### Audyt 42 — pełny audyt 6 agentów + debata (2026-03-08)
+- 6 agentów: Security, Backend, Frontend, Docs, Tests, DB&Types
+- 11 findings surowych → debata reviewer → 3 HIGH confirmed, 3 MEDIUM (pominięte per user), 1 LOW (pominięty), 4 deferred (duplikaty D-14, D-15, D-25, D-06)
+- Nowe HIGH: H-16 (sub-query filter limit), H-17 (notificationDetails kopiowane), H-18 (brak testu PDF route)
+- Zaktualizowano D-03 (PDF już zaimplementowany)
+- Usunięto z "Do zrobienia" items naprawione w sesji 41 (L-04, L-05, L-06, L-07, L-08) — przeniesione do sekcji Zrobione sesji 41
 
 ### Sesja 41 — Analiza + fixy LOW (agent teams)
 - [x] L-04: A11y — `scope="col"` na 13 `<th>`, `aria-label` na X drawera i usuwaniu stopu, `role="group"` + `aria-pressed` na przełączniku widoku

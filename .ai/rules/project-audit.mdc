@@ -1,0 +1,489 @@
+## PROJECT_AUDIT
+
+### Pełny audyt projektu z agent teams + debatą
+
+Rule do powtarzalnego, idempotentnego audytu całego projektu Planning App.
+Uruchamiany przez `/project:audit`. Orkiestruje 5-6 agentów analizujących różne domeny, następnie reviewer weryfikuje findings w fazie debaty. Wyniki trafiają do `.ai/to_do/to_do.md`.
+
+---
+
+## Faza 1: Rozpoznanie (orkiestrator)
+
+Przed uruchomieniem agentów, orkiestrator MUSI:
+
+1. **Przeczytać `.ai/to_do/to_do.md`** — zanotować:
+   - Istniejące otwarte issues (sekcje "Do zrobienia — HIGH/MEDIUM/LOW")
+   - Sekcję "Odroczone" (NIE będzie nadpisywana)
+   - Sekcję "Zrobione" (NIE będzie nadpisywana)
+
+2. **Przeczytać źródła prawdy**:
+   - `.ai/prd.md` — Product Requirements Document
+   - `.ai/api-plan.md` — specyfikacja API
+   - `.ai/ui-plan.md` — specyfikacja UI
+   - `.ai/db-plan.md` — specyfikacja bazy danych
+
+3. **Zanotować kontekst**: data audytu, branch, liczba istniejących issues
+
+---
+
+## Faza 2: Analiza równoległa (6 agentów)
+
+Uruchom 6 agentów RÓWNOLEGLE za pomocą `Agent tool` (subagent). Każdy agent otrzymuje prompt ze swoją domeną i formatem raportowania.
+
+### Agent 1: Security Auditor
+
+**Prompt dla agenta:**
+```
+Jesteś Security Auditorem projektu Planning App (Astro 5 + React 19 + TypeScript + Supabase + PostgreSQL).
+
+TWOJE ZADANIE: Przeprowadź audyt bezpieczeństwa całego backendu i middleware.
+
+PLIKI DO ANALIZY:
+- src/pages/api/**/*.ts (wszystkie endpointy API)
+- src/middleware.ts
+- src/lib/services/**/*.ts (logika biznesowa)
+- src/lib/validators/**/*.ts (walidacja danych)
+- src/lib/api-helpers.ts (helpery API)
+
+CO SZUKASZ (OWASP Top 10 + więcej):
+- Injection (SQL, NoSQL, command injection)
+- Broken authentication / authorization bypass
+- Sensitive data exposure (logi, odpowiedzi, env)
+- IDOR (Insecure Direct Object References)
+- Security misconfiguration
+- XSS (jeśli backend renderuje HTML)
+- CSRF / CORS issues
+- Rate limiting gaps
+- Input validation gaps (brakujący Zod, .max(), .min())
+- Unsafe type casts ukrywające problemy bezpieczeństwa
+
+PRIORYTET SEVERITY:
+- HIGH: Eksploitowalne bez uwierzytelnienia lub prowadzące do data breach
+- MEDIUM: Wymaga uwierzytelnienia lub specyficznych warunków
+- LOW: Defense-in-depth, best practices
+
+FORMAT KAŻDEGO FINDINGA (ŚCIŚLE PRZESTRZEGAJ):
+```
+FINDING:
+- id: SEC-XX
+- severity: HIGH|MEDIUM|LOW
+- category: security
+- file: ścieżka/do/pliku.ts
+- line: numer_linii (lub zakres np. 45-67)
+- description: Co jest nie tak i dlaczego to zagrożenie
+- suggestedFix: Jak naprawić (konkretne kroki)
+- effort: S|M|L
+```
+
+REGUŁY:
+- Czytaj KOD, nie zgaduj. Każdy finding musi mieć konkretny plik i linię.
+- NIE edytuj żadnych plików. Tylko raportuj.
+- Ignoruj issues z sekcji "Odroczone" w to_do.md (już zdecydowane).
+- Sprawdź `.claude/agent-memory/reviewer.md` na początku pracy.
+```
+
+### Agent 2: Backend Analyst
+
+**Prompt dla agenta:**
+```
+Jesteś Backend Analystem projektu Planning App (Astro 5 + React 19 + TypeScript + Supabase + PostgreSQL).
+
+TWOJE ZADANIE: Znajdź bugi logiczne, problemy wydajnościowe i edge cases w API i serwisach.
+
+PLIKI DO ANALIZY:
+- src/pages/api/**/*.ts (endpointy)
+- src/lib/services/**/*.ts (serwisy)
+- src/lib/validators/**/*.ts (walidatory Zod)
+- src/lib/api-helpers.ts, src/lib/api-client.ts
+
+CO SZUKASZ:
+- Bugi logiczne (zła kolejność operacji, brakujące warunki, off-by-one)
+- Race conditions (TOCTOU, concurrent updates bez locków)
+- Error handling (brakujące try/catch, połykanie błędów, niejasne error messages)
+- N+1 queries (pętle z zapytaniami do DB)
+- Edge cases (null/undefined nie obsłużone, puste tablice, granice)
+- Niespójność między walidatorem Zod a service layer
+- Brakujące transakcje DB (operacje wielokrokowe bez atomowości)
+- Memory leaks w serwisach
+
+FORMAT KAŻDEGO FINDINGA:
+```
+FINDING:
+- id: BUG-XX
+- severity: HIGH|MEDIUM|LOW
+- category: bug|performance|architecture
+- file: ścieżka/do/pliku.ts
+- line: numer_linii
+- description: Co jest nie tak
+- suggestedFix: Jak naprawić
+- effort: S|M|L
+```
+
+REGUŁY:
+- Czytaj KOD, nie zgaduj. Konkretny plik i linia.
+- NIE edytuj plików. Tylko raportuj.
+- Ignoruj issues z "Odroczone" w to_do.md.
+```
+
+### Agent 3: Frontend Analyst
+
+**Prompt dla agenta:**
+```
+Jesteś Frontend Analystem projektu Planning App (React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui).
+
+TWOJE ZADANIE: Znajdź problemy w komponentach React, hookach, kontekstach i UX.
+
+PLIKI DO ANALIZY:
+- src/components/**/*.tsx (wszystkie komponenty)
+- src/hooks/**/*.ts (custom hooks)
+- src/contexts/**/*.tsx (konteksty React)
+- src/lib/view-models.ts (ViewModele)
+
+CO SZUKASZ:
+- Memory leaks (brakujący cleanup w useEffect, stale closures)
+- Niepotrzebne re-rendery (brakujące React.memo, useCallback, useMemo)
+- Accessibility (brakujące aria-*, role, keyboard navigation)
+- UX bugi (broken flows, missing loading states, error states)
+- State management issues (prop drilling, stale state, race conditions w hookach)
+- Dark mode issues (brakujące dark: klasy)
+- Responsywność (brakujące breakpointy, overflow)
+- Niespójność z ui-plan.md (przeczytaj `.ai/ui-plan.md` na początku!)
+
+FORMAT KAŻDEGO FINDINGA:
+```
+FINDING:
+- id: UI-XX
+- severity: HIGH|MEDIUM|LOW
+- category: bug|a11y|performance|ux
+- file: ścieżka/do/pliku.tsx
+- line: numer_linii
+- description: Co jest nie tak
+- suggestedFix: Jak naprawić
+- effort: S|M|L
+```
+
+REGUŁY:
+- Czytaj KOD, nie zgaduj.
+- NIE edytuj plików.
+- Sprawdź `.ai/ui-plan.md` jako źródło prawdy dla UI.
+```
+
+### Agent 4: Docs Compliance
+
+**Prompt dla agenta:**
+```
+Jesteś Docs Compliance Auditorem projektu Planning App.
+
+TWOJE ZADANIE: Znajdź rozbieżności między dokumentacją (.ai/) a kodem źródłowym.
+
+PLIKI DO ANALIZY:
+- `.ai/prd.md` vs cały src/ — czy wymagania PRD są zaimplementowane?
+- `.ai/api-plan.md` vs src/pages/api/ — czy endpointy matchują specyfikację?
+- `.ai/ui-plan.md` vs src/components/ — czy UI matchuje specyfikację?
+- `.ai/db-plan.md` vs supabase/migrations/ — czy schema matchuje?
+
+CO SZUKASZ:
+- Wymagania PRD niezaimplementowane w kodzie
+- Funkcjonalności w kodzie nieopisane w PRD (nadmiarowe)
+- Endpointy API różniące się od api-plan.md (metoda, ścieżka, body, response)
+- Komponenty UI różniące się od ui-plan.md
+- Kolumny/tabele DB różniące się od db-plan.md
+- Rozbieżności w nazwach pól, typach, wartościach domyślnych
+
+PRIORYTET:
+- HIGH: Brakująca kluczowa funkcjonalność z PRD, lub kod robi coś sprzecznego z PRD
+- MEDIUM: Drobne rozbieżności w nazewnictwie, typach, domyślnych wartościach
+- LOW: Docs nieaktualne ale kod poprawny (trzeba zaktualizować docs)
+
+FORMAT KAŻDEGO FINDINGA:
+```
+FINDING:
+- id: DOC-XX
+- severity: HIGH|MEDIUM|LOW
+- category: docs
+- file: ścieżka/do/pliku (kod) + ścieżka/do/doc.md (dokumentacja)
+- line: numer_linii w kodzie (jeśli dotyczy)
+- description: Co jest rozbieżne — podaj OCZEKIWANE (z docs) vs AKTUALNE (z kodu)
+- suggestedFix: Czy naprawić kod czy docs? Co zmienić?
+- effort: S|M|L
+```
+
+REGUŁY:
+- Czytaj OBA: dokumentację I kod. Porównuj konkretne fragmenty.
+- NIE edytuj plików.
+- Pamiętaj: PRD jest źródłem prawdy dla wymagań biznesowych.
+```
+
+### Agent 5: Test Analyst
+
+**Prompt dla agenta:**
+```
+Jesteś Test Analystem projektu Planning App (Vitest + React Testing Library).
+
+TWOJE ZADANIE: Oceń jakość testów i znajdź luki w pokryciu.
+
+PLIKI DO ANALIZY:
+- src/**/__tests__/**/*.test.ts(x) (wszystkie testy)
+- src/test/**/*.ts (helpery testowe, mocki, fixtures)
+- vitest.config.ts (konfiguracja)
+
+CO SZUKASZ:
+- Brakujące testy dla krytycznych ścieżek (API endpoints, hooks, serwisy)
+- Słabe assertions (tylko sprawdzenie statusu, bez sprawdzenia body)
+- Brakujące edge cases (null, puste tablice, graniczne wartości)
+- Testy testujące implementację zamiast zachowania (mockują za dużo)
+- Flaky tests (zależne od kolejności, timing, globalnego stanu)
+- Brakujące error path tests (co gdy API zwraca 400/500?)
+- Nieaktualne mocki (mocki nie matchują prawdziwych typów/DTOs)
+- Pokrycie: które serwisy/endpointy/komponenty NIE mają testów?
+
+Uruchom `npx vitest run` żeby sprawdzić stan testów.
+
+FORMAT KAŻDEGO FINDINGA:
+```
+FINDING:
+- id: TST-XX
+- severity: HIGH|MEDIUM|LOW
+- category: test
+- file: ścieżka/do/pliku (testowany plik LUB brakujący test)
+- line: numer_linii (jeśli dotyczy)
+- description: Co jest nie tak lub czego brakuje
+- suggestedFix: Jaki test dodać / jak poprawić istniejący
+- effort: S|M|L
+```
+
+REGUŁY:
+- Czytaj testy I testowany kod.
+- NIE edytuj plików.
+- Uruchom testy żeby potwierdzić stan.
+```
+
+### Agent 6: DB & Types Analyst
+
+**Prompt dla agenta:**
+```
+Jesteś DB & Types Analystem projektu Planning App (PostgreSQL 15+ + Supabase + TypeScript strict).
+
+TWOJE ZADANIE: Sprawdź schema DB, typy TypeScript i ich spójność.
+
+PLIKI DO ANALIZY:
+- supabase/migrations/**/*.sql (migracje)
+- src/types.ts (DTOs, interfejsy)
+- src/lib/view-models.ts (ViewModele)
+- src/lib/validators/**/*.ts (walidatory Zod)
+- src/db/**/*.ts (jeśli istnieje)
+- `.ai/db-plan.md` (specyfikacja DB)
+
+CO SZUKASZ:
+- Schema drift: migracje vs db-plan.md (brakujące kolumny, zmienione typy)
+- Missing indexes: kolumny używane w WHERE/ORDER BY bez indeksu
+- Type safety gaps: `as any`, `as unknown`, brakujące nullable
+- Validator gaps: Zod schema nie pokrywa wszystkich pól DTO
+- Inconsistent nullability: DB NULL vs TypeScript optional vs Zod .nullable()
+- Unused columns: kolumny w DB nieużywane w kodzie
+- Missing constraints: brakujące FK, CHECK, UNIQUE
+- RLS gaps: tabele bez Row Level Security (jeśli dotyczy)
+
+FORMAT KAŻDEGO FINDINGA:
+```
+FINDING:
+- id: DB-XX
+- severity: HIGH|MEDIUM|LOW
+- category: architecture|bug|performance
+- file: ścieżka/do/pliku
+- line: numer_linii
+- description: Co jest nie tak
+- suggestedFix: Jak naprawić
+- effort: S|M|L
+```
+
+REGUŁY:
+- Czytaj migracje + typy + walidatory. Porównuj trójkę.
+- NIE edytuj plików.
+```
+
+### Uruchomienie agentów
+
+Orkiestrator uruchamia WSZYSTKICH 6 agentów równolegle za pomocą `Agent tool`:
+- Każdy agent = osobne wywołanie `Agent tool` z `subagent_type: "general-purpose"`
+- Prompty jak powyżej (wklej pełny prompt dla danego agenta)
+- Agenci pracują read-only (nie edytują plików)
+
+---
+
+## Faza 3: Debata (reviewer)
+
+Po zebraniu wyników WSZYSTKICH 6 agentów:
+
+1. **Orkiestrator konsoliduje** — zbiera wszystkie findings w jedną listę
+2. **Uruchamia agenta Reviewer/Debater** z promptem:
+
+```
+Jesteś Reviewer/Debater w audycie projektu Planning App.
+
+TWOJE ZADANIE: Zweryfikuj każdy finding z audytu. Wyeliminuj false positives i duplikaty.
+
+LISTA FINDINGS DO WERYFIKACJI:
+[tu orkiestrator wkleja WSZYSTKIE findings ze wszystkich 6 agentów]
+
+KONTEKST:
+- Sekcja "Odroczone" w to_do.md (issues już zdecydowane — WYKLUCZ je):
+[tu orkiestrator wkleja sekcję Odroczone]
+
+DLA KAŻDEGO FINDINGA:
+1. Przeczytaj wskazany plik i linię w kodzie
+2. Oceń czy finding jest prawidłowy
+3. Oznacz:
+   - CONFIRMED — finding poprawny, zachowaj
+   - FALSE_POSITIVE — kod jest OK, finding nieprawdziwy (podaj uzasadnienie)
+   - DUPLICATE — ten sam problem zgłoszony przez innego agenta (podaj ID duplikatu)
+   - ALREADY_FIXED — problem już naprawiony (podaj dowód)
+   - DEFERRED — problem pokrywa się z istniejącym "Odroczone" w to_do.md
+4. Dla CONFIRMED: możesz podwyższyć/obniżyć severity z uzasadnieniem
+
+FORMAT ODPOWIEDZI:
+```
+VERDICT: [ID findinga]
+- status: CONFIRMED|FALSE_POSITIVE|DUPLICATE|ALREADY_FIXED|DEFERRED
+- originalSeverity: HIGH|MEDIUM|LOW
+- adjustedSeverity: HIGH|MEDIUM|LOW (jeśli zmieniona)
+- reason: Uzasadnienie decyzji (1-2 zdania)
+- duplicateOf: [ID] (tylko dla DUPLICATE)
+```
+
+Po wszystkich verdictach, podaj PODSUMOWANIE:
+- Ile CONFIRMED (H/M/L)
+- Ile FALSE_POSITIVE
+- Ile DUPLICATE
+- Ile ALREADY_FIXED
+- Ile DEFERRED
+
+REGUŁY:
+- Czytaj KOD przy każdej weryfikacji. Nie ufaj ślepo findingom.
+- Bądź surowy ale sprawiedliwy. Nie odrzucaj prawdziwych problemów.
+- Jeśli finding jest na granicy — CONFIRMED z obniżonym severity.
+```
+
+---
+
+## Faza 4: Zapis (orkiestrator)
+
+Po zakończeniu debaty, orkiestrator:
+
+### 4.1 Przygotowanie
+
+1. Weź TYLKO findings oznaczone jako CONFIRMED
+2. Użyj adjustedSeverity (nie originalSeverity)
+3. Pogrupuj: HIGH, MEDIUM, LOW
+4. Ponumeruj od 1: H-01, H-02, ..., M-01, M-02, ..., L-01, L-02, ...
+5. Zmapuj kategorie: security, bug, architecture, docs, performance, test, a11y, ux
+
+### 4.2 Format wpisu
+
+Każdy wpis w to_do.md:
+
+```markdown
+### H-XX. Tytuł problemu
+- **Kategoria:** security | bug | architecture | docs | performance | test | a11y | ux
+- **Pliki:** `plik1.ts:123`, `plik2.tsx:45`
+- **Opis:** Co jest nie tak i dlaczego to problem
+- **Sugerowany fix:** Jak naprawić
+- **Effort:** S | M | L
+```
+
+### 4.3 Zapis do to_do.md
+
+1. Przeczytaj aktualny `.ai/to_do/to_do.md`
+2. **ZACHOWAJ bez zmian**: sekcje "Odroczone" i "Zrobione"
+3. **NADPISZ**: sekcje "Do zrobienia — HIGH", "Do zrobienia — MEDIUM", "Do zrobienia — LOW"
+4. Zaktualizuj datę i opis sesji w nagłówku
+
+Struktura pliku po zapisie:
+```markdown
+# Lista rzeczy do zrobienia (TODO)
+
+> Ostatnia aktualizacja: [DATA] (audyt pełny — [X] findings: [H] HIGH, [M] MEDIUM, [L] LOW)
+
+---
+
+## Do zrobienia — HIGH
+
+### H-01. ...
+...
+
+---
+
+## Do zrobienia — MEDIUM
+
+### M-01. ...
+...
+
+---
+
+## Do zrobienia — LOW
+
+### L-01. ...
+...
+
+---
+
+## Odroczone (user decision: zostawić)
+[BEZ ZMIAN — przepisz istniejącą zawartość]
+
+---
+
+## Zrobione
+[BEZ ZMIAN — przepisz istniejącą zawartość]
+```
+
+### 4.4 Raport końcowy
+
+Po zapisie, orkiestrator prezentuje użytkownikowi:
+
+```
+## Raport audytu — [DATA]
+
+### Statystyki
+- Agentów: 6
+- Findings surowe: X (przed debatą)
+- Po debacie: Y confirmed, Z odrzuconych (false positive/duplicate/deferred)
+
+### Wyniki
+- HIGH: X issues
+- MEDIUM: Y issues
+- LOW: Z issues
+
+### Top 5 najważniejszych
+1. H-01: [tytuł]
+2. H-02: [tytuł]
+...
+
+### Zapisano do: `.ai/to_do/to_do.md`
+```
+
+---
+
+## Zasady idempotentności
+
+1. **Rerun nadpisuje**: Sekcje "Do zrobienia" są CAŁKOWICIE zastępowane nowymi findings
+2. **Numeracja od 1**: Nowe ID przy każdym audycie (H-01, M-01, L-01)
+3. **Odroczone nietykalne**: Sekcja "Odroczone" przepisywana bez zmian
+4. **Zrobione nietykalne**: Sekcja "Zrobione" przepisywana bez zmian
+5. **Debata efemeryczna**: Protokół debaty NIE jest zapisywany — tylko wynik w to_do.md
+
+## Priorytety wagi (severity)
+
+Najwyższy priorytet (łatwiej dostać HIGH):
+- **Security** — eksploitowalne luki
+- **Bugi** — błędy prowadzące do data loss lub crash
+- **Spójność z PRD** — brakujące kluczowe funkcjonalności
+
+Normalny priorytet:
+- **Architecture** — problemy strukturalne
+- **Performance** — N+1, re-renders
+- **Tests** — brakujące pokrycie
+
+Niższy priorytet:
+- **A11y** — accessibility
+- **UX** — drobne problemy interfejsu
+- **Docs** — nieaktualna dokumentacja (ale kod OK)
