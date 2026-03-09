@@ -1,6 +1,6 @@
 # Plan implementacji REST API — wszystkie endpointy
 
-**Dokumenty źródłowe:** `.ai/api-plan.md` (specyfikacja REST API), `.ai/db-plan.md` (schemat bazy danych), `src/types.ts` (typy DTO i Command), `src/db/database.types.ts` (typy Supabase).
+**Dokumenty źródłowe:** `.ai/api-plan.md` (specyfikacja REST API), `.ai/db-plan.md` (schemat bazy danych), `src/types/` (typy DTO i Command), `src/db/database.types.ts` (typy Supabase).
 
 ---
 
@@ -427,7 +427,7 @@ function isValidUUID(value: string): boolean
 1. Auth guard + requireWriteAccess.
 2. Waliduj body.
 3. Pobierz bieżący status zlecenia.
-4. Sprawdź dozwolone przejście wg `ALLOWED_MANUAL_STATUS_TRANSITIONS` z `src/types.ts`:
+4. Sprawdź dozwolone przejście wg `ALLOWED_MANUAL_STATUS_TRANSITIONS` z `src/types/`:
    - `zrealizowane` ← z: robocze, wysłane, korekta, korekta wysłane, reklamacja
    - `reklamacja` ← z: wysłane, korekta, korekta wysłane (+ wymagane `complaintReason`)
    - `anulowane` ← z: robocze, wysłane, korekta, korekta wysłane, reklamacja (nie z zrealizowane)
@@ -953,7 +953,7 @@ export const dictionarySyncSchema = z.object({
 
 ### 7.1 Format odpowiedzi błędu
 
-Zgodny z `ApiErrorResponse` z `src/types.ts`:
+Zgodny z `ApiErrorResponse` z `src/types/`:
 
 ```json
 {
@@ -1106,7 +1106,7 @@ api-helpers.ts ←── Etap 1
 
 ## 11. Mapowanie camelCase ↔ snake_case
 
-Supabase zwraca dane w `snake_case`. Typy DTO w `src/types.ts` używają `camelCase`. Warstwa serwisowa jest odpowiedzialna za transformację.
+Supabase zwraca dane w `snake_case`. Typy DTO w `src/types/` używają `camelCase`. Warstwa serwisowa jest odpowiedzialna za transformację.
 
 **Przykład mapowania `transport_orders` → `OrderListItemDto`:**
 

@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-08 (sesja 46 — Microsoft Graph API integration)
+> Ostatnia aktualizacja: 2026-03-08 (sesja 47-48 — maintainability refactoring)
 
 ---
 
@@ -64,10 +64,12 @@
 - (2) Standard Supabase SSR. (3) Wymaga nowego pola email. (4) Stack trace w logach serwera = feature. (5-8) Niski priorytet na intranecie.
 
 ### D-27. L-13 — Test pokrycie komponentów — wystarczające
-- 1045 unit + 25 E2E + 97 drawer-e2e. Dodawać testy przy bugach, nie proaktywnie.
+- 1045 unit + 25 E2E. Dodawać testy przy bugach, nie proaktywnie.
+- **Uwaga (sesja 47-48):** 97 tymczasowych drawer-e2e testów USUNIĘTE (3 pliki testowe + 1 helper = ~3249 linii dead code).
 
-### D-28. L-14.4 — Drawer-e2e wolne testy — akceptowalne
-- 97 testów w 5.24s (~54ms/test). Zostawić aż pojawi się decyzja o refactorze.
+### D-28. L-14.4 — Drawer-e2e wolne testy — DONE (sesja 47-48)
+- ~~97 testów w 5.24s (~54ms/test). Zostawić aż pojawi się decyzja o refactorze.~~
+- **Rozwiązane:** Tymczasowe testy drawer-e2e usunięte w ramach refactoringu maintainability.
 
 ### D-29. L-15.1/2 — DB constraints i indeksy — premature
 - (1) Zod waliduje na API, jedyny punkt wejścia. (2) pg_trgm GIN od setek tysięcy rekordów.
@@ -148,6 +150,15 @@
 ---
 
 ## Zrobione
+
+### Sesja 47-48 — Maintainability refactoring (~3285 linii dead code usunięte)
+- [x] Ekstrakcja `AppProviders` wrapper component — eliminacja duplikacji providerów
+- [x] Rozbicie monolitycznego `src/types.ts` (468 linii) na 4 moduły domenowe (`src/types/common.ts`, `dictionary.ts`, `order.ts`, `warehouse.ts`) z backward-compatible re-export hub
+- [x] Ekstrakcja współdzielonego `src/lib/send-email.ts` — deduplikacja logiki email z useOrderActions + useOrderDrawer
+- [x] Usunięcie dead code: AppHeader.tsx, 3 strony test-order, 4 pliki drawer-e2e testów (~3285 linii łącznie)
+- [x] Rozszerzenie CI pipeline: dodanie kroków lint, build, unit test przed E2E
+- [x] Naprawione niespójności dokumentacji w plikach .ai/
+- [x] D-28 rozwiązane (drawer-e2e testy usunięte)
 
 ### Sesja 46 — Microsoft Graph API integration (email wysyłka)
 - [x] Nowy flow wysyłki maila przez Microsoft Graph API (tworzenie draftu w Outlook Web z PDF w załączniku)

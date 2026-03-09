@@ -546,7 +546,7 @@ CREATE POLICY user_profiles_write_admin
 | `src/components/auth/LoginCard.tsx` | Przycisk SSO + collapsed email/password fallback |
 | `src/lib/services/auth.service.ts` | Sprawdzanie `is_active` w `getCurrentUser()` |
 | `src/middleware.ts` | Server-side guard /orders, domain check, admin rate limit |
-| `src/types.ts` | Nowe DTO: AdminUserDto, CreateUserCommand, AllowedEmailDto |
+| `src/types/` | Nowe DTO: AdminUserDto, CreateUserCommand, AllowedEmailDto |
 | `.env.example` | Nowe zmienne: AZURE_CLIENT_ID, AZURE_CLIENT_SECRET, AZURE_TENANT_ID |
 | `src/db/database.types.ts` | Regeneracja z nowymi tabelami |
 
@@ -835,7 +835,7 @@ Legenda: [E] = Edytuj, [X] = Usuń z allowlisty
 | 3.4 | SSO logout w AuthContext | Frontend | 30 min |
 | 3.5 | Strona `/admin/users` | Frontend | 30 min |
 | 3.6 | UserManagement, UserCreateDialog, UserEditDialog | Frontend | 3h |
-| 3.7 | Nawigacja: link do panelu admin w AppHeader (tylko ADMIN) | Frontend | 15 min |
+| 3.7 | Nawigacja: link do panelu admin w AppSidebar (tylko ADMIN) | Frontend | 15 min | ~~AppHeader.tsx usunięty — zastąpiony przez AppSidebar~~ |
 
 **Estymacja Fazy 3:** ~6h
 
@@ -927,7 +927,7 @@ Przed rozpoczęciem implementacji potrzebne są decyzje:
 | **D-02** | Supabase hosting (produkcja) | Self-hosted vs Cloud (Free/Pro) | Wpływa na konfigurację SSO redirect URIs |
 | **D-03** | Token w localStorage vs cookies | A: `persistSession:false` (sesja ginie po F5) vs B: `@supabase/ssr` (HttpOnly cookie) | B jest bezpieczniejsze ale więcej pracy |
 | **D-04** | Czy fallback email+hasło dla wszystkich? | A: Wszystkie konta SSO+password vs B: Tylko admin ma hasło | B jest prostsze i bezpieczniejsze |
-| **D-05** | Panel admin — osobna strona czy tab? | A: `/admin/users` (nowa strona) vs B: Zakładka "Admin" w AppHeader | A — czystsza separacja |
+| **D-05** | Panel admin — osobna strona czy tab? | A: `/admin/users` (nowa strona) vs B: Zakładka "Admin" w AppSidebar ~~(dawniej AppHeader — usunięty)~~ | A — czystsza separacja |
 | **D-06** | Kolejność wdrożenia | A: Najpierw admin panel, potem SSO vs B: Wszystko naraz | A — etapowe, mniej ryzyka |
 | **D-07** | Co z admin@test.pl na produkcji? | A: Dezaktywuj vs B: Zmień email na @odylion.com vs C: Zostaw jako emergency | C na dev, A na prod |
 

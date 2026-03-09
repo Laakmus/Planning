@@ -296,7 +296,7 @@ Widok w pełni obsługuje dark mode (spójne z resztą aplikacji):
 ```
 src/pages/warehouse.astro           — strona Astro z React island
 src/components/warehouse/
-  WarehouseApp.tsx                  — główny kontener (SidebarProvider, AuthProvider, ThemeProvider)
+  WarehouseApp.tsx                  — główny kontener (SidebarProvider + AppProviders z src/components/providers/AppProviders.tsx — wspólny wrapper: ThemeProvider → ErrorBoundary → AuthProvider → DictionaryProvider → TooltipProvider)
   WeekNavigation.tsx                — strzałki + pole nr tygodnia + nagłówek tygodnia
   DayCard.tsx                       — karta jednego dnia (nagłówek + tabela)
   OperationsTable.tsx               — tabela operacji (thead + tbody)

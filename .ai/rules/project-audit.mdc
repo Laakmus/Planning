@@ -268,7 +268,7 @@ TWOJE ZADANIE: Sprawdź schema DB, typy TypeScript i ich spójność.
 
 PLIKI DO ANALIZY:
 - supabase/migrations/**/*.sql (migracje)
-- src/types.ts (DTOs, interfejsy)
+- src/types/ (DTOs, interfejsy — katalog z modułami)
 - src/lib/view-models.ts (ViewModele)
 - src/lib/validators/**/*.ts (walidatory Zod)
 - src/db/**/*.ts (jeśli istnieje)

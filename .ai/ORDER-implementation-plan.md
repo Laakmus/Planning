@@ -117,7 +117,7 @@ Klauzula poufności (`confidentialityClause`) ma być zapisywana per zlecenie w 
    ```
 
 2. **Typy** — dodać pole:
-   - `OrderDetailDto.confidentialityClause: string | null` (w `src/types.ts`)
+   - `OrderDetailDto.confidentialityClause: string | null` (w `src/types/`)
    - `OrderFormData.confidentialityClause: string | null` (w `src/lib/view-models.ts`)
 
 3. **API** — dodać pole do:
@@ -846,7 +846,7 @@ User klika "Generuj PDF" w toolbarze OrderView
 ## Fazy implementacji — SZCZEGÓŁOWE INSTRUKCJE
 
 ### Faza 0: Typy, stałe, mappers, migracja DB
-**Pliki:** `src/components/orders/order-view/types.ts`, `src/components/orders/order-view/constants.ts`, `supabase/migrations/`, `src/types.ts`, `src/lib/view-models.ts`
+**Pliki:** `src/components/orders/order-view/types.ts`, `src/components/orders/order-view/constants.ts`, `supabase/migrations/`, `src/types/`, `src/lib/view-models.ts`
 **Agent:** Types + Database
 
 0. **Migracja DB** (`supabase/migrations/YYYYMMDD_add_confidentiality_clause.sql`):
@@ -855,7 +855,7 @@ User klika "Generuj PDF" w toolbarze OrderView
      ADD COLUMN confidentiality_clause text DEFAULT NULL;
    ```
    + Dodać `confidentialityClause` do:
-   - `OrderDetailDto` w `src/types.ts` (`confidentialityClause: string | null`)
+   - `OrderDetailDto` w `src/types/` (`confidentialityClause: string | null`)
    - `OrderFormData` w `src/lib/view-models.ts` (`confidentialityClause: string | null`)
    - Zod schemas w `create.ts` i `[orderId]/index.ts` (PUT) — `z.string().max(2000).nullable().optional()`
    - SELECT w `order.service.ts` (getOrderById, getOrders)

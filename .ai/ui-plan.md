@@ -492,7 +492,7 @@ Przyciski akcji (sticky na dole draweru):
    ↓ (poprawne dane → Supabase Auth → JWT)
 3. Przekierowanie na /orders
    ↓
-4. [Nagłówek] ładuje profil (GET /auth/me)
+4. [AppSidebar/AuthProvider] ładuje profil (GET /auth/me)
    [Lista zleceń] ładuje słowniki + pierwszą stronę zleceń (GET /orders?view=CURRENT)
    ↓
 5. Użytkownik przegląda listę, filtruje, sortuje
@@ -567,7 +567,7 @@ Przyciski akcji (sticky na dole draweru):
 ### 3.6 Przepływ: Synchronizacja słowników
 
 ```
-1. Użytkownik klika „Aktualizuj dane" w nagłówku
+1. Użytkownik klika „Aktualizuj dane" w sidebarze (SyncButton w AppSidebar footer)
    ↓
 2. POST /dictionary-sync/run → przycisk disabled + „Synchronizacja..."
    ↓
@@ -622,9 +622,8 @@ Przyciski akcji (sticky na dole draweru):
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ [AppHeader - sticky h-14]                               │
-│ [Logo] Tytuł │ [Akt.|Zreal.|Anul.] │ [Aktualizuj dane] │ Imię Nazwisko [Wyloguj] │
-│                                               │ Admin   │
+│ [AppSidebar (lewy)] │ [SidebarInset — main content]       │
+│  (zastąpił AppHeader — patrz sekcja 2.2 pkt 1)           │
 ├─────────────────────────────────────────────────────────┤
 │ [Pasek filtrów + ustawienia listy — sticky]             │
 │ [Rodzaj] [Status] [Firma zał.] [Firma rozł.] [Firma transport.] [Towar] [Nr tyg.] [Szukaj] [50▼][Trasa|Kolumny] [+ Nowe zlecenie] │
@@ -646,8 +645,8 @@ Przyciski akcji (sticky na dole draweru):
 
 ```
 ┌────────────────────────────┬────────────────────────────┐
-│ [AppHeader]                │                            │
-├────────────────────────────┤   [Drawer edycji zlecenia] │
+│ [AppSidebar] │ [Main]     │                            │
+│ (zastąpił AppHeader)       │   [Drawer edycji zlecenia] │
 │ [Zakładki]                 │   ┌──────────────────────┐ │
 ├────────────────────────────┤   │ Nagłówek: ZT2026/0001    │ │
 │ [Filtry]                   │   │ Historia zmian ↗     │ │
@@ -698,7 +697,7 @@ Aplikacja nie ma tradycyjnej nawigacji wielostronicowej. Struktura nawigacji:
 | Lista → Menu kontekstowe | Prawy klik na wiersz |
 | Edycja → Historia | Link w nagłówku draweru |
 | Lista → Historia | Menu kontekstowe → „Historia zmian" |
-| Wylogowanie | Przycisk „Wyloguj" w nagłówku |
+| Wylogowanie | Przycisk „Wyloguj" w sidebarze (AppSidebar footer) |
 | Powrót do listy z draweru | Zamknięcie draweru (X, Escape, klik na backdrop) |
 
 Wszystkie przejścia wewnątrz widoku głównego (`/orders`) odbywają się bez zmiany URL (stan React). Jedyna zmiana URL to logowanie ↔ lista.
@@ -940,7 +939,9 @@ Kolumna towaru zawiera pozycje z `order.items` w formacie: **Nazwa** (tonaż, me
 - Rozmiar: `text-xs` (12px, spójny z resztą kolumn tabeli)
 - Wiersz "Razem" (dla >1 pozycji): `text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-0.5 mt-0.5`
 
-### 6.7 Nagłówek aplikacji
+### 6.7 Nagłówek aplikacji [DEPRECATED — zastąpiony przez AppSidebar]
+
+> **Uwaga:** AppHeader został zastąpiony przez AppSidebar (shadcn/ui Sidebar) — patrz sekcja 2.2 pkt 1 i sekcja 2.5. Poniższy opis zachowany wyłącznie jako referencja historyczna.
 
 ```
 [Logo 8×8 bg-primary rounded + ikona] [Tytuł UPPERCASE tracking-tight] | [Zakładki w bg-slate-100 rounded-lg] | [Aktualizuj dane] | Imię Nazwisko  [Wyloguj]

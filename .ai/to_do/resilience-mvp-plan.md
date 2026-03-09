@@ -12,7 +12,7 @@ Dodanie mechanizmów odporności na błędy: rollback danych, offline detection 
 
 ### Faza 1: Typy i interfejsy
 - **Agent:** Types
-- **Plik:** `src/types.ts`
+- **Plik:** `src/types/`
 - **Zakres:**
   - `OfflineError` — klasa błędu braku połączenia (`isOffline = true`)
   - `DataSourceAdapter` — interfejs adaptera źródła danych (6 metod: companies, locations, products, transportTypes, orderStatuses, vehicleVariants)
@@ -127,7 +127,7 @@ Dodanie mechanizmów odporności na błędy: rollback danych, offline detection 
 
 | Plik | Zmiana |
 |------|--------|
-| `src/types.ts` | +OfflineError, +DataSourceAdapter, +DataSourceType |
+| `src/types/` | +OfflineError, +DataSourceAdapter, +DataSourceType |
 | `src/lib/api-client.ts` | +offline guard, +retry z backoff (GET/PUT) |
 | `src/lib/services/order-create.service.ts` | +compensating DELETE w createOrder |
 | `src/lib/services/order-update.service.ts` | +logging w updateOrder |

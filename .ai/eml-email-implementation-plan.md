@@ -20,7 +20,7 @@ Przycisk "Wyślij maila" w drawerze zlecenia obecnie otwiera `mailto:` link bez 
 
 | Plik | Agent | Opis zmian |
 |------|-------|------------|
-| `src/types.ts` (L356-362) | Types | Usunięcie `PrepareEmailResponseDto` (nie będzie JSON response na success) |
+| `src/types/` (moduły typów) | Types | Usunięcie `PrepareEmailResponseDto` (nie będzie JSON response na success) |
 | `src/lib/services/order-misc.service.ts` (L9, L20-23, L223-330) | Backend | Zmiana `prepareEmailForOrder`: generuje PDF + .eml, zwraca `emlContent` zamiast `emailOpenUrl` |
 | `src/pages/api/v1/orders/[orderId]/prepare-email.ts` (L79) | Backend | Response: blob `message/rfc822` zamiast `jsonResponse()` |
 | `src/pages/api/v1/orders/[orderId]/pdf.ts` (L37-93) | Backend | Refactor: użyj `resolvePdfData()` zamiast inline kodu |
@@ -29,6 +29,7 @@ Przycisk "Wyślij maila" w drawerze zlecenia obecnie otwiera `mailto:` link bez 
 
 ### BEZ ZMIAN (reuse as-is)
 
+- `src/lib/send-email.ts` — współdzielony helper do wysyłki maili (wyekstrahowany z `useOrderActions` i `useOrderDrawer`; obsługuje Graph API + fallback .eml)
 - `src/lib/services/pdf/pdf-generator.service.ts` — `generateOrderPdf()` wywoływane z serwisu
 - `src/lib/api-client.ts` — `api.postRaw()` + obsługa błędów raw mode (L134-143)
 - `src/components/orders/drawer/DrawerFooter.tsx` — przycisk UI bez zmian
@@ -41,7 +42,7 @@ Przycisk "Wyślij maila" w drawerze zlecenia obecnie otwiera `mailto:` link bez 
 
 ### Faza 1: Types agent
 
-**`src/types.ts`** — usunięcie `PrepareEmailResponseDto` (L355-362) i `PrepareEmailCommand` (L351-353). Te interfejsy nie będą potrzebne — success response to blob, nie JSON.
+**`src/types/`** — usunięcie `PrepareEmailResponseDto` i `PrepareEmailCommand`. Te interfejsy nie będą potrzebne — success response to blob, nie JSON.
 
 ### Faza 2: Backend agent
 

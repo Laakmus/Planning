@@ -12,7 +12,7 @@ Widok zleceń transportowych to główny ekran aplikacji, dostępny po zalogowan
 
 Widok realizuje historyjki: US-001, US-010–US-013, US-020–US-028, US-030–US-032, US-040–US-042, US-050–US-051, US-070–US-071, US-080–US-081.
 
-Stos: Astro 5 (SSR) + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui (styl New York, Lucide icons). Backend API jest już zaimplementowany — endpointy w `src/pages/api/v1/`, serwisy w `src/lib/services/`, typy w `src/types.ts`.
+Stos: Astro 5 (SSR) + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui (styl New York, Lucide icons). Backend API jest już zaimplementowany — endpointy w `src/pages/api/v1/`, serwisy w `src/lib/services/`, typy w `src/types/` (re-export hub `src/types/index.ts`).
 
 ---
 
@@ -31,13 +31,9 @@ Strona `/orders` renderuje pojedynczą wyspę React (`<OrdersApp client:load />`
 
 ```
 OrdersApp (React island — korzenny komponent)
-├── MicrosoftAuthProvider (opcjonalny — gdy skonfigurowane PUBLIC_MICROSOFT_CLIENT_ID/TENANT_ID)
-├── ThemeProvider
-│   └── ErrorBoundary
-│       └── AuthProvider
-│           └── DictionaryProvider
-│               └── TooltipProvider
-│                   └── SidebarProvider
+├── AppProviders (ThemeProvider → ErrorBoundary → AuthProvider → DictionaryProvider → TooltipProvider)
+│   └── MicrosoftAuthProvider (opcjonalny — gdy skonfigurowane PUBLIC_MICROSOFT_CLIENT_ID/TENANT_ID)
+│       └── SidebarProvider
 │                       ├── AppSidebar
 │                       │   ├── SidebarHeader (logo Truck + tytuł)
 │                       │   ├── SidebarContent (nawigacja: Aktualne, Zrealizowane, Anulowane)
@@ -144,7 +140,7 @@ OrdersApp (React island — korzenny komponent)
 
 ### 4.4 OrderTabs (ZASTĄPIONY przez AppSidebar)
 
-- **Status**: Zastąpiony. Nawigacja widoków przeniesiona do AppSidebar jako SidebarMenu. Plik `OrderTabs.tsx` zachowany jako referencja, ale nie jest importowany.
+- **Status**: Zastąpiony. Nawigacja widoków przeniesiona do AppSidebar jako SidebarMenu. Plik `OrderTabs.tsx` jest nadal używany jako komponent zakładek w headerze OrdersApp (inline tabs w headerze, obok SidebarTrigger). Plik `AppHeader.tsx` został usunięty (dead code).
 
 ### 4.5 FilterBar
 
@@ -827,7 +823,7 @@ OrdersApp (React island — korzenny komponent)
 
 ## 5. Typy
 
-### 5.1 Istniejące typy DTO (z `src/types.ts`)
+### 5.1 Istniejące typy DTO (z `src/types/`)
 
 Wszystkie typy DTO są już zdefiniowane i gotowe do użycia:
 
