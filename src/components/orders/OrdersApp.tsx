@@ -6,45 +6,29 @@
  *
  * Struktura komponentów:
  *   OrdersApp
- *   └── ThemeProvider
- *       └── ErrorBoundary
- *           └── AuthProvider
- *               └── DictionaryProvider
- *                   └── TooltipProvider
- *                       └── SidebarProvider
- *                           ├── AppSidebar (nawigacja, sync, użytkownik)
- *                           └── SidebarInset
- *                               ├── header (SidebarTrigger + tytuł widoku)
- *                               ├── OrdersPage (filtry, tabela, stopka)
- *                               └── Toaster
+ *   └── AppProviders (ThemeProvider → ErrorBoundary → AuthProvider → DictionaryProvider → TooltipProvider)
+ *       └── MicrosoftAuthProvider
+ *           └── SidebarProvider
+ *               ├── AppSidebar (nawigacja, sync, użytkownik)
+ *               └── SidebarInset
+ *                   ├── header (SidebarTrigger + tytuł widoku)
+ *                   ├── OrdersPage (filtry, tabela, stopka)
+ *                   └── Toaster
  */
 
 import { useEffect, useState } from "react";
-import { ThemeProvider } from "next-themes";
 
-import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { AppProviders } from "@/components/providers/AppProviders";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { DictionaryProvider } from "@/contexts/DictionaryContext";
+import { useAuth } from "@/contexts/AuthContext";
 import { MicrosoftAuthProvider } from "@/contexts/MicrosoftAuthContext";
 import type { ViewGroup } from "@/lib/view-models";
 
 import { AppSidebar } from "./AppSidebar";
 import OrderTabs from "./OrderTabs";
 import { OrdersPage } from "./OrdersPage";
-
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
-
-/** Etykiety nagłówka dla poszczególnych widoków */
-const VIEW_LABELS: Record<ViewGroup, string> = {
-  CURRENT: "Aktualne zlecenia",
-  COMPLETED: "Zrealizowane",
-  CANCELLED: "Anulowane",
-};
 
 function OrdersAppInner() {
   const { user, isLoading } = useAuth();
@@ -94,19 +78,11 @@ function OrdersAppInner() {
 export default function OrdersApp() {
   return (
     <div data-testid="orders-app">
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <ErrorBoundary>
-        <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
-          <DictionaryProvider>
-            <MicrosoftAuthProvider>
-              <TooltipProvider>
-                <OrdersAppInner />
-              </TooltipProvider>
-            </MicrosoftAuthProvider>
-          </DictionaryProvider>
-        </AuthProvider>
-      </ErrorBoundary>
-    </ThemeProvider>
+      <AppProviders>
+        <MicrosoftAuthProvider>
+          <OrdersAppInner />
+        </MicrosoftAuthProvider>
+      </AppProviders>
     </div>
   );
 }

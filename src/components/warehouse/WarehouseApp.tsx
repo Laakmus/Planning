@@ -2,19 +2,16 @@
  * Korzeń React wyspy /warehouse.
  *
  * Montowany jako <WarehouseApp client:load /> w src/pages/warehouse.astro.
- * Struktura providerów identyczna jak OrdersApp.
+ * Używa wspólnego AppProviders (jak OrdersApp).
  */
 
 import { useEffect, useState } from "react";
-import { ThemeProvider } from "next-themes";
 
-import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
+import { AppProviders } from "@/components/providers/AppProviders";
 import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { AuthProvider, useAuth } from "@/contexts/AuthContext";
-import { DictionaryProvider } from "@/contexts/DictionaryContext";
+import { useAuth } from "@/contexts/AuthContext";
 
 import { AppSidebar } from "@/components/orders/AppSidebar";
 import { useWarehouseWeek } from "@/hooks/useWarehouseWeek";
@@ -25,9 +22,6 @@ import { WeekNavigation } from "./WeekNavigation";
 import { DayCard } from "./DayCard";
 import { NoDateSection } from "./NoDateSection";
 import { WeekSummaryFooter } from "./WeekSummaryFooter";
-
-const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL as string;
-const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY as string;
 
 /** Brama auth — czeka na sesję, potem renderuje WarehouseContent. */
 function WarehouseAppInner() {
@@ -150,16 +144,8 @@ function WarehouseContent() {
 
 export default function WarehouseApp() {
   return (
-    <ThemeProvider attribute="class" defaultTheme="system" enableSystem disableTransitionOnChange>
-      <ErrorBoundary>
-        <AuthProvider supabaseUrl={supabaseUrl} supabaseAnonKey={supabaseAnonKey}>
-          <DictionaryProvider>
-            <TooltipProvider>
-              <WarehouseAppInner />
-            </TooltipProvider>
-          </DictionaryProvider>
-        </AuthProvider>
-      </ErrorBoundary>
-    </ThemeProvider>
+    <AppProviders>
+      <WarehouseAppInner />
+    </AppProviders>
   );
 }

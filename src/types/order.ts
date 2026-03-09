@@ -1,33 +1,12 @@
 /**
- * Typy DTO i Command używane w REST API (api/v1).
- * Zgodne z .ai/api-plan.md i .ai/view-implementation-plan.md.
+ * Typy DTO dla zleceń transportowych (lista, szczegóły, CRUD, historia).
  */
 
-/** Rola użytkownika w systemie (user_profiles.role). */
-export type UserRole = "ADMIN" | "PLANNER" | "READ_ONLY";
+import type { PaginatedResponse } from "./common";
 
-/**
- * Profil zalogowanego użytkownika — odpowiedź GET /api/v1/auth/me.
- * Pola w camelCase dla API.
- */
-export interface AuthMeDto {
-  id: string;
-  email: string;
-  fullName: string | null;
-  phone: string | null;
-  role: UserRole;
-  /** Oddział magazynowy użytkownika (FK → locations). Null = brak przypisanego oddziału. */
-  locationId: string | null;
-}
-
-/** Odpowiedź paginowana (lista zleceń, itp.). */
-export interface PaginatedResponse<T> {
-  items: T[];
-  page: number;
-  pageSize: number;
-  totalItems: number;
-  totalPages: number;
-}
+// ---------------------------------------------------------------------------
+// Lista zleceń — GET /api/v1/orders
+// ---------------------------------------------------------------------------
 
 /** Uproszczony punkt trasy w liście zleceń (GET /api/v1/orders). */
 export interface OrderListStopDto {
@@ -110,95 +89,9 @@ export interface CarrierColorResponseDto {
 /** Odpowiedź GET /api/v1/orders. */
 export type OrderListResponseDto = PaginatedResponse<OrderListItemDto>;
 
-/** Odpowiedź lista (bez paginacji) — np. historia statusów, log zmian, słowniki. */
-export interface ListResponse<T> {
-  items: T[];
-}
-
-/** Element listy firm — GET /api/v1/companies. */
-export interface CompanyDto {
-  id: string;
-  name: string;
-  isActive: boolean;
-  erpId: string | null;
-  taxId: string | null;
-  type: string | null;
-  notes: string | null;
-}
-
-/** Element listy lokalizacji — GET /api/v1/locations (z companyName z join). */
-export interface LocationDto {
-  id: string;
-  name: string;
-  companyId: string;
-  companyName: string | null;
-  city: string;
-  country: string;
-  streetAndNumber: string;
-  postalCode: string;
-  isActive: boolean;
-  notes: string | null;
-}
-
-/** Element listy produktów — GET /api/v1/products. */
-export interface ProductDto {
-  id: string;
-  name: string;
-  isActive: boolean;
-  description: string | null;
-  defaultLoadingMethodCode: string;
-}
-
-/** Element listy typów transportu — GET /api/v1/transport-types. */
-export interface TransportTypeDto {
-  code: string;
-  name: string;
-  isActive: boolean;
-  description: string | null;
-}
-
-/** Element listy statusów zleceń — GET /api/v1/order-statuses. */
-export interface OrderStatusDto {
-  code: string;
-  name: string;
-  sortOrder: number | null;
-  viewGroup: string;
-  isEditable: boolean;
-}
-
-/** Element listy wariantów pojazdów — GET /api/v1/vehicle-variants. */
-export interface VehicleVariantDto {
-  code: string;
-  name: string;
-  isActive: boolean;
-  capacityTons: number;
-  capacityVolumeM3: number | null;
-  vehicleType: string;
-  description: string | null;
-}
-
-/** Jedna pozycja historii statusów — GET /api/v1/orders/{id}/history/status. */
-export interface StatusHistoryItemDto {
-  id: number;
-  orderId: string;
-  oldStatusCode: string;
-  newStatusCode: string;
-  changedAt: string;
-  changedByUserId: string;
-  changedByUserName: string | null;
-}
-
-/** Jedna pozycja logu zmian — GET /api/v1/orders/{id}/history/changes. */
-export interface ChangeLogItemDto {
-  id: number;
-  orderId: string;
-  fieldName: string;
-  oldValue: string | null;
-  newValue: string | null;
-  changedAt: string;
-  changedByUserId: string;
-  changedByUserName: string | null;
-}
+// ---------------------------------------------------------------------------
+// Szczegóły zlecenia — GET /api/v1/orders/{orderId}
+// ---------------------------------------------------------------------------
 
 /**
  * Nagłówek zlecenia w widoku szczegółowym — GET /api/v1/orders/{orderId}.
@@ -296,6 +189,10 @@ export interface OrderDetailResponseDto {
   stops: OrderStopDto[];
   items: OrderItemDto[];
 }
+
+// ---------------------------------------------------------------------------
+// Operacje CRUD na zleceniach
+// ---------------------------------------------------------------------------
 
 /** Odpowiedź DELETE /api/v1/orders/{orderId} (anulowanie). */
 export interface DeleteOrderResponseDto {
@@ -396,73 +293,29 @@ export interface PatchStopResponseDto {
   notes: string | null;
 }
 
-/** Body POST /api/v1/dictionary-sync/run. */
-export interface DictionarySyncCommand {
-  resources: Array<"COMPANIES" | "LOCATIONS" | "PRODUCTS">;
-}
-
-/** Odpowiedź POST /api/v1/dictionary-sync/run. */
-export interface DictionarySyncResponseDto {
-  jobId: string;
-  status: string;
-}
-
-/** Odpowiedź GET /api/v1/dictionary-sync/jobs/{jobId}. */
-export interface DictionarySyncJobDto {
-  jobId: string;
-  status: string;
-  startedAt?: string | null;
-  completedAt?: string | null;
-}
-
 // ---------------------------------------------------------------------------
-// Widok magazynowy — GET /api/v1/warehouse/orders
+// Historia zleceń
 // ---------------------------------------------------------------------------
 
-/** Pozycja towarowa w widoku magazynowym. */
-export interface WarehouseItemDto {
-  productName: string;
-  loadingMethod: string | null;
-  weightTons: number | null;
-}
-
-/** Pojedynczy wpis operacji w widoku magazynowym (jeden stop = jeden wiersz). */
-export interface WarehouseOrderEntryDto {
+/** Jedna pozycja historii statusów — GET /api/v1/orders/{id}/history/status. */
+export interface StatusHistoryItemDto {
+  id: number;
   orderId: string;
-  orderNo: string;
-  stopType: "LOADING" | "UNLOADING";
-  timeLocal: string | null;
-  /** true jeśli oryginalny dzień stopu = sobota/niedziela (przesunięty do piątku). */
-  isWeekend: boolean;
-  /** Oryginalna data stopu (widoczna gdy isWeekend=true). */
-  originalDate: string | null;
-  items: WarehouseItemDto[];
-  totalWeightTons: number | null;
-  carrierName: string | null;
-  vehicleType: string | null;
-  notificationDetails: string | null;
+  oldStatusCode: string;
+  newStatusCode: string;
+  changedAt: string;
+  changedByUserId: string;
+  changedByUserName: string | null;
 }
 
-/** Dane jednego dnia w widoku magazynowym. */
-export interface WarehouseDayDto {
-  date: string;
-  dayName: string;
-  entries: WarehouseOrderEntryDto[];
-}
-
-/** Odpowiedź GET /api/v1/warehouse/orders. */
-export interface WarehouseWeekResponseDto {
-  week: number;
-  year: number;
-  weekStart: string;
-  weekEnd: string;
-  locationName: string;
-  days: WarehouseDayDto[];
-  noDateEntries: WarehouseOrderEntryDto[];
-  summary: {
-    loadingCount: number;
-    loadingTotalTons: number;
-    unloadingCount: number;
-    unloadingTotalTons: number;
-  };
+/** Jedna pozycja logu zmian — GET /api/v1/orders/{id}/history/changes. */
+export interface ChangeLogItemDto {
+  id: number;
+  orderId: string;
+  fieldName: string;
+  oldValue: string | null;
+  newValue: string | null;
+  changedAt: string;
+  changedByUserId: string;
+  changedByUserName: string | null;
 }

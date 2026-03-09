@@ -9,8 +9,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDictionaries } from "@/contexts/DictionaryContext";
 import { useMicrosoftAuth } from "@/contexts/MicrosoftAuthContext";
-import { createGraphDraft } from "@/lib/graph-mail";
-import { ApiError } from "@/lib/api-client";
+import { sendEmailForOrder } from "@/lib/send-email";
 import { STATUS_NAMES } from "@/lib/view-models";
 import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
 import type {
@@ -603,65 +602,15 @@ export function useOrderDrawer({
 
   const handleSendEmailFromDrawer = useCallback(async () => {
     if (!orderId) return;
-
-    // Otwórz pustą kartę PRZED async call — uniknięcie popup blocker
-    const useGraphApi = microsoft.isConfigured;
-    const outlookTab = useGraphApi ? window.open("about:blank", "_blank") : null;
-
-    try {
-      if (useGraphApi) {
-        // Flow Graph API: pobierz PDF base64, utwórz draft w Outlook
-        const response = await api.postRaw(`/api/v1/orders/${orderId}/prepare-email`, {
-          outputFormat: "pdf-base64",
-        });
-        const data = await response.json();
-        const { pdfBase64, pdfFileName } = data as {
-          pdfBase64: string;
-          pdfFileName: string;
-        };
-
-        const token = await microsoft.getToken();
-        const { webLink } = await createGraphDraft(token, pdfBase64, pdfFileName);
-
-        if (outlookTab) {
-          outlookTab.location.href = webLink;
-        } else {
-          window.open(webLink, "_blank");
-        }
-
-        toast.success("Draft email utworzony w Outlook — otwarto w nowej karcie.");
-        onOrderUpdated();
-      } else {
-        // Fallback .eml: stary flow bez zmian
-        const response = await api.postRaw(`/api/v1/orders/${orderId}/prepare-email`, {});
-        const blob = await response.blob();
-        const url = URL.createObjectURL(blob);
-        const a = document.createElement("a");
-        a.href = url;
-        a.download = `zlecenie-${(detail?.order.orderNo ?? orderId).replace(/\//g, "-")}.eml`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
-        URL.revokeObjectURL(url);
-        toast.success("Plik .eml pobrany — otwórz go w programie pocztowym.");
-        onOrderUpdated();
-      }
-    } catch (err) {
-      // Zamknij pustą kartę przy błędzie
-      if (outlookTab && !outlookTab.closed) {
-        outlookTab.close();
-      }
-      // 422 z listą brakujących pól → pokaż dialog walidacji
-      if (
-        err instanceof ApiError &&
-        err.statusCode === 422 &&
-        Array.isArray(err.details?.missing)
-      ) {
-        setEmailValidationErrors(err.details.missing as string[]);
-        return;
-      }
-      toast.error(err instanceof Error ? err.message : "Błąd przygotowania maila.");
-    }
+    const emlName = `zlecenie-${(detail?.order.orderNo ?? orderId).replace(/\//g, "-")}.eml`;
+    await sendEmailForOrder({
+      orderId,
+      api,
+      microsoft,
+      emlFileName: emlName,
+      onSuccess: () => onOrderUpdated(),
+      onValidationError: (fields) => setEmailValidationErrors(fields),
+    });
   }, [orderId, detail, api, onOrderUpdated, microsoft]);
 
   // ---------------------------------------------------------------------------
