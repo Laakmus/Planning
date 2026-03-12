@@ -376,6 +376,7 @@ export type Database = {
           carrier_location_name_snapshot: string | null
           carrier_name_snapshot: string | null
           complaint_reason: string | null
+          confidentiality_clause: boolean | null
           created_at: string
           created_by_user_id: string
           currency_code: string
@@ -395,6 +396,7 @@ export type Database = {
           locked_at: string | null
           locked_by_user_id: string | null
           main_product_name: string | null
+          notification_details: string | null
           order_no: string
           order_seq_no: number | null
           payment_method: string | null
@@ -405,7 +407,6 @@ export type Database = {
           receiver_name_snapshot: string | null
           required_documents_text: string | null
           search_text: string | null
-
           sender_contact_email: string | null
           sender_contact_name: string | null
           sender_contact_phone: string | null
@@ -435,6 +436,7 @@ export type Database = {
           carrier_location_name_snapshot?: string | null
           carrier_name_snapshot?: string | null
           complaint_reason?: string | null
+          confidentiality_clause?: boolean | null
           created_at?: string
           created_by_user_id: string
           currency_code: string
@@ -454,6 +456,7 @@ export type Database = {
           locked_at?: string | null
           locked_by_user_id?: string | null
           main_product_name?: string | null
+          notification_details?: string | null
           order_no: string
           order_seq_no?: number | null
           payment_method?: string | null
@@ -493,6 +496,7 @@ export type Database = {
           carrier_location_name_snapshot?: string | null
           carrier_name_snapshot?: string | null
           complaint_reason?: string | null
+          confidentiality_clause?: boolean | null
           created_at?: string
           created_by_user_id?: string
           currency_code?: string
@@ -512,6 +516,7 @@ export type Database = {
           locked_at?: string | null
           locked_by_user_id?: string | null
           main_product_name?: string | null
+          notification_details?: string | null
           order_no?: string
           order_seq_no?: number | null
           payment_method?: string | null
@@ -608,13 +613,6 @@ export type Database = {
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "transport_orders_vehicle_variant_code_fkey"
-            columns: ["vehicle_variant_code"]
-            isOneToOne: false
-            referencedRelation: "vehicle_variants"
-            referencedColumns: ["code"]
-          },
         ]
       }
       transport_types: {
@@ -644,6 +642,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          location_id: string | null
           phone: string | null
           role: string
           updated_at: string
@@ -653,6 +652,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          location_id?: string | null
           phone?: string | null
           role: string
           updated_at?: string
@@ -662,11 +662,20 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          location_id?: string | null
           phone?: string | null
           role?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicle_variants: {
         Row: {

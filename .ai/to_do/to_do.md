@@ -12,12 +12,7 @@
 
 ## Do zrobienia — MEDIUM
 
-### M-20. database.types.ts nieaktualny — brakuje kolumn
-- **Kategoria:** architecture
-- **Pliki:** `src/db/database.types.ts`
-- **Opis:** Brakuje: `notification_details`, `confidentiality_clause` (transport_orders), `location_id` (user_profiles). Zawiera usuniętą FK `vehicle_variant_code_fkey`. Root cause `as any` castów w auth.service i warehouse.service.
-- **Sugerowany fix:** Uruchomić `npx supabase gen types typescript --local > src/db/database.types.ts`. Po regeneracji usunąć zbędne `as any` casts.
-- **Effort:** S
+(brak)
 
 ---
 
@@ -136,6 +131,7 @@
 - [x] H-16: Sub-query filters w listOrders — zamiana 5 osobnych sub-queries (~96 linii) na RPC `filter_order_ids` (EXISTS subqueries w jednym SQL). Nowa migracja, indeks `order_stops(kind, location_id)`, typ w database.types.ts, 6 nowych testów.
 - [x] H-17: `duplicateOrder` — zmiana `notification_details: detail.order.notificationDetails ?? null` na `null` (PRD §3.1.5a). Dodany test weryfikujący.
 - [x] H-18: Testy API route PDF — już istniały (10 scenariuszy w `pdf.test.ts`). Usunięto z TODO.
+- [x] M-20: Ręczna aktualizacja `database.types.ts` — dodane `notification_details`, `confidentiality_clause` (transport_orders), `location_id` (user_profiles), usunięta FK `vehicle_variant_code_fkey`. Usunięto 3x `as any` (auth.service.ts, warehouse/orders.ts).
 
 ### Sesja 47-48 — Maintainability refactoring (~3285 linii dead code usunięte)
 - [x] Ekstrakcja `AppProviders` wrapper component — eliminacja duplikacji providerów

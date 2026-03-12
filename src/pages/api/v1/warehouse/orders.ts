@@ -136,11 +136,11 @@ export const GET: APIRoute = async ({ locals, request }) => {
 
   try {
     // Pobierz nazwę lokalizacji
-    const { data: location } = await (locals.supabase
+    const { data: location } = await locals.supabase
       .from("locations")
       .select("name")
       .eq("id", effectiveLocationId)
-      .maybeSingle() as any);
+      .maybeSingle();
 
     const result = await getWarehouseWeekOrders(
       locals.supabase,

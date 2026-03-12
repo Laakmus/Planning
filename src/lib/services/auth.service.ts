@@ -46,16 +46,15 @@ export async function getCurrentUser(
     return null;
   }
 
-  // location_id dodane w migracji warehouse — brak w wygenerowanych typach DB, stąd cast
-  const { data: profile, error: profileError } = await (supabase
+  const { data: profile, error: profileError } = await supabase
     .from("user_profiles")
     .select("id, email, full_name, phone, role, location_id")
     .eq("id", authUser.id)
-    .maybeSingle() as any);
+    .maybeSingle();
 
   if (profileError || !profile) {
     return null;
   }
 
-  return mapRowToAuthMeDto(profile as any);
+  return mapRowToAuthMeDto(profile);
 }
