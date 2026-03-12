@@ -1,31 +1,12 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-08 (sesja 47-48 — maintainability refactoring)
+> Ostatnia aktualizacja: 2026-03-12 (sesja 49 — HIGH fixes H-16, H-17, H-18)
 
 ---
 
 ## Do zrobienia — HIGH
 
-### H-16. Sub-query filters w listOrders — ciche obcięcie wyników powyżej 1000
-- **Kategoria:** bug
-- **Pliki:** `src/lib/services/order-list.service.ts:150-244`
-- **Opis:** Filtry sub-query (productId, loadingLocationId, loadingCompanyId itp.) pobierają WSZYSTKIE pasujące order_id z order_items/order_stops bez limitu. Supabase/PostgREST domyślnie limituje odpowiedź do 1000 wierszy (PGRST_MAX_ROWS). Jeśli więcej niż 1000 zleceń pasuje do filtra, część wyników zostanie cicho pominięta (false negatives). Użytkownik nie zobaczy wszystkich zleceń.
-- **Sugerowany fix:** Zastąpić client-side intersection Set na RPC (stored procedure) z JOINami i EXISTS subquery w jednym SQL zapytaniu. Alternatywa: dodać `.limit(10000)` z error handling gdy limit przekroczony.
-- **Effort:** L
-
-### H-17. duplicateOrder kopiuje notificationDetails wbrew PRD
-- **Kategoria:** bug (docs compliance)
-- **Pliki:** `src/lib/services/order-misc.service.ts:85`, `.ai/prd.md` (§3.1.5a)
-- **Opis:** PRD §3.1.5a explicite mówi: pole "Dane do awizacji" (notificationDetails) jest "**Nie kopiowane** przy duplikowaniu zlecenia". Jednak kod kopiuje wartość: `notification_details: detail.order.notificationDetails ?? null`. Powinno być `null`.
-- **Sugerowany fix:** Zmienić linię 85 na `notification_details: null`.
-- **Effort:** S
-
-### H-18. Brak testów API route dla endpointu PDF
-- **Kategoria:** test
-- **Pliki:** `src/pages/api/v1/orders/[orderId]/pdf.ts` (brak pliku testowego)
-- **Opis:** Endpoint POST /api/v1/orders/{orderId}/pdf jest w pełni zaimplementowany (auth, UUID validation, data fetch, NIP/kraje resolve, PDF generation, binary response). Nie ma żadnego testu API route. pdf-generator.service ma 25 testów unit, ale warstwa API route (auth, error handling, mapowanie detail→pdf input, Content-Disposition header) jest nieobjęta. Regresje w integracji nie zostaną wykryte.
-- **Sugerowany fix:** Dodać `src/pages/api/v1/orders/[orderId]/__tests__/pdf.test.ts` z testami: 401 (brak auth), 400 (invalid UUID), 404 (order not found), 200 (success z Content-Type application/pdf), 500 (error handling). Mock getOrderDetail + generateOrderPdf.
-- **Effort:** M
+(brak)
 
 ---
 
@@ -150,6 +131,11 @@
 ---
 
 ## Zrobione
+
+### Sesja 49 — HIGH fixes (H-16, H-17, H-18)
+- [x] H-16: Sub-query filters w listOrders — zamiana 5 osobnych sub-queries (~96 linii) na RPC `filter_order_ids` (EXISTS subqueries w jednym SQL). Nowa migracja, indeks `order_stops(kind, location_id)`, typ w database.types.ts, 6 nowych testów.
+- [x] H-17: `duplicateOrder` — zmiana `notification_details: detail.order.notificationDetails ?? null` na `null` (PRD §3.1.5a). Dodany test weryfikujący.
+- [x] H-18: Testy API route PDF — już istniały (10 scenariuszy w `pdf.test.ts`). Usunięto z TODO.
 
 ### Sesja 47-48 — Maintainability refactoring (~3285 linii dead code usunięte)
 - [x] Ekstrakcja `AppProviders` wrapper component — eliminacja duplikacji providerów

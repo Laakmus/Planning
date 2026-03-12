@@ -102,7 +102,7 @@ function mapRowToOrderListItemDto(
 /**
  * Pobiera listę zleceń z filtrami, sortowaniem i paginacją.
  * Filtry productId, loadingLocationId, loadingCompanyId, unloadingLocationId, unloadingCompanyId
- * wymagają sub-query / RPC — na razie nie są stosowane (można dodać w kolejnej iteracji).
+ * używają RPC filter_order_ids (jeden SQL z EXISTS, bez limitu PostgREST).
  *
  * @param supabase — klient Supabase
  * @param params — parametry z walidowanego query (orderListQuerySchema)
@@ -146,100 +146,23 @@ export async function listOrders(
     return { items: [], page, pageSize, totalItems: 0, totalPages: 1 };
   }
 
-  // Sub-query filters: collect order_ids matching advanced filters
+  // Sub-query filters: RPC filter_order_ids (H-16 — eliminuje limit 1000 PostgREST)
   let subQueryOrderIds: string[] | null = null;
 
   if (productId || loadingLocationId || loadingCompanyId || unloadingLocationId || unloadingCompanyId) {
-    // Run all independent filter queries in parallel
-    const filterPromises: Array<Promise<Set<string>>> = [];
+    const { data: filterRows, error: filterError } = await supabase.rpc("filter_order_ids", {
+      p_product_id: productId ?? null,
+      p_loading_location_id: loadingLocationId ?? null,
+      p_unloading_location_id: unloadingLocationId ?? null,
+      p_loading_company_id: loadingCompanyId ?? null,
+      p_unloading_company_id: unloadingCompanyId ?? null,
+    });
 
-    if (productId) {
-      filterPromises.push(
-        Promise.resolve(
-          supabase
-            .from("order_items")
-            .select("order_id")
-            .eq("product_id", productId)
-        ).then(({ data }) => new Set((data ?? []).map((r) => r.order_id)))
-      );
-    }
+    if (filterError) throw filterError;
 
-    if (loadingLocationId) {
-      filterPromises.push(
-        Promise.resolve(
-          supabase
-            .from("order_stops")
-            .select("order_id")
-            .eq("location_id", loadingLocationId)
-            .eq("kind", "LOADING")
-        ).then(({ data }) => new Set((data ?? []).map((r) => r.order_id)))
-      );
-    }
+    subQueryOrderIds = (filterRows ?? []).map((r) => r.order_id);
 
-    if (unloadingLocationId) {
-      filterPromises.push(
-        Promise.resolve(
-          supabase
-            .from("order_stops")
-            .select("order_id")
-            .eq("location_id", unloadingLocationId)
-            .eq("kind", "UNLOADING")
-        ).then(({ data }) => new Set((data ?? []).map((r) => r.order_id)))
-      );
-    }
-
-    if (loadingCompanyId) {
-      filterPromises.push(
-        Promise.resolve(
-          supabase
-            .from("locations")
-            .select("id")
-            .eq("company_id", loadingCompanyId)
-        ).then(async ({ data: locs }) => {
-            const locIds = (locs ?? []).map((l) => l.id);
-            if (locIds.length === 0) return new Set<string>();
-            const { data: stopRows } = await supabase
-              .from("order_stops")
-              .select("order_id")
-              .in("location_id", locIds)
-              .eq("kind", "LOADING");
-            return new Set((stopRows ?? []).map((r) => r.order_id));
-          })
-      );
-    }
-
-    if (unloadingCompanyId) {
-      filterPromises.push(
-        Promise.resolve(
-          supabase
-            .from("locations")
-            .select("id")
-            .eq("company_id", unloadingCompanyId)
-        ).then(async ({ data: locs }) => {
-            const locIds = (locs ?? []).map((l) => l.id);
-            if (locIds.length === 0) return new Set<string>();
-            const { data: stopRows } = await supabase
-              .from("order_stops")
-              .select("order_id")
-              .in("location_id", locIds)
-              .eq("kind", "UNLOADING");
-            return new Set((stopRows ?? []).map((r) => r.order_id));
-          })
-      );
-    }
-
-    // Run all filter queries in parallel, then intersect results
-    const idSets = await Promise.all(filterPromises);
-
-    if (idSets.length > 0) {
-      let result = idSets[0];
-      for (let i = 1; i < idSets.length; i++) {
-        result = new Set([...result].filter((id) => idSets[i].has(id)));
-      }
-      subQueryOrderIds = [...result];
-    }
-
-    if (subQueryOrderIds && subQueryOrderIds.length === 0) {
+    if (subQueryOrderIds.length === 0) {
       return { items: [], page, pageSize, totalItems: 0, totalPages: 1 };
     }
   }

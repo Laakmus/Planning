@@ -86,7 +86,7 @@ export async function duplicateOrder(
     special_requirements: detail.order.specialRequirements ?? null,
     required_documents_text: detail.order.requiredDocumentsText ?? null,
     general_notes: detail.order.generalNotes ?? null,
-    notification_details: detail.order.notificationDetails ?? null,
+    notification_details: null, // PRD §3.1.5a: "Nie kopiowane" przy duplikowaniu
     confidentiality_clause: detail.order.confidentialityClause ?? null,
     sender_contact_name: detail.order.senderContactName ?? null,
     sender_contact_phone: detail.order.senderContactPhone ?? null,

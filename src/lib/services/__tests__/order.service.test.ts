@@ -311,6 +311,50 @@ describe("duplicateOrder", () => {
     expect(result!.statusCode).toBe("robocze");
   });
 
+  it("duplikacja nie kopiuje notification_details (PRD §3.1.5a)", async () => {
+    // Oryginał ma niepuste notificationDetails
+    const supabase = buildOrderServiceMock(
+      {
+        transport_orders: {
+          selectSequence: [
+            { data: makeOrderRow({ notification_details: "Awizacja: Jan, tel. 600100200" }), error: null },
+          ],
+          insert: { data: { id: "new-order-id", created_at: "2026-02-18T10:00:00Z" }, error: null },
+        },
+        order_stops: {
+          select: { data: [makeStopRow()], error: null },
+          insert: { data: null, error: null },
+        },
+        order_items: {
+          select: { data: [makeItemRow()], error: null },
+          insert: { data: null, error: null },
+        },
+        transport_types: { select: { data: { code: "PL" }, error: null } },
+        locations: { select: { data: [{ id: VALID_LOCATION_ID }], error: null } },
+        products: { select: { data: [{ id: VALID_PRODUCT_ID }], error: null } },
+      },
+      { generate_next_order_no: { data: "ZT2026/0002", error: null } }
+    );
+
+    await duplicateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
+      includeStops: true,
+      includeItems: true,
+      resetStatusToDraft: true,
+    });
+
+    // Znajdź wywołanie from("transport_orders") po którym nastąpił insert
+    const fromFn = supabase.from as ReturnType<typeof vi.fn>;
+    const transportOrdersCalls = fromFn.mock.calls
+      .map((args, i) => ({ args, result: fromFn.mock.results[i].value }))
+      .filter((c) => c.args[0] === "transport_orders");
+    // Ostatnie wywołanie from("transport_orders") to insert (po select w getOrderDetail)
+    const insertChain = transportOrdersCalls[transportOrdersCalls.length - 1].result;
+    const insertFn = insertChain.insert as ReturnType<typeof vi.fn>;
+    expect(insertFn).toHaveBeenCalled();
+    const insertPayload = insertFn.mock.calls[0][0];
+    expect(insertPayload.notification_details).toBeNull();
+  });
+
   it("resetStatusToDraft: false → zachowuje oryginalny status", async () => {
     const supabase = buildDuplicateMock();
 
@@ -1248,5 +1292,106 @@ describe("listOrders", () => {
         pageSize: 50,
       })
     ).rejects.toEqual({ message: "Query error" });
+  });
+
+  // -----------------------------------------------------------------------
+  // Sub-query filters — RPC filter_order_ids (H-16)
+  // -----------------------------------------------------------------------
+
+  const defaultListParams = {
+    view: "CURRENT" as const,
+    sortBy: "FIRST_LOADING_DATETIME" as const,
+    sortDirection: "ASC" as const,
+    page: 1,
+    pageSize: 50,
+  };
+
+  describe("sub-query filters (RPC filter_order_ids)", () => {
+    it("productId → wywołuje RPC filter_order_ids z p_product_id", async () => {
+      const supabase = buildListMock();
+      const rpcFn = supabase.rpc as ReturnType<typeof vi.fn>;
+      rpcFn.mockResolvedValueOnce({ data: [{ order_id: VALID_ORDER_ID }], error: null });
+
+      await listOrders(supabase, { ...defaultListParams, productId: VALID_PRODUCT_ID });
+
+      expect(rpcFn).toHaveBeenCalledWith("filter_order_ids", expect.objectContaining({
+        p_product_id: VALID_PRODUCT_ID,
+        p_loading_location_id: null,
+        p_unloading_location_id: null,
+        p_loading_company_id: null,
+        p_unloading_company_id: null,
+      }));
+    });
+
+    it("loadingLocationId → wywołuje RPC z p_loading_location_id", async () => {
+      const supabase = buildListMock();
+      const rpcFn = supabase.rpc as ReturnType<typeof vi.fn>;
+      rpcFn.mockResolvedValueOnce({ data: [{ order_id: VALID_ORDER_ID }], error: null });
+
+      await listOrders(supabase, { ...defaultListParams, loadingLocationId: VALID_LOCATION_ID });
+
+      expect(rpcFn).toHaveBeenCalledWith("filter_order_ids", expect.objectContaining({
+        p_loading_location_id: VALID_LOCATION_ID,
+      }));
+    });
+
+    it("kombinacja filtrów → wszystkie parametry przekazane do RPC", async () => {
+      const supabase = buildListMock();
+      const rpcFn = supabase.rpc as ReturnType<typeof vi.fn>;
+      rpcFn.mockResolvedValueOnce({ data: [{ order_id: VALID_ORDER_ID }], error: null });
+
+      await listOrders(supabase, {
+        ...defaultListParams,
+        productId: VALID_PRODUCT_ID,
+        loadingLocationId: VALID_LOCATION_ID,
+        unloadingCompanyId: VALID_COMPANY_ID,
+      });
+
+      expect(rpcFn).toHaveBeenCalledWith("filter_order_ids", expect.objectContaining({
+        p_product_id: VALID_PRODUCT_ID,
+        p_loading_location_id: VALID_LOCATION_ID,
+        p_unloading_company_id: VALID_COMPANY_ID,
+      }));
+    });
+
+    it("RPC zwraca pustą listę → early return { items: [], totalItems: 0 }", async () => {
+      const supabase = buildListMock();
+      const rpcFn = supabase.rpc as ReturnType<typeof vi.fn>;
+      rpcFn.mockResolvedValueOnce({ data: [], error: null });
+
+      const result = await listOrders(supabase, {
+        ...defaultListParams,
+        productId: VALID_PRODUCT_ID,
+      });
+
+      expect(result.items).toEqual([]);
+      expect(result.totalItems).toBe(0);
+
+      // transport_orders NIE powinno być odpytane (early return)
+      const fromFn = supabase.from as ReturnType<typeof vi.fn>;
+      const calledTables = fromFn.mock.calls.map((c: unknown[]) => c[0]);
+      expect(calledTables).not.toContain("transport_orders");
+    });
+
+    it("RPC zwraca error → throws", async () => {
+      const supabase = buildListMock();
+      const rpcFn = supabase.rpc as ReturnType<typeof vi.fn>;
+      rpcFn.mockResolvedValueOnce({ data: null, error: { message: "RPC error" } });
+
+      await expect(
+        listOrders(supabase, { ...defaultListParams, productId: VALID_PRODUCT_ID })
+      ).rejects.toEqual({ message: "RPC error" });
+    });
+
+    it("brak filtrów sub-query → RPC NIE jest wywoływane", async () => {
+      const supabase = buildListMock();
+      const rpcFn = supabase.rpc as ReturnType<typeof vi.fn>;
+
+      await listOrders(supabase, defaultListParams);
+
+      // RPC powinno być wywołane tylko raz (order_statuses view group) lub wcale dla filter_order_ids
+      const filterCalls = rpcFn.mock.calls.filter((c: unknown[]) => c[0] === "filter_order_ids");
+      expect(filterCalls).toHaveLength(0);
+    });
   });
 });

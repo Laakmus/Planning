@@ -705,6 +705,18 @@ export type Database = {
     Functions: {
       current_user_is_admin_or_planner: { Args: never; Returns: boolean }
       generate_next_order_no: { Args: never; Returns: string }
+      filter_order_ids: {
+        Args: {
+          p_product_id?: string | null
+          p_loading_location_id?: string | null
+          p_unloading_location_id?: string | null
+          p_loading_company_id?: string | null
+          p_unloading_company_id?: string | null
+        }
+        Returns: {
+          order_id: string
+        }[]
+      }
       try_lock_order: {
         Args: {
           p_lock_expiry_minutes?: number
