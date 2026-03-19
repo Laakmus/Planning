@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-19 (sesja 50 — pre-production hardening)
+> Ostatnia aktualizacja: 2026-03-19 (sesja 50 — pre-production hardening + UX audit + E2E)
 
 ---
 
@@ -171,6 +171,19 @@
 - [x] P3-04: Body size limit 1MB w middleware (413 Payload Too Large)
 - [x] P5-02: Guard statusu w try_lock_order RPC (`AND status_code NOT IN ('anulowane','zrealizowane')`)
 - [x] P5-03: Search field max length 200 — walidator + 3 dictionary endpoints
+- [x] Fix: isDirty bug w OrderForm.tsx — side-effecty wewnątrz updater function (React 18+ batching)
+- [x] UX Audit: 21 problemów naprawionych (4 HIGH, 9 MEDIUM, 8 LOW):
+  - [x] HIGH: Dialogi potwierdzenia zmiana statusu, duplikacji, przywrócenia z context menu
+  - [x] HIGH: Guard isSaving w handleSave (podwójne kliknięcie)
+  - [x] HIGH: Loading state "Wyślij maila" (spinner + disabled)
+  - [x] MEDIUM: Lock error rozróżnianie 409 vs inne, error state w drawerze z retry
+  - [x] MEDIUM: Potwierdzenie usuwania stopów i towarów (gdy mają dane)
+  - [x] MEDIUM: Select "Typ auta"/"Forma płatności" — opcja wyczyść (— Brak —)
+  - [x] MEDIUM: Loading indicator przy zmianie filtrów (opacity + spinner)
+  - [x] MEDIUM: Toast błędu słowników, nawigacja tygodniowa 53 tygodnie
+  - [x] LOW: Ctrl+S w drawerze, orderNo w dialogach, komentarze bez numeracji, deferred week input
+- [x] E2E: 8 nowych testów Playwright w `e2e/tests/ux-guards.spec.ts` (łącznie 33 E2E)
+- Wynik: 1000/1000 unit testów, 33 E2E testów, 0 błędów TypeScript, build OK
 - [x] D-10, D-12, D-19: Przeniesione z odroczonych do zrealizowanych
 - [x] Naprawione testy: health.test.ts (logError mock), order.validator.test.ts (forceRegeneratePdf usunięte)
 - Wynik: 999/999 testów, 0 błędów TypeScript, build OK
