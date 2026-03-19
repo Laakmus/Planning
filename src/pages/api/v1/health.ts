@@ -4,7 +4,7 @@
  */
 
 import type { APIRoute } from "astro";
-import { jsonResponse, errorResponse } from "@/lib/api-helpers";
+import { jsonResponse, errorResponse, logError } from "@/lib/api-helpers";
 
 export const GET: APIRoute = async ({ locals }) => {
   try {
@@ -14,7 +14,8 @@ export const GET: APIRoute = async ({ locals }) => {
       .limit(1);
 
     if (error) {
-      return errorResponse(503, "Service Unavailable", `DB check failed: ${error.message}`);
+      logError("[GET /api/v1/health]", error);
+      return errorResponse(503, "Service Unavailable", "Database unavailable");
     }
 
     return jsonResponse({
@@ -23,6 +24,7 @@ export const GET: APIRoute = async ({ locals }) => {
       db: "connected",
     });
   } catch (err) {
-    return errorResponse(503, "Service Unavailable", err instanceof Error ? err.message : "Unknown error");
+    logError("[GET /api/v1/health]", err);
+    return errorResponse(503, "Service Unavailable", "Database unavailable");
   }
 };

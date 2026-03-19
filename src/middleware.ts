@@ -137,6 +137,25 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   );
 
+  // Body size limit — ochrona przed memory exhaustion (1MB)
+  const contentLength = context.request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > 1_048_576) {
+    return new Response(
+      JSON.stringify({
+        error: "Payload Too Large",
+        message: "Rozmiar żądania przekracza limit 1MB.",
+        statusCode: 413,
+      }),
+      {
+        status: 413,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": getCorsOrigin(),
+        },
+      }
+    );
+  }
+
   // Allow OPTIONS (CORS preflight) without rate limiting
   if (method === "OPTIONS") {
     return new Response(null, {

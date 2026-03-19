@@ -29,7 +29,7 @@ export const orderListQuerySchema = z.object({
   loadingCompanyId: z.string().uuid().optional(),
   unloadingLocationId: z.string().uuid().optional(),
   unloadingCompanyId: z.string().uuid().optional(),
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   dateFrom: isoDateSchema.optional(),
   dateTo: isoDateSchema.optional(),
   sortBy: z
@@ -159,7 +159,6 @@ export type DuplicateOrderParams = z.infer<typeof duplicateOrderSchema>;
 
 /** Body POST /api/v1/orders/{orderId}/prepare-email. */
 export const prepareEmailSchema = z.object({
-  forceRegeneratePdf: z.boolean().optional().default(false),
   outputFormat: z.enum(["eml", "pdf-base64"]).optional().default("eml"),
 });
 

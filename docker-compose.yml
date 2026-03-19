@@ -1,0 +1,41 @@
+# ============================================================
+# Planning App — Docker Compose (produkcja)
+# ============================================================
+# Uruchamia aplikację Astro SSR.
+# Supabase (PostgreSQL + Auth + PostgREST) zarządzany oddzielnie
+# (Supabase self-hosted lub Supabase Cloud).
+#
+# Użycie:
+#   cp .env.production.example .env
+#   # uzupełnij .env
+#   docker compose up -d
+#   docker compose logs -f app
+
+services:
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: planning-app
+    restart: unless-stopped
+    ports:
+      - "${PORT:-4321}:4321"
+    env_file:
+      - .env
+    environment:
+      - NODE_ENV=production
+    healthcheck:
+      test: ["CMD", "wget", "--no-verbose", "--tries=1", "--spider", "http://localhost:4321/api/v1/health"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 10s
+    # Limity zasobów (dostosuj do serwera)
+    deploy:
+      resources:
+        limits:
+          memory: 512M
+          cpus: "1.0"
+        reservations:
+          memory: 256M
+          cpus: "0.25"

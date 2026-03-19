@@ -22,7 +22,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
   try {
     const url = new URL(request.url);
     const params = parseQueryParams(url);
-    const search = typeof params.search === "string" ? params.search : undefined;
+    const search = typeof params.search === "string" ? params.search.slice(0, 200) : undefined;
     const companyId =
       typeof params.companyId === "string" && isValidUUID(params.companyId)
         ? params.companyId

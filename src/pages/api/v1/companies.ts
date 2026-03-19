@@ -21,7 +21,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
   try {
     const url = new URL(request.url);
     const params = parseQueryParams(url);
-    const search = typeof params.search === "string" ? params.search : undefined;
+    const search = typeof params.search === "string" ? params.search.slice(0, 200) : undefined;
     const result = await getCompanies(locals.supabase, search);
     return jsonResponse(result, 200, { "Cache-Control": "private, max-age=3600" });
   } catch (err) {
