@@ -155,6 +155,8 @@ export function OrderForm({
     setComplaintReason(order.complaintReason);
     formDataDirtyRef.current = false;
     setIsDirty(false);
+    onDirtyChange(false); // synchronizuj stan dirty z rodzicem przy resecie formularza
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.id, order.updatedAt]); // reset przy zmianie zlecenia LUB po aktualizacji danych
 
   /** Sprawdza czy formularz ma niezapisane zmiany */
@@ -167,14 +169,14 @@ export function OrderForm({
   }
 
   function patch(update: Partial<OrderFormData>) {
-    setFormData((prev) => {
-      const next = { ...prev, ...update };
-      formDataDirtyRef.current = true;
-      const dirty = computeDirty(true, pendingStatusCode, complaintReason);
-      setIsDirty(dirty);
-      onDirtyChange(dirty);
-      return next;
-    });
+    // Ustaw flagę i dirty PRZED setFormData — side-effecty nie mogą być w updater function
+    // (wywołania setState wewnątrz updater są batched i mogą nie dotrzeć do innych komponentów
+    // zanim użytkownik zdąży wywołać handleCloseRequest)
+    formDataDirtyRef.current = true;
+    const dirty = computeDirty(true, pendingStatusCode, complaintReason);
+    setFormData((prev) => ({ ...prev, ...update }));
+    setIsDirty(dirty);
+    onDirtyChange(dirty);
   }
 
   // Rejestruj submit ref dla OrderDrawer
