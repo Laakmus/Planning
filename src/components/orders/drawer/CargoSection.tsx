@@ -3,8 +3,19 @@
  * Lista pozycji towarowych.
  */
 
+import { useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -42,12 +53,20 @@ export function CargoSection({
   const activeItems = formData.items.filter((it) => !it._deleted);
   const totalTons = activeItems.reduce((sum, it) => sum + (it.quantityTons ?? 0), 0);
 
+  // Stan dialogu potwierdzenia usunięcia towaru
+  const [pendingRemoveIdx, setPendingRemoveIdx] = useState<number | null>(null);
+
   function patchItem(idx: number, patch: Partial<OrderFormItem>) {
     const updated = formData.items.map((it, i) => (i === idx ? { ...it, ...patch } : it));
     onChange({ items: updated });
   }
 
-  function removeItem(idx: number) {
+  /** Sprawdza czy pozycja towarowa ma wypełnione dane */
+  function itemHasData(item: OrderFormItem): boolean {
+    return item.productId !== null || item.quantityTons !== null || item.notes !== null;
+  }
+
+  function doRemoveItem(idx: number) {
     const item = formData.items[idx];
     let updated: OrderFormItem[];
     if (item.id === null) {
@@ -56,6 +75,16 @@ export function CargoSection({
       updated = formData.items.map((it, i) => (i === idx ? { ...it, _deleted: true } : it));
     }
     onChange({ items: updated });
+  }
+
+  function removeItem(idx: number) {
+    const item = formData.items[idx];
+    // Jeśli pozycja ma dane — pokaż dialog potwierdzenia
+    if (itemHasData(item)) {
+      setPendingRemoveIdx(idx);
+    } else {
+      doRemoveItem(idx);
+    }
   }
 
   function addItem() {
@@ -214,6 +243,32 @@ export function CargoSection({
           Dodaj kolejny asortyment
         </button>
       )}
+
+      {/* Dialog potwierdzenia usunięcia towaru z danymi */}
+      <AlertDialog open={pendingRemoveIdx !== null} onOpenChange={(open) => { if (!open) setPendingRemoveIdx(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć pozycję towarową?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć tę pozycję? Dane zostaną utracone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingRemoveIdx !== null) {
+                  doRemoveItem(pendingRemoveIdx);
+                  setPendingRemoveIdx(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

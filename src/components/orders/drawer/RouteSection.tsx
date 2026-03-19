@@ -5,8 +5,19 @@
  * Drag handle jest NA ZEWNĄTRZ karty — w wrapperze flex.
  */
 
-import { useCallback, useMemo } from "react";
+import { useCallback, useMemo, useState } from "react";
 import { GripVertical, PlusCircle } from "lucide-react";
+
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import {
   DndContext,
   closestCenter,
@@ -181,7 +192,15 @@ export function RouteSection({
     onChange({ stops: updated });
   }
 
-  function removeStop(idx: number) {
+  // Stan dialogu potwierdzenia usunięcia stopu
+  const [pendingRemoveIdx, setPendingRemoveIdx] = useState<number | null>(null);
+
+  /** Sprawdza czy stop ma wypełnione dane (locationId, dateLocal lub notes) */
+  function stopHasData(stop: OrderFormStop): boolean {
+    return stop.locationId !== null || stop.dateLocal !== null || stop.notes !== null;
+  }
+
+  function doRemoveStop(idx: number) {
     const stop = formData.stops[idx];
     let updated: OrderFormStop[];
     if (stop.id === null) {
@@ -190,6 +209,16 @@ export function RouteSection({
       updated = formData.stops.map((s, i) => (i === idx ? { ...s, _deleted: true } : s));
     }
     onChange({ stops: updated });
+  }
+
+  function removeStop(idx: number) {
+    const stop = formData.stops[idx];
+    // Jeśli stop ma dane — pokaż dialog potwierdzenia
+    if (stopHasData(stop)) {
+      setPendingRemoveIdx(idx);
+    } else {
+      doRemoveStop(idx);
+    }
   }
 
   function addStop(kind: "LOADING" | "UNLOADING") {
@@ -347,6 +376,32 @@ export function RouteSection({
           </button>
         </div>
       )}
+
+      {/* Dialog potwierdzenia usunięcia stopu z danymi */}
+      <AlertDialog open={pendingRemoveIdx !== null} onOpenChange={(open) => { if (!open) setPendingRemoveIdx(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć punkt trasy?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć ten punkt trasy? Dane zostaną utracone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingRemoveIdx !== null) {
+                  doRemoveStop(pendingRemoveIdx);
+                  setPendingRemoveIdx(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
 
     </div>
   );

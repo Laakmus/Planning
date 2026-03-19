@@ -4,6 +4,7 @@
  */
 
 import { useState, useEffect, useCallback, useRef } from "react";
+import { getISOWeeksInYear } from "date-fns";
 import type { WarehouseWeekResponseDto } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
 
@@ -73,14 +74,26 @@ export function useWarehouseWeek(locationId?: string) {
   }, [week, year]);
 
   const prevWeek = useCallback(() => {
-    if (week <= 1) { setWeek(52); setYear(y => y - 1); }
-    else { setWeek(w => w - 1); }
-  }, [week]);
+    if (week <= 1) {
+      // Poprzedni rok może mieć 52 lub 53 tygodnie
+      const weeksInPrevYear = getISOWeeksInYear(new Date(year - 1, 6, 1));
+      setWeek(weeksInPrevYear);
+      setYear(y => y - 1);
+    } else {
+      setWeek(w => w - 1);
+    }
+  }, [week, year]);
 
   const nextWeek = useCallback(() => {
-    if (week >= 53) { setWeek(1); setYear(y => y + 1); }
-    else { setWeek(w => w + 1); }
-  }, [week]);
+    // Bieżący rok może mieć 52 lub 53 tygodnie
+    const weeksInCurrentYear = getISOWeeksInYear(new Date(year, 6, 1));
+    if (week >= weeksInCurrentYear) {
+      setWeek(1);
+      setYear(y => y + 1);
+    } else {
+      setWeek(w => w + 1);
+    }
+  }, [week, year]);
 
   const goToWeek = useCallback((w: number) => {
     if (w >= 1 && w <= 53) setWeek(w);

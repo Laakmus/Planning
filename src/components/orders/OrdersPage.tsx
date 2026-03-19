@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { STATUS_NAMES } from "@/lib/view-models";
 
 import {
   AlertDialog,
@@ -77,20 +78,32 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   // Akcje na zleceniach (wyekstrahowane do osobnego hooka)
   const {
     isCreatingOrder,
-    cancelOrderId,
-    setCancelOrderId,
+    pendingCancel,
+    setPendingCancel,
+    pendingStatusChange,
+    setPendingStatusChange,
+    pendingDuplicate,
+    setPendingDuplicate,
+    pendingRestore,
+    setPendingRestore,
     handleAddOrder,
     handleSendEmail,
-    handleChangeStatus,
+    handleChangeStatusRequest,
+    handleChangeStatusConfirm,
     handleCancelRequest,
     handleCancelConfirm,
-    handleRestore,
+    handleRestoreRequest,
+    handleRestoreConfirm,
     handleSetCarrierColor,
     handleSetEntryFixed,
-    handleDuplicate,
+    handleDuplicateRequest,
+    handleDuplicateConfirm,
     emailValidationErrors,
     clearEmailValidationErrors,
   } = useOrderActions({ api, refetch, tableScrollRef, microsoft });
+
+  // Stan pola powodu reklamacji w dialogu zmiany statusu
+  const [complaintReasonInput, setComplaintReasonInput] = useState("");
 
   useEffect(() => {
     if (data) {
@@ -198,10 +211,10 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           onRowClick={handleRowClick}
           onSendEmail={handleSendEmail}
           onShowHistory={handleShowHistory}
-          onChangeStatus={handleChangeStatus}
-          onDuplicate={handleDuplicate}
+          onChangeStatus={handleChangeStatusRequest}
+          onDuplicate={handleDuplicateRequest}
           onCancel={handleCancelRequest}
-          onRestore={handleRestore}
+          onRestore={handleRestoreRequest}
           onSetCarrierColor={handleSetCarrierColor}
           onSetEntryFixed={handleSetEntryFixed}
         />
@@ -269,18 +282,106 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
       />
 
       {/* Dialog potwierdzenia anulowania zlecenia */}
-      <AlertDialog open={!!cancelOrderId} onOpenChange={(open) => { if (!open) setCancelOrderId(null); }}>
+      <AlertDialog open={!!pendingCancel} onOpenChange={(open) => { if (!open) setPendingCancel(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Anuluj zlecenie</AlertDialogTitle>
             <AlertDialogDescription>
-              Czy na pewno chcesz anulować to zlecenie? Tej operacji nie można cofnąć.
+              Czy na pewno chcesz anulować zlecenie <span className="font-semibold">{pendingCancel?.orderNo}</span>? Tej operacji nie można cofnąć.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
             <AlertDialogCancel>Nie</AlertDialogCancel>
             <AlertDialogAction variant="destructive" onClick={handleCancelConfirm}>
               Tak, anuluj
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog potwierdzenia zmiany statusu */}
+      <AlertDialog
+        open={!!pendingStatusChange}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingStatusChange(null);
+            setComplaintReasonInput("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Zmień status zlecenia</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                Czy na pewno chcesz zmienić status zlecenia{" "}
+                <span className="font-semibold">{pendingStatusChange?.orderNo}</span>{" "}
+                na <span className="font-semibold">{pendingStatusChange ? STATUS_NAMES[pendingStatusChange.newStatus] : ""}</span>?
+                {pendingStatusChange?.newStatus === "reklamacja" && (
+                  <label className="block mt-3">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Powód reklamacji
+                    </span>
+                    <textarea
+                      className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                      rows={3}
+                      maxLength={500}
+                      placeholder="Opisz powód reklamacji..."
+                      value={complaintReasonInput}
+                      onChange={(e) => setComplaintReasonInput(e.target.value)}
+                    />
+                  </label>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setComplaintReasonInput("")}>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                handleChangeStatusConfirm(
+                  pendingStatusChange?.newStatus === "reklamacja" ? complaintReasonInput : undefined
+                );
+                setComplaintReasonInput("");
+              }}
+            >
+              Tak, zmień status
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog potwierdzenia duplikacji zlecenia */}
+      <AlertDialog open={!!pendingDuplicate} onOpenChange={(open) => { if (!open) setPendingDuplicate(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Skopiuj zlecenie</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz skopiować zlecenie <span className="font-semibold">{pendingDuplicate?.orderNo}</span>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Nie</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDuplicateConfirm}>
+              Tak, skopiuj
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog potwierdzenia przywrócenia zlecenia */}
+      <AlertDialog open={!!pendingRestore} onOpenChange={(open) => { if (!open) setPendingRestore(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Przywróć zlecenie</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz przywrócić zlecenie <span className="font-semibold">{pendingRestore?.orderNo}</span> do aktualnych?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Nie</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestoreConfirm}>
+              Tak, przywróć
             </AlertDialogAction>
           </AlertDialogFooter>
         </AlertDialogContent>

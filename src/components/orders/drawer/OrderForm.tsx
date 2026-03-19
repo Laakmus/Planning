@@ -186,6 +186,20 @@ export function OrderForm({
     };
   }, [formData, pendingStatusCode, complaintReason, onSave, submitRef]);
 
+  // Skrót klawiszowy Ctrl+S / Cmd+S — zapis formularza
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      if ((e.ctrlKey || e.metaKey) && e.key === "s") {
+        e.preventDefault();
+        if (!isReadOnly) {
+          submitRef.current?.();
+        }
+      }
+    }
+    window.addEventListener("keydown", onKeyDown);
+    return () => window.removeEventListener("keydown", onKeyDown);
+  }, [isReadOnly, submitRef]);
+
   // Udostępnij aktualny formData przez ref (dla OrderView)
   useEffect(() => {
     formDataRef.current = formData;

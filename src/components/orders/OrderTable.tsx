@@ -6,7 +6,7 @@
  */
 
 import { forwardRef } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
 
 import type { OrderListItemDto } from "@/types";
 import type { ListViewMode, OrderSortBy, OrderStatusCode, SortDirection, ViewGroup } from "@/lib/view-models";
@@ -24,10 +24,10 @@ interface OrderTableProps {
   onRowClick: (orderId: string) => void;
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
-  onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
-  onDuplicate: (orderId: string) => void;
-  onCancel: (orderId: string) => void;
-  onRestore: (orderId: string) => void;
+  onChangeStatus: (orderId: string, orderNo: string, newStatus: OrderStatusCode) => void;
+  onDuplicate: (orderId: string, orderNo: string) => void;
+  onCancel: (orderId: string, orderNo: string) => void;
+  onRestore: (orderId: string, orderNo: string) => void;
   onSetCarrierColor: (orderId: string, color: string | null) => void;
   onSetEntryFixed: (orderId: string, value: boolean | null) => void;
 }
@@ -104,17 +104,26 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
   onSetEntryFixed,
 }, ref) {
   const minWidth = viewMode === "columns" ? "1500px" : "1280px";
+  // Przeładowanie z istniejącymi danymi — wizualna indykacja ładowania
+  const isReloading = isLoading && orders.length > 0;
 
   return (
     <div
       ref={ref}
-      className="flex-1 min-h-0 overflow-auto bg-white dark:bg-slate-900"
+      className="flex-1 min-h-0 overflow-auto bg-white dark:bg-slate-900 relative"
       style={{
         // Cienki, widoczny scrollbar
         scrollbarWidth: "thin",
         scrollbarColor: "#cbd5e1 transparent",
       }}
     >
+      {/* Pasek ładowania przy zmianie filtrów */}
+      {isReloading && (
+        <div className="sticky top-0 left-0 right-0 z-30 flex items-center justify-center py-1 bg-primary/10 backdrop-blur-sm">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary mr-1.5" />
+          <span className="text-xs text-primary font-medium">Ładowanie...</span>
+        </div>
+      )}
       <table
         className="orders-table w-full border-collapse text-left"
         role="table"
@@ -183,7 +192,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+        <tbody className={`divide-y divide-slate-200 dark:divide-slate-700 ${isReloading ? "opacity-50 pointer-events-none" : ""}`}>
           {isLoading && orders.length === 0 ? (
             // Skeleton loading — 5 wierszy
             Array.from({ length: 5 }).map((_, i) => (

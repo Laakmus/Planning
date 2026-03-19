@@ -40,6 +40,7 @@ import { useOrderActions } from "../useOrderActions";
 // ---------------------------------------------------------------------------
 
 const ORDER_ID = "order-uuid-actions-test";
+const ORDER_NO = "ZT2026/0001";
 
 function createMockScrollRef() {
   return {
@@ -192,16 +193,16 @@ describe("useOrderActions", () => {
   // -------------------------------------------------------------------------
 
   describe("handleCancelConfirm", () => {
-    it("DELETE sukces → toast.success + refetch + reset cancelOrderId", async () => {
+    it("DELETE sukces → toast.success + refetch + reset pendingCancel", async () => {
       mockApi.delete.mockResolvedValue(undefined);
 
       const { result } = renderActions();
 
-      // Ustaw cancelOrderId
+      // Ustaw pendingCancel
       act(() => {
-        result.current.handleCancelRequest(ORDER_ID);
+        result.current.handleCancelRequest(ORDER_ID, ORDER_NO);
       });
-      expect(result.current.cancelOrderId).toBe(ORDER_ID);
+      expect(result.current.pendingCancel).toEqual({ orderId: ORDER_ID, orderNo: ORDER_NO });
 
       // Potwierdź anulowanie
       await act(async () => {
@@ -211,10 +212,10 @@ describe("useOrderActions", () => {
       expect(mockApi.delete).toHaveBeenCalledWith(`/api/v1/orders/${ORDER_ID}`);
       expect(mockToast.success).toHaveBeenCalledWith("Zlecenie anulowane.");
       expect(refetchFn).toHaveBeenCalled();
-      expect(result.current.cancelOrderId).toBeNull();
+      expect(result.current.pendingCancel).toBeNull();
     });
 
-    it("cancelOrderId = null → nie wywołuje api.delete", async () => {
+    it("pendingCancel = null → nie wywołuje api.delete", async () => {
       const { result } = renderActions();
 
       await act(async () => {
@@ -230,7 +231,7 @@ describe("useOrderActions", () => {
       const { result } = renderActions();
 
       act(() => {
-        result.current.handleCancelRequest(ORDER_ID);
+        result.current.handleCancelRequest(ORDER_ID, ORDER_NO);
       });
 
       await act(async () => {
@@ -245,14 +246,21 @@ describe("useOrderActions", () => {
   // handleDuplicate
   // -------------------------------------------------------------------------
 
-  describe("handleDuplicate", () => {
-    it("POST sukces → toast.success z orderNo + refetch", async () => {
+  describe("handleDuplicateRequest + handleDuplicateConfirm", () => {
+    it("request ustawia pendingDuplicate, confirm → POST + toast.success + refetch", async () => {
       mockApi.post.mockResolvedValue({ orderNo: "ZT2026/0099" });
 
       const { result } = renderActions();
 
+      // Request otwiera dialog
+      act(() => {
+        result.current.handleDuplicateRequest(ORDER_ID, ORDER_NO);
+      });
+      expect(result.current.pendingDuplicate).toEqual({ orderId: ORDER_ID, orderNo: ORDER_NO });
+
+      // Confirm wysyła POST
       await act(async () => {
-        await result.current.handleDuplicate(ORDER_ID);
+        await result.current.handleDuplicateConfirm();
       });
 
       expect(mockApi.post).toHaveBeenCalledWith(
@@ -261,6 +269,7 @@ describe("useOrderActions", () => {
       );
       expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining("ZT2026/0099"));
       expect(refetchFn).toHaveBeenCalled();
+      expect(result.current.pendingDuplicate).toBeNull();
     });
 
     it("POST error → toast.error", async () => {
@@ -268,8 +277,12 @@ describe("useOrderActions", () => {
 
       const { result } = renderActions();
 
+      act(() => {
+        result.current.handleDuplicateRequest(ORDER_ID, ORDER_NO);
+      });
+
       await act(async () => {
-        await result.current.handleDuplicate(ORDER_ID);
+        await result.current.handleDuplicateConfirm();
       });
 
       expect(mockToast.error).toHaveBeenCalledWith("Duplicate failed");
@@ -280,14 +293,25 @@ describe("useOrderActions", () => {
   // handleChangeStatus
   // -------------------------------------------------------------------------
 
-  describe("handleChangeStatus", () => {
-    it("POST sukces → toast.success + refetch", async () => {
+  describe("handleChangeStatusRequest + handleChangeStatusConfirm", () => {
+    it("request ustawia pendingStatusChange, confirm → POST + toast.success + refetch", async () => {
       mockApi.post.mockResolvedValue(undefined);
 
       const { result } = renderActions();
 
+      // Request otwiera dialog
+      act(() => {
+        result.current.handleChangeStatusRequest(ORDER_ID, ORDER_NO, "zrealizowane");
+      });
+      expect(result.current.pendingStatusChange).toEqual({
+        orderId: ORDER_ID,
+        orderNo: ORDER_NO,
+        newStatus: "zrealizowane",
+      });
+
+      // Confirm wysyła POST
       await act(async () => {
-        await result.current.handleChangeStatus(ORDER_ID, "zrealizowane");
+        await result.current.handleChangeStatusConfirm();
       });
 
       expect(mockApi.post).toHaveBeenCalledWith(
@@ -296,6 +320,7 @@ describe("useOrderActions", () => {
       );
       expect(mockToast.success).toHaveBeenCalledWith("Status zmieniony.");
       expect(refetchFn).toHaveBeenCalled();
+      expect(result.current.pendingStatusChange).toBeNull();
     });
 
     it("POST error → toast.error", async () => {
@@ -303,11 +328,34 @@ describe("useOrderActions", () => {
 
       const { result } = renderActions();
 
+      act(() => {
+        result.current.handleChangeStatusRequest(ORDER_ID, ORDER_NO, "anulowane");
+      });
+
       await act(async () => {
-        await result.current.handleChangeStatus(ORDER_ID, "anulowane");
+        await result.current.handleChangeStatusConfirm();
       });
 
       expect(mockToast.error).toHaveBeenCalledWith("Forbidden");
+    });
+
+    it("reklamacja z complaintReason → POST zawiera complaintReason", async () => {
+      mockApi.post.mockResolvedValue(undefined);
+
+      const { result } = renderActions();
+
+      act(() => {
+        result.current.handleChangeStatusRequest(ORDER_ID, ORDER_NO, "reklamacja");
+      });
+
+      await act(async () => {
+        await result.current.handleChangeStatusConfirm("Towar uszkodzony");
+      });
+
+      expect(mockApi.post).toHaveBeenCalledWith(
+        `/api/v1/orders/${ORDER_ID}/status`,
+        { newStatusCode: "reklamacja", complaintReason: "Towar uszkodzony" }
+      );
     });
   });
 
@@ -315,14 +363,21 @@ describe("useOrderActions", () => {
   // handleRestore
   // -------------------------------------------------------------------------
 
-  describe("handleRestore", () => {
-    it("POST sukces → toast.success + refetch", async () => {
+  describe("handleRestoreRequest + handleRestoreConfirm", () => {
+    it("request ustawia pendingRestore, confirm → POST + toast.success + refetch", async () => {
       mockApi.post.mockResolvedValue(undefined);
 
       const { result } = renderActions();
 
+      // Request otwiera dialog
+      act(() => {
+        result.current.handleRestoreRequest(ORDER_ID, ORDER_NO);
+      });
+      expect(result.current.pendingRestore).toEqual({ orderId: ORDER_ID, orderNo: ORDER_NO });
+
+      // Confirm wysyła POST
       await act(async () => {
-        await result.current.handleRestore(ORDER_ID);
+        await result.current.handleRestoreConfirm();
       });
 
       expect(mockApi.post).toHaveBeenCalledWith(
@@ -333,6 +388,7 @@ describe("useOrderActions", () => {
         "Zlecenie przywrócone do Aktualnych (status: Korekta)."
       );
       expect(refetchFn).toHaveBeenCalled();
+      expect(result.current.pendingRestore).toBeNull();
     });
 
     it("POST error → toast.error", async () => {
@@ -340,8 +396,12 @@ describe("useOrderActions", () => {
 
       const { result } = renderActions();
 
+      act(() => {
+        result.current.handleRestoreRequest(ORDER_ID, ORDER_NO);
+      });
+
       await act(async () => {
-        await result.current.handleRestore(ORDER_ID);
+        await result.current.handleRestoreConfirm();
       });
 
       expect(mockToast.error).toHaveBeenCalledWith("Restore failed");
@@ -426,14 +486,14 @@ describe("useOrderActions", () => {
   // -------------------------------------------------------------------------
 
   describe("handleCancelRequest", () => {
-    it("ustawia cancelOrderId", () => {
+    it("ustawia pendingCancel z orderId i orderNo", () => {
       const { result } = renderActions();
 
       act(() => {
-        result.current.handleCancelRequest(ORDER_ID);
+        result.current.handleCancelRequest(ORDER_ID, ORDER_NO);
       });
 
-      expect(result.current.cancelOrderId).toBe(ORDER_ID);
+      expect(result.current.pendingCancel).toEqual({ orderId: ORDER_ID, orderNo: ORDER_NO });
     });
   });
 
@@ -442,11 +502,14 @@ describe("useOrderActions", () => {
   // -------------------------------------------------------------------------
 
   describe("stan początkowy", () => {
-    it("isCreatingOrder = false, cancelOrderId = null", () => {
+    it("isCreatingOrder = false, pendingCancel = null, pendingStatusChange = null, pendingDuplicate = null, pendingRestore = null", () => {
       const { result } = renderActions();
 
       expect(result.current.isCreatingOrder).toBe(false);
-      expect(result.current.cancelOrderId).toBeNull();
+      expect(result.current.pendingCancel).toBeNull();
+      expect(result.current.pendingStatusChange).toBeNull();
+      expect(result.current.pendingDuplicate).toBeNull();
+      expect(result.current.pendingRestore).toBeNull();
     });
   });
 });

@@ -3,6 +3,7 @@
  * Sticky top, widoczna przy przewijaniu.
  */
 
+import { useState, useEffect } from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -32,6 +33,25 @@ function formatFullDate(dateStr: string): string {
 }
 
 export function WeekNavigation({ week, year, weekStart, weekEnd, onPrev, onNext, onGoToWeek }: WeekNavigationProps) {
+  // Lokalny stan inputa — commit dopiero na Enter lub blur
+  const [inputValue, setInputValue] = useState(String(week));
+
+  // Synchronizuj z props (np. po kliknięciu strzałek)
+  useEffect(() => {
+    setInputValue(String(week));
+  }, [week]);
+
+  /** Zatwierdź wartość inputa */
+  const commitInput = () => {
+    const v = parseInt(inputValue);
+    if (!isNaN(v) && v >= 1 && v <= 53) {
+      onGoToWeek(v);
+    } else {
+      // Przywróć poprzednią wartość przy błędnym wpisie
+      setInputValue(String(week));
+    }
+  };
+
   const dateRange = weekStart && weekEnd
     ? `${formatShortDate(weekStart)} \u2013 ${formatFullDate(weekEnd)}`
     : "";
@@ -59,11 +79,10 @@ export function WeekNavigation({ week, year, weekStart, weekEnd, onPrev, onNext,
               type="number"
               min={1}
               max={53}
-              value={week}
-              onChange={(e) => {
-                const v = parseInt(e.target.value);
-                if (!isNaN(v)) onGoToWeek(v);
-              }}
+              value={inputValue}
+              onChange={(e) => setInputValue(e.target.value)}
+              onKeyDown={(e) => { if (e.key === "Enter") commitInput(); }}
+              onBlur={commitInput}
               className="h-10 w-16 text-sm text-center font-semibold"
             />
           </div>

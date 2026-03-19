@@ -60,7 +60,8 @@ export function CarrierSection({
   }
 
   function handleVehicleTypeChange(type: string) {
-    onChange({ vehicleTypeText: type });
+    // Specjalna wartość "__clear__" = wyczyść pole (null)
+    onChange({ vehicleTypeText: type === "__clear__" ? null : type });
   }
 
   function handleVolumeInputChange(value: string) {
@@ -107,6 +108,9 @@ export function CarrierSection({
               <SelectValue placeholder="Wybierz typ..." />
             </SelectTrigger>
             <SelectContent>
+              <SelectItem value="__clear__" className="text-sm text-slate-400">
+                — Brak —
+              </SelectItem>
               {uniqueVehicleTypes.map((type) => (
                 <SelectItem key={type} value={type} className="text-sm">
                   {type}

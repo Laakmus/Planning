@@ -73,13 +73,14 @@ function renderMenu(options: RenderMenuOptions = {}) {
 
   const props = {
     orderId: "order-1",
+    orderNo: "ZT2026/0001",
     statusCode,
     activeView,
     carrierCellColor,
     onOpen: vi.fn(),
     onSendEmail: vi.fn(),
     onShowHistory: vi.fn(),
-    onChangeStatus: vi.fn() as (orderId: string, newStatus: OrderStatusCode) => void,
+    onChangeStatus: vi.fn() as (orderId: string, orderNo: string, newStatus: OrderStatusCode) => void,
     onDuplicate: vi.fn(),
     onCancel: vi.fn(),
     onRestore: vi.fn(),
@@ -254,13 +255,13 @@ describe("OrderRowContextMenu", () => {
     it("wywołuje onDuplicate po kliknięciu 'Skopiuj zlecenie'", async () => {
       const { props } = renderMenu();
       await userEvent.click(screen.getByText("Skopiuj zlecenie"));
-      expect(props.onDuplicate).toHaveBeenCalledWith("order-1");
+      expect(props.onDuplicate).toHaveBeenCalledWith("order-1", "ZT2026/0001");
     });
 
     it("wywołuje onCancel po kliknięciu 'Anuluj zlecenie'", async () => {
       const { props } = renderMenu({ statusCode: "robocze" });
       await userEvent.click(screen.getByText("Anuluj zlecenie"));
-      expect(props.onCancel).toHaveBeenCalledWith("order-1");
+      expect(props.onCancel).toHaveBeenCalledWith("order-1", "ZT2026/0001");
     });
 
     it("wywołuje onSendEmail po kliknięciu 'Wyślij maila'", async () => {

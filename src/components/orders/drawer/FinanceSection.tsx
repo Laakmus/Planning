@@ -103,13 +103,16 @@ export function FinanceSection({
         <Label className="text-xs">Forma płatności</Label>
         <Select
           value={formData.paymentMethod ?? ""}
-          onValueChange={(v) => onChange({ paymentMethod: v })}
+          onValueChange={(v) => onChange({ paymentMethod: v === "__clear__" ? null : v })}
           disabled={isReadOnly}
         >
           <SelectTrigger className="h-8 text-sm">
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
+            <SelectItem value="__clear__" className="text-sm text-slate-400">
+              — Brak —
+            </SelectItem>
             {PAYMENT_METHODS.map((pm) => (
               <SelectItem key={pm.value} value={pm.value} className="text-sm">
                 {pm.label}

@@ -28,19 +28,54 @@ interface UseOrderActionsOptions {
   microsoft?: MicrosoftAuth;
 }
 
+/** Pending zmiana statusu — czeka na potwierdzenie użytkownika */
+export interface PendingStatusChange {
+  orderId: string;
+  orderNo: string;
+  newStatus: OrderStatusCode;
+  complaintReason?: string;
+}
+
+/** Pending duplikacja — czeka na potwierdzenie użytkownika */
+export interface PendingDuplicate {
+  orderId: string;
+  orderNo: string;
+}
+
+/** Pending przywrócenie — czeka na potwierdzenie użytkownika */
+export interface PendingRestore {
+  orderId: string;
+  orderNo: string;
+}
+
+/** Pending anulowanie — czeka na potwierdzenie użytkownika (z orderNo) */
+export interface PendingCancel {
+  orderId: string;
+  orderNo: string;
+}
+
 export interface UseOrderActionsReturn {
   isCreatingOrder: boolean;
-  cancelOrderId: string | null;
-  setCancelOrderId: (id: string | null) => void;
+  pendingCancel: PendingCancel | null;
+  setPendingCancel: (val: PendingCancel | null) => void;
+  pendingStatusChange: PendingStatusChange | null;
+  setPendingStatusChange: (val: PendingStatusChange | null) => void;
+  pendingDuplicate: PendingDuplicate | null;
+  setPendingDuplicate: (val: PendingDuplicate | null) => void;
+  pendingRestore: PendingRestore | null;
+  setPendingRestore: (val: PendingRestore | null) => void;
   handleAddOrder: () => Promise<void>;
   handleSendEmail: (orderId: string) => Promise<void>;
-  handleChangeStatus: (orderId: string, newStatus: OrderStatusCode) => Promise<void>;
-  handleCancelRequest: (orderId: string) => void;
+  handleChangeStatusRequest: (orderId: string, orderNo: string, newStatus: OrderStatusCode) => void;
+  handleChangeStatusConfirm: (complaintReason?: string) => Promise<void>;
+  handleCancelRequest: (orderId: string, orderNo: string) => void;
   handleCancelConfirm: () => Promise<void>;
-  handleRestore: (orderId: string) => Promise<void>;
+  handleRestoreRequest: (orderId: string, orderNo: string) => void;
+  handleRestoreConfirm: () => Promise<void>;
   handleSetCarrierColor: (orderId: string, color: string | null) => Promise<void>;
   handleSetEntryFixed: (orderId: string, value: boolean | null) => Promise<void>;
-  handleDuplicate: (orderId: string) => Promise<void>;
+  handleDuplicateRequest: (orderId: string, orderNo: string) => void;
+  handleDuplicateConfirm: () => Promise<void>;
   emailValidationErrors: string[];
   clearEmailValidationErrors: () => void;
 }
@@ -55,8 +90,17 @@ export function useOrderActions({
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
   const isCreatingRef = useRef(false);
 
-  // Stan dialogu potwierdzenia anulowania
-  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
+  // Stan dialogu potwierdzenia anulowania (z orderNo)
+  const [pendingCancel, setPendingCancel] = useState<PendingCancel | null>(null);
+
+  // Stan dialogu potwierdzenia zmiany statusu
+  const [pendingStatusChange, setPendingStatusChange] = useState<PendingStatusChange | null>(null);
+
+  // Stan dialogu potwierdzenia duplikacji
+  const [pendingDuplicate, setPendingDuplicate] = useState<PendingDuplicate | null>(null);
+
+  // Stan dialogu potwierdzenia przywrócenia
+  const [pendingRestore, setPendingRestore] = useState<PendingRestore | null>(null);
 
   // Stan dialogu walidacji email (422 — brakujące pola)
   const [emailValidationErrors, setEmailValidationErrors] = useState<string[]>([]);
@@ -116,27 +160,42 @@ export function useOrderActions({
     [api, refetch, microsoft]
   );
 
-  const handleChangeStatus = useCallback(
-    async (orderId: string, newStatus: OrderStatusCode) => {
+  // Zmiana statusu — request otwiera dialog, confirm wysyła POST
+  const handleChangeStatusRequest = useCallback(
+    (orderId: string, orderNo: string, newStatus: OrderStatusCode) => {
+      setPendingStatusChange({ orderId, orderNo, newStatus });
+    },
+    []
+  );
+
+  const handleChangeStatusConfirm = useCallback(
+    async (complaintReason?: string) => {
+      if (!pendingStatusChange) return;
+      const { orderId, newStatus } = pendingStatusChange;
+      setPendingStatusChange(null);
       try {
-        await api.post(`/api/v1/orders/${orderId}/status`, { newStatusCode: newStatus });
+        await api.post(`/api/v1/orders/${orderId}/status`, {
+          newStatusCode: newStatus,
+          ...(newStatus === "reklamacja" && complaintReason ? { complaintReason } : {}),
+        });
         toast.success("Status zmieniony.");
         refetch();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Błąd zmiany statusu.");
       }
     },
-    [api, refetch]
+    [api, pendingStatusChange, refetch]
   );
 
-  const handleCancelRequest = useCallback((orderId: string) => {
-    setCancelOrderId(orderId);
+  // Anulowanie — request otwiera dialog (z orderNo), confirm wysyła DELETE
+  const handleCancelRequest = useCallback((orderId: string, orderNo: string) => {
+    setPendingCancel({ orderId, orderNo });
   }, []);
 
   const handleCancelConfirm = useCallback(async () => {
-    if (!cancelOrderId) return;
-    const orderId = cancelOrderId;
-    setCancelOrderId(null);
+    if (!pendingCancel) return;
+    const { orderId } = pendingCancel;
+    setPendingCancel(null);
     try {
       await api.delete(`/api/v1/orders/${orderId}`);
       toast.success("Zlecenie anulowane.");
@@ -144,20 +203,28 @@ export function useOrderActions({
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Błąd anulowania zlecenia.");
     }
-  }, [api, cancelOrderId, refetch]);
+  }, [api, pendingCancel, refetch]);
 
-  const handleRestore = useCallback(
-    async (orderId: string) => {
-      try {
-        await api.post(`/api/v1/orders/${orderId}/restore`, {});
-        toast.success("Zlecenie przywrócone do Aktualnych (status: Korekta).");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd przywracania zlecenia.");
-      }
+  // Przywrócenie — request otwiera dialog, confirm wysyła POST
+  const handleRestoreRequest = useCallback(
+    (orderId: string, orderNo: string) => {
+      setPendingRestore({ orderId, orderNo });
     },
-    [api, refetch]
+    []
   );
+
+  const handleRestoreConfirm = useCallback(async () => {
+    if (!pendingRestore) return;
+    const { orderId } = pendingRestore;
+    setPendingRestore(null);
+    try {
+      await api.post(`/api/v1/orders/${orderId}/restore`, {});
+      toast.success("Zlecenie przywrócone do Aktualnych (status: Korekta).");
+      refetch();
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Błąd przywracania zlecenia.");
+    }
+  }, [api, pendingRestore, refetch]);
 
   const handleSetCarrierColor = useCallback(
     async (orderId: string, color: string | null) => {
@@ -193,39 +260,56 @@ export function useOrderActions({
     [api, refetch]
   );
 
-  const handleDuplicate = useCallback(
-    async (orderId: string) => {
-      try {
-        const result = await api.post<DuplicateOrderResponseDto>(
-          `/api/v1/orders/${orderId}/duplicate`,
-          { includeStops: true, includeItems: true, resetStatusToDraft: true }
-        );
-        toast.success(`Zlecenie skopiowane jako ${result.orderNo}.`);
-        await refetch();
-        // Auto-scroll na dół — kopia trafia na koniec listy (null dates, ASC nulls last)
-        requestAnimationFrame(() => {
-          tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
-        });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd kopiowania zlecenia.");
-      }
+  // Duplikacja — request otwiera dialog, confirm wysyła POST
+  const handleDuplicateRequest = useCallback(
+    (orderId: string, orderNo: string) => {
+      setPendingDuplicate({ orderId, orderNo });
     },
-    [api, refetch, tableScrollRef]
+    []
   );
+
+  const handleDuplicateConfirm = useCallback(async () => {
+    if (!pendingDuplicate) return;
+    const { orderId } = pendingDuplicate;
+    setPendingDuplicate(null);
+    try {
+      const result = await api.post<DuplicateOrderResponseDto>(
+        `/api/v1/orders/${orderId}/duplicate`,
+        { includeStops: true, includeItems: true, resetStatusToDraft: true }
+      );
+      toast.success(`Zlecenie skopiowane jako ${result.orderNo}.`);
+      await refetch();
+      // Auto-scroll na dół — kopia trafia na koniec listy (null dates, ASC nulls last)
+      requestAnimationFrame(() => {
+        tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
+      });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Błąd kopiowania zlecenia.");
+    }
+  }, [api, pendingDuplicate, refetch, tableScrollRef]);
 
   return {
     isCreatingOrder,
-    cancelOrderId,
-    setCancelOrderId,
+    pendingCancel,
+    setPendingCancel,
+    pendingStatusChange,
+    setPendingStatusChange,
+    pendingDuplicate,
+    setPendingDuplicate,
+    pendingRestore,
+    setPendingRestore,
     handleAddOrder,
     handleSendEmail,
-    handleChangeStatus,
+    handleChangeStatusRequest,
+    handleChangeStatusConfirm,
     handleCancelRequest,
     handleCancelConfirm,
-    handleRestore,
+    handleRestoreRequest,
+    handleRestoreConfirm,
     handleSetCarrierColor,
     handleSetEntryFixed,
-    handleDuplicate,
+    handleDuplicateRequest,
+    handleDuplicateConfirm,
     emailValidationErrors,
     clearEmailValidationErrors,
   };

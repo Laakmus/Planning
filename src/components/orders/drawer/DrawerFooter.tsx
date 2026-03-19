@@ -10,6 +10,7 @@ import { Eye, Loader2, Lock, Mail } from "lucide-react";
 interface DrawerFooterProps {
   isReadOnly: boolean;
   isSaving: boolean;
+  isSendingEmail: boolean;
   isDirty: boolean;
   lockedByUserName: string | null;
   onSave: () => void;
@@ -21,6 +22,7 @@ interface DrawerFooterProps {
 export function DrawerFooter({
   isReadOnly,
   isSaving,
+  isSendingEmail,
   isDirty,
   lockedByUserName,
   onSave,
@@ -84,10 +86,20 @@ export function DrawerFooter({
           <button
             type="button"
             onClick={onSendEmail}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            disabled={isSendingEmail}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Mail className="w-4 h-4" />
-            Wyślij maila
+            {isSendingEmail ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Wysyłanie…
+              </>
+            ) : (
+              <>
+                <Mail className="w-4 h-4" />
+                Wyślij maila
+              </>
+            )}
           </button>
         )}
       </div>

@@ -32,10 +32,10 @@ interface OrderRowProps {
   onRowClick: (orderId: string) => void;
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
-  onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
-  onDuplicate: (orderId: string) => void;
-  onCancel: (orderId: string) => void;
-  onRestore: (orderId: string) => void;
+  onChangeStatus: (orderId: string, orderNo: string, newStatus: OrderStatusCode) => void;
+  onDuplicate: (orderId: string, orderNo: string) => void;
+  onCancel: (orderId: string, orderNo: string) => void;
+  onRestore: (orderId: string, orderNo: string) => void;
   onSetCarrierColor: (orderId: string, color: string | null) => void;
   onSetEntryFixed: (orderId: string, value: boolean | null) => void;
 }
@@ -213,15 +213,18 @@ export function OrderRow({
 
       {/* Komentarz */}
       <td className="py-1 px-4 min-w-[120px]">
-        <div className="space-y-0.5">
-          {order.items
-            .filter((it) => it.notes)
-            .map((item, idx) => (
-              <div key={idx} className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                {idx + 1}. {item.notes}
-              </div>
-            ))}
-        </div>
+        {(() => {
+          const notesItems = order.items.filter((it) => it.notes);
+          return (
+            <div className="space-y-0.5">
+              {notesItems.map((item, idx) => (
+                <div key={idx} className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  {notesItems.length > 1 ? `${idx + 1}. ` : ""}{item.notes}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </td>
 
       {/* Firma transportowa */}
@@ -266,6 +269,7 @@ export function OrderRow({
   return (
     <OrderRowContextMenu
       orderId={order.id}
+      orderNo={order.orderNo}
       statusCode={order.statusCode}
       activeView={activeView}
       carrierCellColor={order.carrierCellColor}

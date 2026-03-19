@@ -5,7 +5,7 @@
  * Przy zamknięciu: sprawdza isDirty → dialog → unlock.
  */
 
-import { History, X } from "lucide-react";
+import { AlertTriangle, History, RefreshCw, X } from "lucide-react";
 
 import {
   Sheet,
@@ -44,11 +44,13 @@ export function OrderDrawer({
     detail,
     isLoading,
     isSaving,
+    isSendingEmail,
     isDirty,
     isReadOnly,
     isNewOrder,
     statusName,
     lockedByUserName,
+    loadError,
     showUnsavedDialog,
     showOrderView,
     orderViewInitialData,
@@ -68,6 +70,7 @@ export function OrderDrawer({
     handleOrderViewSave,
     handleOrderViewCancel,
     doClose,
+    retryLoadDetail,
     historyHandler,
     emailValidationErrors,
     clearEmailValidationErrors,
@@ -153,6 +156,24 @@ export function OrderDrawer({
             </div>
           )}
 
+          {/* Widok błędu — gdy loadDetail zwrócił błąd */}
+          {!isLoading && !detail && loadError && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
+              <AlertTriangle className="w-10 h-10 text-amber-500" />
+              <p className="text-sm text-slate-600 dark:text-slate-400 text-center max-w-sm">
+                {loadError}
+              </p>
+              <button
+                type="button"
+                onClick={retryLoadDetail}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Spróbuj ponownie
+              </button>
+            </div>
+          )}
+
           {!isLoading && detail && showOrderView && orderViewInitialData && (
             <OrderView
               initialData={orderViewInitialData}
@@ -179,6 +200,7 @@ export function OrderDrawer({
               <DrawerFooter
                 isReadOnly={isReadOnly}
                 isSaving={isSaving}
+                isSendingEmail={isSendingEmail}
                 isDirty={isDirty}
                 lockedByUserName={lockedByUserName}
                 onSave={() => submitRef.current?.()}

@@ -6,6 +6,7 @@
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
+import { ApiError } from "@/lib/api-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDictionaries } from "@/contexts/DictionaryContext";
 import { useMicrosoftAuth } from "@/contexts/MicrosoftAuthContext";
@@ -137,11 +138,13 @@ export interface UseOrderDrawerReturn {
   detail: OrderDetailResponseDto | null;
   isLoading: boolean;
   isSaving: boolean;
+  isSendingEmail: boolean;
   isDirty: boolean;
   isReadOnly: boolean;
   isNewOrder: boolean;
   statusName: string;
   lockedByUserName: string | null;
+  loadError: string | null;
   showUnsavedDialog: boolean;
   showOrderView: boolean;
   orderViewInitialData: OrderViewData | null;
@@ -161,6 +164,7 @@ export interface UseOrderDrawerReturn {
   handleOrderViewSave: (viewData: OrderViewData) => Promise<void>;
   handleOrderViewCancel: () => void;
   doClose: () => Promise<void>;
+  retryLoadDetail: () => void;
   historyHandler: (() => void) | undefined;
   emailValidationErrors: string[];
   clearEmailValidationErrors: () => void;
@@ -183,8 +187,11 @@ export function useOrderDrawer({
   const [detail, setDetail] = useState<OrderDetailResponseDto | null>(null);
   const [isLoading, setIsLoading] = useState(false);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSendingEmail, setIsSendingEmail] = useState(false);
   const [isDirty, setIsDirty] = useState(false);
   const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
+  // Błąd ładowania detali — wyświetlany w drawerze zamiast pustego stanu
+  const [loadError, setLoadError] = useState<string | null>(null);
 
   // Czy zlecenie jest zablokowane przez INNEGO użytkownika
   const [lockedByUserName, setLockedByUserName] = useState<string | null>(null);
@@ -212,11 +219,19 @@ export function useOrderDrawer({
 
   const loadDetail = useCallback(async (id: string) => {
     setIsLoading(true);
+    setLoadError(null);
     try {
       // Pobierz detale i lockuj równolegle — oszczędza jeden round-trip
       const shouldLock = user?.role !== "READ_ONLY";
       const lockPromise = shouldLock
-        ? api.post(`/api/v1/orders/${id}/lock`, {}).catch(() => ({ lockFailed: true }))
+        ? api.post(`/api/v1/orders/${id}/lock`, {}).catch((err: unknown): { lockFailed: true; conflict: boolean } => {
+            // Rozróżniamy 409 Conflict (inny użytkownik blokuje) vs inne błędy
+            if (err instanceof ApiError && err.statusCode === 409) {
+              return { lockFailed: true, conflict: true };
+            }
+            // Inne błędy (500, network) — pozwól edytować z ostrzeżeniem
+            return { lockFailed: true, conflict: false };
+          })
         : Promise.resolve(null);
 
       const [data, lockResult] = await Promise.all([
@@ -227,13 +242,22 @@ export function useOrderDrawer({
 
       // Sprawdź blokadę przez innego użytkownika
       if (data.order.lockedByUserId && data.order.lockedByUserId !== user?.id) {
-        setLockedByUserName("inny użytkownik");
+        // Detale zawierają nazwę blokującego użytkownika
+        setLockedByUserName(data.order.lockedByUserName ?? "inny użytkownik");
       } else if (lockResult && typeof lockResult === "object" && "lockFailed" in lockResult) {
-        // Lock nie udał się (409 conflict lub błąd serwera) — otwieramy readonly
-        setLockedByUserName("inny użytkownik");
+        const lockErr = lockResult as { lockFailed: true; conflict: boolean };
+        if (lockErr.conflict) {
+          // 409 — zlecenie edytowane przez kogoś innego
+          setLockedByUserName(data.order.lockedByUserName ?? "inny użytkownik");
+        } else {
+          // Inny błąd (500, sieć) — ostrzeżenie, ale pozwalamy edytować
+          toast.error("Nie udało się zablokować zlecenia — spróbuj ponownie");
+        }
       }
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Błąd ładowania zlecenia.");
+      const message = err instanceof Error ? err.message : "Błąd ładowania zlecenia.";
+      setLoadError(message);
+      toast.error(message);
     } finally {
       setIsLoading(false);
     }
@@ -301,6 +325,8 @@ export function useOrderDrawer({
   const handleSave = useCallback(
     async (formData: OrderFormData, pendingStatus: OrderStatusCode | null, complaintReason: string | null) => {
       if (!detail) return;
+      // Guard: zapobiega podwójnemu kliknięciu "Zapisz" (race condition)
+      if (isSaving) return;
 
       // Walidacja: powód reklamacji wymagany
       if (pendingStatus === "reklamacja" && !complaintReason?.trim()) {
@@ -385,7 +411,7 @@ export function useOrderDrawer({
         setIsSaving(false);
       }
     },
-    [orderId, detail, api, onOrderUpdated, doClose, onClose]
+    [orderId, detail, isSaving, api, onOrderUpdated, doClose, onClose]
   );
 
   // ---------------------------------------------------------------------------
@@ -602,16 +628,23 @@ export function useOrderDrawer({
 
   const handleSendEmailFromDrawer = useCallback(async () => {
     if (!orderId) return;
-    const emlName = `zlecenie-${(detail?.order.orderNo ?? orderId).replace(/\//g, "-")}.eml`;
-    await sendEmailForOrder({
-      orderId,
-      api,
-      microsoft,
-      emlFileName: emlName,
-      onSuccess: () => onOrderUpdated(),
-      onValidationError: (fields) => setEmailValidationErrors(fields),
-    });
-  }, [orderId, detail, api, onOrderUpdated, microsoft]);
+    // Guard: zapobiega wielokrotnemu kliknięciu podczas wysyłania
+    if (isSendingEmail) return;
+    setIsSendingEmail(true);
+    try {
+      const emlName = `zlecenie-${(detail?.order.orderNo ?? orderId).replace(/\//g, "-")}.eml`;
+      await sendEmailForOrder({
+        orderId,
+        api,
+        microsoft,
+        emlFileName: emlName,
+        onSuccess: () => onOrderUpdated(),
+        onValidationError: (fields) => setEmailValidationErrors(fields),
+      });
+    } finally {
+      setIsSendingEmail(false);
+    }
+  }, [orderId, detail, api, onOrderUpdated, microsoft, isSendingEmail]);
 
   // ---------------------------------------------------------------------------
   // Wartości obliczane
@@ -626,15 +659,25 @@ export function useOrderDrawer({
       ? () => onShowHistory(orderId, detail.order.orderNo)
       : undefined;
 
+  // Retry: ponowne ładowanie detali (przycisk "Spróbuj ponownie" w drawerze)
+  const retryLoadDetail = useCallback(() => {
+    if (orderId) {
+      setLoadError(null);
+      loadDetail(orderId);
+    }
+  }, [orderId, loadDetail]);
+
   return {
     detail,
     isLoading,
     isSaving,
+    isSendingEmail,
     isDirty,
     isReadOnly,
     isNewOrder,
     statusName,
     lockedByUserName,
+    loadError,
     showUnsavedDialog,
     showOrderView,
     orderViewInitialData,
@@ -654,6 +697,7 @@ export function useOrderDrawer({
     handleOrderViewSave,
     handleOrderViewCancel,
     doClose,
+    retryLoadDetail,
     historyHandler,
     emailValidationErrors,
     clearEmailValidationErrors,

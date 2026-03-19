@@ -14,9 +14,11 @@ import {
   useContext,
   useEffect,
   useMemo,
+  useRef,
   useState,
   type ReactNode,
 } from "react";
+import { toast } from "sonner";
 
 import type {
   CompanyDto,
@@ -67,6 +69,8 @@ interface DictionaryProviderProps {
 export function DictionaryProvider({ children }: DictionaryProviderProps) {
   const { user, api } = useAuth();
   const [state, setState] = useState<DictionaryState>(INITIAL_STATE);
+  // Flaga zapobiegająca powtórnemu wyświetlaniu toasta o błędzie słowników
+  const errorShownRef = useRef(false);
 
   // Załaduj wszystkie 6 słowników równolegle
   const loadDictionaries = useCallback(async () => {
@@ -117,8 +121,20 @@ export function DictionaryProvider({ children }: DictionaryProviderProps) {
     } else {
       // Wyczyść cache po wylogowaniu
       setState(INITIAL_STATE);
+      errorShownRef.current = false;
     }
   }, [user, loadDictionaries]);
+
+  // Jednorazowy toast o błędzie ładowania słowników
+  useEffect(() => {
+    if (state.error && !errorShownRef.current) {
+      errorShownRef.current = true;
+      toast.error("Nie udało się załadować słowników. Spróbuj odświeżyć stronę.");
+    }
+    if (!state.error) {
+      errorShownRef.current = false;
+    }
+  }, [state.error]);
 
   const value = useMemo<DictionaryContextValue>(
     () => ({
