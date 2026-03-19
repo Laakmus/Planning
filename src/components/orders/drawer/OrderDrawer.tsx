@@ -57,6 +57,7 @@ export function OrderDrawer({
     showPreviewUnsavedDialog,
     submitRef,
     formDataRef,
+    orderViewDirtyRef,
     setIsDirty,
     setShowUnsavedDialog,
     setShowPreviewUnsavedDialog,
@@ -181,6 +182,7 @@ export function OrderDrawer({
               onSave={handleOrderViewSave}
               onCancel={handleOrderViewCancel}
               onGeneratePdf={handleGeneratePdf}
+              onDirtyChange={(dirty) => { orderViewDirtyRef.current = dirty; }}
             />
           )}
 

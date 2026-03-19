@@ -25,6 +25,7 @@ export default function OrderView({
   onSave,
   onCancel,
   onGeneratePdf,
+  onDirtyChange,
 }: OrderViewProps) {
   // -- Stan --
   const [data, setData] = useState<OrderViewData>(initialData);
@@ -36,6 +37,11 @@ export default function OrderView({
   // -- Detekcja zmian --
   const isDirty =
     JSON.stringify(data) !== JSON.stringify(originalDataRef.current);
+
+  // Informuj parenta o zmianie isDirty (do handleCloseRequest w drawerze)
+  useEffect(() => {
+    onDirtyChange?.(isDirty);
+  }, [isDirty, onDirtyChange]);
 
   // -- Handlery --
   const handleChange = useCallback((updated: OrderViewData) => {

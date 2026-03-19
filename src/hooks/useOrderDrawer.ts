@@ -151,6 +151,7 @@ export interface UseOrderDrawerReturn {
   showPreviewUnsavedDialog: boolean;
   submitRef: React.MutableRefObject<(() => void) | null>;
   formDataRef: React.MutableRefObject<OrderFormData | null>;
+  orderViewDirtyRef: React.MutableRefObject<boolean>;
   setIsDirty: (dirty: boolean) => void;
   setShowUnsavedDialog: (show: boolean) => void;
   setShowPreviewUnsavedDialog: (show: boolean) => void;
@@ -200,6 +201,8 @@ export function useOrderDrawer({
   const formDataRef = useRef<OrderFormData | null>(null);
   // Ref zapobiegający resetowi isDirty przy re-renderze z nową referencją loadDetail
   const lastResetOrderIdRef = useRef<string | null>(null);
+  // Ref śledzący czy OrderView (podgląd A4) ma niezapisane zmiany
+  const orderViewDirtyRef = useRef(false);
   const isReadOnly = user?.role === "READ_ONLY" || !!lockedByUserName;
 
   // Stan OrderView (podgląd A4)
@@ -318,11 +321,12 @@ export function useOrderDrawer({
     setLockedByUserName(null);
     setShowOrderView(false);
     setOrderViewInitialData(null);
+    orderViewDirtyRef.current = false;
     onClose();
   }, [orderId, lockedByUserName, user, api, onClose]);
 
   function handleCloseRequest() {
-    if (isDirty) {
+    if (isDirty || orderViewDirtyRef.current) {
       setShowUnsavedDialog(true);
     } else {
       doClose();
@@ -695,6 +699,7 @@ export function useOrderDrawer({
     showPreviewUnsavedDialog,
     submitRef,
     formDataRef,
+    orderViewDirtyRef,
     setIsDirty,
     setShowUnsavedDialog,
     setShowPreviewUnsavedDialog,

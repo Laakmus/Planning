@@ -92,6 +92,7 @@ export interface OrderViewProps {
   onSave?: (data: OrderViewData) => void;
   onCancel?: () => void;
   onGeneratePdf?: () => void;
+  onDirtyChange?: (dirty: boolean) => void;
 }
 
 // ---------------------------------------------------------------------------
