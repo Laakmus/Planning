@@ -198,6 +198,8 @@ export function useOrderDrawer({
 
   const submitRef = useRef<(() => void) | null>(null);
   const formDataRef = useRef<OrderFormData | null>(null);
+  // Ref zapobiegający resetowi isDirty przy re-renderze z nową referencją loadDetail
+  const lastResetOrderIdRef = useRef<string | null>(null);
   const isReadOnly = user?.role === "READ_ONLY" || !!lockedByUserName;
 
   // Stan OrderView (podgląd A4)
@@ -267,16 +269,25 @@ export function useOrderDrawer({
 
   useEffect(() => {
     if (isOpen && orderId) {
+      // Reset isDirty TYLKO gdy zmieniono zlecenie — nie przy ponownym odpaleniu efektu
+      // z powodu niestabilnej referencji loadDetail (React 18+ context re-render)
+      if (lastResetOrderIdRef.current !== orderId) {
+        lastResetOrderIdRef.current = orderId;
+        setIsDirty(false);
+      }
       setDetail(null);
-      setIsDirty(false);
       setLockedByUserName(null);
       loadDetail(orderId);
     } else if (isOpen && !orderId) {
       // New order mode — empty defaults, no lock
+      lastResetOrderIdRef.current = null;
       setDetail(createEmptyDetail());
       setIsDirty(false);
       setLockedByUserName(null);
       setIsLoading(false);
+    } else if (!isOpen) {
+      // Drawer zamknięty — reset ref żeby następne otwarcie tego samego zlecenia działało
+      lastResetOrderIdRef.current = null;
     }
   }, [isOpen, orderId, loadDetail]);
 
