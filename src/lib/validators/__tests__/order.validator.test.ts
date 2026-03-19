@@ -561,14 +561,14 @@ describe("patchStopSchema", () => {
 // ---------------------------------------------------------------------------
 
 describe("prepareEmailSchema", () => {
-  it("{} → { forceRegeneratePdf: false }", () => {
+  it("{} → defaults to outputFormat 'eml'", () => {
     const result = prepareEmailSchema.parse({});
-    expect(result.forceRegeneratePdf).toBe(false);
+    expect(result.outputFormat).toBe("eml");
   });
 
-  it("{ forceRegeneratePdf: true } → OK", () => {
-    const result = prepareEmailSchema.parse({ forceRegeneratePdf: true });
-    expect(result.forceRegeneratePdf).toBe(true);
+  it("{ outputFormat: 'pdf-base64' } → OK", () => {
+    const result = prepareEmailSchema.parse({ outputFormat: "pdf-base64" });
+    expect(result.outputFormat).toBe("pdf-base64");
   });
 });
 

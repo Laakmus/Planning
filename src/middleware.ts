@@ -1,11 +1,20 @@
 /**
  * Astro middleware: Supabase client injection + rate limiting + idempotency-key.
  * Dotyczy wyłącznie endpointów /api/*.
+ *
+ * Zawiera też jednorazowe uruchomienie schedulera czyszczenia anulowanych zleceń.
  */
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types";
 import { getCorsOrigin } from "./lib/api-helpers";
+import { startCleanupScheduler } from "./lib/services/cleanup.service";
+
+// ---------------------------------------------------------------------------
+// Jednorazowe uruchomienie schedulera czyszczenia anulowanych zleceń (co 1h)
+// Moduł middleware jest importowany raz przy starcie serwera — bezpieczne.
+// ---------------------------------------------------------------------------
+startCleanupScheduler();
 
 // ---------------------------------------------------------------------------
 // Rate limiter (in-memory, per userId or IP)

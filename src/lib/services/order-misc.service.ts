@@ -343,7 +343,9 @@ export async function prepareEmailForOrder(
   }
 
   // Format eml: buduj plik .eml z załącznikiem PDF
-  const emlContent = buildEmlWithPdfAttachment({ pdfBuffer, pdfFileName });
+  // Temat identyczny z Graph API flow (graph-mail.ts)
+  const emlSubject = `Zlecenie transportowe — ${pdfFileName.replace(".pdf", "")}`;
+  const emlContent = buildEmlWithPdfAttachment({ pdfBuffer, pdfFileName, subject: emlSubject });
 
   return {
     success: true,

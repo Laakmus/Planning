@@ -4,7 +4,7 @@
 
 import { describe, it, expect } from "vitest";
 
-import { buildEmlWithPdfAttachment } from "../eml-builder.service";
+import { buildEmlWithPdfAttachment, encodeRfc2231 } from "../eml-builder.service";
 
 // ---------------------------------------------------------------------------
 // Helper — minimalny PDF buffer do testów
@@ -15,6 +15,30 @@ function makePdfBuffer(size = 128): ArrayBuffer {
   for (let i = 0; i < size; i++) arr[i] = i % 256;
   return arr.buffer;
 }
+
+describe("encodeRfc2231", () => {
+  it("should encode ASCII filename correctly", () => {
+    const result = encodeRfc2231("test.pdf");
+    expect(result).toBe("UTF-8''test.pdf");
+  });
+
+  it("should encode spaces as %20", () => {
+    const result = encodeRfc2231("my file.pdf");
+    expect(result).toBe("UTF-8''my%20file.pdf");
+  });
+
+  it("should encode Polish characters", () => {
+    const result = encodeRfc2231("zlecenie-ążśźęćńół.pdf");
+    expect(result).toContain("UTF-8''");
+    // Polskie znaki powinny być zakodowane jako %XX sekwencje
+    expect(result).not.toMatch(/[ążśźęćńół]/);
+  });
+
+  it("should encode slash character", () => {
+    const result = encodeRfc2231("zlecenie-ZT2026/0001.pdf");
+    expect(result).toContain("%2F");
+  });
+});
 
 describe("buildEmlWithPdfAttachment", () => {
   const defaultOptions = {
@@ -42,11 +66,29 @@ describe("buildEmlWithPdfAttachment", () => {
     expect(eml).toContain("Content-Type: application/pdf");
   });
 
-  it("should contain Content-Disposition with correct filename", () => {
+  it("should contain Content-Disposition with both filename and filename* (RFC 2231)", () => {
     const eml = buildEmlWithPdfAttachment(defaultOptions);
-    expect(eml).toContain(
-      `Content-Disposition: attachment; filename="${defaultOptions.pdfFileName}"`
-    );
+    // Powinien zawierać surową nazwę pliku w filename=""
+    expect(eml).toContain(`filename="${defaultOptions.pdfFileName}"`);
+    // Powinien zawierać RFC 2231 encoded filename*
+    expect(eml).toContain("filename*=UTF-8''Zlecenie_ZT2026_0001.pdf");
+  });
+
+  it("should encode Polish characters in filename* with RFC 2231", () => {
+    const polishFileName = "Zlecenie_ążśźęćńół.pdf";
+    const eml = buildEmlWithPdfAttachment({
+      pdfBuffer: makePdfBuffer(),
+      pdfFileName: polishFileName,
+    });
+
+    // filename= zachowuje oryginał (kompatybilność wsteczna)
+    expect(eml).toContain(`filename="${polishFileName}"`);
+    // filename* koduje polskie znaki
+    expect(eml).toMatch(/filename\*=UTF-8''/);
+    // Polskie znaki nie powinny występować w filename* (zakodowane jako %XX)
+    const filenameStarMatch = eml.match(/filename\*=([^\r\n]+)/);
+    expect(filenameStarMatch).not.toBeNull();
+    expect(filenameStarMatch![1]).not.toMatch(/[ążśźęćńół]/);
   });
 
   it("should wrap base64 lines at 76 characters max", () => {
@@ -77,10 +119,44 @@ describe("buildEmlWithPdfAttachment", () => {
     }
   });
 
-  it("should have empty Subject header", () => {
+  it("should have empty Subject when no subject provided", () => {
     const eml = buildEmlWithPdfAttachment(defaultOptions);
     // "Subject: " z niczym po dwukropku i spacji (następna linia to inny nagłówek)
     expect(eml).toMatch(/Subject: \r\n/);
+  });
+
+  it("should include Subject header with provided text", () => {
+    const eml = buildEmlWithPdfAttachment({
+      ...defaultOptions,
+      subject: "Test Order Subject",
+    });
+    // ASCII temat — bez kodowania RFC 2047
+    expect(eml).toContain("Subject: Test Order Subject");
+  });
+
+  it("should encode Subject with Polish characters using RFC 2047", () => {
+    const eml = buildEmlWithPdfAttachment({
+      ...defaultOptions,
+      subject: "Zlecenie transportowe — zlecenie-ZT2026-0001",
+    });
+    // Temat z em-dash (—) wymaga kodowania RFC 2047
+    expect(eml).toMatch(/Subject: =\?UTF-8\?B\?[A-Za-z0-9+/=]+\?=/);
+  });
+
+  it("should produce decodable RFC 2047 subject", () => {
+    const originalSubject = "Zlecenie transportowe — zlecenie-ZT2026-0001";
+    const eml = buildEmlWithPdfAttachment({
+      ...defaultOptions,
+      subject: originalSubject,
+    });
+
+    // Wyciągnij zakodowany temat
+    const subjectMatch = eml.match(/Subject: =\?UTF-8\?B\?([A-Za-z0-9+/=]+)\?=/);
+    expect(subjectMatch).not.toBeNull();
+
+    // Dekoduj base64 i sprawdź czy oryginał się zgadza
+    const decoded = Buffer.from(subjectMatch![1], "base64").toString("utf-8");
+    expect(decoded).toBe(originalSubject);
   });
 
   it("should have proper opening and closing boundary markers", () => {
@@ -118,17 +194,5 @@ describe("buildEmlWithPdfAttachment", () => {
     const afterTransfer = eml.slice(idx7bit);
     // Format: "7bit\r\n\r\n\r\n--boundary"
     expect(afterTransfer).toMatch(/7bit\r\n\r\n\r\n--/);
-  });
-
-  it("should handle filename with Polish characters", () => {
-    const polishFileName = "Zlecenie_ZT2026_ążśźęćńół.pdf";
-    const eml = buildEmlWithPdfAttachment({
-      pdfBuffer: makePdfBuffer(),
-      pdfFileName: polishFileName,
-    });
-
-    expect(eml).toContain(
-      `Content-Disposition: attachment; filename="${polishFileName}"`
-    );
   });
 });

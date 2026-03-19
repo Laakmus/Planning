@@ -18,6 +18,7 @@ import { makeApiContext } from "@/test/helpers/api-context";
 vi.mock("@/lib/api-helpers", () => ({
   jsonResponse: vi.fn(),
   errorResponse: vi.fn(),
+  logError: vi.fn(),
 }));
 
 import { GET } from "../health";
@@ -139,7 +140,7 @@ describe("GET /api/v1/health", () => {
     expect(mockErrorResponse).toHaveBeenCalledWith(
       503,
       "Service Unavailable",
-      "DB check failed: connection refused",
+      "Database unavailable",
     );
   });
 
@@ -160,7 +161,7 @@ describe("GET /api/v1/health", () => {
     expect(mockErrorResponse).toHaveBeenCalledWith(
       503,
       "Service Unavailable",
-      "Network error",
+      "Database unavailable",
     );
   });
 

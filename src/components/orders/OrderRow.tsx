@@ -12,6 +12,7 @@ import type { OrderListItemDto } from "@/types";
 import type { ListViewMode, OrderStatusCode, ViewGroup } from "@/lib/view-models";
 
 import { DatesCell, LocationsCell } from "./LocationsCell";
+import { ExpiryCountdown } from "./ExpiryCountdown";
 import { FixCell } from "./FixCell";
 import { LockIndicator } from "./LockIndicator";
 import { OrderRowContextMenu } from "./OrderRowContextMenu";
@@ -104,6 +105,12 @@ export function OrderRow({
       {/* Status */}
       <td className="py-1 px-4 min-w-[100px]">
         <StatusBadge statusCode={order.statusCode} statusName={order.statusName} />
+        {/* Odliczanie do wygaśnięcia — tylko dla anulowanych zleceń */}
+        {order.statusCode === "anulowane" && (
+          <div className="mt-0.5">
+            <ExpiryCountdown updatedAt={order.updatedAt} />
+          </div>
+        )}
       </td>
 
       {/* Tydzień */}

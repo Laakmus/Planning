@@ -5,17 +5,49 @@
  */
 
 /**
+ * Koduje string UTF-8 zgodnie z RFC 2231 (percent-encoding).
+ * Używane do nazw plików z polskimi znakami w Content-Disposition.
+ *
+ * @param value — string do zakodowania
+ * @returns zakodowany string z prefiksem charset (np. "UTF-8''Zlecenie%20transportowe.pdf")
+ */
+export function encodeRfc2231(value: string): string {
+  // encodeURIComponent koduje wszystko oprócz A-Z a-z 0-9 - _ . ! ~ * ' ( )
+  // RFC 2231 wymaga kodowania większości znaków specjalnych — encodeURIComponent jest wystarczający
+  const encoded = encodeURIComponent(value);
+  return `UTF-8''${encoded}`;
+}
+
+/**
+ * Koduje temat wiadomości email zgodnie z RFC 2047 (encoded-word, charset UTF-8, encoding B = base64).
+ * Pozwala na polskie znaki diakrytyczne w nagłówku Subject.
+ *
+ * @param subject — temat wiadomości (plain text)
+ * @returns zakodowany nagłówek lub pusty string gdy brak tematu
+ */
+function encodeSubjectRfc2047(subject: string): string {
+  if (!subject) return "";
+  // Sprawdź czy temat zawiera wyłącznie znaki ASCII — wtedy kodowanie zbędne
+  if (/^[\x20-\x7E]*$/.test(subject)) return subject;
+  // Kodowanie Base64 (RFC 2047 "B" encoding)
+  const base64 = Buffer.from(subject, "utf-8").toString("base64");
+  return `=?UTF-8?B?${base64}?=`;
+}
+
+/**
  * Buduje treść pliku .eml z załączonym PDF.
  *
  * @param options.pdfBuffer — zawartość PDF jako ArrayBuffer
  * @param options.pdfFileName — nazwa pliku PDF w załączniku
+ * @param options.subject — temat wiadomości email (opcjonalny, domyślnie pusty)
  * @returns treść pliku .eml (string)
  */
 export function buildEmlWithPdfAttachment(options: {
   pdfBuffer: ArrayBuffer;
   pdfFileName: string;
+  subject?: string;
 }): string {
-  const { pdfBuffer, pdfFileName } = options;
+  const { pdfBuffer, pdfFileName, subject } = options;
 
   // Unikalna granica MIME (timestamp + losowa wartość)
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -28,12 +60,18 @@ export function buildEmlWithPdfAttachment(options: {
   }
   const base64Content = base64Lines.join("\r\n");
 
+  // Kodowanie tematu (RFC 2047 dla polskich znaków)
+  const encodedSubject = encodeSubjectRfc2047(subject || "");
+
+  // RFC 2231 encoding nazwy pliku (polskie znaki, spacje, slash itp.)
+  const rfc2231Filename = encodeRfc2231(pdfFileName);
+
   // Budowanie pliku .eml
   const parts: string[] = [
     // Nagłówki główne
     "MIME-Version: 1.0",
     "X-Unsent: 1",
-    "Subject: ",
+    `Subject: ${encodedSubject}`,
     "To: ",
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     "",
@@ -48,7 +86,7 @@ export function buildEmlWithPdfAttachment(options: {
     `--${boundary}`,
     "Content-Type: application/pdf",
     "Content-Transfer-Encoding: base64",
-    `Content-Disposition: attachment; filename="${pdfFileName}"`,
+    `Content-Disposition: attachment; filename="${pdfFileName}"; filename*=${rfc2231Filename}`,
     "",
     base64Content,
     // Zamknięcie multipart
