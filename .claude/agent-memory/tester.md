@@ -1,5 +1,27 @@
 # Tester Agent — Pamięć
 
+## Sesja 49 (2026-03-19) — E2E testy UX Guards
+
+### Wykonane
+- `e2e/tests/ux-guards.spec.ts` — 8 nowych testów E2E pokrywających naprawione problemy UX:
+  1. **Drawer unsaved changes dialog** — zmiana pola → X → AlertDialog "Niezapisane zmiany" → "Wróć do edycji" → "Zamknij bez zapisywania"
+  2. **Drawer Ctrl+S save** — zmiana pola → Ctrl+S → PUT response OK → drawer zamknięty
+  3. **Context menu duplicate confirmation** — prawy klik → "Skopiuj zlecenie" → AlertDialog z orderNo → "Nie" (anuluj)
+  4. **Context menu cancel confirmation** — prawy klik → "Anuluj zlecenie" → AlertDialog z orderNo → "Nie" (cofnij)
+  5. **Loading indicator on filter change** — fill search → tbody opacity-50 lub tekst "Ładowanie"
+  6. **Email button for wysłane** — drawer zlecenia "wysłane" → przycisk "Wyślij maila" widoczny
+  7. **Email button for korekta wysłane** — drawer zlecenia "korekta wysłane" → przycisk widoczny
+  8. **Expiry countdown in cancelled orders** — sidebar "Anulowane" → tekst "Wygasa za" lub "Wygasło"
+
+### Learningi
+- **AlertDialog selektor**: `page.locator('[role="alertdialog"]')` — Radix AlertDialog renderuje w Portal z tym atrybutem
+- **Drawer close button**: `button[title="Zamknij (Escape)"]` w custom header OrderDrawer (nie domyślny Sheet close)
+- **NotesSection textarea**: selektor przez placeholder `"Dodatkowe uwagi do zlecenia…"` — stabilniejszy niż `.locator("textarea").last()`
+- **Loading indicator**: OrderTable ustawia `opacity-50` na `<tbody>` gdy `isReloading=true` (isLoading + orders.length > 0)
+- **Email button visibility**: DrawerFooter renderuje "Wyślij maila" gdy `onSendEmail` prop jest truthy; OrderDrawer przekazuje go tylko dla statusów: robocze, korekta, wysłane, korekta wysłane
+- **ExpiryCountdown**: Renderuje "Wygasa za X h Y min" lub "Wygasło" — seed data może mieć wygasłe zlecenia, stąd regex `/Wygasa za|Wygasło/`
+- **Loading state test**: Nie używaj `ordersPage.searchByText()` (czeka na response) — zamiast tego `filterSearch.fill()` + `expect().toPass()` żeby złapać stan pośredni
+
 ## Sesja 38 (2026-03-07) — Playwright E2E infrastruktura (Faza 0)
 
 ### Wykonane
