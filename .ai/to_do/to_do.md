@@ -1,18 +1,52 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-12 (sesja 49 — HIGH fixes H-16, H-17, H-18)
+> Ostatnia aktualizacja: 2026-03-19 (sesja 50 — pre-production hardening)
 
 ---
 
 ## Do zrobienia — HIGH
 
-(brak)
+### PP-01. P1-01 — Przeniesienie Microsoft Graph API na backend (Confidential Client)
+- Token Mail.ReadWrite w przeglądarce = ryzyko XSS → pełny dostęp do skrzynki
+- Status zmienia się na "wysłane" ZANIM draft powstanie (race condition)
+- Wymaga rejestracji app w Azure AD jako Confidential Client
+- **Effort**: L (8-12h), **Zależność**: Azure AD app registration
+- **Pliki**: graph-mail.server.ts (nowy), prepare-email.ts, order-misc.service.ts, useOrderActions.ts, useOrderDrawer.ts, OrdersApp.tsx, MicrosoftAuthContext.tsx (usunąć)
+
+### PP-02. P2-01 — Integracja dictionary-sync z Comarch ERP XL
+- **ZABLOKOWANE**: Brak dokumentacji API Comarch ERP XL od działu IT
+- Krok wstępny: IT → typ API (SOAP? REST? SQL?), dane dostępowe, struktura tabel
+- **Effort**: XL (16-24h), **Zależność**: zewnętrzna (Comarch API)
 
 ---
 
 ## Do zrobienia — MEDIUM
 
-(brak)
+### PP-03. P3-01 — Sentry integration (error tracking)
+- SDK Sentry dla Node.js (backend) + React (frontend)
+- `logError()` → Sentry.captureException(), ErrorBoundary → Sentry.ErrorBoundary
+- **Effort**: M (2-3h)
+
+### PP-04. P3-02 — Centralized logging (structured)
+- Zastąpienie `console.error` → pino/winston z rotacją logów
+- **Effort**: M (3-4h)
+
+### PP-05. P3-03 — Backup strategy + disaster recovery
+- Dokumentacja RTO/RPO, automatyczne backupy DB (pg_dump cron lub Supabase managed)
+- Podstawowe instrukcje w DEPLOYMENT.md — wymaga rozszerzenia o skrypty i testy restore
+- **Effort**: M (2-3h)
+
+### PP-06. P4-01 — CI/CD deployment pipeline
+- Rozszerzenie `.github/workflows/e2e.yml` o krok deploy (SSH/Docker push)
+- **Effort**: M (3-4h), **Zależność**: Dockerfile (DONE)
+
+### PP-07. P4-03 — Load testing
+- k6 script testujący 50 concurrent users (orders CRUD, list, PDF)
+- **Effort**: M (3-4h)
+
+### PP-08. P5-01 — Remaining `as any` casts (3 w kodzie produkcyjnym)
+- `warehouse/orders.ts:117`, `useOrderDrawer.ts:439-440`
+- **Effort**: S (30 min)
 
 ---
 
@@ -82,10 +116,9 @@
 - `handleCloseRequest` jest zwykłą funkcją (nie useCallback) → tworzona na nowo przy każdym renderze → zawsze ma aktualny `isDirty`.
 - Brak `useCallback` to co najwyżej mikro-optimizacja (nowa referencja per render), nie bug poprawności.
 
-### D-19. M-07 — Race condition lockOrder (TOCTOU)
-- SELECT statusu i RPC try_lock_order to osobne operacje. Między nimi inny użytkownik może zmienić status.
-- Wymaga migracji SQL: `AND status_code NOT IN ('anulowane','zrealizowane')` w RPC.
-- Ryzyko niskie — wymaga precyzyjnego timingu dwóch użytkowników. Aplikacja wewnętrzna, kilkudziesięciu użytkowników.
+### D-19. M-07 — Race condition lockOrder (TOCTOU) — NAPRAWIONE (sesja 50)
+- ~~Wymaga migracji SQL: `AND status_code NOT IN ('anulowane','zrealizowane')` w RPC.~~
+- **Rozwiązane:** Migracja `20260319000000_lock_order_status_guard.sql` — dodano guard statusu + zwrot `TERMINAL_STATUS`.
 
 ### D-03. PDF endpoint — ZAIMPLEMENTOWANY (sesja 39-40)
 - PDF endpoint w pełni działa (pdf-generator.service.ts). Stub 501 zastąpiony implementacją.
@@ -98,34 +131,49 @@
 ### D-06. Dictionary sync endpoints — stuby
 - `POST /dictionary-sync/run` i `GET /jobs/{id}` zwracają mock responses. Oczekiwane dla MVP bez integracji ERP.
 
-### D-07. Job czyszczący anulowane zlecenia po 24h
-- PRD wymaga usunięcia anulowanych po 24h. Wymaga `pg_cron` (infrastructure).
-- **Powiązane:** "Wygasa za X h" w UI (wymagane w ui-plan.md, brak implementacji)
+### D-07. Job czyszczący anulowane zlecenia po 24h — ZAIMPLEMENTOWANE (sesja 50)
+- ~~PRD wymaga usunięcia anulowanych po 24h. Wymaga `pg_cron` (infrastructure).~~
+- **Rozwiązane:** `cleanup.service.ts` (setInterval 1h) + `POST /api/v1/admin/cleanup` + `ExpiryCountdown.tsx` UI.
 
-### D-08. parseJsonBody — limit rozmiaru body (revert z sesji 36)
-- Było M-11 w sesji 34 (1MB limit), cofnięte w sesji 36.
-- Debata sesja 37: Security (8/10), Architect (4/10), Tech Lead (overthinking dla intranetu).
-- **Konsensus:** Odłożone — intranet za VPN, zaufani użytkownicy. Naprawić przed wystawieniem publicznym.
+### D-08. parseJsonBody — limit rozmiaru body — NAPRAWIONE (sesja 50)
+- ~~Było M-11 w sesji 34 (1MB limit), cofnięte w sesji 36.~~
+- **Rozwiązane:** Content-Length check w middleware (1MB limit → 413 Payload Too Large).
 
 ### D-09. Rate limiting — fallback na IP dla niezweryfikowanych tokenów
 - Middleware dekoduje JWT bez weryfikacji podpisu (atob). Atakujący mógłby sfabrykować JWT z sub innego użytkownika.
 - **Konsensus debaty:** Odłożone — na intranecie IP-based wystarczy, ryzyko minimalne.
 
-### D-10. Health endpoint — usunięcie error.message z odpowiedzi
-- GET /api/v1/health ujawnia `error.message` z PostgreSQL w odpowiedzi 503.
-- **Konsensus debaty:** Odłożone — intranet, health check dla monitoringu wewnętrznego.
+### D-10. Health endpoint — usunięcie error.message z odpowiedzi — NAPRAWIONE (sesja 50)
+- ~~GET /api/v1/health ujawnia `error.message` z PostgreSQL w odpowiedzi 503.~~
+- **Rozwiązane:** Zmieniono na generyczne "Database unavailable", dodano `logError()`.
 
 ### D-11. N+1 queries w updateOrder
 - Do 33+50 sekwencyjnych zapytań DB przy zapisie z pełną trasą i itemami (typowo 15-20).
 - **Konsensus debaty:** Premature optimization przy kilkudziesięciu użytkownikach. Naprawić przy skalowaniu.
 
-### D-12. Brak limitu długości pola search w walidatorach
-- `orderListQuerySchema` i dictionary endpoints nie mają `.max()` na polu search.
-- **Konsensus debaty:** Odłożone — intranet, niskie ryzyko slow query DoS.
+### D-12. Brak limitu długości pola search w walidatorach — NAPRAWIONE (sesja 50)
+- ~~`orderListQuerySchema` i dictionary endpoints nie mają `.max()` na polu search.~~
+- **Rozwiązane:** `.max(200)` w orderListQuerySchema + `.slice(0, 200)` w companies/locations/products endpoints.
 
 ---
 
 ## Zrobione
+
+### Sesja 50 — Pre-production hardening (agent teams)
+- [x] P0-01: `.env.production.example` — template konfiguracji produkcyjnej
+- [x] P0-02: `Dockerfile` (multi-stage) + `docker-compose.yml` + `.dockerignore`
+- [x] P0-03: Health endpoint — ukrycie `error.message` DB → generyczne "Database unavailable"
+- [x] P0-04: `DEPLOYMENT.md` — pełna dokumentacja operacyjna (deploy, backup, monitoring, troubleshooting)
+- [x] P1-02: .eml Subject header + RFC 2231 encoding polskich znaków w nazwie załącznika
+- [x] P1-03: Usunięcie dead code `forceRegeneratePdf` z `prepareEmailSchema`
+- [x] P2-02: Cleanup service — automatyczne usuwanie anulowanych zleceń po 24h (setInterval 1h) + endpoint `POST /api/v1/admin/cleanup`
+- [x] P2-03: `ExpiryCountdown` — "Wygasa za X h Y min" w zakładce Anulowane (z kolorowaniem: neutralny > pomarańczowy > czerwony)
+- [x] P3-04: Body size limit 1MB w middleware (413 Payload Too Large)
+- [x] P5-02: Guard statusu w try_lock_order RPC (`AND status_code NOT IN ('anulowane','zrealizowane')`)
+- [x] P5-03: Search field max length 200 — walidator + 3 dictionary endpoints
+- [x] D-10, D-12, D-19: Przeniesione z odroczonych do zrealizowanych
+- [x] Naprawione testy: health.test.ts (logError mock), order.validator.test.ts (forceRegeneratePdf usunięte)
+- Wynik: 999/999 testów, 0 błędów TypeScript, build OK
 
 ### Sesja 49 — HIGH fixes (H-16, H-17, H-18)
 - [x] H-16: Sub-query filters w listOrders — zamiana 5 osobnych sub-queries (~96 linii) na RPC `filter_order_ids` (EXISTS subqueries w jednym SQL). Nowa migracja, indeks `order_stops(kind, location_id)`, typ w database.types.ts, 6 nowych testów.
