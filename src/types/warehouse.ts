@@ -49,3 +49,22 @@ export interface WarehouseWeekResponseDto {
     unloadingTotalTons: number;
   };
 }
+
+/** Odbiorca raportu magazynowego. */
+export interface ReportRecipientDto {
+  id: string;
+  email: string;
+  name: string | null;
+}
+
+/** Request body POST /api/v1/warehouse/report/pdf i /send-email. */
+export interface WarehouseReportPdfRequestDto {
+  week: number;
+  year: number;
+  locationId?: string;
+}
+
+/** Response GET /api/v1/warehouse/report/recipients. */
+export interface WarehouseReportRecipientsResponseDto {
+  recipients: ReportRecipientDto[];
+}

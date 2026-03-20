@@ -17,6 +17,7 @@ import { AppSidebar } from "@/components/orders/AppSidebar";
 import { useWarehouseWeek } from "@/hooks/useWarehouseWeek";
 
 import { BranchSelector } from "./BranchSelector";
+import { ReportActions } from "./ReportActions";
 import { OperationLegend } from "./OperationLegend";
 import { WeekNavigation } from "./WeekNavigation";
 import { DayCard } from "./DayCard";
@@ -87,6 +88,14 @@ function WarehouseContent() {
           <Separator orientation="vertical" className="h-6" />
           <h1 className="text-sm font-semibold">Widok magazynowy</h1>
           <BranchSelector value={selectedLocationId} onChange={setSelectedLocationId} />
+          <div className="ml-auto">
+            <ReportActions
+              week={week}
+              year={year}
+              locationId={selectedLocationId}
+              disabled={isLoading || !!error}
+            />
+          </div>
         </header>
 
         <div className="flex flex-col flex-1 overflow-hidden">

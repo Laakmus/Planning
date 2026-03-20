@@ -46,8 +46,10 @@ export function buildEmlWithPdfAttachment(options: {
   pdfBuffer: ArrayBuffer;
   pdfFileName: string;
   subject?: string;
+  to?: string;
+  body?: string;
 }): string {
-  const { pdfBuffer, pdfFileName, subject } = options;
+  const { pdfBuffer, pdfFileName, subject, to, body } = options;
 
   // Unikalna granica MIME (timestamp + losowa wartość)
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -72,16 +74,16 @@ export function buildEmlWithPdfAttachment(options: {
     "MIME-Version: 1.0",
     "X-Unsent: 1",
     `Subject: ${encodedSubject}`,
-    "To: ",
+    `To: ${to ?? ""}`,
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     "",
     // Preambuła (ignorowana przez klienty MIME)
     `--${boundary}`,
-    // Część tekstowa (pusty body)
+    // Część tekstowa
     "Content-Type: text/plain; charset=utf-8",
     "Content-Transfer-Encoding: 7bit",
     "",
-    "",
+    body ?? "",
     // Załącznik PDF
     `--${boundary}`,
     "Content-Type: application/pdf",

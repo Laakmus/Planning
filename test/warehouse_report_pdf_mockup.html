@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+<meta charset="UTF-8">
+<title>Mockup: Plan załadunkowy magazynu (PDF landscape A4)</title>
+<style>
+  /* Symulacja landscape A4: 297x210mm */
+  body { margin: 0; background: #eee; font-family: 'Segoe UI', Roboto, sans-serif; }
+  .page {
+    width: 297mm; min-height: 210mm;
+    margin: 20px auto; background: #fff; padding: 12mm;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    box-sizing: border-box;
+  }
+
+  /* Tytuł */
+  .title { font-size: 14pt; font-weight: bold; margin-bottom: 2mm; }
+  .subtitle { font-size: 10pt; color: #64748b; margin-bottom: 5mm; }
+
+  /* Nagłówek dnia */
+  .day-header {
+    background: #e2e8f0; padding: 2mm 3mm; font-size: 11pt; font-weight: bold;
+    text-transform: uppercase; margin-top: 4mm;
+  }
+
+  /* Tabela */
+  table { width: 100%; border-collapse: collapse; font-size: 7pt; margin-bottom: 1mm; }
+  thead th {
+    background: #f1f5f9; color: #64748b; font-weight: bold; text-align: left;
+    padding: 1.5mm 2mm; border-bottom: 0.5px solid #cbd5e1; font-size: 7pt;
+  }
+  tbody td {
+    padding: 1.5mm 2mm; border-bottom: 0.5px solid #cbd5e1; font-size: 7pt;
+    vertical-align: top; /* wyrównanie do góry przy wieloliniowych komórkach */
+  }
+
+  /* Kolumny */
+  .col-type { width: 5%; }
+  .col-time { width: 7%; }
+  .col-order { width: 12%; }
+  .col-cargo { width: 32%; }
+  .col-carrier { width: 22%; }
+  .col-notif { width: 22%; }
+
+  /* Kolorowanie wierszy */
+  tr.loading td { background: #dcfce7; }
+  tr.unloading td { background: #dbeafe; }
+
+  /* Typ bold */
+  .type-label { font-weight: bold; }
+  .order-no { font-weight: bold; }
+
+  /* Weekend marker */
+  .weekend { color: #dc2626; }
+
+  /* Podsumowanie */
+  .summary { margin-top: 5mm; border-top: 0.5px solid #cbd5e1; padding-top: 3mm; }
+  .summary-title { font-size: 9pt; font-weight: bold; margin-bottom: 2mm; }
+  .summary-line { font-size: 7pt; margin-left: 2mm; line-height: 1.8; }
+
+  /* Stopka */
+  .footer {
+    margin-top: 8mm; font-size: 7pt; color: #64748b;
+    display: flex; justify-content: space-between;
+  }
+
+  /* Legenda kolorów */
+  .legend { font-size: 7pt; color: #64748b; margin-bottom: 3mm; display: flex; gap: 12mm; }
+  .legend-item { display: flex; align-items: center; gap: 2mm; }
+  .legend-box { width: 4mm; height: 3mm; border-radius: 0.5mm; }
+  .legend-box.loading { background: #dcfce7; border: 0.5px solid #86efac; }
+  .legend-box.unloading { background: #dbeafe; border: 0.5px solid #93c5fd; }
+
+  /* Wieloliniowe pozycje towarowe */
+  .cargo-item { display: block; line-height: 1.6; }
+  .cargo-total { display: block; line-height: 1.6; font-weight: bold; margin-top: 1mm; }
+</style>
+</head>
+<body>
+
+<div class="page">
+  <!-- TYTUŁ -->
+  <div class="title">PLAN ZAŁADUNKOWY — MAGAZYN NORD GŁÓWNY</div>
+  <div class="subtitle">Tydzień 12 (16.03.2026 – 20.03.2026)</div>
+
+  <!-- LEGENDA -->
+  <div class="legend">
+    <div class="legend-item"><div class="legend-box loading"></div> Z = Załadunek</div>
+    <div class="legend-item"><div class="legend-box unloading"></div> R = Rozładunek</div>
+    <div class="legend-item"><span class="weekend">* = przesunięty z weekendu</span></div>
+  </div>
+
+  <!-- PONIEDZIAŁEK -->
+  <div class="day-header">Poniedziałek 16.03.2026</div>
+  <table>
+    <thead>
+      <tr>
+        <th class="col-type">Typ</th>
+        <th class="col-time">Godz.</th>
+        <th class="col-order">Nr zlecenia</th>
+        <th class="col-cargo">Towar / Masa</th>
+        <th class="col-carrier">Przewoźnik</th>
+        <th class="col-notif">Awizacja</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="loading">
+        <td><span class="type-label">Z</span></td>
+        <td>06:00</td>
+        <td><span class="order-no">ZT2026/0042</span></td>
+        <td>
+          <span class="cargo-item">Miedź (luzem) 24t</span>
+        </td>
+        <td>ABC Trans Sp. z o.o.</td>
+        <td>Kierowca Jan Kowalski, tel. 600-100-200</td>
+      </tr>
+      <tr class="loading">
+        <td><span class="type-label">Z</span></td>
+        <td>08:30</td>
+        <td><span class="order-no">ZT2026/0045</span></td>
+        <td>
+          <span class="cargo-item">Granulat PE (paleta) 18t</span>
+        </td>
+        <td>Trans-Pol Sp. z o.o.</td>
+        <td>Awizacja mailowa 24h wcześniej</td>
+      </tr>
+      <tr class="unloading">
+        <td><span class="type-label">R</span></td>
+        <td>10:00</td>
+        <td><span class="order-no">ZT2026/0038</span></td>
+        <td>
+          <span class="cargo-item">Złom stalowy (luzem) 22t</span>
+        </td>
+        <td>Metrans GmbH</td>
+        <td></td>
+      </tr>
+      <tr class="loading">
+        <td><span class="type-label">Z</span></td>
+        <td>14:00</td>
+        <td><span class="order-no">ZT2026/0051</span></td>
+        <td>
+          <span class="cargo-item">Aluminium (bigbag) 12t</span>
+          <span class="cargo-item">Miedź (luzem) 8t</span>
+          <span class="cargo-total">Razem: 20t</span>
+        </td>
+        <td>SpedBud Kraków</td>
+        <td>Wymagane ważenie na wjeździe. Kierowca musi mieć dowód rejestracyjny i CMR. Wjazd bramą nr 3.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- WTOREK -->
+  <div class="day-header">Wtorek 17.03.2026</div>
+  <table>
+    <thead>
+      <tr>
+        <th class="col-type">Typ</th>
+        <th class="col-time">Godz.</th>
+        <th class="col-order">Nr zlecenia</th>
+        <th class="col-cargo">Towar / Masa</th>
+        <th class="col-carrier">Przewoźnik</th>
+        <th class="col-notif">Awizacja</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="unloading">
+        <td><span class="type-label">R</span></td>
+        <td>07:00</td>
+        <td><span class="order-no">ZT2026/0040</span></td>
+        <td>
+          <span class="cargo-item">Nikiel (paleta) 15t</span>
+        </td>
+        <td>LogiSped Berlin</td>
+        <td>Dokumenty CMR wymagane, kontakt: Anna Müller +49 172 1234567</td>
+      </tr>
+      <tr class="loading">
+        <td><span class="type-label">Z</span></td>
+        <td>09:00</td>
+        <td><span class="order-no">ZT2026/0053</span></td>
+        <td>
+          <span class="cargo-item">Granulat PP (luzem) 24t</span>
+        </td>
+        <td>EcoTrans Wrocław Sp. z o.o. Sp.k.</td>
+        <td></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- ŚRODA -->
+  <div class="day-header">Środa 18.03.2026</div>
+  <table>
+    <thead>
+      <tr>
+        <th class="col-type">Typ</th>
+        <th class="col-time">Godz.</th>
+        <th class="col-order">Nr zlecenia</th>
+        <th class="col-cargo">Towar / Masa</th>
+        <th class="col-carrier">Przewoźnik</th>
+        <th class="col-notif">Awizacja</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="loading">
+        <td><span class="type-label">Z</span></td>
+        <td>06:30</td>
+        <td><span class="order-no">ZT2026/0055</span></td>
+        <td>
+          <span class="cargo-item">Miedź (luzem) 24t</span>
+        </td>
+        <td>ABC Trans Sp. z o.o.</td>
+        <td>Potwierdzenie SMS dzień przed</td>
+      </tr>
+      <tr class="loading">
+        <td><span class="type-label">Z</span></td>
+        <td>11:00</td>
+        <td><span class="order-no">ZT2026/0058</span></td>
+        <td>
+          <span class="cargo-item">Złom miedziany (luzem) 18t</span>
+          <span class="cargo-item">Odpady elektroniczne (paleta) 3t</span>
+          <span class="cargo-item">Kable miedziane (kosze) 2t</span>
+          <span class="cargo-total">Razem: 23t</span>
+        </td>
+        <td>Recykling-Trans Katowice Sp. z o.o.</td>
+        <td>Ważenie na wjeździe i wyjeździe. Dokumenty KPO obowiązkowe. Wjazd po telefonicznym potwierdzeniu z magazynem.</td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PIĄTEK -->
+  <div class="day-header">Piątek 20.03.2026</div>
+  <table>
+    <thead>
+      <tr>
+        <th class="col-type">Typ</th>
+        <th class="col-time">Godz.</th>
+        <th class="col-order">Nr zlecenia</th>
+        <th class="col-cargo">Towar / Masa</th>
+        <th class="col-carrier">Przewoźnik</th>
+        <th class="col-notif">Awizacja</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr class="unloading">
+        <td><span class="type-label">R</span></td>
+        <td>08:00</td>
+        <td><span class="order-no">ZT2026/0039</span></td>
+        <td>
+          <span class="cargo-item">Złom aluminium (bigbag) 16t</span>
+        </td>
+        <td>Trans-Pol Sp. z o.o.</td>
+        <td></td>
+      </tr>
+      <tr class="loading">
+        <td><span class="type-label">Z</span></td>
+        <td class="weekend">10:00 *</td>
+        <td><span class="order-no">ZT2026/0060</span></td>
+        <td>
+          <span class="cargo-item">Granulat PE (paleta) 20t</span>
+        </td>
+        <td>SpedBud Kraków</td>
+        <td><span class="weekend">Przesunięty z soboty 21.03</span></td>
+      </tr>
+    </tbody>
+  </table>
+
+  <!-- PODSUMOWANIE -->
+  <div class="summary">
+    <div class="summary-title">PODSUMOWANIE TYGODNIA</div>
+    <div class="summary-line">Załadunki: 7 operacji (153,0 t)</div>
+    <div class="summary-line">Rozładunki: 3 operacji (53,0 t)</div>
+    <div class="summary-line"><strong>Łącznie: 206,0 t</strong></div>
+  </div>
+
+  <!-- STOPKA -->
+  <div class="footer">
+    <span>Wygenerowano: 20.03.2026 17:30</span>
+    <span>Strona 1 z 1</span>
+  </div>
+</div>
+
+</body>
+</html>
