@@ -61,7 +61,7 @@ function WarehouseContent() {
   if (!user?.locationId) {
     return (
       <SidebarProvider>
-        <AppSidebar activeView={null} onViewChange={() => { window.location.href = "/orders"; }} />
+        <AppSidebar activeView={null} onViewChange={(view) => { window.location.href = `/orders?view=${view}`; }} />
         <SidebarInset>
           <header className="flex h-14 items-center gap-2 border-b px-4 print:hidden">
             <SidebarTrigger />
@@ -80,7 +80,7 @@ function WarehouseContent() {
 
   return (
     <SidebarProvider>
-      <AppSidebar activeView={null} onViewChange={() => { window.location.href = "/orders"; }} />
+      <AppSidebar activeView={null} onViewChange={(view) => { window.location.href = `/orders?view=${view}`; }} />
       <SidebarInset>
         <header className="flex h-14 items-center gap-2 border-b px-4 print:hidden">
           <SidebarTrigger />

@@ -32,7 +32,12 @@ import { OrdersPage } from "./OrdersPage";
 
 function OrdersAppInner() {
   const { user, isLoading } = useAuth();
-  const [activeView, setActiveView] = useState<ViewGroup>("CURRENT");
+  const [activeView, setActiveView] = useState<ViewGroup>(() => {
+    if (typeof window === "undefined") return "CURRENT";
+    const param = new URLSearchParams(window.location.search).get("view");
+    if (param === "CURRENT" || param === "COMPLETED" || param === "CANCELLED") return param;
+    return "CURRENT";
+  });
 
   // Przekieruj na login gdy auth się rozstrzygnie i brak sesji
   useEffect(() => {
