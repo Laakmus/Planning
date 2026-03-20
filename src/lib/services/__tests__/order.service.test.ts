@@ -1057,7 +1057,6 @@ describe("prepareEmailForOrder", () => {
     const supabase = buildEmailMock({ status_code: "robocze" });
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
-      forceRegeneratePdf: false,
       outputFormat: "eml" as const,
     });
 
@@ -1073,7 +1072,6 @@ describe("prepareEmailForOrder", () => {
     const supabase = buildEmailMock({ status_code: "korekta" });
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
-      forceRegeneratePdf: false,
       outputFormat: "eml" as const,
     });
 
@@ -1087,7 +1085,6 @@ describe("prepareEmailForOrder", () => {
     const supabase = buildEmailMock({ carrier_company_id: null });
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
-      forceRegeneratePdf: false,
       outputFormat: "eml" as const,
     });
 
@@ -1102,7 +1099,7 @@ describe("prepareEmailForOrder", () => {
     const supabase = buildEmailMock({ status_code: "zrealizowane" });
 
     await expect(
-      prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, { forceRegeneratePdf: false, outputFormat: "eml" as const })
+      prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, { outputFormat: "eml" as const })
     ).rejects.toThrow("NOT_ALLOWED_STATUS");
   });
 
@@ -1112,7 +1109,6 @@ describe("prepareEmailForOrder", () => {
     });
 
     const result = await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
-      forceRegeneratePdf: false,
       outputFormat: "eml" as const,
     });
     expect(result).toBeNull();

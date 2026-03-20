@@ -693,6 +693,21 @@ Dane awizacji przechowywane są w polu `notification_details` (textarea, max 500
 - Dedykowany endpoint: `GET /api/v1/warehouse/orders?week=12&year=2026`
 - Zwraca dane pogrupowane per dzień + sekcja „bez daty" + podsumowanie tygodnia
 
+3.2.8 Eksport PDF + email (plan załadunkowy)
+
+- **Przyciski w headerze**: "Podgląd PDF" (outline) + "Wyślij plan" (default, ikona Mail), widoczne po prawej stronie headera (ml-auto), obok BranchSelector.
+- **Podgląd PDF**: Generuje landscape A4 PDF z planem załadunkowym, otwiera w nowej karcie przeglądarki (natywny PDF viewer z opcją druku).
+- **Wyślij plan**: Dialog potwierdzenia z listą odbiorców z tabeli `warehouse_report_recipients` → plik .eml z PDF w załączniku i pre-filled To:. Gdy brak odbiorców — przycisk disabled z tooltipem "Brak odbiorców".
+- **Format PDF**:
+  - Tytuł: "PLAN ZAŁADUNKOWY — MAGAZYN {NAZWA}", podtytuł z zakresem dat.
+  - Tabele per dzień (nagłówek dnia + nagłówki kolumn: Typ, Godz., Nr zlecenia, Towar/Masa, Przewoźnik, Awizacja).
+  - Kolorowanie: załadunek = emerald-100, rozładunek = blue-100. Weekend = czerwony tekst.
+  - Dynamiczna wysokość wierszy (zawijanie tekstu w kolumnach Towar, Przewoźnik, Awizacja). Towar — każda pozycja w osobnej linii.
+  - Podsumowanie tygodnia: załadunki/rozładunki count+tony, łącznie.
+  - Stopka: data wygenerowania + numeracja stron.
+- **Odbiorcy**: Stała lista email per oddział w tabeli `warehouse_report_recipients` (zmienia się raz na pół roku). Zarządzanie: ADMIN w SQL/Studio, brak UI do zarządzania w MVP.
+- **Auth**: ADMIN + PLANNER mogą generować PDF i wysyłać email. READ_ONLY nie ma dostępu do tych akcji.
+
   3.3 Funkcje planowane na etap 2 (poza MVP)
 
 - Dokładne odwzorowanie PDF zlecenia transportowego w 100 procentach zgodne z istniejącym sztywnym formularzem firmowym (układ, czcionki, współrzędne).

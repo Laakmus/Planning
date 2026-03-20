@@ -428,6 +428,26 @@ PK:
 
 ---
 
+#### 1.13 `warehouse_report_recipients` – odbiorcy planu załadunkowego per oddział
+
+Stała lista adresów email, na które wysyłany jest tygodniowy plan załadunkowy. Zmienia się raz na pół roku — zarządzanie przez ADMIN (brak UI w MVP, tylko SQL/Studio).
+
+- **id**: `uuid` PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
+- **location_id**: `uuid` FK → `locations.id` (`ON DELETE CASCADE`), `NOT NULL`
+- **email**: `varchar(320)`, `NOT NULL`
+- **name**: `varchar(200)` — opcjonalna nazwa odbiorcy
+- **created_at**: `timestamptz`, `DEFAULT now()`, `NOT NULL`
+
+Indeksy:
+- `wrr_location_email_uq` — UNIQUE INDEX na `(location_id, lower(email))` — case-insensitive unikalność
+- `wrr_location_id_idx` — INDEX na `location_id`
+
+RLS:
+- `select_recipients` — SELECT dla authenticated
+- `manage_recipients` — ALL (INSERT/UPDATE/DELETE) tylko dla ADMIN
+
+---
+
 ### 2. Relacje między tabelami
 
 1. **`transport_orders` → `order_stops`**  

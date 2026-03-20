@@ -473,6 +473,15 @@ Przyciski akcji (sticky na dole draweru):
 | NoDateSection | `src/components/warehouse/NoDateSection.tsx` | Sekcja stopów bez daty |
 | BranchSelector | `src/components/warehouse/BranchSelector.tsx` | Dropdown oddziałów firmy użytkownika |
 | OperationLegend | `src/components/warehouse/OperationLegend.tsx` | Legenda typów operacji (Zał/Roz) |
+| ReportActions | `src/components/warehouse/ReportActions.tsx` | Przyciski "Podgląd PDF" + "Wyślij plan" w headerze |
+
+#### Eksport PDF + email
+
+W headerze widoku magazynowego (po prawej stronie, `ml-auto`) dwa przyciski:
+- **Podgląd PDF** (`variant="outline"`, ikona FileText) — generuje landscape A4 PDF z planem załadunkowym i otwiera w nowej karcie przeglądarki.
+- **Wyślij plan** (`variant="default"`, ikona Mail) — otwiera AlertDialog z listą odbiorców z `warehouse_report_recipients`, po potwierdzeniu pobiera plik .eml z PDF w załączniku.
+- Gdy brak odbiorców — przycisk "Wyślij plan" disabled z tooltipem.
+- API: `POST /warehouse/report/pdf`, `POST /warehouse/report/send-email`, `GET /warehouse/report/recipients`.
 
 #### Hook
 

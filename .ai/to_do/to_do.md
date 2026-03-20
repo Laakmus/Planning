@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-19 (sesja 50 — pre-production hardening + UX audit + E2E)
+> Ostatnia aktualizacja: 2026-03-20 (sesja 51 — plan załadunkowy PDF + email)
 
 ---
 
@@ -158,6 +158,22 @@
 ---
 
 ## Zrobione
+
+### Sesja 51 — Plan załadunkowy magazynu PDF + email (agent teams)
+- [x] Migracja DB: tabela `warehouse_report_recipients` (RLS: ADMIN zarządza, authenticated czyta)
+- [x] Typy: `ReportRecipientDto`, `WarehouseReportPdfRequestDto`, `WarehouseReportRecipientsResponseDto` w `src/types/warehouse.ts`
+- [x] Walidatory Zod: `warehouseReportPdfSchema`, `warehouseReportSendEmailSchema` w nowym pliku `src/lib/validators/warehouse-report.validator.ts`
+- [x] PDF generator: landscape A4, dynamiczna wysokość wierszy, wieloliniowy tekst (towar, przewoźnik, awizacja), tabele per dzień, podsumowanie tygodnia, stopka z datą i numeracją stron
+- [x] 3 endpointy API: `POST /warehouse/report/pdf`, `POST /warehouse/report/send-email`, `GET /warehouse/report/recipients`
+- [x] eml-builder: dodane opcjonalne parametry `to` i `body` (backward-compatible)
+- [x] Frontend: `ReportActions.tsx` — "Podgląd PDF" (outline) + "Wyślij plan" (dialog z listą odbiorców, .eml download)
+- [x] `WarehouseApp.tsx` — ReportActions w headerze (ml-auto, po BranchSelector)
+- [x] `database.types.ts` — dodana tabela `warehouse_report_recipients`
+- [x] Fix: usunięto `forceRegeneratePdf` z testów order.service (pre-existing TS error)
+- [x] HTML mockup: `test/warehouse_report_pdf_mockup.html`
+- [x] Aktualizacja dokumentacji: api-plan.md (§2.17), db-plan.md (§1.13), ui-plan.md, prd.md (§3.2.8)
+- [x] Również: auto-fill sender contact, documents/currency, hover borders, RouteSection fix (osobny commit)
+- Wynik: 1000/1000 testów, 0 błędów TypeScript, build OK
 
 ### Sesja 50 — Pre-production hardening (agent teams)
 - [x] P0-01: `.env.production.example` — template konfiguracji produkcyjnej

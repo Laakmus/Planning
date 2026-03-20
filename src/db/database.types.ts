@@ -707,6 +707,38 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouse_report_recipients: {
+        Row: {
+          id: string
+          location_id: string
+          email: string
+          name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          location_id: string
+          email: string
+          name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          location_id?: string
+          email?: string
+          name?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_report_recipients_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never

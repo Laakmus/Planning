@@ -725,7 +725,38 @@ Wszystkie te endpointy używają standardowego formatu:
 
 ---
 
-### 2.17 Health check
+### 2.17 Widok magazynowy — plan załadunkowy PDF + email
+
+- **POST** `/api/v1/warehouse/report/pdf`
+  - **Opis**: Generuje PDF planu załadunkowego magazynu (landscape A4) z tabelami per dzień.
+  - **Auth**: `requireWriteAccess` (ADMIN + PLANNER)
+  - **Body żądania**:
+    ```json
+    { "week": 12, "year": 2026, "locationId": "uuid (opcjonalny)" }
+    ```
+  - **Sukces**: `200 OK` (binarne dane PDF, Content-Type: `application/pdf`)
+  - **Błędy**: `400`, `401`, `403` (brak oddziału), `500`
+
+- **POST** `/api/v1/warehouse/report/send-email`
+  - **Opis**: Generuje PDF planu załadunkowego, pobiera odbiorców z `warehouse_report_recipients` i zwraca plik .eml z załącznikiem PDF lub JSON z PDF base64 (do Graph API).
+  - **Auth**: `requireWriteAccess` (ADMIN + PLANNER)
+  - **Body żądania**:
+    ```json
+    { "week": 12, "year": 2026, "locationId": "uuid (opcjonalny)", "outputFormat": "eml | pdf-base64" }
+    ```
+  - **Sukces (eml)**: `200 OK` — plik .eml (Content-Type: `message/rfc822`)
+  - **Sukces (pdf-base64)**: `200 OK` — JSON `{ pdfBase64, pdfFileName, recipients: [{email, name}] }`
+  - **Błędy**: `400`, `401`, `403`, `422` (brak skonfigurowanych odbiorców), `500`
+
+- **GET** `/api/v1/warehouse/report/recipients?locationId=UUID`
+  - **Opis**: Lista odbiorców planu załadunkowego dla danego oddziału.
+  - **Auth**: authenticated (wszyscy zalogowani)
+  - **Odpowiedź**: `{ recipients: [{ id, email, name }] }`
+  - **Błędy**: `400` (brak/nieprawidłowy locationId), `401`, `500`
+
+---
+
+### 2.18 Health check
 
 - **GET** `/api/v1/health`
   - **Opis**: Sprawdza dostępność serwera i połączenie z bazą danych. Nie wymaga uwierzytelniania.
