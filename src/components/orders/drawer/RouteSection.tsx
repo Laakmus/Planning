@@ -5,7 +5,7 @@
  * Drag handle jest NA ZEWNĄTRZ karty — w wrapperze flex.
  */
 
-import { useCallback, useMemo, useState } from "react";
+import { memo, useCallback, useMemo, useState } from "react";
 import { GripVertical, PlusCircle } from "lucide-react";
 
 import {
@@ -106,7 +106,7 @@ function SortableStopWrapper({
   );
 }
 
-export function RouteSection({
+export const RouteSection = memo(function RouteSection({
   formData,
   transportTypes,
   companies,
@@ -405,4 +405,4 @@ export function RouteSection({
 
     </div>
   );
-}
+});

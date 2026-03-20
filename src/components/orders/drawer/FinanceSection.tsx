@@ -3,6 +3,8 @@
  * Stawka, waluta, termin płatności, forma płatności.
  */
 
+import { memo } from "react";
+
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -32,7 +34,7 @@ const PAYMENT_METHODS = [
   { value: "Karta", label: "Karta" },
 ];
 
-export function FinanceSection({
+export const FinanceSection = memo(function FinanceSection({
   formData,
   isReadOnly,
   onChange,
@@ -123,4 +125,4 @@ export function FinanceSection({
       </div>
     </div>
   );
-}
+});

@@ -2,6 +2,8 @@
  * Sekcja 5 – Uwagi ogólne.
  */
 
+import { memo } from "react";
+
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import type { OrderFormData } from "@/lib/view-models";
@@ -14,7 +16,7 @@ interface NotesSectionProps {
 
 const MAX_NOTES = 500;
 
-export function NotesSection({ formData, isReadOnly, onChange }: NotesSectionProps) {
+export const NotesSection = memo(function NotesSection({ formData, isReadOnly, onChange }: NotesSectionProps) {
   const notes = formData.generalNotes ?? "";
 
   return (
@@ -36,4 +38,4 @@ export function NotesSection({ formData, isReadOnly, onChange }: NotesSectionPro
       />
     </div>
   );
-}
+});

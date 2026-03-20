@@ -4,6 +4,8 @@
  * Kolorowe przyciski zamiast select. Jeśli wybrano "reklamacja" — wymagane pole powodu.
  */
 
+import { memo } from "react";
+
 import { AlertTriangle, CheckCircle, Info, XCircle } from "lucide-react";
 
 import { Textarea } from "@/components/ui/textarea";
@@ -50,7 +52,7 @@ const DEFAULT_BUTTON_STYLE = {
   icon: null as React.ReactNode,
 };
 
-export function StatusSection({
+export const StatusSection = memo(function StatusSection({
   currentStatusCode,
   currentStatusName,
   pendingStatusCode,
@@ -155,4 +157,4 @@ export function StatusSection({
       </div>
     </div>
   );
-}
+});

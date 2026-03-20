@@ -3,7 +3,7 @@
  * Autocomplete firmy, NIP (readonly), typ auta + objętość (2 niezależne pola), wymagane dokumenty.
  */
 
-import { useMemo } from "react";
+import { memo, useMemo } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -33,7 +33,7 @@ const REQUIRED_DOCS_OPTIONS = [
   { value: "WZE, Aneks VII, CMR", label: "WZE, Aneks VII, CMR" },
 ];
 
-export function CarrierSection({
+export const CarrierSection = memo(function CarrierSection({
   formData,
   companies,
   vehicleVariants,
@@ -181,4 +181,4 @@ export function CarrierSection({
       </div>
     </div>
   );
-}
+});

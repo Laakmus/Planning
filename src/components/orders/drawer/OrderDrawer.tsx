@@ -5,6 +5,8 @@
  * Przy zamknięciu: sprawdza isDirty → dialog → unlock.
  */
 
+import { lazy, Suspense } from "react";
+
 import { AlertTriangle, History, RefreshCw, X } from "lucide-react";
 
 import {
@@ -17,10 +19,12 @@ import { useOrderDrawer } from "@/hooks/useOrderDrawer";
 import { formatDateTimeFromTimestamp } from "@/lib/format-utils";
 
 import { StatusBadge } from "../StatusBadge";
-import OrderView from "../order-view/OrderView";
+
+const OrderView = lazy(() => import("../order-view/OrderView"));
 
 import { ValidationErrorDialog } from "../ValidationErrorDialog";
 import { DrawerFooter } from "./DrawerFooter";
+import { DrawerSkeleton } from "./DrawerSkeleton";
 import { OrderForm } from "./OrderForm";
 import { PreviewUnsavedDialog } from "./PreviewUnsavedDialog";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
@@ -151,11 +155,7 @@ export function OrderDrawer({
             )}
           </header>
 
-          {isLoading && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-sm text-slate-400">Ładowanie zlecenia…</div>
-            </div>
-          )}
+          {isLoading && <DrawerSkeleton />}
 
           {/* Widok błędu — gdy loadDetail zwrócił błąd */}
           {!isLoading && !detail && loadError && (
@@ -176,14 +176,16 @@ export function OrderDrawer({
           )}
 
           {!isLoading && detail && showOrderView && orderViewInitialData && (
-            <OrderView
-              initialData={orderViewInitialData}
-              isReadOnly={isReadOnly}
-              onSave={handleOrderViewSave}
-              onCancel={handleOrderViewCancel}
-              onGeneratePdf={handleGeneratePdf}
-              onDirtyChange={(dirty) => { orderViewDirtyRef.current = dirty; }}
-            />
+            <Suspense fallback={<DrawerSkeleton />}>
+              <OrderView
+                initialData={orderViewInitialData}
+                isReadOnly={isReadOnly}
+                onSave={handleOrderViewSave}
+                onCancel={handleOrderViewCancel}
+                onGeneratePdf={handleGeneratePdf}
+                onDirtyChange={(dirty) => { orderViewDirtyRef.current = dirty; }}
+              />
+            </Suspense>
           )}
 
           {!isLoading && detail && !showOrderView && (

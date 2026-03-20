@@ -3,7 +3,7 @@
  * Zarządza lokalnym stanem formularza i flagą isDirty.
  */
 
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, useTransition } from "react";
 
 import { ArrowLeftRight, Banknote, MessageSquare, Package, Route, Truck, User } from "lucide-react";
 
@@ -227,6 +227,22 @@ export function OrderForm({
 
   const statusName = STATUS_NAMES[order.statusCode as OrderStatusCode] ?? order.statusCode;
 
+  // Faza 4: Progressive rendering — sekcje 2–6 renderują się po pierwszej ramce,
+  // żeby nie blokować main thread przy montowaniu drawera
+  const [secondaryReady, setSecondaryReady] = useState(false);
+  const [, startTransition] = useTransition();
+  useEffect(() => {
+    // Po zamontowaniu pierwszych sekcji (kontakt + trasa), oddaj kontrolę przeglądarce
+    // i wyrenderuj pozostałe sekcje w low-priority transition
+    const id = requestAnimationFrame(() => {
+      startTransition(() => setSecondaryReady(true));
+    });
+    return () => {
+      cancelAnimationFrame(id);
+      setSecondaryReady(false);
+    };
+  }, [order.id]);
+
   return (
     <ScrollArea className="flex-1 min-h-0">
       <div className="p-6 space-y-8">
@@ -282,81 +298,86 @@ export function OrderForm({
           />
         </section>
 
-        {/* Sekcja 2 – Towar */}
-        <section>
-          <SectionHeader icon={<Package className="w-4 h-4 text-amber-500" />} title="Sekcja 2: Towar" />
-          <CargoSection
-            formData={formData}
-            products={products}
-            isReadOnly={isReadOnly}
-            onChange={patch}
-          />
-        </section>
-
-        {/* Sekcja 3 – Firma transportowa */}
-        <section>
-          <SectionHeader icon={<Truck className="w-4 h-4 text-violet-500" />} title="Sekcja 3: Firma transportowa" />
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 transition-colors">
-            <CarrierSection
-              formData={formData}
-              companies={companies}
-              vehicleVariants={vehicleVariants}
-              isReadOnly={isReadOnly}
-              onChange={patch}
-            />
-          </div>
-        </section>
-
-        {/* Sekcja 4 – Finanse */}
-        <section>
-          <SectionHeader icon={<Banknote className="w-4 h-4 text-yellow-500" />} title="Sekcja 4: Finanse" />
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-yellow-500/50 transition-colors">
-            <FinanceSection
-              formData={formData}
-              isReadOnly={isReadOnly}
-              onChange={patch}
-            />
-          </div>
-        </section>
-
-        {/* Sekcja 5 – Uwagi */}
-        <section>
-          <SectionHeader icon={<MessageSquare className="w-4 h-4 text-slate-400 dark:text-slate-500" />} title="Sekcja 5: Uwagi" />
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400/50 transition-colors">
-            <NotesSection
-              formData={formData}
-              isReadOnly={isReadOnly}
-              onChange={patch}
-            />
-          </div>
-        </section>
-
-        {/* Sekcja 6 – Zmiana statusu (tylko edycja) */}
-        {!isReadOnly && (
-          <section>
-            <SectionHeader icon={<ArrowLeftRight className="w-4 h-4 text-indigo-500" />} title="Sekcja 6: Zmiana statusu" />
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 transition-colors">
-              <StatusSection
-                currentStatusCode={order.statusCode}
-                currentStatusName={statusName}
-                pendingStatusCode={pendingStatusCode}
-                complaintReason={complaintReason}
+        {/* Sekcje 2–6: renderowane po pierwszej ramce (progressive rendering) */}
+        {secondaryReady && (
+          <>
+            {/* Sekcja 2 – Towar */}
+            <section>
+              <SectionHeader icon={<Package className="w-4 h-4 text-amber-500" />} title="Sekcja 2: Towar" />
+              <CargoSection
+                formData={formData}
+                products={products}
                 isReadOnly={isReadOnly}
-                onStatusChange={(code) => {
-                  setPendingStatusCode(code);
-                  const dirty = computeDirty(formDataDirtyRef.current, code, complaintReason);
-                  setIsDirty(dirty);
-                  onDirtyChange(dirty);
-                }}
-                onComplaintReasonChange={(reason) => {
-                  setComplaintReason(reason);
-                  const dirty = computeDirty(formDataDirtyRef.current, pendingStatusCode, reason);
-                  setIsDirty(dirty);
-                  onDirtyChange(dirty);
-                }}
+                onChange={patch}
               />
-            </div>
-          </section>
+            </section>
+
+            {/* Sekcja 3 – Firma transportowa */}
+            <section>
+              <SectionHeader icon={<Truck className="w-4 h-4 text-violet-500" />} title="Sekcja 3: Firma transportowa" />
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 transition-colors">
+                <CarrierSection
+                  formData={formData}
+                  companies={companies}
+                  vehicleVariants={vehicleVariants}
+                  isReadOnly={isReadOnly}
+                  onChange={patch}
+                />
+              </div>
+            </section>
+
+            {/* Sekcja 4 – Finanse */}
+            <section>
+              <SectionHeader icon={<Banknote className="w-4 h-4 text-yellow-500" />} title="Sekcja 4: Finanse" />
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-yellow-500/50 transition-colors">
+                <FinanceSection
+                  formData={formData}
+                  isReadOnly={isReadOnly}
+                  onChange={patch}
+                />
+              </div>
+            </section>
+
+            {/* Sekcja 5 – Uwagi */}
+            <section>
+              <SectionHeader icon={<MessageSquare className="w-4 h-4 text-slate-400 dark:text-slate-500" />} title="Sekcja 5: Uwagi" />
+              <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400/50 transition-colors">
+                <NotesSection
+                  formData={formData}
+                  isReadOnly={isReadOnly}
+                  onChange={patch}
+                />
+              </div>
+            </section>
+
+            {/* Sekcja 6 – Zmiana statusu (tylko edycja) */}
+            {!isReadOnly && (
+              <section>
+                <SectionHeader icon={<ArrowLeftRight className="w-4 h-4 text-indigo-500" />} title="Sekcja 6: Zmiana statusu" />
+                <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 transition-colors">
+                  <StatusSection
+                    currentStatusCode={order.statusCode}
+                    currentStatusName={statusName}
+                    pendingStatusCode={pendingStatusCode}
+                    complaintReason={complaintReason}
+                    isReadOnly={isReadOnly}
+                    onStatusChange={(code) => {
+                      setPendingStatusCode(code);
+                      const dirty = computeDirty(formDataDirtyRef.current, code, complaintReason);
+                      setIsDirty(dirty);
+                      onDirtyChange(dirty);
+                    }}
+                    onComplaintReasonChange={(reason) => {
+                      setComplaintReason(reason);
+                      const dirty = computeDirty(formDataDirtyRef.current, pendingStatusCode, reason);
+                      setIsDirty(dirty);
+                      onDirtyChange(dirty);
+                    }}
+                  />
+                </div>
+              </section>
+            )}
+          </>
         )}
 
       </div>

@@ -3,7 +3,7 @@
  * Lista pozycji towarowych.
  */
 
-import { useState } from "react";
+import { memo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
 import {
@@ -44,7 +44,7 @@ const LOADING_METHODS: { code: LoadingMethodCode; label: string }[] = [
   { code: "KOSZE", label: "Inne" },
 ];
 
-export function CargoSection({
+export const CargoSection = memo(function CargoSection({
   formData,
   products,
   isReadOnly,
@@ -272,4 +272,4 @@ export function CargoSection({
 
     </div>
   );
-}
+});

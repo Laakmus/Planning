@@ -5,6 +5,8 @@
  * Lock banner: gdy zlecenie zablokowane przez innego użytkownika.
  */
 
+import { memo } from "react";
+
 import { Eye, Loader2, Lock, Mail } from "lucide-react";
 
 interface DrawerFooterProps {
@@ -19,7 +21,7 @@ interface DrawerFooterProps {
   onSendEmail?: () => void;
 }
 
-export function DrawerFooter({
+export const DrawerFooter = memo(function DrawerFooter({
   isReadOnly,
   isSaving,
   isSendingEmail,
@@ -133,4 +135,4 @@ export function DrawerFooter({
       </div>
     </footer>
   );
-}
+});
