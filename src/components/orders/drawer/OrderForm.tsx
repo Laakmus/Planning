@@ -11,6 +11,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { useAuth } from "@/contexts/AuthContext";
 import { useDictionaries } from "@/contexts/DictionaryContext";
 import { STATUS_NAMES } from "@/lib/view-models";
 import type { CurrencyCode, OrderFormData, OrderFormItem, OrderFormStop, OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
@@ -76,12 +77,17 @@ function mapItemsToForm(items: OrderItemDto[]): OrderFormItem[] {
   }));
 }
 
-function buildInitialForm(order: OrderDetailDto, stops: OrderStopDto[], items: OrderItemDto[]): OrderFormData {
+function buildInitialForm(
+  order: OrderDetailDto,
+  stops: OrderStopDto[],
+  items: OrderItemDto[],
+  currentUser: { fullName: string | null; phone: string | null; email: string } | null,
+): OrderFormData {
   return {
     transportTypeCode: (LEGACY_TRANSPORT_CODE_MAP[order.transportTypeCode] ?? order.transportTypeCode as TransportTypeCode) ?? "PL",
     currencyCode: (order.currencyCode as CurrencyCode) ?? "PLN",
     priceAmount: order.priceAmount,
-    paymentTermDays: order.paymentTermDays,
+    paymentTermDays: order.paymentTermDays ?? 21,
     paymentMethod: order.paymentMethod,
     totalLoadTons: order.totalLoadTons,
     totalLoadVolumeM3: order.totalLoadVolumeM3,
@@ -96,9 +102,10 @@ function buildInitialForm(order: OrderDetailDto, stops: OrderStopDto[], items: O
     notificationDetails: order.notificationDetails,
     confidentialityClause: order.confidentialityClause,
     complaintReason: order.complaintReason,
-    senderContactName: order.senderContactName,
-    senderContactPhone: order.senderContactPhone,
-    senderContactEmail: order.senderContactEmail,
+    // Osoba kontaktowa = zawsze zalogowany użytkownik
+    senderContactName: currentUser?.fullName ?? order.senderContactName,
+    senderContactPhone: currentUser?.phone ?? order.senderContactPhone,
+    senderContactEmail: currentUser?.email ?? order.senderContactEmail,
     stops: mapStopsToForm(stops),
     items: mapItemsToForm(items),
   };
@@ -133,10 +140,11 @@ export function OrderForm({
   submitRef,
   formDataRef,
 }: OrderFormProps) {
+  const { user } = useAuth();
   const { companies, locations, products, transportTypes, vehicleVariants } = useDictionaries();
 
   const [formData, setFormData] = useState<OrderFormData>(() =>
-    buildInitialForm(order, stops, items)
+    buildInitialForm(order, stops, items, user)
   );
   const [pendingStatusCode, setPendingStatusCode] = useState<OrderStatusCode | null>(null);
   const [complaintReason, setComplaintReason] = useState<string | null>(order.complaintReason);
@@ -148,7 +156,7 @@ export function OrderForm({
 
   // Przebuduj formularz gdy order/stops/items się zmienią (np. po przeładowaniu detali)
   useEffect(() => {
-    const initial = buildInitialForm(order, stops, items);
+    const initial = buildInitialForm(order, stops, items, user);
     originalComplaintReasonRef.current = order.complaintReason;
     setFormData(initial);
     setPendingStatusCode(null);
@@ -169,6 +177,18 @@ export function OrderForm({
   }
 
   function patch(update: Partial<OrderFormData>) {
+    // Auto-fill dokumentów i waluty przy zmianie typu transportu
+    if (update.transportTypeCode) {
+      const code = update.transportTypeCode;
+      if (code === "PL") {
+        update.requiredDocumentsText = "WZ, KPO, kwit wagowy";
+        update.currencyCode = "PLN";
+      } else if (code === "EXP" || code === "EXP_K" || code === "IMP") {
+        update.requiredDocumentsText = "WZE, Aneks VII, CMR";
+        update.currencyCode = "EUR";
+      }
+    }
+
     // Ustaw flagę i dirty PRZED setFormData — side-effecty nie mogą być w updater function
     // (wywołania setState wewnątrz updater są batched i mogą nie dotrzeć do innych komponentów
     // zanim użytkownik zdąży wywołać handleCloseRequest)
@@ -276,7 +296,7 @@ export function OrderForm({
         {/* Sekcja 3 – Firma transportowa */}
         <section>
           <SectionHeader icon={<Truck className="w-4 h-4 text-violet-500" />} title="Sekcja 3: Firma transportowa" />
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 transition-colors">
             <CarrierSection
               formData={formData}
               companies={companies}
@@ -290,7 +310,7 @@ export function OrderForm({
         {/* Sekcja 4 – Finanse */}
         <section>
           <SectionHeader icon={<Banknote className="w-4 h-4 text-yellow-500" />} title="Sekcja 4: Finanse" />
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-yellow-500/50 transition-colors">
             <FinanceSection
               formData={formData}
               isReadOnly={isReadOnly}
@@ -302,7 +322,7 @@ export function OrderForm({
         {/* Sekcja 5 – Uwagi */}
         <section>
           <SectionHeader icon={<MessageSquare className="w-4 h-4 text-slate-400 dark:text-slate-500" />} title="Sekcja 5: Uwagi" />
-          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+          <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400/50 transition-colors">
             <NotesSection
               formData={formData}
               isReadOnly={isReadOnly}
@@ -315,7 +335,7 @@ export function OrderForm({
         {!isReadOnly && (
           <section>
             <SectionHeader icon={<ArrowLeftRight className="w-4 h-4 text-indigo-500" />} title="Sekcja 6: Zmiana statusu" />
-            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800">
+            <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 transition-colors">
               <StatusSection
                 currentStatusCode={order.statusCode}
                 currentStatusName={statusName}

@@ -10,6 +10,7 @@ import type { ApiClient } from "@/lib/api-client";
 import { sendEmailForOrder } from "@/lib/send-email";
 import type { OrderStatusCode } from "@/lib/view-models";
 import type {
+  AuthMeDto,
   CarrierColorResponseDto,
   CreateOrderResponseDto,
   DuplicateOrderResponseDto,
@@ -23,6 +24,7 @@ interface MicrosoftAuth {
 
 interface UseOrderActionsOptions {
   api: ApiClient;
+  user: AuthMeDto | null;
   refetch: () => void | Promise<void>;
   tableScrollRef: React.RefObject<HTMLDivElement | null>;
   microsoft?: MicrosoftAuth;
@@ -82,6 +84,7 @@ export interface UseOrderActionsReturn {
 
 export function useOrderActions({
   api,
+  user,
   refetch,
   tableScrollRef,
   microsoft,
@@ -120,16 +123,16 @@ export function useOrderActions({
         vehicleTypeText: null,
         vehicleCapacityVolumeM3: null,
         priceAmount: null,
-        paymentTermDays: null,
+        paymentTermDays: 21,
         paymentMethod: null,
         totalLoadTons: null,
         totalLoadVolumeM3: null,
         specialRequirements: null,
-        requiredDocumentsText: null,
+        requiredDocumentsText: "WZ, KPO, kwit wagowy",
         generalNotes: null,
-        senderContactName: null,
-        senderContactPhone: null,
-        senderContactEmail: null,
+        senderContactName: user?.fullName ?? null,
+        senderContactPhone: user?.phone ?? null,
+        senderContactEmail: user?.email ?? null,
         stops: [],
         items: [],
       });

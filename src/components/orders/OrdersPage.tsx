@@ -100,7 +100,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     handleDuplicateConfirm,
     emailValidationErrors,
     clearEmailValidationErrors,
-  } = useOrderActions({ api, refetch, tableScrollRef, microsoft });
+  } = useOrderActions({ api, user, refetch, tableScrollRef, microsoft });
 
   // Stan pola powodu reklamacji w dialogu zmiany statusu
   const [complaintReasonInput, setComplaintReasonInput] = useState("");

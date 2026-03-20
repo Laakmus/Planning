@@ -315,7 +315,7 @@ export function RouteSection({
           <SelectContent>
             {transportTypes.map((tt) => (
               <SelectItem key={tt.code} value={tt.code} className="text-sm">
-                {tt.name}
+                {tt.code}
               </SelectItem>
             ))}
           </SelectContent>

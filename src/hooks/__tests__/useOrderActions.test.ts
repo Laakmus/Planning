@@ -71,7 +71,7 @@ describe("useOrderActions", () => {
 
   function renderActions() {
     return renderHook(() =>
-      useOrderActions({ api: mockApi as any, refetch: refetchFn as unknown as () => void | Promise<void>, tableScrollRef })
+      useOrderActions({ api: mockApi as any, user: null, refetch: refetchFn as unknown as () => void | Promise<void>, tableScrollRef })
     );
   }
 
