@@ -248,7 +248,7 @@ export function OrderForm({
       <div className="p-6 space-y-8">
 
         {/* Osoba kontaktowa */}
-        <section>
+        <section className="animate-section-in">
           <SectionHeader icon={<User className="w-4 h-4 text-slate-400 dark:text-slate-500" />} title="Osoba kontaktowa" />
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
             <div className="space-y-1">
@@ -286,7 +286,7 @@ export function OrderForm({
         </section>
 
         {/* Sekcja 1 – Trasa */}
-        <section>
+        <section className="animate-section-in" style={{ animationDelay: "50ms" }}>
           <SectionHeader icon={<Route className="w-4 h-4 text-primary" />} title="Sekcja 1: Trasa" />
           <RouteSection
             formData={formData}
@@ -302,7 +302,7 @@ export function OrderForm({
         {secondaryReady && (
           <>
             {/* Sekcja 2 – Towar */}
-            <section>
+            <section className="animate-section-in" style={{ animationDelay: "60ms" }}>
               <SectionHeader icon={<Package className="w-4 h-4 text-amber-500" />} title="Sekcja 2: Towar" />
               <CargoSection
                 formData={formData}
@@ -313,7 +313,7 @@ export function OrderForm({
             </section>
 
             {/* Sekcja 3 – Firma transportowa */}
-            <section>
+            <section className="animate-section-in" style={{ animationDelay: "120ms" }}>
               <SectionHeader icon={<Truck className="w-4 h-4 text-violet-500" />} title="Sekcja 3: Firma transportowa" />
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-violet-500/50 transition-colors">
                 <CarrierSection
@@ -327,7 +327,7 @@ export function OrderForm({
             </section>
 
             {/* Sekcja 4 – Finanse */}
-            <section>
+            <section className="animate-section-in" style={{ animationDelay: "180ms" }}>
               <SectionHeader icon={<Banknote className="w-4 h-4 text-yellow-500" />} title="Sekcja 4: Finanse" />
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-yellow-500/50 transition-colors">
                 <FinanceSection
@@ -339,7 +339,7 @@ export function OrderForm({
             </section>
 
             {/* Sekcja 5 – Uwagi */}
-            <section>
+            <section className="animate-section-in" style={{ animationDelay: "240ms" }}>
               <SectionHeader icon={<MessageSquare className="w-4 h-4 text-slate-400 dark:text-slate-500" />} title="Sekcja 5: Uwagi" />
               <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-slate-400/50 transition-colors">
                 <NotesSection
@@ -352,7 +352,7 @@ export function OrderForm({
 
             {/* Sekcja 6 – Zmiana statusu (tylko edycja) */}
             {!isReadOnly && (
-              <section>
+              <section className="animate-section-in" style={{ animationDelay: "300ms" }}>
                 <SectionHeader icon={<ArrowLeftRight className="w-4 h-4 text-indigo-500" />} title="Sekcja 6: Zmiana statusu" />
                 <div className="p-4 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-indigo-500/50 transition-colors">
                   <StatusSection
