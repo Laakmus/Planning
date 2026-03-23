@@ -657,10 +657,11 @@ Wszystkie te endpointy używają standardowego formatu:
     ```json
     {
       "pdfBase64": "JVBERi0xLj... (base64-encoded PDF)",
-      "pdfFileName": "zlecenie-ZT2026-0001.pdf"
+      "pdfFileName": "zlecenie-ZT2026-0001.pdf",
+      "emailSubject": "ZT2026/0001 -Recykling Plus S.A. - TransBud Logistyka - Magazyn Główny - zał. 20/02/2026"
     }
     ```
-    Frontend używa tych danych do utworzenia draftu wiadomości przez Microsoft Graph API (`POST /me/messages` z fileAttachment) i otwarcia Outlook Web z draftem.
+    `emailSubject` — temat emaila wygenerowany na backendzie w formacie: `{orderNo} -{odbiorcy+} - {carrier} - {załadunki+} - zał. {DD/MM/YYYY}`. Frontend przekazuje go do Microsoft Graph API (`POST /me/messages`) jako `subject`. Fallback: jeśli brak, frontend używa domyślnego tematu.
   - **Błędy**: `401`, `403`, `404`, `422` (lista braków do wysyłki)
 
 ---

@@ -6,7 +6,7 @@
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../../db/database.types";
-import type { DuplicateOrderResponseDto } from "../../types";
+import type { DuplicateOrderResponseDto, OrderDetailResponseDto } from "../../types";
 import type { DuplicateOrderParams, PrepareEmailParams } from "../validators/order.validator";
 
 import { getOrderDetail } from "./order-detail.service";
@@ -22,7 +22,7 @@ import { generateOrderPdf } from "./pdf/pdf-generator.service";
 
 export type PrepareEmailResult =
   | { success: true; format: "eml"; emlContent: string; orderNo: string }
-  | { success: true; format: "pdf-base64"; pdfBase64: string; pdfFileName: string; orderNo: string }
+  | { success: true; format: "pdf-base64"; pdfBase64: string; pdfFileName: string; orderNo: string; emailSubject: string }
   | { success: false; validationErrors: string[] }
   | null;
 
@@ -215,6 +215,46 @@ const PREPARE_EMAIL_STATUS_TRANSITION: Record<string, string> = {
   "korekta wysłane": "korekta wysłane",
 };
 
+/** Buduje temat emaila: {orderNo} -{odbiorcy} - {carrier} - {załadunki} - zał. {DD/MM/YYYY} */
+function buildEmailSubject(detail: OrderDetailResponseDto): string {
+  const { order, stops } = detail;
+
+  const orderNo = order.orderNo || "???";
+
+  // Odbiorcy = unikalne companyNameSnapshot z UNLOADING stops
+  const receivers = [...new Set(
+    stops
+      .filter(s => s.kind === "UNLOADING" && s.companyNameSnapshot?.trim())
+      .map(s => s.companyNameSnapshot!.trim())
+  )];
+
+  const carrier = order.carrierNameSnapshot?.trim() || "";
+
+  // Załadunki = unikalne locationNameSnapshot z LOADING stops
+  const loadings = [...new Set(
+    stops
+      .filter(s => s.kind === "LOADING" && s.locationNameSnapshot?.trim())
+      .map(s => s.locationNameSnapshot!.trim())
+  )];
+
+  // Data pierwszego załadunku DD/MM/YYYY
+  let dateStr = "";
+  if (order.firstLoadingDate) {
+    const d = order.firstLoadingDate.slice(0, 10); // YYYY-MM-DD
+    const [y, m, day] = d.split("-");
+    dateStr = `${day}/${m}/${y}`;
+  }
+
+  // Składanie: pomijamy puste segmenty
+  const parts: string[] = [orderNo];
+  if (receivers.length > 0) parts.push(`-${receivers.join("+")}`);
+  if (carrier) parts.push(carrier);
+  if (loadings.length > 0) parts.push(loadings.join("+"));
+  if (dateStr) parts.push(`zał. ${dateStr}`);
+
+  return parts.join(" - ");
+}
+
 /**
  * Walidacja biznesowa i przygotowanie zlecenia do wysyłki email (zmiana statusu, sent_at, mailto).
  * Zwraca null gdy zlecenie nie istnieje; { success: false, validationErrors } przy 422; { success: true, data } przy 200.
@@ -339,12 +379,13 @@ export async function prepareEmailForOrder(
       pdfBase64,
       pdfFileName,
       orderNo: order.orderNo,
+      emailSubject: buildEmailSubject(detail),
     };
   }
 
   // Format eml: buduj plik .eml z załącznikiem PDF
   // Temat identyczny z Graph API flow (graph-mail.ts)
-  const emlSubject = `Zlecenie transportowe — ${pdfFileName.replace(".pdf", "")}`;
+  const emlSubject = buildEmailSubject(detail);
   const emlContent = buildEmlWithPdfAttachment({ pdfBuffer, pdfFileName, subject: emlSubject });
 
   return {

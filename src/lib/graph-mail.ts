@@ -24,7 +24,8 @@ interface GraphDraftResult {
 export async function createGraphDraft(
   token: string,
   pdfBase64: string,
-  pdfFileName: string
+  pdfFileName: string,
+  subject?: string
 ): Promise<GraphDraftResult> {
   // Krok 1: Utwórz draft wiadomości
   const createResponse = await fetch(`${GRAPH_BASE}/me/messages`, {
@@ -34,7 +35,7 @@ export async function createGraphDraft(
       "Content-Type": "application/json",
     },
     body: JSON.stringify({
-      subject: `Zlecenie transportowe — ${pdfFileName.replace(".pdf", "")}`,
+      subject: subject || `Zlecenie transportowe — ${pdfFileName.replace(".pdf", "")}`,
       body: {
         contentType: "Text",
         content: "W załączniku zlecenie transportowe w formacie PDF.",

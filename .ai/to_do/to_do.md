@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-20 (sesja 51 — plan załadunkowy PDF + email)
+> Ostatnia aktualizacja: 2026-03-23 (sesja 52 — nowy format tematu emaila)
 
 ---
 

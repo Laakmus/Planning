@@ -50,13 +50,14 @@ export async function sendEmailForOrder({
         outputFormat: "pdf-base64",
       });
       const data = await response.json();
-      const { pdfBase64, pdfFileName } = data as {
+      const { pdfBase64, pdfFileName, emailSubject } = data as {
         pdfBase64: string;
         pdfFileName: string;
+        emailSubject?: string;
       };
 
       const token = await microsoft!.getToken();
-      const { webLink } = await createGraphDraft(token, pdfBase64, pdfFileName);
+      const { webLink } = await createGraphDraft(token, pdfBase64, pdfFileName, emailSubject);
 
       if (outlookTab) {
         outlookTab.location.href = webLink;
