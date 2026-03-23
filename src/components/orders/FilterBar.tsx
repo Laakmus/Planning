@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { useDictionaries } from "@/contexts/DictionaryContext";
 import { hasActiveFilters } from "@/lib/view-models";
 import type { OrderListFilters, ListViewMode, OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
+import { weekNumberToDateRange } from "@/lib/week-utils";
 
 import { AutocompleteFilter } from "./AutocompleteFilter";
 import { ListSettings } from "./ListSettings";
@@ -91,6 +92,9 @@ export function FilterBar({
   const companyItems = companies.map((c) => ({ id: c.id, label: c.name }));
   const productItems = products.map((p) => ({ id: p.id, label: p.name }));
 
+  // Walidacja formatu numeru tygodnia — czerwona ramka gdy wartość niepusta ale nieprawidłowa
+  const isWeekInvalid = weekInput.trim() !== "" && !weekNumberToDateRange(weekInput.trim());
+
   const filtersActive = hasActiveFilters(filters);
 
   return (
@@ -167,13 +171,19 @@ export function FilterBar({
         width="w-28"
       />
 
-      {/* 7. Numer tygodnia */}
+      {/* 7. Numer tygodnia — inputMode numeric, maxLength 7, czerwona ramka przy złym formacie */}
       <input
         type="text"
+        inputMode="numeric"
+        maxLength={7}
         placeholder="Tydzień"
         value={weekInput}
         onChange={(e) => handleWeekChange(e.target.value)}
-        className="h-8 text-xs bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-800 rounded px-2 w-16 text-slate-700 dark:text-slate-300 placeholder:text-slate-400"
+        className={`h-8 text-xs bg-white dark:bg-slate-800 border rounded px-2 w-16 text-slate-700 dark:text-slate-300 placeholder:text-slate-400 ${
+          isWeekInvalid
+            ? "border-red-400 dark:border-red-500"
+            : "border-slate-200 dark:border-slate-800"
+        }`}
         data-testid="filter-week"
       />
 

@@ -25,9 +25,11 @@ function formatUTCDate(date: Date): string {
  * (poniedziałek–niedziela tego tygodnia ISO).
  *
  * Obsługiwane formaty wejściowe:
- * - "07"      → tydzień 7 bieżącego roku
- * - "2026-07" → tydzień 7 roku 2026
- * - "2026-W07"→ tydzień 7 roku 2026
+ * - "07"       → tydzień 7 bieżącego roku
+ * - "7"        → tydzień 7 bieżącego roku
+ * - "2026-07"  → tydzień 7 roku 2026 (myślnik bez W)
+ * - "2026-W07" → tydzień 7 roku 2026 (ISO 8601 z myślnikiem i W)
+ * - "2026W07"  → tydzień 7 roku 2026 (bez myślnika, z W)
  *
  * Zwraca null gdy format jest nieprawidłowy lub numer tygodnia poza zakresem 1–53.
  */
@@ -38,10 +40,10 @@ export function weekNumberToDateRange(
   let year: number;
   let week: number;
 
-  // Format z rokiem: "2026-07" lub "2026-W07"
-  // Wymagamy separatora '-' lub 'W' między rokiem a numerem tygodnia
-  // (np. "2026-05", "2026W05" OK; "2026007" odrzucony)
-  const fullMatch = trimmed.match(/^(\d{4})[W-](\d{1,2})$/);
+  // Format z rokiem: "2026-07", "2026-W07" lub "2026W07"
+  // Separator może być: myślnik+W, sam myślnik, lub sam W
+  // (np. "2026-05", "2026-W05", "2026W05" OK; "2026007" odrzucony)
+  const fullMatch = trimmed.match(/^(\d{4})(?:-W?|W)(\d{1,2})$/);
   if (fullMatch) {
     year = parseInt(fullMatch[1], 10);
     week = parseInt(fullMatch[2], 10);

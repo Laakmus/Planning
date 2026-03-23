@@ -16,7 +16,7 @@
  *                   └── Toaster
  */
 
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 import { AppProviders } from "@/components/providers/AppProviders";
 import { Separator } from "@/components/ui/separator";
@@ -39,10 +39,25 @@ function OrdersAppInner() {
     return "CURRENT";
   });
 
+  // Śledzi czy użytkownik był kiedykolwiek zalogowany — zapobiega odmontowaniu drzewa przy chwilowym null
+  const wasEverLoggedIn = useRef(false);
+  if (user) {
+    wasEverLoggedIn.current = true;
+  }
+
   // Przekieruj na login gdy auth się rozstrzygnie i brak sesji
   useEffect(() => {
     if (!isLoading && !user) {
-      window.location.href = "/";
+      if (!wasEverLoggedIn.current) {
+        // Nigdy nie był zalogowany — natychmiastowy redirect
+        window.location.href = "/";
+        return;
+      }
+      // Był zalogowany — daj chwilę na recovery (auth event flicker)
+      const timer = setTimeout(() => {
+        window.location.href = "/";
+      }, 2000);
+      return () => clearTimeout(timer);
     }
   }, [isLoading, user]);
 
@@ -55,8 +70,17 @@ function OrdersAppInner() {
     );
   }
 
-  // Brak sesji — nie renderuj nic (redirect w toku)
+  // Brak sesji — zachowaj drzewo jeśli użytkownik był zalogowany (auth event) lub usuń gdy nigdy nie był zalogowany
   if (!user) {
+    if (wasEverLoggedIn.current) {
+      // Chwilowy null z auth event — pokaż loading zamiast odmontowywać drzewo (filtry się nie resetują)
+      return (
+        <div className="h-screen flex items-center justify-center bg-slate-50 dark:bg-slate-950">
+          <p className="text-sm text-slate-400">Ładowanie...</p>
+        </div>
+      );
+    }
+    // Nigdy nie był zalogowany — redirect w toku
     return null;
   }
 

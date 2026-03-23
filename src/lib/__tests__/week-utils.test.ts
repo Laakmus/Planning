@@ -44,8 +44,11 @@ describe("weekNumberToDateRange", () => {
       });
     });
 
-    it('"2026-W07" (myślnik + W) → null (regex obsługuje tylko 1 separator)', () => {
-      expect(weekNumberToDateRange("2026-W07")).toBeNull();
+    it('"2026-W07" (myślnik + W, format ISO 8601) → tydzień 7 roku 2026', () => {
+      expect(weekNumberToDateRange("2026-W07")).toEqual({
+        dateFrom: "2026-02-09",
+        dateTo: "2026-02-15",
+      });
     });
 
     it('"7" (bez leading zero) → działa', () => {
