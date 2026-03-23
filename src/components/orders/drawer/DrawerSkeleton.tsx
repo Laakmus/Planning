@@ -16,7 +16,7 @@ function SkeletonSection({ children }: { children: React.ReactNode }) {
 
 export const DrawerSkeleton = memo(function DrawerSkeleton() {
   return (
-    <div className="flex-1 overflow-y-auto p-6 space-y-8">
+    <div className="flex-1 overflow-y-auto py-6 pl-6 pr-8 space-y-8">
       {/* Osoba kontaktowa */}
       <SkeletonSection>
         <div className="flex items-center gap-2">

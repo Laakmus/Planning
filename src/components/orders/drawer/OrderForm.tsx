@@ -245,7 +245,7 @@ export function OrderForm({
 
   return (
     <ScrollArea className="flex-1 min-h-0">
-      <div className="p-6 space-y-8">
+      <div className="py-6 pl-6 pr-8 space-y-8">
 
         {/* Osoba kontaktowa */}
         <section className="animate-section-in">
