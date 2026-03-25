@@ -923,21 +923,21 @@ Kolumna Firma transportowa wyświetla **tylko nazwę firmy** (bez osoby kontakto
 
 **Oznaczanie kolorem komórki (carrier cell color):**
 - Użytkownik (ADMIN/PLANNER) może oznaczyć komórkę jednym z 4 kolorów poprzez menu kontekstowe (prawy klik → podmenu "Kolor" z kolorowymi kwadracikami)
-- **Dozwolone kolory**: `#48A111` (zielony), `#25671E` (ciemnozielony), `#FFEF5F` (żółty), `#EEA727` (pomarańczowy)
-- Kolor stosowany jako `backgroundColor` komórki (inline style); `#25671E` wymaga białego tekstu dla kontrastu
+- **Dozwolone kolory**: `#34d399` (zielony, emerald-400), `#047857` (ciemnozielony, emerald-700), `#fde047` (żółty, amber-400), `#f97316` (pomarańczowy, orange-500)
+- Kolor stosowany jako `backgroundColor` komórki (inline style); `#047857` wymaga białego tekstu dla kontrastu
 - **Status override**: gdy status = wysłane/korekta wysłane → kolor komórki ukryty (wiersz przejmuje zielone tło `bg-emerald-100/70`)
 - Kolor zapisywany w DB (`carrier_cell_color` na `transport_orders`) i widoczny dla wszystkich użytkowników
 - READ_ONLY widzi kolor, ale nie ma opcji zmiany w menu kontekstowym
 - Kolor NIE jest kopiowany przy duplikacji zlecenia
-- API: `PATCH /api/v1/orders/{orderId}/carrier-color` z body `{ color: "#48A111" | null }`
+- API: `PATCH /api/v1/orders/{orderId}/carrier-color` z body `{ color: "#34d399" | null }`
 
 **Przykład w HTML:**
 ```html
 <td class="py-1 px-4 text-[12px]">Mega Transport</td>
-<!-- z kolorem: -->
-<td class="py-1 px-4 text-[12px]" style="background-color: #48A111">Mega Transport</td>
-<!-- ciemnozielony z białym tekstem: -->
-<td class="py-1 px-4 text-[12px]" style="background-color: #25671E; color: #fff">Mega Transport</td>
+<!-- z kolorem (emerald-400): -->
+<td class="py-1 px-4 text-[12px]" style="background-color: #34d399">Mega Transport</td>
+<!-- ciemnozielony (emerald-700) z białym tekstem: -->
+<td class="py-1 px-4 text-[12px]" style="background-color: #047857; color: #fff">Mega Transport</td>
 ```
 
 ### 6.6 Kolumna Towaru

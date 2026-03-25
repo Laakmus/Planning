@@ -185,8 +185,8 @@ describe("updateCarrierCellColor", () => {
       transport_orders: { update: { data: null, error: null, count: 1 } },
     });
 
-    const result = await updateCarrierCellColor(supabase, VALID_ORDER_ID, "#48A111");
-    expect(result).toEqual({ id: VALID_ORDER_ID, carrierCellColor: "#48A111" });
+    const result = await updateCarrierCellColor(supabase, VALID_ORDER_ID, "#34d399");
+    expect(result).toEqual({ id: VALID_ORDER_ID, carrierCellColor: "#34d399" });
   });
 
   it("null → usuwanie koloru", async () => {
@@ -203,7 +203,7 @@ describe("updateCarrierCellColor", () => {
       transport_orders: { update: { data: null, error: null, count: 0 } },
     });
 
-    const result = await updateCarrierCellColor(supabase, VALID_ORDER_ID, "#48A111");
+    const result = await updateCarrierCellColor(supabase, VALID_ORDER_ID, "#34d399");
     expect(result).toBeNull();
   });
 });

@@ -518,9 +518,9 @@ describe("duplicateOrderSchema", () => {
 // ---------------------------------------------------------------------------
 
 describe("carrierCellColorSchema", () => {
-  it('{ color: "#48A111" } → OK', () => {
-    const result = carrierCellColorSchema.parse({ color: "#48A111" });
-    expect(result.color).toBe("#48A111");
+  it('{ color: "#34d399" } → OK', () => {
+    const result = carrierCellColorSchema.parse({ color: "#34d399" });
+    expect(result.color).toBe("#34d399");
   });
 
   it('{ color: "#FF0000" } → ZodError (nie w ALLOWED)', () => {

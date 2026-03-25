@@ -234,7 +234,7 @@ describe("OrderRowContextMenu", () => {
     });
 
     it("renderuje 'Usuń kolor'", () => {
-      renderMenu({ carrierCellColor: "#48A111" });
+      renderMenu({ carrierCellColor: "#34d399" });
       expect(screen.getByText("Usuń kolor")).toBeInTheDocument();
     });
   });

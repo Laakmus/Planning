@@ -73,7 +73,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   }, [activeView]);
 
   // Pobierz listę zleceń
-  const { data, isLoading, error, refetch } = useOrders(filters, page);
+  const { data, isLoading, error, refetch, silentRefetch, updateOrderLocally } = useOrders(filters, page);
 
   // Akcje na zleceniach (wyekstrahowane do osobnego hooka)
   const {
@@ -100,7 +100,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     handleDuplicateConfirm,
     emailValidationErrors,
     clearEmailValidationErrors,
-  } = useOrderActions({ api, user, refetch, tableScrollRef, microsoft });
+  } = useOrderActions({ api, user, refetch, silentRefetch, updateOrderLocally, tableScrollRef, microsoft });
 
   // Stan pola powodu reklamacji w dialogu zmiany statusu
   const [complaintReasonInput, setComplaintReasonInput] = useState("");

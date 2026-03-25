@@ -15,6 +15,7 @@ import type {
   CreateOrderResponseDto,
   DuplicateOrderResponseDto,
   EntryFixedResponseDto,
+  OrderListItemDto,
 } from "@/types";
 
 interface MicrosoftAuth {
@@ -26,6 +27,8 @@ interface UseOrderActionsOptions {
   api: ApiClient;
   user: AuthMeDto | null;
   refetch: () => void | Promise<void>;
+  silentRefetch: () => void | Promise<void>;
+  updateOrderLocally: (orderId: string, patch: Partial<OrderListItemDto>) => void;
   tableScrollRef: React.RefObject<HTMLDivElement | null>;
   microsoft?: MicrosoftAuth;
 }
@@ -86,6 +89,8 @@ export function useOrderActions({
   api,
   user,
   refetch,
+  silentRefetch,
+  updateOrderLocally,
   tableScrollRef,
   microsoft,
 }: UseOrderActionsOptions): UseOrderActionsReturn {
@@ -124,7 +129,7 @@ export function useOrderActions({
         vehicleCapacityVolumeM3: null,
         priceAmount: null,
         paymentTermDays: 21,
-        paymentMethod: null,
+        paymentMethod: "Przelew",
         totalLoadTons: null,
         totalLoadVolumeM3: null,
         specialRequirements: null,
@@ -137,7 +142,7 @@ export function useOrderActions({
         items: [],
       });
       toast.success(`Utworzono zlecenie ${result.orderNo}.`);
-      await refetch();
+      await silentRefetch();
       // Auto-scroll na dół po wyrenderowaniu nowego wiersza
       requestAnimationFrame(() => {
         tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
@@ -148,7 +153,7 @@ export function useOrderActions({
       isCreatingRef.current = false;
       setIsCreatingOrder(false);
     }
-  }, [api, refetch, tableScrollRef]);
+  }, [api, silentRefetch, tableScrollRef]);
 
   const handleSendEmail = useCallback(
     async (orderId: string) => {
@@ -156,11 +161,11 @@ export function useOrderActions({
         orderId,
         api,
         microsoft,
-        onSuccess: () => refetch(),
+        onSuccess: () => silentRefetch(),
         onValidationError: (fields) => setEmailValidationErrors(fields),
       });
     },
-    [api, refetch, microsoft]
+    [api, silentRefetch, microsoft]
   );
 
   // Zmiana statusu — request otwiera dialog, confirm wysyła POST
@@ -182,12 +187,12 @@ export function useOrderActions({
           ...(newStatus === "reklamacja" && complaintReason ? { complaintReason } : {}),
         });
         toast.success("Status zmieniony.");
-        refetch();
+        silentRefetch();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Błąd zmiany statusu.");
       }
     },
-    [api, pendingStatusChange, refetch]
+    [api, pendingStatusChange, silentRefetch]
   );
 
   // Anulowanie — request otwiera dialog (z orderNo), confirm wysyła DELETE
@@ -202,11 +207,11 @@ export function useOrderActions({
     try {
       await api.delete(`/api/v1/orders/${orderId}`);
       toast.success("Zlecenie anulowane.");
-      refetch();
+      silentRefetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Błąd anulowania zlecenia.");
     }
-  }, [api, pendingCancel, refetch]);
+  }, [api, pendingCancel, silentRefetch]);
 
   // Przywrócenie — request otwiera dialog, confirm wysyła POST
   const handleRestoreRequest = useCallback(
@@ -223,30 +228,34 @@ export function useOrderActions({
     try {
       await api.post(`/api/v1/orders/${orderId}/restore`, {});
       toast.success("Zlecenie przywrócone do Aktualnych (status: Korekta).");
-      refetch();
+      silentRefetch();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Błąd przywracania zlecenia.");
     }
-  }, [api, pendingRestore, refetch]);
+  }, [api, pendingRestore, silentRefetch]);
 
   const handleSetCarrierColor = useCallback(
     async (orderId: string, color: string | null) => {
+      // Optimistic update — natychmiastowa zmiana w UI
+      updateOrderLocally(orderId, { carrierCellColor: color });
       try {
         await api.patch<CarrierColorResponseDto>(
           `/api/v1/orders/${orderId}/carrier-color`,
           { color }
         );
         toast.success(color ? "Kolor ustawiony." : "Kolor usunięty.");
-        refetch();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Błąd ustawiania koloru.");
+        await silentRefetch();
       }
     },
-    [api, refetch]
+    [api, updateOrderLocally, silentRefetch]
   );
 
   const handleSetEntryFixed = useCallback(
     async (orderId: string, value: boolean | null) => {
+      // Optimistic update — natychmiastowa zmiana w UI
+      updateOrderLocally(orderId, { isEntryFixed: value });
       try {
         await api.patch<EntryFixedResponseDto>(
           `/api/v1/orders/${orderId}/entry-fixed`,
@@ -255,12 +264,12 @@ export function useOrderActions({
         toast.success(
           value === true ? "Fix: Tak" : value === false ? "Fix: Nie" : "Fix usunięty."
         );
-        refetch();
       } catch (err) {
         toast.error(err instanceof Error ? err.message : "Błąd ustawiania pola Fix.");
+        await silentRefetch();
       }
     },
-    [api, refetch]
+    [api, updateOrderLocally, silentRefetch]
   );
 
   // Duplikacja — request otwiera dialog, confirm wysyła POST
@@ -281,7 +290,7 @@ export function useOrderActions({
         { includeStops: true, includeItems: true, resetStatusToDraft: true }
       );
       toast.success(`Zlecenie skopiowane jako ${result.orderNo}.`);
-      await refetch();
+      await silentRefetch();
       // Auto-scroll na dół — kopia trafia na koniec listy (null dates, ASC nulls last)
       requestAnimationFrame(() => {
         tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
@@ -289,7 +298,7 @@ export function useOrderActions({
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Błąd kopiowania zlecenia.");
     }
-  }, [api, pendingDuplicate, refetch, tableScrollRef]);
+  }, [api, pendingDuplicate, silentRefetch, tableScrollRef]);
 
   return {
     isCreatingOrder,

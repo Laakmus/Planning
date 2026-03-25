@@ -93,7 +93,7 @@ export const CargoSection = memo(function CargoSection({
       productId: null,
       productNameSnapshot: null,
       defaultLoadingMethodSnapshot: null,
-      loadingMethodCode: null,
+      loadingMethodCode: "LUZEM",
       quantityTons: null,
       notes: null,
       _deleted: false,
@@ -107,7 +107,6 @@ export const CargoSection = memo(function CargoSection({
       productId: item?.id ?? null,
       productNameSnapshot: item?.name ?? null,
       defaultLoadingMethodSnapshot: item?.defaultLoadingMethodCode ?? null,
-      loadingMethodCode: (item?.defaultLoadingMethodCode as LoadingMethodCode) ?? null,
     });
   }
 
@@ -198,11 +197,6 @@ export const CargoSection = memo(function CargoSection({
                       ))}
                     </SelectContent>
                   </Select>
-                  {item.defaultLoadingMethodSnapshot && (
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                      Domyślnie: {item.defaultLoadingMethodSnapshot}
-                    </p>
-                  )}
                 </div>
               </div>
 

@@ -8,7 +8,7 @@
  * - 400 nieprawidłowy JSON (parseJsonBody rzuca)
  * - 400 nieprawidłowy kolor (Zod fail)
  * - 404 updateCarrierCellColor zwraca null
- * - 200 ustawienie koloru "#48A111"
+ * - 200 ustawienie koloru "#34d399"
  * - 200 usunięcie koloru (null)
  * - 500 błąd serwera
  */
@@ -127,12 +127,12 @@ beforeEach(() => {
   mockIsValidUUID.mockReturnValue(true);
 
   // Domyślnie: parseJsonBody zwraca body z kolorem
-  mockParseJsonBody.mockResolvedValue({ color: "#48A111" });
+  mockParseJsonBody.mockResolvedValue({ color: "#34d399" });
 
   // Domyślnie: Zod przechodzi
   mockCarrierCellColorSchema.safeParse.mockReturnValue({
     success: true,
-    data: { color: "#48A111" },
+    data: { color: "#34d399" },
   });
 });
 
@@ -216,9 +216,9 @@ describe("PATCH /api/v1/orders/{orderId}/carrier-color", () => {
     expect(response.status).toBe(404);
   });
 
-  it("returns 200 when setting color '#48A111'", async () => {
+  it("returns 200 when setting color '#34d399'", async () => {
     // Arrange
-    const fakeResult = { orderId: VALID_ORDER_ID, carrierCellColor: "#48A111" };
+    const fakeResult = { orderId: VALID_ORDER_ID, carrierCellColor: "#34d399" };
     mockUpdateCarrierCellColor.mockResolvedValue(fakeResult as never);
 
     // Act
@@ -228,7 +228,7 @@ describe("PATCH /api/v1/orders/{orderId}/carrier-color", () => {
     expect(mockUpdateCarrierCellColor).toHaveBeenCalledWith(
       expect.anything(), // supabase
       VALID_ORDER_ID,
-      "#48A111"
+      "#34d399"
     );
     expect(mockJsonResponse).toHaveBeenCalledWith(fakeResult, 200);
     expect(response.status).toBe(200);
@@ -269,14 +269,14 @@ describe("PATCH /api/v1/orders/{orderId}/carrier-color", () => {
     expect(response.status).toBe(500);
   });
 
-  it("returns 200 with different allowed color '#FFEF5F'", async () => {
+  it("returns 200 with different allowed color '#fde047'", async () => {
     // Arrange
-    mockParseJsonBody.mockResolvedValue({ color: "#FFEF5F" });
+    mockParseJsonBody.mockResolvedValue({ color: "#fde047" });
     mockCarrierCellColorSchema.safeParse.mockReturnValue({
       success: true,
-      data: { color: "#FFEF5F" },
+      data: { color: "#fde047" },
     });
-    const fakeResult = { orderId: VALID_ORDER_ID, carrierCellColor: "#FFEF5F" };
+    const fakeResult = { orderId: VALID_ORDER_ID, carrierCellColor: "#fde047" };
     mockUpdateCarrierCellColor.mockResolvedValue(fakeResult as never);
 
     // Act
@@ -286,7 +286,7 @@ describe("PATCH /api/v1/orders/{orderId}/carrier-color", () => {
     expect(mockUpdateCarrierCellColor).toHaveBeenCalledWith(
       expect.anything(),
       VALID_ORDER_ID,
-      "#FFEF5F"
+      "#fde047"
     );
     expect(response.status).toBe(200);
   });

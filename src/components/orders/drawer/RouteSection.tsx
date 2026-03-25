@@ -89,7 +89,7 @@ function SortableStopWrapper({
   };
 
   return (
-    <div ref={setNodeRef} style={style} className="flex gap-2 items-start">
+    <div ref={setNodeRef} style={style} className="flex gap-2 items-start min-w-0">
       {!isReadOnly && (
         <div
           ref={setActivatorNodeRef}
@@ -326,7 +326,7 @@ export const RouteSection = memo(function RouteSection({
       {isReadOnly ? (
         <div className="space-y-3">
           {activeStops.map((stop, activeIdx) => (
-            <div key={`stop-${activeIndexToOriginal[activeIdx]}`} className="flex gap-2 items-start">
+            <div key={`stop-${activeIndexToOriginal[activeIdx]}`} className="flex gap-2 items-start min-w-0">
               {renderStopCard(stop, activeIdx)}
             </div>
           ))}

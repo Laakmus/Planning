@@ -86,9 +86,9 @@ export function AutocompleteField<T extends { id: string }>({
           role="combobox"
           aria-expanded={open}
           disabled={disabled}
-          className={`w-full justify-between font-normal text-sm ${compact ? "h-auto py-1.5 px-2" : "h-8 px-3"}`}
+          className={`w-full justify-between font-normal text-sm overflow-hidden ${compact ? "h-auto py-1.5 px-2" : "h-8 px-3"}`}
         >
-            <span className={displayValue ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}>
+            <span className={`truncate ${displayValue ? "text-slate-900 dark:text-slate-100" : "text-slate-400"}`}>
               {displayValue || placeholder}
             </span>
             <div className="flex items-center gap-0.5 ml-2 shrink-0">

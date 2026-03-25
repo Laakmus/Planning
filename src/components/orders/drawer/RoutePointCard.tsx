@@ -6,11 +6,11 @@
 
 import { X } from "lucide-react";
 
-import { Input } from "@/components/ui/input";
 import type { CompanyDto, LocationDto } from "@/types";
 import type { OrderFormStop, StopKind } from "@/lib/view-models";
 
 import { AutocompleteField } from "./AutocompleteField";
+import { DateCombobox } from "./DateCombobox";
 import { TimeCombobox } from "./TimeCombobox";
 
 // ---------------------------------------------------------------------------
@@ -94,7 +94,7 @@ export function RoutePointCard({
   }
 
   return (
-    <div className={`flex-1 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 transition-all ${hoverBorder}`}>
+    <div className={`flex-1 min-w-0 bg-white dark:bg-slate-900/30 border border-slate-200 dark:border-slate-800 rounded-lg p-3 transition-all ${hoverBorder}`}>
       {/* Badge + close button */}
       <div className="flex items-center justify-between mb-2">
         <span className={`text-xs font-bold px-2 py-0.5 rounded uppercase ${badgeClass}`}>
@@ -114,9 +114,9 @@ export function RoutePointCard({
       </div>
 
       {/* Grid 4-kolumnowy: Firma | Lokalizacja | Data | Godzina */}
-      <div className="grid grid-cols-2 md:grid-cols-[11fr_6fr_3fr_3fr] gap-2">
+      <div className="grid grid-cols-2 md:grid-cols-[9fr_8fr_3fr_3fr] gap-2 min-w-0">
         {/* Firma */}
-        <div className="col-span-2 md:col-span-1">
+        <div className="col-span-2 md:col-span-1 min-w-0">
           <AutocompleteField
             placeholder="Firma"
             items={companies}
@@ -130,7 +130,7 @@ export function RoutePointCard({
         </div>
 
         {/* Lokalizacja */}
-        <div className="col-span-1">
+        <div className="col-span-1 min-w-0">
           <AutocompleteField
             placeholder="Lokalizacja"
             items={filteredLocations}
@@ -145,12 +145,10 @@ export function RoutePointCard({
 
         {/* Data */}
         <div className="col-span-1">
-          <Input
-            type="date"
-            value={stop.dateLocal ?? ""}
-            onChange={(e) => onChange({ dateLocal: e.target.value || null })}
+          <DateCombobox
+            value={stop.dateLocal}
+            onChange={(val) => onChange({ dateLocal: val })}
             disabled={isReadOnly}
-            className="h-8 text-sm w-full"
           />
         </div>
 

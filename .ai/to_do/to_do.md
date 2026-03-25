@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-23 (sesja 52 — nowy format tematu emaila)
+> Ostatnia aktualizacja: 2026-03-25 (sesja 54 — fix duplikowania numerów zleceń po fizycznym usunięciu)
 
 ---
 
@@ -158,6 +158,22 @@
 ---
 
 ## Zrobione
+
+### Sesja 54 — Fix duplikowania numerów zleceń po fizycznym usunięciu (BUG)
+- [x] **BUG**: Po fizycznym usunięciu anulowanego zlecenia z najwyższym numerem (cleanup po 24h), nowe zlecenie mogło dostać ten sam numer
+- [x] **Przyczyna**: `generate_next_order_no()` RPC bazowała na `MAX(seq)` z tabeli `transport_orders` — po DELETE wiersza MAX się cofał
+- [x] **Fix**: Nowa tabela `order_no_counters` (year PK, last_seq INT) + atomowy UPSERT w RPC — licznik nigdy się nie cofa
+- [x] **Migracja**: `20260325000000_order_no_counter.sql` — tabela + inicjalizacja z istniejących danych + zaktualizowana RPC
+- [x] **Brak zmian w kodzie TS** — sygnatura RPC bez zmian, testy unit (1000) przechodzą
+
+### Sesja 53 — Fix niestabilnego sortowania + eliminacja mignięcia tabeli
+- [x] **BUG 1**: Zmiana koloru w kolumnie "Firma transportowa" (menu kontekstowe) powodowała przeskok wiersza na inną pozycję w tabeli
+- [x] **Przyczyna**: Brak tiebreakera w sortowaniu — PostgreSQL zwracał wiersze o identycznym kluczu sortowania w nieokreślonej kolejności (MVCC po UPDATE)
+- [x] **Fix**: Dodano `.order("order_seq_no", { ascending: true })` jako drugi klucz sortowania w `order-list.service.ts`
+- [x] **BUG 2**: Każda akcja z menu kontekstowego powodowała widoczne mignięcie tabeli (opacity-50 + Loader2 bar)
+- [x] **Przyczyna**: `refetch()` ustawiał `setIsLoading(true)` → `OrderTable` reagował `isReloading = true` → freeze UI
+- [x] **Fix**: Optimistic updates (kolor, fix) + silent refetch (pozostałe akcje) w `useOrders.ts` + `useOrderActions.ts`
+- [x] Pliki: `useOrders.ts` (silentRefetch, updateOrderLocally), `useOrderActions.ts` (optimistic + silentRefetch), `OrdersPage.tsx` (przekazanie)
 
 ### Sesja 51 — Plan załadunkowy magazynu PDF + email (agent teams)
 - [x] Migracja DB: tabela `warehouse_report_recipients` (RLS: ADMIN zarządza, authenticated czyta)

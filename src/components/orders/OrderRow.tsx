@@ -71,7 +71,7 @@ export function OrderRow({
     !isGreenRow && order.carrierCellColor
       ? {
           backgroundColor: order.carrierCellColor,
-          color: order.carrierCellColor === "#25671E" ? "#fff" : undefined,
+          color: order.carrierCellColor === "#047857" ? "#fff" : undefined,
         }
       : undefined;
 

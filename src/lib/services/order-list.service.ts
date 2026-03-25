@@ -204,6 +204,7 @@ export async function listOrders(
 
   query = query
     .order(sortColumn, { ascending })
+    .order("order_seq_no", { ascending: true })
     .range((page - 1) * pageSize, page * pageSize - 1);
 
   const { data: rows, error, count } = await query;

@@ -135,7 +135,7 @@
           "updatedAt": "timestamp",
           "updatedByUserId": "uuid | null",
           "updatedByUserName": "string | null",
-          "carrierCellColor": "string | null (hex kolor tła komórki przewoźnika, np. #48A111)",
+          "carrierCellColor": "string | null (hex kolor tła komórki przewoźnika, np. #34d399)",
           "isEntryFixed": "boolean | null (flaga Fix — zafiksowany wjazd)"
         }
       ],
@@ -511,7 +511,7 @@
   - **Body żądania**:
     ```json
     {
-      "color": "#48A111 | #25671E | #FFEF5F | #EEA727 | null"
+      "color": "#34d399 | #047857 | #fde047 | #f97316 | null"
     }
     ```
   - **Body odpowiedzi**:

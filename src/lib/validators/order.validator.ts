@@ -198,10 +198,10 @@ export type EntryFixedParams = z.infer<typeof entryFixedSchema>;
 
 /** Allowed carrier cell colors (hex). */
 export const ALLOWED_CARRIER_CELL_COLORS = [
-  "#48A111",
-  "#25671E",
-  "#FFEF5F",
-  "#EEA727",
+  "#34d399",
+  "#047857",
+  "#fde047",
+  "#f97316",
 ] as const;
 
 /** Body PATCH /api/v1/orders/{orderId}/carrier-color. */

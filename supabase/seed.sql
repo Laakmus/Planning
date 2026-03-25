@@ -395,7 +395,7 @@ INSERT INTO public.transport_orders (
   'MEGA_24T', 'Dokumenty celne przygotowane', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-26', '06:00:00', '2026-02-27', '18:00:00',
   'PL', 'DE', 2026,
-  '#48A111', 14, 'Przelew'
+  '#34d399', 14, 'Przelew'
 );
 
 -- Zlecenie 11: wysłane, krajowe, multi-stop: Warszawa → Łódź → Katowice → Ruda Śląska
@@ -414,7 +414,7 @@ INSERT INTO public.transport_orders (
   '2026-02-23', '06:00:00', '2026-02-24', '16:00:00',
   '2026-02-23', '11:00:00', '2026-02-24', '16:00:00',
   'PL', 'PL', 2026,
-  '2026-02-22T08:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '#FFEF5F', 21, 'Przelew'
+  '2026-02-22T08:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '#fde047', 21, 'Przelew'
 );
 
 -- Zlecenie 12: wysłane, kontener morski, Gdynia → Hamburg
@@ -467,7 +467,7 @@ INSERT INTO public.transport_orders (
   '2026-02-22', '08:00:00', '2026-02-23', '10:00:00',
   '2026-02-23', '18:00:00',
   'DE', 'PL', 2026,
-  '2026-02-21T14:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '#EEA727', 14, 'Przelew'
+  '2026-02-21T14:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '#f97316', 14, 'Przelew'
 );
 
 -- Zlecenie 15: zrealizowane, krajowe, Gdańsk → Wrocław
@@ -539,7 +539,7 @@ INSERT INTO public.transport_orders (
   '2026-02-28', '08:00:00', '2026-03-01', '12:00:00',
   'PL', 'PL', 2026,
   'Marek Wiśniewski', '+48 605 666 777', 'marek.w@metalurgica.pl',
-  '#25671E', 21, 'Przelew'
+  '#047857', 21, 'Przelew'
 );
 
 -- Zlecenie 19: wysłane, eksport, Gdańsk → Berlin (USD)

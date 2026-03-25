@@ -3,7 +3,7 @@
  * Autocomplete firmy, NIP (readonly), typ auta + objętość (2 niezależne pola), wymagane dokumenty.
  */
 
-import { memo, useMemo } from "react";
+import { memo } from "react";
 
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -15,7 +15,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import type { CompanyDto, VehicleVariantDto } from "@/types";
+import type { CompanyDto } from "@/types";
 import type { OrderFormData } from "@/lib/view-models";
 
 import { AutocompleteField } from "./AutocompleteField";
@@ -23,10 +23,19 @@ import { AutocompleteField } from "./AutocompleteField";
 interface CarrierSectionProps {
   formData: OrderFormData;
   companies: CompanyDto[];
-  vehicleVariants: VehicleVariantDto[];
   isReadOnly: boolean;
   onChange: (patch: Partial<OrderFormData>) => void;
 }
+
+const VEHICLE_TYPES = [
+  "Ruchoma podłoga",
+  "Firanka",
+  "Wywrotka",
+  "Hakowiec",
+  "Hakowiec z HDS",
+  "Tandem",
+  "Naczepa podkontenerowa",
+] as const;
 
 const REQUIRED_DOCS_OPTIONS = [
   { value: "WZ, KPO, kwit wagowy", label: "WZ, KPO, kwit wagowy" },
@@ -36,7 +45,6 @@ const REQUIRED_DOCS_OPTIONS = [
 export const CarrierSection = memo(function CarrierSection({
   formData,
   companies,
-  vehicleVariants,
   isReadOnly,
   onChange,
 }: CarrierSectionProps) {
@@ -44,13 +52,6 @@ export const CarrierSection = memo(function CarrierSection({
     ? companies.find((c) => c.id === formData.carrierCompanyId)
     : null;
 
-  // Lista unikalnych typów pojazdów do selecta
-  const uniqueVehicleTypes = useMemo(() => {
-    const types = new Set(
-      vehicleVariants.filter((v) => v.isActive).map((v) => v.vehicleType),
-    );
-    return Array.from(types);
-  }, [vehicleVariants]);
 
   function handleCarrierChange(
     _id: string | null,
@@ -111,7 +112,7 @@ export const CarrierSection = memo(function CarrierSection({
               <SelectItem value="__clear__" className="text-sm text-slate-400">
                 — Brak —
               </SelectItem>
-              {uniqueVehicleTypes.map((type) => (
+              {VEHICLE_TYPES.map((type) => (
                 <SelectItem key={type} value={type} className="text-sm">
                   {type}
                 </SelectItem>

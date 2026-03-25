@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { weekNumberToDateRange } from "@/lib/week-utils";
-import type { OrderListResponseDto } from "@/types";
+import type { OrderListItemDto, OrderListResponseDto } from "@/types";
 import type { OrderListFilters } from "@/lib/view-models";
 
 export interface UseOrdersResult {
@@ -15,6 +15,8 @@ export interface UseOrdersResult {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  silentRefetch: () => Promise<void>;
+  updateOrderLocally: (orderId: string, patch: Partial<OrderListItemDto>) => void;
 }
 
 /**
@@ -32,13 +34,13 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
   const [error, setError] = useState<string | null>(null);
   const controllerRef = useRef<AbortController | null>(null);
 
-  const fetchData = useCallback(async () => {
+  const fetchDataInternal = useCallback(async (silent: boolean) => {
     // Anuluj poprzednie żądanie
     controllerRef.current?.abort();
     const controller = new AbortController();
     controllerRef.current = controller;
 
-    setIsLoading(true);
+    if (!silent) setIsLoading(true);
     setError(null);
 
     // Buduj parametry zapytania — undefined pomijane przez ApiClient
@@ -84,6 +86,24 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
     }
   }, [api, filters, page]);
 
+  const fetchData = useCallback(() => fetchDataInternal(false), [fetchDataInternal]);
+  const silentRefetch = useCallback(() => fetchDataInternal(true), [fetchDataInternal]);
+
+  const updateOrderLocally = useCallback(
+    (orderId: string, patch: Partial<OrderListItemDto>) => {
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map((item) =>
+            item.id === orderId ? { ...item, ...patch } : item
+          ),
+        };
+      });
+    },
+    []
+  );
+
   useEffect(() => {
     fetchData();
     return () => {
@@ -91,5 +111,5 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
     };
   }, [fetchData]);
 
-  return { data, isLoading, error, refetch: fetchData };
+  return { data, isLoading, error, refetch: fetchData, silentRefetch, updateOrderLocally };
 }

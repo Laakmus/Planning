@@ -28,10 +28,10 @@ import {
 
 /** Carrier cell color options. */
 const CARRIER_COLORS = [
-  { hex: "#48A111", label: "Zielony" },
-  { hex: "#25671E", label: "Ciemnozielony" },
-  { hex: "#FFEF5F", label: "Żółty" },
-  { hex: "#EEA727", label: "Pomarańczowy" },
+  { hex: "#34d399", label: "Zielony" },
+  { hex: "#047857", label: "Ciemnozielony" },
+  { hex: "#fde047", label: "Żółty" },
+  { hex: "#f97316", label: "Pomarańczowy" },
 ] as const;
 
 interface OrderRowContextMenuProps {

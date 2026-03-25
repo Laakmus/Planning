@@ -57,11 +57,15 @@ function createMockScrollRef() {
 
 describe("useOrderActions", () => {
   let refetchFn: ReturnType<typeof vi.fn>;
+  let silentRefetchFn: ReturnType<typeof vi.fn>;
+  let updateOrderLocallyFn: ReturnType<typeof vi.fn>;
   let tableScrollRef: React.RefObject<HTMLDivElement | null>;
 
   beforeEach(() => {
     vi.clearAllMocks();
     refetchFn = vi.fn().mockResolvedValue(undefined);
+    silentRefetchFn = vi.fn().mockResolvedValue(undefined);
+    updateOrderLocallyFn = vi.fn();
     tableScrollRef = createMockScrollRef();
   });
 
@@ -71,7 +75,14 @@ describe("useOrderActions", () => {
 
   function renderActions() {
     return renderHook(() =>
-      useOrderActions({ api: mockApi as any, user: null, refetch: refetchFn as unknown as () => void | Promise<void>, tableScrollRef })
+      useOrderActions({
+        api: mockApi as any,
+        user: null,
+        refetch: refetchFn as unknown as () => void | Promise<void>,
+        silentRefetch: silentRefetchFn as unknown as () => void | Promise<void>,
+        updateOrderLocally: updateOrderLocallyFn,
+        tableScrollRef,
+      })
     );
   }
 
@@ -91,7 +102,7 @@ describe("useOrderActions", () => {
 
       expect(mockApi.post).toHaveBeenCalledWith("/api/v1/orders", expect.any(Object));
       expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining("ZT2026/0042"));
-      expect(refetchFn).toHaveBeenCalled();
+      expect(silentRefetchFn).toHaveBeenCalled();
     });
 
     it("POST error → toast.error", async () => {
@@ -104,7 +115,7 @@ describe("useOrderActions", () => {
       });
 
       expect(mockToast.error).toHaveBeenCalledWith("Serwer niedostępny");
-      expect(refetchFn).not.toHaveBeenCalled();
+      expect(silentRefetchFn).not.toHaveBeenCalled();
     });
 
     it("POST error (non-Error) → toast.error z fallback message", async () => {
@@ -171,7 +182,7 @@ describe("useOrderActions", () => {
         {}
       );
       expect(mockToast.success).toHaveBeenCalled();
-      expect(refetchFn).toHaveBeenCalled();
+      expect(silentRefetchFn).toHaveBeenCalled();
     });
 
     it("postRaw error → toast.error", async () => {
@@ -184,7 +195,7 @@ describe("useOrderActions", () => {
       });
 
       expect(mockToast.error).toHaveBeenCalledWith("Email error");
-      expect(refetchFn).not.toHaveBeenCalled();
+      expect(silentRefetchFn).not.toHaveBeenCalled();
     });
   });
 
@@ -211,7 +222,7 @@ describe("useOrderActions", () => {
 
       expect(mockApi.delete).toHaveBeenCalledWith(`/api/v1/orders/${ORDER_ID}`);
       expect(mockToast.success).toHaveBeenCalledWith("Zlecenie anulowane.");
-      expect(refetchFn).toHaveBeenCalled();
+      expect(silentRefetchFn).toHaveBeenCalled();
       expect(result.current.pendingCancel).toBeNull();
     });
 
@@ -268,7 +279,7 @@ describe("useOrderActions", () => {
         { includeStops: true, includeItems: true, resetStatusToDraft: true }
       );
       expect(mockToast.success).toHaveBeenCalledWith(expect.stringContaining("ZT2026/0099"));
-      expect(refetchFn).toHaveBeenCalled();
+      expect(silentRefetchFn).toHaveBeenCalled();
       expect(result.current.pendingDuplicate).toBeNull();
     });
 
@@ -319,7 +330,7 @@ describe("useOrderActions", () => {
         { newStatusCode: "zrealizowane" }
       );
       expect(mockToast.success).toHaveBeenCalledWith("Status zmieniony.");
-      expect(refetchFn).toHaveBeenCalled();
+      expect(silentRefetchFn).toHaveBeenCalled();
       expect(result.current.pendingStatusChange).toBeNull();
     });
 
@@ -387,7 +398,7 @@ describe("useOrderActions", () => {
       expect(mockToast.success).toHaveBeenCalledWith(
         "Zlecenie przywrócone do Aktualnych (status: Korekta)."
       );
-      expect(refetchFn).toHaveBeenCalled();
+      expect(silentRefetchFn).toHaveBeenCalled();
       expect(result.current.pendingRestore).toBeNull();
     });
 
@@ -413,7 +424,7 @@ describe("useOrderActions", () => {
   // -------------------------------------------------------------------------
 
   describe("handleSetCarrierColor", () => {
-    it("PATCH sukces z kolorem → toast 'Kolor ustawiony.' + refetch", async () => {
+    it("PATCH sukces z kolorem → optimistic update + toast 'Kolor ustawiony.'", async () => {
       mockApi.patch.mockResolvedValue({ id: ORDER_ID, carrierCellColor: "#FF0000" });
 
       const { result } = renderActions();
@@ -422,15 +433,16 @@ describe("useOrderActions", () => {
         await result.current.handleSetCarrierColor(ORDER_ID, "#FF0000");
       });
 
+      expect(updateOrderLocallyFn).toHaveBeenCalledWith(ORDER_ID, { carrierCellColor: "#FF0000" });
       expect(mockApi.patch).toHaveBeenCalledWith(
         `/api/v1/orders/${ORDER_ID}/carrier-color`,
         { color: "#FF0000" }
       );
       expect(mockToast.success).toHaveBeenCalledWith("Kolor ustawiony.");
-      expect(refetchFn).toHaveBeenCalled();
+      expect(silentRefetchFn).not.toHaveBeenCalled();
     });
 
-    it("PATCH sukces z null → toast 'Kolor usunięty.'", async () => {
+    it("PATCH sukces z null → optimistic update + toast 'Kolor usunięty.'", async () => {
       mockApi.patch.mockResolvedValue({ id: ORDER_ID, carrierCellColor: null });
 
       const { result } = renderActions();
@@ -439,12 +451,13 @@ describe("useOrderActions", () => {
         await result.current.handleSetCarrierColor(ORDER_ID, null);
       });
 
+      expect(updateOrderLocallyFn).toHaveBeenCalledWith(ORDER_ID, { carrierCellColor: null });
       expect(mockToast.success).toHaveBeenCalledWith("Kolor usunięty.");
     });
   });
 
   describe("handleSetEntryFixed", () => {
-    it("PATCH true → toast 'Fix: Tak'", async () => {
+    it("PATCH true → optimistic update + toast 'Fix: Tak'", async () => {
       mockApi.patch.mockResolvedValue({});
 
       const { result } = renderActions();
@@ -453,6 +466,7 @@ describe("useOrderActions", () => {
         await result.current.handleSetEntryFixed(ORDER_ID, true);
       });
 
+      expect(updateOrderLocallyFn).toHaveBeenCalledWith(ORDER_ID, { isEntryFixed: true });
       expect(mockToast.success).toHaveBeenCalledWith("Fix: Tak");
     });
 

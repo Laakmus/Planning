@@ -506,7 +506,6 @@ export default function OrderDocument({
                       onSelect={(product) =>
                         updateItem(itemIndex, {
                           name: product.name,
-                          packagingType: product.defaultPackaging,
                         })
                       }
                       disabled={disabled}

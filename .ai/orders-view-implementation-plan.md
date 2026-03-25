@@ -314,7 +314,7 @@ OrdersApp (React island — korzenny komponent)
     </div>
     ```
   - **Komentarz** — lista ponumerowana uwag z `order.items[].notes` (powiązana z pozycjami towaru); jeśli brak — puste pole; styl: `text-[11px] text-slate-500`
-  - **Firma transportowa** — **tylko nazwa firmy** (`carrierName` z API), **bez** osoby kontaktowej i telefonu; styl: `text-[12px]`. Komórka może mieć kolorowe tło (inline style z `carrierCellColor`): `#48A111`, `#25671E` (biały tekst), `#FFEF5F`, `#EEA727`. Kolor ukryty gdy status = wysłane/korekta wysłane (zielone tło wiersza przejmuje).
+  - **Firma transportowa** — **tylko nazwa firmy** (`carrierName` z API), **bez** osoby kontaktowej i telefonu; styl: `text-[12px]`. Komórka może mieć kolorowe tło (inline style z `carrierCellColor`): `#34d399` (emerald-400), `#047857` (emerald-700, biały tekst), `#fde047` (amber-400), `#f97316` (orange-500). Kolor ukryty gdy status = wysłane/korekta wysłane (zielone tło wiersza przejmuje).
   - **Typ auta** — `vehicleVariantName` + objętość w nawiasie (`vehicleCapacityVolumeM3`), np. „firanka (90m³)"; styl: `text-[12px]`
   - **Stawka** — `priceAmount` + `currencyCode` (np. "1450 PLN"); styl: `text-[12px] font-medium`
   - **Data wysłania zlecenia** — dwulinijkowa:

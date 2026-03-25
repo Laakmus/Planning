@@ -117,7 +117,7 @@ Tabela główna, centralna dla całego systemu.
   - kiedy blokada została ustawiona, może być `NULL`
 - **carrier_cell_color**: `varchar(7)`
   - kolor tła komórki „Firma transportowa" w widoku listy; jeden z 4 predefiniowanych hex-ów lub `NULL` (brak koloru)
-  - `CHECK (carrier_cell_color IS NULL OR carrier_cell_color IN ('#48A111','#25671E','#FFEF5F','#EEA727'))`
+  - `CHECK (carrier_cell_color IS NULL OR carrier_cell_color IN ('#34d399','#047857','#fde047','#f97316'))`
   - ustawiany z menu kontekstowego (prawy klik); ukryty gdy status = wysłane/korekta wysłane (wiersz ma zielone tło)
   - NIE kopiowany przy duplikacji zlecenia
   - edytowalny przez ADMIN i PLANNER; READ_ONLY widzi kolor, ale nie może zmieniać

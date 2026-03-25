@@ -1,6 +1,6 @@
 /**
  * PATCH /api/v1/orders/{orderId}/carrier-color — set carrier cell color.
- * Body: { color: "#48A111" | "#25671E" | "#FFEF5F" | "#EEA727" | null }
+ * Body: { color: "#34d399" | "#047857" | "#fde047" | "#f97316" | null }
  * Response: 200 + CarrierColorResponseDto. Errors: 400, 401, 403, 404.
  */
 
@@ -39,7 +39,7 @@ export const PATCH: APIRoute = async ({ params, locals, request }) => {
 
   const parsed = carrierCellColorSchema.safeParse(body);
   if (!parsed.success) {
-    return errorResponse(400, "Bad Request", "Nieprawidłowy kolor. Dozwolone: #48A111, #25671E, #FFEF5F, #EEA727 lub null.");
+    return errorResponse(400, "Bad Request", "Nieprawidłowy kolor. Dozwolone: #34d399, #047857, #fde047, #f97316 lub null.");
   }
 
   try {

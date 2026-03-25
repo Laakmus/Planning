@@ -141,7 +141,7 @@ export function OrderForm({
   formDataRef,
 }: OrderFormProps) {
   const { user } = useAuth();
-  const { companies, locations, products, transportTypes, vehicleVariants } = useDictionaries();
+  const { companies, locations, products, transportTypes } = useDictionaries();
 
   const [formData, setFormData] = useState<OrderFormData>(() =>
     buildInitialForm(order, stops, items, user)
@@ -319,7 +319,6 @@ export function OrderForm({
                 <CarrierSection
                   formData={formData}
                   companies={companies}
-                  vehicleVariants={vehicleVariants}
                   isReadOnly={isReadOnly}
                   onChange={patch}
                 />
