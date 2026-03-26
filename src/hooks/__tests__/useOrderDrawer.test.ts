@@ -349,8 +349,8 @@ describe("useOrderDrawer", () => {
       );
       expect(mockToast.success).toHaveBeenCalledWith("Zlecenie zapisane.");
       expect(onOrderUpdatedFn).toHaveBeenCalled();
-      // doClose wywołuje onClose
-      expect(onCloseFn).toHaveBeenCalled();
+      // PUT nie zamyka drawera — drawer pozostaje otwarty po zapisie
+      expect(onCloseFn).not.toHaveBeenCalled();
     });
 
     it("PUT + pendingStatus → dodatkowy POST /status", async () => {

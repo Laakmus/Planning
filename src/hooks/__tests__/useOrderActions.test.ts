@@ -80,7 +80,7 @@ describe("useOrderActions", () => {
         user: null,
         refetch: refetchFn as unknown as () => void | Promise<void>,
         silentRefetch: silentRefetchFn as unknown as () => void | Promise<void>,
-        updateOrderLocally: updateOrderLocallyFn,
+        updateOrderLocally: updateOrderLocallyFn as unknown as (orderId: string, patch: Partial<import("@/types").OrderListItemDto>) => void,
         tableScrollRef,
       })
     );

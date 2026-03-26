@@ -174,6 +174,9 @@
 - [x] **Przyczyna**: `refetch()` ustawiał `setIsLoading(true)` → `OrderTable` reagował `isReloading = true` → freeze UI
 - [x] **Fix**: Optimistic updates (kolor, fix) + silent refetch (pozostałe akcje) w `useOrders.ts` + `useOrderActions.ts`
 - [x] Pliki: `useOrders.ts` (silentRefetch, updateOrderLocally), `useOrderActions.ts` (optimistic + silentRefetch), `OrdersPage.tsx` (przekazanie)
+- [x] **BUG 3**: Zapis w drawerze powodował mignięcie tabeli (ten sam problem co BUG 2)
+- [x] **Fix**: Zmiana `onOrderUpdated={refetch}` → `onOrderUpdated={silentRefetch}` w `OrdersPage.tsx`
+- [x] **Pre-existing test fix**: `useOrderDrawer.test.ts` — test oczekiwał `onClose` po PUT, ale drawer nie zamyka się po aktualizacji
 
 ### Sesja 51 — Plan załadunkowy magazynu PDF + email (agent teams)
 - [x] Migracja DB: tabela `warehouse_report_recipients` (RLS: ADMIN zarządza, authenticated czyta)

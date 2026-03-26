@@ -264,7 +264,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           orderId={selectedOrderId}
           isOpen={drawerOpen}
           onClose={handleDrawerClose}
-          onOrderUpdated={refetch}
+          onOrderUpdated={silentRefetch}
           onShowHistory={handleShowHistory}
         />
       </ErrorBoundary>
