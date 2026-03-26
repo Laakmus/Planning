@@ -14,12 +14,9 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDictionaries } from "@/contexts/DictionaryContext";
 import { STATUS_NAMES } from "@/lib/view-models";
-import type { CurrencyCode, OrderFormData, OrderFormItem, OrderFormStop, OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
+import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
+import { mapDetailToFormData } from "@/lib/form-mappers";
 
-/** Mapowanie starych kodów transportu na aktualne (dane seed/historyczne). */
-const LEGACY_TRANSPORT_CODE_MAP: Record<string, TransportTypeCode> = {
-  KRAJ: "PL", MIEDZY: "EXP", EKSPRES: "IMP",
-};
 import type { OrderDetailDto, OrderItemDto, OrderStopDto } from "@/types";
 
 import { CargoSection } from "./CargoSection";
@@ -41,74 +38,6 @@ interface OrderFormProps {
   submitRef: React.RefObject<(() => void) | null>;
   /** Ref do odczytu aktualnego stanu formData (dla OrderView) */
   formDataRef: React.RefObject<OrderFormData | null>;
-}
-
-// ---------------------------------------------------------------------------
-// Helpers — mapowanie DTO → stan formularza
-// ---------------------------------------------------------------------------
-
-function mapStopsToForm(stops: OrderStopDto[]): OrderFormStop[] {
-  return stops.map((s) => ({
-    id: s.id,
-    kind: s.kind as "LOADING" | "UNLOADING",
-    sequenceNo: s.sequenceNo,
-    dateLocal: s.dateLocal,
-    timeLocal: s.timeLocal,
-    locationId: s.locationId,
-    locationNameSnapshot: s.locationNameSnapshot,
-    companyNameSnapshot: s.companyNameSnapshot,
-    addressSnapshot: s.addressSnapshot,
-    notes: s.notes,
-    _deleted: false,
-  }));
-}
-
-function mapItemsToForm(items: OrderItemDto[]): OrderFormItem[] {
-  return items.map((it) => ({
-    id: it.id,
-    productId: it.productId,
-    productNameSnapshot: it.productNameSnapshot,
-    defaultLoadingMethodSnapshot: it.defaultLoadingMethodSnapshot,
-    loadingMethodCode: it.loadingMethodCode,
-    quantityTons: it.quantityTons,
-    notes: it.notes,
-    _deleted: false,
-    _clientKey: crypto.randomUUID(),
-  }));
-}
-
-function buildInitialForm(
-  order: OrderDetailDto,
-  stops: OrderStopDto[],
-  items: OrderItemDto[],
-  currentUser: { fullName: string | null; phone: string | null; email: string } | null,
-): OrderFormData {
-  return {
-    transportTypeCode: (LEGACY_TRANSPORT_CODE_MAP[order.transportTypeCode] ?? order.transportTypeCode as TransportTypeCode) ?? "PL",
-    currencyCode: (order.currencyCode as CurrencyCode) ?? "PLN",
-    priceAmount: order.priceAmount,
-    paymentTermDays: order.paymentTermDays ?? 21,
-    paymentMethod: order.paymentMethod,
-    totalLoadTons: order.totalLoadTons,
-    totalLoadVolumeM3: order.totalLoadVolumeM3,
-    carrierCompanyId: order.carrierCompanyId,
-    shipperLocationId: order.shipperLocationId,
-    receiverLocationId: order.receiverLocationId,
-    vehicleTypeText: order.vehicleTypeText,
-    vehicleCapacityVolumeM3: order.vehicleCapacityVolumeM3,
-    specialRequirements: order.specialRequirements,
-    requiredDocumentsText: order.requiredDocumentsText,
-    generalNotes: order.generalNotes,
-    notificationDetails: order.notificationDetails,
-    confidentialityClause: order.confidentialityClause,
-    complaintReason: order.complaintReason,
-    // Osoba kontaktowa = zawsze zalogowany użytkownik
-    senderContactName: currentUser?.fullName ?? order.senderContactName,
-    senderContactPhone: currentUser?.phone ?? order.senderContactPhone,
-    senderContactEmail: currentUser?.email ?? order.senderContactEmail,
-    stops: mapStopsToForm(stops),
-    items: mapItemsToForm(items),
-  };
 }
 
 // ---------------------------------------------------------------------------
@@ -144,7 +73,7 @@ export function OrderForm({
   const { companies, locations, products, transportTypes } = useDictionaries();
 
   const [formData, setFormData] = useState<OrderFormData>(() =>
-    buildInitialForm(order, stops, items, user)
+    mapDetailToFormData({ order, stops, items, currentUser: user })
   );
   const [pendingStatusCode, setPendingStatusCode] = useState<OrderStatusCode | null>(null);
   const [complaintReason, setComplaintReason] = useState<string | null>(order.complaintReason);
@@ -156,7 +85,7 @@ export function OrderForm({
 
   // Przebuduj formularz gdy order/stops/items się zmienią (np. po przeładowaniu detali)
   useEffect(() => {
-    const initial = buildInitialForm(order, stops, items, user);
+    const initial = mapDetailToFormData({ order, stops, items, currentUser: user });
     originalComplaintReasonRef.current = order.complaintReason;
     setFormData(initial);
     setPendingStatusCode(null);

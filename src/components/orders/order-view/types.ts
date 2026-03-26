@@ -21,6 +21,7 @@ export type PackagingType = "LUZEM" | "BIGBAG" | "PALETA" | "INNA";
 
 export interface OrderViewItem {
   id: string;
+  productId: string | null;
   name: string;
   notes: string;
   packagingType: PackagingType | null;
@@ -47,6 +48,7 @@ export interface OrderViewData {
   createdAt: string; // YYYY-MM-DD
 
   // Sekcja 4 - Firma transportowa (editable)
+  carrierCompanyId: string | null;
   carrierName: string;
   carrierAddress: string;
   carrierNip: string;
@@ -173,6 +175,7 @@ function generateId(): string {
 function mapItemForward(item: OrderFormItem): OrderViewItem {
   return {
     id: item.id ?? generateId(),
+    productId: item.productId,
     name: item.productNameSnapshot ?? "",
     notes: item.notes ?? "",
     packagingType: mapLoadingMethodToPackaging(item.loadingMethodCode),
@@ -228,6 +231,7 @@ export function formDataToViewData(
   return {
     orderNo,
     createdAt,
+    carrierCompanyId: formData.carrierCompanyId,
     carrierName: carrier?.name ?? "",
     carrierAddress: carrierAddr,
     carrierNip: carrier?.taxId ?? "",
@@ -262,13 +266,16 @@ function mapItemReverse(
   products: ProductDto[],
 ): OrderFormItem {
   const original = originalItems.find((i) => i.id === viewItem.id);
-  const product = products.find((p) => p.name === viewItem.name);
+  // Użyj productId z OrderViewItem (przekazane przez forward mapper) zamiast szukać po nazwie
+  const product = viewItem.productId
+    ? products.find((p) => p.id === viewItem.productId)
+    : products.find((p) => p.name === viewItem.name);
   const productChanged =
     original && product && original.productId !== product.id;
 
   return {
     id: original?.id ?? null,
-    productId: product?.id ?? null,
+    productId: viewItem.productId ?? product?.id ?? null,
     productNameSnapshot: viewItem.name || null,
     defaultLoadingMethodSnapshot:
       product?.defaultLoadingMethodCode ?? null,
@@ -356,7 +363,10 @@ export function viewDataToFormData(
   companies: CompanyDto[],
   products: ProductDto[],
 ): OrderFormData {
-  const carrier = companies.find((c) => c.name === viewData.carrierName);
+  // Użyj carrierCompanyId z OrderViewData (przekazane przez forward mapper) zamiast szukać po nazwie
+  const carrierId = viewData.carrierCompanyId
+    ?? companies.find((c) => c.name === viewData.carrierName)?.id
+    ?? null;
 
   return {
     // Pola zachowane z oryginalu (ukryte w OrderView)
@@ -373,7 +383,7 @@ export function viewDataToFormData(
     notificationDetails: originalFormData.notificationDetails,
 
     // Pola edytowane w OrderView (konwersja "" -> null dla API)
-    carrierCompanyId: carrier?.id ?? originalFormData.carrierCompanyId,
+    carrierCompanyId: carrierId ?? originalFormData.carrierCompanyId,
     vehicleTypeText: viewData.vehicleType || null,
     vehicleCapacityVolumeM3: viewData.vehicleVolumeM3,
     priceAmount: viewData.priceAmount,

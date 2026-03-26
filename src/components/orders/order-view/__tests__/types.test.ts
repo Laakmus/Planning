@@ -654,7 +654,8 @@ describe("viewDataToFormData", () => {
         items: [makeFormItem({ productId: PRODUCT_ID })],
       });
       const viewData = callForward(original);
-      // Zmien nazwe produktu → inny product match
+      // Symuluj zmianę produktu w A4 (autocomplete aktualizuje id + name razem)
+      viewData.items[0].productId = PRODUCT2_ID;
       viewData.items[0].name = "Piasek kwarcowy";
       const restored = callReverse(viewData, original);
 
@@ -742,10 +743,11 @@ describe("viewDataToFormData", () => {
 
   // Carrier resolve
   describe("carrier resolve", () => {
-    it("resolve'uje carrierCompanyId z nazwy firmy", () => {
+    it("resolve'uje carrierCompanyId z ID (autocomplete aktualizuje id + name)", () => {
       const original = makeFormData();
       const viewData = callForward(original);
-      // Zmien na inna firme
+      // Symuluj zmianę carrier w A4 (autocomplete aktualizuje id + name razem)
+      viewData.carrierCompanyId = COMPANY_OTHER_ID;
       viewData.carrierName = "InnaFirma S.A.";
       const restored = callReverse(viewData, original);
 
@@ -781,6 +783,7 @@ describe("viewDataToFormData", () => {
       // Dodaj nowy item w viewData
       viewData.items.push({
         id: "new-item-from-view",
+        productId: null,
         name: "Piasek kwarcowy",
         notes: "Nowa pozycja",
         packagingType: "LUZEM",

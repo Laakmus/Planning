@@ -42,6 +42,7 @@ export function ProductAutocomplete({
 }: {
   value: string;
   onSelect: (product: {
+    id: string;
     name: string;
     defaultPackaging: PackagingType | null;
   }) => void;
@@ -110,6 +111,7 @@ export function ProductAutocomplete({
                     value={product.name}
                     onSelect={() => {
                       onSelect({
+                        id: product.id,
                         name: product.name,
                         defaultPackaging: packaging,
                       });

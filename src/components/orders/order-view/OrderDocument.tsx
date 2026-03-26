@@ -304,6 +304,7 @@ export default function OrderDocument({
                         l.companyId === company.id && l.isActive,
                     );
                     update({
+                      carrierCompanyId: company.id,
                       carrierName: company.name,
                       carrierAddress: loc
                         ? `${loc.streetAndNumber}, ${loc.postalCode} ${loc.city}`
@@ -313,6 +314,7 @@ export default function OrderDocument({
                   }}
                   onClear={() =>
                     update({
+                      carrierCompanyId: null,
                       carrierName: "",
                       carrierAddress: "",
                       carrierNip: "",
@@ -505,6 +507,7 @@ export default function OrderDocument({
                       value={item.name}
                       onSelect={(product) =>
                         updateItem(itemIndex, {
+                          productId: product.id,
                           name: product.name,
                         })
                       }

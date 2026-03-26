@@ -12,6 +12,7 @@ import { useDictionaries } from "@/contexts/DictionaryContext";
 import { useMicrosoftAuth } from "@/contexts/MicrosoftAuthContext";
 import { sendEmailForOrder } from "@/lib/send-email";
 import { STATUS_NAMES } from "@/lib/view-models";
+import { mapDetailToFormData } from "@/lib/form-mappers";
 import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
 import type {
   CreateOrderResponseDto,
@@ -322,6 +323,7 @@ export function useOrderDrawer({
     setShowOrderView(false);
     setOrderViewInitialData(null);
     orderViewDirtyRef.current = false;
+    pendingPreviewRef.current = false;
     onClose();
   }, [orderId, lockedByUserName, user, api, onClose]);
 
@@ -472,56 +474,15 @@ export function useOrderDrawer({
   // Handlery OrderView (podgląd A4)
   // ---------------------------------------------------------------------------
 
-  /** Buduje OrderFormData z detali — helper do podglądu bez polegania na formDataRef */
+  /** Buduje OrderFormData z detali — używa wspólnego mappera z legacy fallback i user override */
   const buildFormDataFromDetail = useCallback((d: OrderDetailResponseDto): OrderFormData => {
-    return {
-      transportTypeCode: (d.order.transportTypeCode as any) ?? "PL",
-      currencyCode: (d.order.currencyCode as any) ?? "PLN",
-      priceAmount: d.order.priceAmount,
-      paymentTermDays: d.order.paymentTermDays,
-      paymentMethod: d.order.paymentMethod,
-      totalLoadTons: d.order.totalLoadTons,
-      totalLoadVolumeM3: d.order.totalLoadVolumeM3,
-      carrierCompanyId: d.order.carrierCompanyId,
-      shipperLocationId: d.order.shipperLocationId,
-      receiverLocationId: d.order.receiverLocationId,
-      vehicleTypeText: d.order.vehicleTypeText,
-      vehicleCapacityVolumeM3: d.order.vehicleCapacityVolumeM3,
-      specialRequirements: d.order.specialRequirements,
-      requiredDocumentsText: d.order.requiredDocumentsText,
-      generalNotes: d.order.generalNotes,
-      notificationDetails: d.order.notificationDetails,
-      confidentialityClause: d.order.confidentialityClause,
-      complaintReason: d.order.complaintReason,
-      senderContactName: d.order.senderContactName,
-      senderContactPhone: d.order.senderContactPhone,
-      senderContactEmail: d.order.senderContactEmail,
-      stops: d.stops.map((s) => ({
-        id: s.id,
-        kind: s.kind as "LOADING" | "UNLOADING",
-        sequenceNo: s.sequenceNo,
-        dateLocal: s.dateLocal,
-        timeLocal: s.timeLocal,
-        locationId: s.locationId,
-        locationNameSnapshot: s.locationNameSnapshot,
-        companyNameSnapshot: s.companyNameSnapshot,
-        addressSnapshot: s.addressSnapshot,
-        notes: s.notes,
-        _deleted: false,
-      })),
-      items: d.items.map((it) => ({
-        id: it.id,
-        productId: it.productId,
-        productNameSnapshot: it.productNameSnapshot,
-        defaultLoadingMethodSnapshot: it.defaultLoadingMethodSnapshot,
-        loadingMethodCode: it.loadingMethodCode,
-        quantityTons: it.quantityTons,
-        notes: it.notes,
-        _deleted: false,
-        _clientKey: crypto.randomUUID(),
-      })),
-    };
-  }, []);
+    return mapDetailToFormData({
+      order: d.order,
+      stops: d.stops,
+      items: d.items,
+      currentUser: user,
+    });
+  }, [user]);
 
   /** Otwiera OrderView — helper wewnętrzny */
   const openOrderView = useCallback((formData: OrderFormData) => {
@@ -576,6 +537,14 @@ export function useOrderDrawer({
       openOrderView(freshFormData);
     }
   }, [detail, openOrderView, buildFormDataFromDetail]);
+
+  // Reset pendingPreviewRef gdy loadDetail zawiódł — zapobiega otwarciu podglądu A4
+  // z danymi innego zlecenia przy następnej zmianie detail
+  useEffect(() => {
+    if (loadError && pendingPreviewRef.current) {
+      pendingPreviewRef.current = false;
+    }
+  }, [loadError]);
 
   /** Dialog "Odrzuć zmiany i przejdź" */
   const handlePreviewDiscardAndGo = useCallback(() => {

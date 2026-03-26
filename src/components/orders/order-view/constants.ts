@@ -93,7 +93,7 @@ export function generateId(): string {
 }
 
 export function createEmptyItem(): OrderViewItem {
-  return { id: generateId(), name: "", notes: "", packagingType: "LUZEM" };
+  return { id: generateId(), productId: null, name: "", notes: "", packagingType: "LUZEM" };
 }
 
 export function createEmptyStop(kind: StopKind): OrderViewStop {
