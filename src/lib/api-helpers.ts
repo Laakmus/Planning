@@ -9,6 +9,8 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../db/database.types";
 import type { AuthMeDto } from "../types";
+import { logger } from "./logger";
+import { captureException } from "./sentry";
 import { getCurrentUser } from "./services/auth.service";
 
 /** Regex dla formatu UUID (8-4-4-4-12 hex). */
@@ -18,6 +20,17 @@ const UUID_REGEX =
 /** Zwraca skonfigurowany CORS origin (env lub domyślny localhost). */
 export function getCorsOrigin(): string {
   return import.meta.env.CORS_ORIGIN ?? "http://localhost:4321";
+}
+
+// Walidacja CORS_ORIGIN w produkcji
+if (import.meta.env.PROD) {
+  const origin = getCorsOrigin();
+  if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+    console.warn(
+      "[SECURITY] CORS_ORIGIN zawiera localhost w trybie produkcyjnym. " +
+      "Ustaw zmienną środowiskową CORS_ORIGIN na domenę produkcyjną."
+    );
+  }
 }
 
 /** Security + CORS headers dołączane do każdej odpowiedzi API. */
@@ -182,7 +195,7 @@ export function isValidUUID(value: string): boolean {
 
 /**
  * Strukturalny log błędu w formacie JSON.
- * Prosty wrapper na console.error — bez zewnętrznych bibliotek (MVP).
+ * Loguje błąd przez pino (structured JSON) i wysyła do Sentry (jeśli skonfigurowany).
  *
  * @param context — identyfikator endpointu/operacji (np. "[GET /api/v1/orders]")
  * @param error — przechwycony błąd
@@ -203,5 +216,6 @@ export function logError(context: string, error: unknown, requestId?: string): v
   } else {
     entry.message = String(error);
   }
-  console.error(JSON.stringify(entry));
+  logger.error(entry, entry.message as string);
+  captureException(error, { context, requestId });
 }

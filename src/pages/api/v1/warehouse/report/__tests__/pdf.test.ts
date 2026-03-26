@@ -71,8 +71,12 @@ type AnyAPIContext = Parameters<typeof POST>[0];
 // Pomocnicze mocki Supabase
 function createSupabaseMock(locationData: { name: string } | null = { name: "Magazyn Nord" }) {
   const mockMaybeSingle = vi.fn().mockResolvedValue({ data: locationData, error: null });
-  const mockEq = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
-  const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+  // Chain obiekt z eq + maybeSingle — obsługuje wielokrotne .eq() (np. .eq("id", x).eq("companies.type", y))
+  const chainObj: Record<string, ReturnType<typeof vi.fn>> = {};
+  const mockEq = vi.fn().mockReturnValue(chainObj);
+  chainObj.eq = mockEq;
+  chainObj.maybeSingle = mockMaybeSingle;
+  const mockSelect = vi.fn().mockReturnValue(chainObj);
   const mockFrom = vi.fn().mockReturnValue({ select: mockSelect });
   return { from: mockFrom, _mocks: { from: mockFrom, select: mockSelect, eq: mockEq, maybeSingle: mockMaybeSingle } };
 }

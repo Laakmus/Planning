@@ -55,14 +55,23 @@ export const POST: APIRoute = async ({ locals, request }) => {
   }
 
   try {
-    // Pobierz nazwę lokalizacji
-    const { data: location } = await locals.supabase
+    // Sprawdź czy lokalizacja istnieje i należy do firmy wewnętrznej (INTERNAL)
+    const { data: location } = await (locals.supabase
       .from("locations")
-      .select("name")
+      .select("id, name, companies!inner(type)")
       .eq("id", locationId)
-      .maybeSingle();
+      .eq("companies.type", "INTERNAL")
+      .maybeSingle() as any);
 
-    const locationName = location?.name ?? "Nieznany oddział";
+    if (!location) {
+      return errorResponse(
+        400,
+        "Bad Request",
+        "Podana lokalizacja nie istnieje lub nie jest oddziałem wewnętrznym."
+      );
+    }
+
+    const locationName = location.name ?? "Nieznany oddział";
 
     // Pobierz dane tygodnia
     const weekData = await getWarehouseWeekOrders(

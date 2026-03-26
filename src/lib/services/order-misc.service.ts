@@ -361,18 +361,14 @@ export async function prepareEmailForOrder(
   // Generowanie PDF
   const pdfInput = await resolvePdfData(supabase, detail);
   const pdfBuffer = generateOrderPdf(pdfInput);
-  const sanitizedName = (order.orderNo || orderId).replace(/["\r\n/]/g, "-");
+  // Allowlist: tylko bezpieczne znaki w nazwie pliku (alfanumeryczne, kropka, myślnik, podkreślnik)
+  const sanitizedName = (order.orderNo || orderId).replace(/[^a-zA-Z0-9._-]/g, "-");
   const pdfFileName = `zlecenie-${sanitizedName}.pdf`;
 
   // Format pdf-base64: zwróć PDF jako base64 (do Graph API na frontendzie)
   if (_params.outputFormat === "pdf-base64") {
     // pdfBuffer to ArrayBuffer z jsPDF — konwertujemy na base64
-    const uint8 = new Uint8Array(pdfBuffer);
-    let binary = "";
-    for (let i = 0; i < uint8.length; i++) {
-      binary += String.fromCharCode(uint8[i]);
-    }
-    const pdfBase64 = btoa(binary);
+    const pdfBase64 = Buffer.from(pdfBuffer).toString("base64");
     return {
       success: true,
       format: "pdf-base64" as const,
@@ -457,13 +453,14 @@ export async function updateEntryFixed(
     v === true ? "true" : v === false ? "false" : null;
 
   if (oldValue !== isEntryFixed) {
-    await supabase.from("order_change_log").insert({
+    const { error: logErr } = await supabase.from("order_change_log").insert({
       order_id: orderId,
       changed_by_user_id: userId,
       field_name: "is_entry_fixed",
       old_value: formatValue(oldValue),
       new_value: formatValue(isEntryFixed),
     });
+    if (logErr) throw logErr;
   }
 
   return { id: orderId, isEntryFixed };

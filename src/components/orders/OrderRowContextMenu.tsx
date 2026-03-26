@@ -186,8 +186,8 @@ export function OrderRowContextMenu({
               </ContextMenuItem>
             )}
 
-            {/* Anuluj zlecenie */}
-            {statusCode !== "anulowane" && (
+            {/* Anuluj zlecenie — nie wyświetlaj w zakładce Zrealizowane (PRD 3.1.7) */}
+            {statusCode !== "anulowane" && !isCompleted && (
               <ContextMenuItem
                 onClick={() => onCancel(orderId, orderNo)}
                 className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"

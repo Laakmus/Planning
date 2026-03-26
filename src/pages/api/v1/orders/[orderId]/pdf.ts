@@ -15,6 +15,7 @@ import {
   getAuthenticatedUser,
   isValidUUID,
   logError,
+  requireWriteAccess,
 } from "../../../../../lib/api-helpers";
 import { getOrderDetail } from "../../../../../lib/services/order.service";
 import { resolvePdfData } from "../../../../../lib/services/pdf/pdf-data-resolver";
@@ -23,6 +24,9 @@ import { generateOrderPdf } from "../../../../../lib/services/pdf/pdf-generator.
 export const POST: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);
   if (authResult instanceof Response) return authResult;
+
+  const writeCheck = requireWriteAccess(authResult);
+  if (writeCheck) return writeCheck;
 
   const orderId = params.orderId;
   if (!orderId || !isValidUUID(orderId)) {
@@ -38,7 +42,8 @@ export const POST: APIRoute = async ({ params, locals }) => {
     const pdfInput = await resolvePdfData(locals.supabase, detail);
     const pdfBuffer = generateOrderPdf(pdfInput);
 
-    const sanitizedName = (detail.order.orderNo || orderId).replace(/["\r\n/]/g, "-");
+    // Allowlist: tylko bezpieczne znaki w nazwie pliku
+    const sanitizedName = (detail.order.orderNo || orderId).replace(/[^a-zA-Z0-9._-]/g, "-");
     const fileName = `zlecenie-${sanitizedName}.pdf`;
 
     return new Response(pdfBuffer, {

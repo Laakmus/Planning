@@ -117,6 +117,17 @@ export const CarrierSection = memo(function CarrierSection({
                   {type}
                 </SelectItem>
               ))}
+              {/* Fallback dla wartości spoza listy (legacy/API) */}
+              {formData.vehicleTypeText &&
+                !(VEHICLE_TYPES as readonly string[]).includes(formData.vehicleTypeText) && (
+                <SelectItem
+                  key={formData.vehicleTypeText}
+                  value={formData.vehicleTypeText}
+                  className="text-sm italic text-slate-500"
+                >
+                  {formData.vehicleTypeText}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>

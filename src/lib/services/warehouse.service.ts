@@ -133,6 +133,8 @@ export async function getWarehouseWeekOrders(
   `;
 
   // Zapytanie 1: stopy z datą w zakresie poniedziałek-niedziela
+  // Cast `as any` konieczny: Supabase PostgREST inner join zwraca typ nullable,
+  // ale .in() filter gwarantuje non-null. Identyczny workaround w pdf.ts i send-email.ts.
   const { data: datedStops, error: datedErr } = await (supabase
     .from("order_stops")
     .select(stopSelect)

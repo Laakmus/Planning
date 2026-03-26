@@ -244,20 +244,6 @@ export interface UnlockOrderResponseDto {
   lockedAt: string | null;
 }
 
-/** Body POST /api/v1/orders/{orderId}/prepare-email. */
-export interface PrepareEmailCommand {
-  forceRegeneratePdf?: boolean;
-}
-
-/** Odpowiedź POST /api/v1/orders/{orderId}/prepare-email. */
-export interface PrepareEmailResponseDto {
-  orderId: string;
-  statusBefore: string;
-  statusAfter: string;
-  emailOpenUrl: string;
-  pdfFileName: string | null;
-}
-
 /** Odpowiedź POST /api/v1/orders/{orderId}/duplicate (kopia zlecenia). */
 export interface DuplicateOrderResponseDto {
   id: string;
@@ -267,10 +253,6 @@ export interface DuplicateOrderResponseDto {
   createdAt: string;
 }
 
-/** Body POST /api/v1/orders/{orderId}/pdf. */
-export interface GeneratePdfCommand {
-  regenerate?: boolean;
-}
 
 /** Body PATCH /api/v1/orders/{orderId}/stops/{stopId} — częściowa edycja (wszystkie pola opcjonalne). */
 export interface PatchStopCommand {

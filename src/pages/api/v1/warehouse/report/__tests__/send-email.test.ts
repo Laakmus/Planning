@@ -97,8 +97,12 @@ function createSupabaseMock(opts?: {
   const mockFrom = vi.fn().mockImplementation((table: string) => {
     if (table === "locations") {
       const mockMaybeSingle = vi.fn().mockResolvedValue({ data: locationData, error: null });
-      const mockEq = vi.fn().mockReturnValue({ maybeSingle: mockMaybeSingle });
-      const mockSelect = vi.fn().mockReturnValue({ eq: mockEq });
+      // Chain obiekt z eq + maybeSingle — obsługuje wielokrotne .eq()
+      const chainObj: Record<string, ReturnType<typeof vi.fn>> = {};
+      const mockEq = vi.fn().mockReturnValue(chainObj);
+      chainObj.eq = mockEq;
+      chainObj.maybeSingle = mockMaybeSingle;
+      const mockSelect = vi.fn().mockReturnValue(chainObj);
       return { select: mockSelect };
     }
     if (table === "warehouse_report_recipients") {

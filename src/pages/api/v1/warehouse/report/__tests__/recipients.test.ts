@@ -16,6 +16,7 @@ import { describe, it, expect, vi, beforeEach } from "vitest";
 
 vi.mock("@/lib/api-helpers", () => ({
   getAuthenticatedUser: vi.fn(),
+  requireWriteAccess: vi.fn(() => null),
   isValidUUID: vi.fn(),
   jsonResponse: vi.fn(),
   errorResponse: vi.fn(),

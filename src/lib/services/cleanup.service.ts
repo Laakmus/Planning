@@ -11,6 +11,7 @@
 
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../db/database.types";
+import { logger } from "../logger";
 
 // ---------------------------------------------------------------------------
 // Stałe
@@ -94,7 +95,8 @@ export async function cleanupCancelledOrders(
     return { deletedCount: 0, deletedOrderIds: [] };
   }
 
-  // Deduplikacja — bierzemy unikalne order_id
+  // Deduplikacja — bierzemy unikalne order_id.
+  // Set zachowuje insertion order (ES2015+), więc kolejność z ORDER BY jest zachowana.
   const candidateOrderIds = [...new Set(candidates.map((c) => c.order_id))];
 
   // Krok 2: Double-check — sprawdź że zlecenia NADAL mają status "anulowane"
@@ -139,15 +141,14 @@ export async function cleanupCancelledOrders(
 // ---------------------------------------------------------------------------
 
 function logCleanup(count: number, orderIds: string[]): void {
-  const entry = {
-    level: "info",
-    timestamp: new Date().toISOString(),
-    context: "[cleanup] cleanupCancelledOrders",
-    message: `Usunięto ${count} anulowanych zleceń`,
-    deletedCount: count,
-    deletedOrderIds: orderIds,
-  };
-  console.log(JSON.stringify(entry));
+  logger.info(
+    {
+      context: "[cleanup] cleanupCancelledOrders",
+      deletedCount: count,
+      deletedOrderIds: orderIds,
+    },
+    `Usunięto ${count} anulowanych zleceń`
+  );
 }
 
 // ---------------------------------------------------------------------------
@@ -163,24 +164,16 @@ let schedulerInterval: ReturnType<typeof setInterval> | null = null;
  */
 export function startCleanupScheduler(): void {
   if (schedulerInterval) {
-    console.log(
-      JSON.stringify({
-        level: "warn",
-        timestamp: new Date().toISOString(),
-        context: "[cleanup] startCleanupScheduler",
-        message: "Scheduler już działa — pomijam duplikat.",
-      })
+    logger.warn(
+      { context: "[cleanup] startCleanupScheduler" },
+      "Scheduler już działa — pomijam duplikat."
     );
     return;
   }
 
-  console.log(
-    JSON.stringify({
-      level: "info",
-      timestamp: new Date().toISOString(),
-      context: "[cleanup] startCleanupScheduler",
-      message: `Scheduler uruchomiony — interwał: ${SCHEDULER_INTERVAL_MS / 1000}s`,
-    })
+  logger.info(
+    { context: "[cleanup] startCleanupScheduler" },
+    `Scheduler uruchomiony — interwał: ${SCHEDULER_INTERVAL_MS / 1000}s`
   );
 
   // Pierwsze uruchomienie po 1 minucie (daj serwerowi czas na start)
@@ -200,13 +193,9 @@ export function stopCleanupScheduler(): void {
   if (schedulerInterval) {
     clearInterval(schedulerInterval);
     schedulerInterval = null;
-    console.log(
-      JSON.stringify({
-        level: "info",
-        timestamp: new Date().toISOString(),
-        context: "[cleanup] stopCleanupScheduler",
-        message: "Scheduler zatrzymany.",
-      })
+    logger.info(
+      { context: "[cleanup] stopCleanupScheduler" },
+      "Scheduler zatrzymany."
     );
   }
 }
@@ -220,14 +209,12 @@ async function runScheduledCleanup(): Promise<void> {
     const supabase = createServiceRoleClient();
     await cleanupCancelledOrders(supabase);
   } catch (err) {
-    console.error(
-      JSON.stringify({
-        level: "error",
-        timestamp: new Date().toISOString(),
+    logger.error(
+      {
         context: "[cleanup] runScheduledCleanup",
-        message: err instanceof Error ? err.message : String(err),
-        stack: err instanceof Error ? err.stack : undefined,
-      })
+        err,
+      },
+      err instanceof Error ? err.message : String(err)
     );
   }
 }

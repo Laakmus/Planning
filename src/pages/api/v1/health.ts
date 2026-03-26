@@ -21,7 +21,6 @@ export const GET: APIRoute = async ({ locals }) => {
     return jsonResponse({
       status: "ok",
       timestamp: new Date().toISOString(),
-      db: "connected",
     });
   } catch (err) {
     logError("[GET /api/v1/health]", err);

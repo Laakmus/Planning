@@ -287,7 +287,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           <AlertDialogHeader>
             <AlertDialogTitle>Anuluj zlecenie</AlertDialogTitle>
             <AlertDialogDescription>
-              Czy na pewno chcesz anulować zlecenie <span className="font-semibold">{pendingCancel?.orderNo}</span>? Tej operacji nie można cofnąć.
+              Czy na pewno chcesz anulować zlecenie <span className="font-semibold">{pendingCancel?.orderNo}</span>? Zlecenie przejdzie do zakładki Anulowane. Można je przywrócić w ciągu 24h.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -338,6 +338,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setComplaintReasonInput("")}>Anuluj</AlertDialogCancel>
             <AlertDialogAction
+              disabled={pendingStatusChange?.newStatus === "reklamacja" && !complaintReasonInput.trim()}
               onClick={() => {
                 handleChangeStatusConfirm(
                   pendingStatusChange?.newStatus === "reklamacja" ? complaintReasonInput : undefined

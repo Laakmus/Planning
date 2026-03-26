@@ -15,7 +15,6 @@ import {
   buildSearchText,
   buildSnapshotsForCarrier,
   buildSnapshotsForLocation,
-  buildSnapshotsForShipperReceiver,
   computeDenormalizedFields,
   MAX_LOADING_STOPS,
   MAX_UNLOADING_STOPS,
@@ -48,8 +47,9 @@ export async function updateOrder(
   params: UpdateOrderParams
 ): Promise<UpdateOrderResponseDto | null> {
   // Rozszerzony SELECT o pola biznesowe do logowania zmian (M-02).
-  // Kolumny payment_term_days, payment_method, total_load_volume_m3, special_requirements
-  // istnieją w DB (consolidated_schema.sql) ale brakuje ich w wygenerowanych typach — stąd cast.
+  // Cast `as unknown as Promise<...>` konieczny: kolumny payment_term_days, payment_method,
+  // total_load_volume_m3, special_requirements istnieją w DB ale brakują w database.types.ts.
+  // TODO: Usunąć po regeneracji typów (`supabase gen types`).
   const { data: order, error: fetchError } = await (supabase
     .from("transport_orders")
     .select(`id, order_no, status_code, locked_by_user_id,
@@ -174,14 +174,17 @@ export async function updateOrder(
   const derivedShipperLocationId = firstLoadingStop?.locationId ?? null;
   const derivedReceiverLocationId = lastUnloadingStop?.locationId ?? null;
 
-  let shipperSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
-  if (derivedShipperLocationId) {
-    shipperSnapshots = await buildSnapshotsForShipperReceiver(supabase, derivedShipperLocationId);
-  }
-  let receiverSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
-  if (derivedReceiverLocationId) {
-    receiverSnapshots = await buildSnapshotsForShipperReceiver(supabase, derivedReceiverLocationId);
-  }
+  // Shipper/receiver snapshoty z locationSnapMap (batch-pobrana) — bez dodatkowych DB queries
+  const shipperLocSnap = derivedShipperLocationId ? locationSnapMap.get(derivedShipperLocationId) ?? null : null;
+  const shipperSnapshots = {
+    nameSnapshot: shipperLocSnap?.companyNameSnapshot ?? null,
+    addressSnapshot: shipperLocSnap?.addressSnapshot ?? null,
+  };
+  const receiverLocSnap = derivedReceiverLocationId ? locationSnapMap.get(derivedReceiverLocationId) ?? null : null;
+  const receiverSnapshots = {
+    nameSnapshot: receiverLocSnap?.companyNameSnapshot ?? null,
+    addressSnapshot: receiverLocSnap?.addressSnapshot ?? null,
+  };
 
   // Batch snapshoty dla items (1 query zamiast N)
   const itemProductIds = activeItems.map((i) => i.productId).filter(Boolean) as string[];
@@ -398,11 +401,17 @@ export async function updateOrder(
     if (stopLogErr) throw stopLogErr;
   }
 
-  // Build snapshot lookup for items by index
-  const itemSnapshotByIdx = new Map(
-    itemsWithSnapshots.map((item, idx) => [idx, item])
-  );
-  let activeItemIdx = 0;
+  // Mapa snapshotów po item.id (istniejące) + oddzielna lista nowych (bez id)
+  const itemSnapshotById = new Map<string, typeof itemsWithSnapshots[number]>();
+  const newItemSnaps: typeof itemsWithSnapshots = [];
+  for (const snap of itemsWithSnapshots) {
+    if (snap.id) {
+      itemSnapshotById.set(snap.id, snap);
+    } else {
+      newItemSnaps.push(snap);
+    }
+  }
+  let newSnapIdx = 0;
 
   for (const i of params.items) {
     // Pomijaj usunięte pozycje bez id (nigdy nie zapisane w bazie)
@@ -412,9 +421,8 @@ export async function updateOrder(
       const { error: delErr } = await supabase.from("order_items").delete().eq("id", i.id).eq("order_id", orderId);
       if (delErr) throw delErr;
     } else if (i.id == null) {
-      // Nowa pozycja (INSERT)
-      const snap = itemSnapshotByIdx.get(activeItemIdx);
-      activeItemIdx++;
+      // Nowa pozycja (INSERT) — snapshot z listy nowych po kolejności
+      const snap = newItemSnaps[newSnapIdx++];
       const { error: insErr } = await supabase.from("order_items").insert({
         order_id: orderId,
         product_id: i.productId ?? null,
@@ -426,9 +434,8 @@ export async function updateOrder(
       });
       if (insErr) throw insErr;
     } else if (!i._deleted) {
-      // Istniejąca pozycja (UPDATE)
-      const snap = itemSnapshotByIdx.get(activeItemIdx);
-      activeItemIdx++;
+      // Istniejąca pozycja (UPDATE) — snapshot matchowany po item.id
+      const snap = i.id ? itemSnapshotById.get(i.id) : undefined;
       const { error: updErr } = await supabase
         .from("order_items")
         .update({

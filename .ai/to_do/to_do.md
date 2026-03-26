@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-26 (sesja: naprawiono H-01, H-02, H-03 → przenumerowano na H-04, H-05)
+> Ostatnia aktualizacja: 2026-03-26 (sesja 58: naprawiono wszystkie L-bugi L-01..L-11, L-12/L-13 odroczone)
 
 ---
 
@@ -22,201 +22,14 @@
 
 ## Do zrobienia — MEDIUM
 
-### M-01. IDOR na locationId w warehouse report endpoints
-- **Kategoria:** security
-- **Pliki:** `src/pages/api/v1/warehouse/report/pdf.ts:52`, `src/pages/api/v1/warehouse/report/send-email.ts:47`
-- **Opis:** Endpointy PDF i send-email przyjmują dowolny `locationId` bez walidacji, czy user ma prawo do danej lokalizacji (typ INTERNAL). GET /warehouse/orders ma tę walidację — brak spójności.
-- **Sugerowany fix:** Skopiować walidację lokalizacji (typ INTERNAL) z `warehouse/orders.ts:112-125` do obu endpointów report.
-- **Effort:** S
-- *Źródło: SEC-03*
-
-### M-02. "Anuluj zlecenie" widoczne w zakładce Zrealizowane
-- **Kategoria:** bug
-- **Pliki:** `src/components/orders/OrderRowContextMenu.tsx:190`
-- **Opis:** Opcja "Anuluj zlecenie" widoczna gdy `statusCode !== "anulowane"` — pojawia się w zakładce Zrealizowane. PRD 3.1.7 mówi: "z widoku zrealizowane nie można bezpośrednio anulować". Backend odrzuci (400), ale UI nie powinno wyświetlać niedozwolonej akcji.
-- **Sugerowany fix:** Dodać warunek `&& activeView !== "COMPLETED"` do widoczności "Anuluj zlecenie".
-- **Effort:** S
-- *Źródło: DOC-03*
-
-### M-03. Brak walidacji pustego powodu reklamacji z context menu
-- **Kategoria:** bug
-- **Pliki:** `src/components/orders/OrdersPage.tsx:340-346`
-- **Opis:** Zmiana statusu na "reklamacja" z menu kontekstowego pozwala zatwierdzić z pustym polem powodu. Walidacja jest w drawerze (useOrderDrawer.ts:347), ale nie w dialogu zmiany statusu. Niezgodne z ui-plan.md ("Zmiana zablokowana bez wypełnienia").
-- **Sugerowany fix:** Dodać `disabled={pendingStatusChange?.newStatus === "reklamacja" && !complaintReasonInput.trim()}` do AlertDialogAction.
-- **Effort:** S
-- *Źródło: UI-05*
-
-### M-04. Mylący tekst "Tej operacji nie można cofnąć" w dialogu anulowania
-- **Kategoria:** ux
-- **Pliki:** `src/components/orders/OrdersPage.tsx:290`
-- **Opis:** Dialog anulowania mówi "Tej operacji nie można cofnąć" — ale anulowane zlecenia SĄ przywracalne w ciągu 24h ("Przywróć do aktualnych").
-- **Sugerowany fix:** Zmienić tekst na "Zlecenie przejdzie do zakładki Anulowane. Można je przywrócić w ciągu 24h."
-- **Effort:** S
-- *Źródło: UI-02*
-
-### M-05. Select "Typ auta" nie wyświetla wartości spoza listy VEHICLE_TYPES
-- **Kategoria:** bug
-- **Pliki:** `src/components/orders/drawer/CarrierSection.tsx:103-121`
-- **Opis:** Jeśli w bazie istnieje wartość vehicleTypeText, która nie jest w hardcoded liście VEHICLE_TYPES, Select wyświetli placeholder "Wybierz typ..." zamiast faktycznej wartości. Bug przy danych legacy lub wpisanych API.
-- **Sugerowany fix:** Jeśli vehicleTypeText nie jest w VEHICLE_TYPES, dodać ją tymczasowo do listy opcji lub wyświetlić jako fallback text.
-- **Effort:** S
-- *Źródło: UI-09*
-
-### M-06. Fragile index-based matching w audit trail items
-- **Kategoria:** architecture
-- **Pliki:** `src/lib/services/order-update.service.ts:401-446`
-- **Opis:** Audit trail matchuje snapshoty items po indeksach numerycznych (activeItemIdx). Matchowanie poprawne w obecnej implementacji (obie tablice mają ten sam porządek), ale fragile coupling z frontendem — zmiana kolejności items w payload złamie matchowanie.
-- **Sugerowany fix:** Matchuj snapshot po item.id (istniejące) lub buduj mapę ID→snapshot. Dla nowych items — matchuj po pozycji w filtrowanej liście (!snap.id).
-- **Effort:** M
-- *Źródło: BUG-01*
-
-### M-07. Brakujące testy: admin/cleanup + dictionary-sync (4 endpointy)
-- **Kategoria:** test
-- **Pliki:** `src/pages/api/v1/admin/cleanup.ts`, `src/pages/api/v1/dictionary-sync/run.ts`, `src/pages/api/v1/dictionary-sync/jobs/[jobId].ts`
-- **Opis:** 4 endpointy bez testów. Cleanup wymaga roli ADMIN (service_role client). Dictionary-sync wymaga writeAccess. Auth guards nietestowane.
-- **Sugerowany fix:** Dodać testy: 401 niezalogowany, 403 brak uprawnień, 400 zły body, 200 sukces.
-- **Effort:** S
-- *Źródła: TST-02, TST-03*
-
-### M-08. Brakujące testy: warehouse PDF generator + auto-korekta
-- **Kategoria:** test
-- **Pliki:** `src/lib/services/pdf/warehouse-pdf-generator.service.ts`, `src/lib/services/__tests__/order.service.test.ts:610`
-- **Opis:** (1) Warehouse PDF generator (350 linii) bez testów — istniejący pdf.test.ts testuje TYLKO order PDF. (2) Test auto-korekta pokrywa "wysłane"→"korekta", ale brak "korekta wysłane"→"korekta".
-- **Sugerowany fix:** (1) Dodać testy warehouse PDF: minimalny input → ArrayBuffer, pełne dane → nie rzuca, pusta lista. (2) Dodać test auto-korekty "korekta wysłane".
-- **Effort:** M
-- *Źródła: TST-08, TST-04*
-
-### M-09. Słabe assertions w testach audit trail
-- **Kategoria:** test
-- **Pliki:** `src/lib/services/__tests__/order.service.test.ts:814-933`
-- **Opis:** Testy audit trail weryfikują że `from("order_change_log").insert()` wywołane, ale NIE sprawdzają treści INSERT payload (field_name, old_value, new_value). Nie da się zweryfikować poprawności logowanej zmiany.
-- **Sugerowany fix:** Przechwycić argument mock.calls i sprawdzić field_name, old_value, new_value.
-- **Effort:** M
-- *Źródło: TST-05*
-
-### M-10. Sentry integration (error tracking)
-- **Kategoria:** architecture
-- **Pliki:** SDK Sentry dla Node.js (backend) + React (frontend)
-- **Opis:** `logError()` → Sentry.captureException(), ErrorBoundary → Sentry.ErrorBoundary
-- **Effort:** M (2-3h)
-
-### M-11. Centralized logging (structured)
-- **Kategoria:** architecture
-- **Pliki:** Zastąpienie `console.error` → pino/winston z rotacją logów
-- **Effort:** M (3-4h)
-
-### M-12. Backup strategy + disaster recovery
-- **Kategoria:** architecture
-- **Pliki:** Dokumentacja RTO/RPO, automatyczne backupy DB (pg_dump cron lub Supabase managed)
-- **Opis:** Podstawowe instrukcje w DEPLOYMENT.md — wymaga rozszerzenia o skrypty i testy restore
-- **Effort:** M (2-3h)
-
 ### M-13. CI/CD deployment pipeline
 - **Kategoria:** architecture
 - **Pliki:** Rozszerzenie `.github/workflows/e2e.yml` o krok deploy (SSH/Docker push)
 - **Effort:** M (3-4h), **Zależność:** Dockerfile (DONE)
 
-### M-14. Load testing
-- **Kategoria:** performance
-- **Pliki:** k6 script testujący 50 concurrent users (orders CRUD, list, PDF)
-- **Effort:** M (3-4h)
-
-### M-15. Remaining `as any` casts (w kodzie produkcyjnym)
-- **Kategoria:** architecture
-- **Pliki:** `warehouse/orders.ts:117`, `useOrderDrawer.ts:439-440`
-- **Effort:** S (30 min)
-
 ---
 
 ## Do zrobienia — LOW
-
-### L-01. Sanityzacja CRLF w EML builder + Content-Disposition filename
-- **Kategoria:** security
-- **Pliki:** `src/lib/services/eml/eml-builder.service.ts:76-77`, `src/lib/services/order-misc.service.ts:364`
-- **Opis:** (1) `encodeSubjectRfc2047` nie koduje czystych ASCII z CRLF — potencjalny email header injection. (2) Filename sanitization w Content-Disposition nie blokuje backslash, semicolon, NUL.
-- **Sugerowany fix:** (1) Sanityzacja `\r\n` w subject/to/body: `.replace(/[\r\n]/g, "")`. (2) Allowlist regex: `.replace(/[^a-zA-Z0-9._-]/g, "-")`.
-- **Effort:** S
-- *Źródła: SEC-01, SEC-05*
-
-### L-02. Brakujące aria-label w filtrach i formularzach
-- **Kategoria:** a11y
-- **Pliki:** `src/components/orders/FilterBar.tsx:103-119,175-188`, `src/components/orders/drawer/RoutePointCard.tsx:181`, `src/components/orders/drawer/CarrierSection.tsx:79-96`
-- **Opis:** Select (rodzaj transportu, status), input tygodnia, wyszukiwanie, komentarz do punktu trasy, pola firmy transportowej — brak powiązanych etykiet dla screen readerów.
-- **Sugerowany fix:** Dodać `aria-label` do każdego pola.
-- **Effort:** S
-- *Źródła: UI-03, UI-04, UI-11, UI-12*
-
-### L-03. Hardening middleware i konfiguracja
-- **Kategoria:** security
-- **Pliki:** `src/middleware.ts:149-166`, `src/lib/api-helpers.ts:24-36`, `src/pages/api/v1/health.ts`
-- **Opis:** (1) Body size limit oparty na Content-Length header — chunked TE omija (reverse proxy limit zalecany). (2) COMMON_HEADERS stały obiekt, CORS_ORIGIN ewaluowany raz przy starcie. (3) Health endpoint publiczny (minimalny info leak).
-- **Sugerowany fix:** (1) Limit na reverse proxy. (2) Walidacja CORS_ORIGIN przy starcie w production. (3) Rozważyć publiczny/prywatny health check.
-- **Effort:** M
-- *Źródła: SEC-02, SEC-09, SEC-10*
-
-### L-04. Brak requireWriteAccess w PDF i recipients endpoints
-- **Kategoria:** security
-- **Pliki:** `src/pages/api/v1/orders/[orderId]/pdf.ts:23`, `src/pages/api/v1/warehouse/report/recipients.ts:22`
-- **Opis:** READ_ONLY może generować PDF (intensywne obliczeniowo) i widzieć adresy email odbiorców raportów. Niekonsekwentne z innymi endpointami.
-- **Sugerowany fix:** Dodać `requireWriteAccess` lub osobny rate limit dla READ_ONLY.
-- **Effort:** S
-- *Źródła: SEC-04, SEC-06*
-
-### L-05. Unsafe type casts w serwisach
-- **Kategoria:** architecture
-- **Pliki:** `src/lib/services/order-update.service.ts:53-78`, `src/lib/services/warehouse.service.ts:143`
-- **Opis:** `as unknown as Promise<...>` w order-update i `as any` w warehouse.service — pomijają walidację kompilatora. Zmiana schematu DB nie zostanie wykryta.
-- **Sugerowany fix:** Po regeneracji database.types.ts (H-01) zweryfikować czy casty nadal potrzebne. Jeśli tak — dodać Zod runtime validation.
-- **Effort:** M
-- *Źródła: SEC-07, BUG-12*
-
-### L-06. Redundantne DB queries (shipper/receiver snapshots)
-- **Kategoria:** performance
-- **Pliki:** `src/lib/services/order-update.service.ts:177-183`, `src/lib/services/order-create.service.ts:127-134`
-- **Opis:** Shipper/receiver snapshoty budowane osobnymi zapytaniami DB, mimo że dane już dostępne w `locationSnapMap` (batch-pobranej mapie).
-- **Sugerowany fix:** Użyj `locationSnapMap` do budowania shipper/receiver snapshotów.
-- **Effort:** S
-- *Źródła: BUG-08, BUG-09*
-
-### L-07. Drobne poprawki backend (5 items)
-- **Kategoria:** bug
-- **Pliki:** `order-misc.service.ts:370-375`, `cleanup.service.ts:98`, `api-helpers.ts:33`, `order-misc.service.ts:289`, `order-misc.service.ts:460`
-- **Opis:** (1) ArrayBuffer→base64 pętla po bajtach → użyj `Buffer.from().toString("base64")`. (2) Cleanup deduplikacja opiera się na Set insertion order — dodaj komentarz. (3) COMMON_HEADERS brak `Access-Control-Allow-Credentials` (nieistotne bo JWT, nie cookies). (4) Stawka 0 PLN przechodzi walidację prepare-email — do potwierdzenia z biznesem. (5) Brak sprawdzenia błędu INSERT do change_log w `updateEntryFixed()`.
-- **Sugerowany fix:** Każdy punkt to S effort, łącznie ~1h.
-- **Effort:** S (łącznie)
-- *Źródła: BUG-04, BUG-05, BUG-06, BUG-10, BUG-13*
-
-### L-08. Drobne poprawki frontend (7 items)
-- **Kategoria:** ux
-- **Pliki:** `useOrderDrawer.ts:427`, `OrderRowContextMenu.tsx:110`, `OrderForm.tsx:232`, `OrderTable.tsx:133`, `StatusFooter.tsx:61`, `MicrosoftAuthContext.tsx:97`, `AutocompleteField.tsx:60`
-- **Opis:** (1) Martwa dep `doClose` w handleSave deps. (2) Brak guard email z context menu. (3) Brak skeleton przy progressive rendering. (4) z-index do weryfikacji. (5) "System Status: OK" hardcoded. (6) useMemo brak w MicrosoftAuthProvider value. (7) Autocomplete filtruje od 1 znaku (ui-plan: >=2).
-- **Sugerowany fix:** Każdy punkt to S effort.
-- **Effort:** S (łącznie)
-- *Źródła: UI-01, UI-06, UI-08, UI-13, UI-14, UI-15, UI-16*
-
-### L-09. Aktualizacja PRD i dokumentacji (5 rozbieżności)
-- **Kategoria:** docs
-- **Pliki:** `.ai/prd.md`
-- **Opis:** (1) Kolor tła bg-emerald-100/70 vs PRD bg-emerald-50/30. (2) Typy pojazdów hardcoded vs "z bazy" (celowa decyzja sesja 21). (3) Kolumna "Fix" nie wymieniona w specyfikacji kolumn. (4) Przewoźnik "nazwa + kontakt" → tylko nazwa. (5) "Ikona Wyślij maila" → context menu/drawer.
-- **Sugerowany fix:** Zaktualizować PRD — każdy punkt to drobna edycja tekstu.
-- **Effort:** S
-- *Źródła: DOC-01, DOC-02, DOC-05, DOC-06, DOC-07*
-
-### L-10. Aktualizacja db-plan.md (order_no_counters)
-- **Kategoria:** docs
-- **Pliki:** `.ai/db-plan.md`
-- **Opis:** Tabela `order_no_counters` (year PK, last_seq INT NOT NULL DEFAULT 0) dodana w sesji 54 — brak w db-plan.md.
-- **Sugerowany fix:** Dodać sekcję 1.14 z opisem tabeli, RLS, powiązania z RPC.
-- **Effort:** S
-- *Źródło: DB-08*
-
-### L-11. Martwe/rozbieżne interfejsy w order.ts
-- **Kategoria:** architecture
-- **Pliki:** `src/types/order.ts:248-273`
-- **Opis:** (1) `PrepareEmailResponseDto` — nigdy nie importowany (martwy kod). (2) `GeneratePdfCommand` — nigdy nie importowany. (3) `PrepareEmailCommand` z `forceRegeneratePdf` ≠ walidator Zod (`outputFormat`).
-- **Sugerowany fix:** Usunąć martwe interfejsy, zaktualizować PrepareEmailCommand lub usunąć.
-- **Effort:** S
-- *Źródła: DB-04, DB-05, DB-06*
 
 ### L-12. Porządki w migracjach (przy następnej konsolidacji)
 - **Kategoria:** architecture
@@ -344,6 +157,40 @@
 ---
 
 ## Zrobione
+
+### Sesja 58 — 11x LOW fixes (L-01..L-11) (agent teams)
+- [x] L-01 (security): CRLF sanitization w EML builder — `.replace(/[\r\n]/g, "")` w subject/to + allowlist filename `.replace(/[^a-zA-Z0-9._-]/g, "-")` w order-misc + pdf.ts
+- [x] L-02 (a11y): aria-label w FilterBar (3 pola: transport, status, tydzień) + RoutePointCard (komentarz)
+- [x] L-03 (security): CORS_ORIGIN warning w produkcji + usunięcie `db: "connected"` z health endpoint
+- [x] L-04 (security): `requireWriteAccess` w pdf.ts + recipients.ts (READ_ONLY → 403)
+- [x] L-05 (architecture): Komentarze wyjaśniające type casty w order-update.service.ts + warehouse.service.ts
+- [x] L-06 (performance): Eliminacja redundantnych DB queries — shipper/receiver z `locationSnapMap` zamiast osobnych `buildSnapshotsForShipperReceiver()`
+- [x] L-07 (bug): Backend minor — (1) `Buffer.from().toString("base64")` zamiast pętli, (2) komentarz Set order, (5) error check na change_log INSERT. Pominięte: (3) Allow-Credentials zbędne (JWT), (4) stawka 0 PLN dozwolona
+- [x] L-08 (ux): Frontend minor — (1) usunięto `doClose` z deps handleSave, (5) "Online" + zielony dot zamiast "System Status: OK", (6) useMemo w MicrosoftAuthContext, (7) `minFilterLength` prop (default 2). Zamknięte: (2) email guard OK, (3) brak problemu, (4) z-index OK
+- [x] L-09 (docs): PRD update — bg-emerald-100/70, hardcoded vehicle types, kolumna Fix, carrier=nazwa, email=context menu
+- [x] L-10 (docs): db-plan.md — sekcja 1.14 `order_no_counters` (year PK, last_seq, RLS, RPC)
+- [x] L-11 (architecture): Usunięto martwe interfejsy: `PrepareEmailCommand`, `PrepareEmailResponseDto`, `GeneratePdfCommand` z order.ts
+- L-12, L-13: odroczone (migracje przy konsolidacji, testy przy okazji zmian)
+- Wynik: 1057/1057 testów, 0 błędów TypeScript
+
+### Sesja 56-57 — 14x MEDIUM fixes (M-01..M-12, M-14, M-15) (agent teams)
+- [x] M-01 (security): IDOR — walidacja INTERNAL (inner join companies) w warehouse report pdf.ts i send-email.ts
+- [x] M-02 (bug): "Anuluj zlecenie" ukryte w zakładce Zrealizowane — `&& !isCompleted` w OrderRowContextMenu.tsx
+- [x] M-03 (bug): Walidacja pustego powodu reklamacji — `disabled` na AlertDialogAction w OrdersPage.tsx
+- [x] M-04 (ux): Tekst dialogu anulowania — informacja o 24h przywracaniu (potwierdzone w backendzie)
+- [x] M-05 (bug): Select "Typ auta" fallback dla legacy wartości spoza VEHICLE_TYPES — CarrierSection.tsx
+- [x] M-06 (architecture): Audit trail matching — zamiana index-based na id-based (`itemSnapshotById` + `newItemSnaps`) w order-update.service.ts
+- [x] M-07 (test): 17 testów cleanup + dictionary-sync (3 nowe pliki: cleanup.test.ts, run.test.ts, jobId.test.ts)
+- [x] M-08 (test): 6 testów warehouse PDF generator + 1 test auto-korekta "korekta wysłane" → "korekta"
+- [x] M-09 (test): Wzmocnienie assertions audit trail — `InsertTrackers` + `findAuditEntry()` + 5 nowych testów payload (field_name, old_value, new_value)
+- [x] M-10 (architecture): Sentry integration — `src/lib/sentry.ts` (graceful no-op bez DSN), captureException w logError + ErrorBoundary (dynamic import), initSentry w middleware
+- [x] M-11 (architecture): pino structured logging — `src/lib/logger.ts`, zamiana console.error/log w api-helpers + cleanup.service (5 zamian)
+- [x] M-12 (architecture): Backup scripts — `scripts/backup.sh` (pg_dump + SHA256 checksum + retencja), `scripts/restore.sh` (walidacja + dry-run + potwierdzenie), `scripts/test-restore.sh` (restore do tymczasowej bazy + weryfikacja 8 tabel). DEPLOYMENT.md rozszerzony o procedury i checklist DR
+- [x] M-14 (performance): k6 load testing — `tests/load/k6-orders.js` (5 scenariuszy: list 25VU, get 10VU, create 5VU, update 5VU, PDF 5VU, thresholds p95)
+- [x] M-15 (architecture): `as any` → typowane casty w useOrderDrawer.ts (zastąpione przez mapDetailToFormData)
+- M-13 (CI/CD): pominięte — brak targetu deploymentu
+- Wynik: 1057/1057 testów, 0 błędów TypeScript. Review: 7.5/10, 0 krytycznych problemów
+- npm: pino ^10.3.1 (dep), pino-pretty ^13.1.3 (devDep), @sentry/node (dep)
 
 ### Sesja 55 — 3x HIGH (H-01, H-02, H-03) naprawione (agent teams)
 - [x] H-01: Ręczna naprawa `database.types.ts` — `confidentiality_clause` boolean→string (3 miejsca), dodano tabelę `order_no_counters`, dodano funkcję `require_write_role`

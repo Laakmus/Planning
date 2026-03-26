@@ -69,12 +69,24 @@ interface TableMock {
   delete?: Res;
 }
 
+/**
+ * Opcjonalny obiekt do śledzenia insertów na wybrane tabele.
+ * Przekaż changeLogInsertMock = vi.fn() żeby przechwycić dane insert() na order_change_log.
+ */
+interface InsertTrackers {
+  changeLogInsertMock?: ReturnType<typeof vi.fn>;
+}
+
 function buildOrderServiceMock(
   tables: Record<string, TableMock> = {},
-  rpcResults?: Record<string, Res>
+  rpcResults?: Record<string, Res>,
+  trackers?: InsertTrackers
 ) {
   // Countery per tabela — do selectSequence
   const selectCounters = new Map<string, number>();
+
+  // Tracker insertów na order_change_log — przechwytuje argumenty (jeśli podany)
+  const changeLogInsertMock = trackers?.changeLogInsertMock;
 
   function getTableConfig(table: string): TableMock {
     return tables[table] ?? {};
@@ -123,8 +135,11 @@ function buildOrderServiceMock(
     chain.then = (resolve: (v: Res) => void) =>
       Promise.resolve(selectRes()).then(resolve);
 
-    // Insert — zwraca chain z select/single
-    chain.insert = vi.fn().mockImplementation(() => {
+    // Insert — zwraca chain z select/single; opcjonalnie śledzi argumenty dla order_change_log
+    chain.insert = vi.fn().mockImplementation((data: unknown) => {
+      if (table === "order_change_log" && changeLogInsertMock) {
+        (changeLogInsertMock as (d: unknown) => void)(data);
+      }
       const insChain: Record<string, unknown> = {};
       insChain.select = vi.fn().mockReturnValue(insChain);
       insChain.single = vi.fn().mockResolvedValue(insertRes);
@@ -567,7 +582,8 @@ describe("createOrder", () => {
 describe("updateOrder", () => {
   function buildUpdateMock(
     orderData?: Record<string, unknown>,
-    tableOverrides?: Record<string, TableMock>
+    tableOverrides?: Record<string, TableMock>,
+    trackers?: InsertTrackers
   ) {
     return buildOrderServiceMock({
       transport_orders: {
@@ -592,7 +608,7 @@ describe("updateOrder", () => {
       order_status_history: { insert: { data: null, error: null } },
       order_change_log: { insert: { data: null, error: null } },
       ...tableOverrides,
-    });
+    }, undefined, trackers);
   }
 
   describe("happy path", () => {
@@ -609,6 +625,14 @@ describe("updateOrder", () => {
 
     it('auto-korekta: "wysłane" → status zmienia się na "korekta"', async () => {
       const supabase = buildUpdateMock({ status_code: "wysłane" });
+      const params = makeUpdateOrderParams();
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result!.statusCode).toBe("korekta");
+    });
+
+    it('auto-korekta: "korekta wysłane" → status zmienia się na "korekta"', async () => {
+      const supabase = buildUpdateMock({ status_code: "korekta wysłane" });
       const params = makeUpdateOrderParams();
 
       const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
@@ -729,6 +753,151 @@ describe("updateOrder", () => {
       await expect(
         updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params)
       ).rejects.toThrow("LOCKED");
+    });
+  });
+
+  // -------------------------------------------------------------------------
+  // Audit trail — weryfikacja payloadu insert() na order_change_log (M-09)
+  // -------------------------------------------------------------------------
+
+  describe("audit trail — payload assertions", () => {
+    // Helper: znajdź wpis audit trail po field_name we wszystkich batch calls
+    function findAuditEntry(
+      insertMock: ReturnType<typeof vi.fn>,
+      fieldName: string
+    ): { field_name: string; old_value: string | null; new_value: string | null; order_id?: string; changed_by_user_id?: string } | undefined {
+      for (const call of insertMock.mock.calls) {
+        const data = call[0];
+        if (Array.isArray(data)) {
+          const entry = data.find((r: Record<string, unknown>) => r.field_name === fieldName);
+          if (entry) return entry;
+        } else if (data && typeof data === "object" && (data as Record<string, unknown>).field_name === fieldName) {
+          return data as { field_name: string; old_value: string | null; new_value: string | null; order_id?: string; changed_by_user_id?: string };
+        }
+      }
+      return undefined;
+    }
+
+    it("zmiana generalNotes → loguje field_name, old_value, new_value", async () => {
+      const changeLogInsertMock = vi.fn();
+      const supabase = buildUpdateMock(
+        { general_notes: "Stare uwagi" },
+        undefined,
+        { changeLogInsertMock }
+      );
+      const params = makeUpdateOrderParams({ generalNotes: "Nowe uwagi" });
+
+      await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+
+      expect(changeLogInsertMock).toHaveBeenCalled();
+      const notesEntry = findAuditEntry(changeLogInsertMock, "general_notes");
+      expect(notesEntry).toBeDefined();
+      expect(notesEntry!.old_value).toBe("Stare uwagi");
+      expect(notesEntry!.new_value).toBe("Nowe uwagi");
+    });
+
+    it("zmiana priceAmount → loguje old/new jako stringi liczbowe", async () => {
+      const changeLogInsertMock = vi.fn();
+      const supabase = buildUpdateMock(
+        { price_amount: 5000 },
+        undefined,
+        { changeLogInsertMock }
+      );
+      const params = makeUpdateOrderParams({ priceAmount: 7500 });
+
+      await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+
+      expect(changeLogInsertMock).toHaveBeenCalled();
+      const priceEntry = findAuditEntry(changeLogInsertMock, "price_amount");
+      expect(priceEntry).toBeDefined();
+      expect(priceEntry!.old_value).toBe("5000");
+      expect(priceEntry!.new_value).toBe("7500");
+    });
+
+    it("zmiana carrierCompanyId → loguje pole carrier_company_id", async () => {
+      const changeLogInsertMock = vi.fn();
+      const supabase = buildUpdateMock(
+        { carrier_company_id: null },
+        undefined,
+        { changeLogInsertMock }
+      );
+      const params = makeUpdateOrderParams({ carrierCompanyId: VALID_COMPANY_ID });
+
+      await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+
+      expect(changeLogInsertMock).toHaveBeenCalled();
+      const carrierEntry = findAuditEntry(changeLogInsertMock, "carrier_company_id");
+      expect(carrierEntry).toBeDefined();
+      // FK resolved — new_value zawiera nazwę firmy z snapshot, nie UUID
+      expect(carrierEntry!.old_value).toBeNull();
+      expect(carrierEntry!.new_value).toBeTruthy();
+    });
+
+    it("auto-korekta (wysłane → korekta) → loguje zmianę status_code", async () => {
+      const changeLogInsertMock = vi.fn();
+      const supabase = buildUpdateMock(
+        { status_code: "wysłane" },
+        undefined,
+        { changeLogInsertMock }
+      );
+      const params = makeUpdateOrderParams();
+
+      const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+      expect(result!.statusCode).toBe("korekta");
+
+      expect(changeLogInsertMock).toHaveBeenCalled();
+      const statusEntry = findAuditEntry(changeLogInsertMock, "status_code");
+      expect(statusEntry).toBeDefined();
+      expect(statusEntry!.old_value).toBe("wysłane");
+      expect(statusEntry!.new_value).toBe("korekta");
+      expect(statusEntry!.order_id).toBe(VALID_ORDER_ID);
+      expect(statusEntry!.changed_by_user_id).toBe(VALID_USER_ID);
+    });
+
+    it("brak zmian w polach biznesowych → NIE loguje business fields do change_log", async () => {
+      const changeLogInsertMock = vi.fn();
+      const supabase = buildUpdateMock(
+        {
+          transport_type_code: "PL",
+          currency_code: "PLN",
+          carrier_company_id: null,
+          vehicle_type_text: null,
+          vehicle_capacity_volume_m3: null,
+          price_amount: null,
+          payment_term_days: null,
+          payment_method: null,
+          general_notes: null,
+          notification_details: null,
+          confidentiality_clause: null,
+          complaint_reason: null,
+          required_documents_text: null,
+          shipper_location_id: null,
+          receiver_location_id: null,
+          sender_contact_name: null,
+          sender_contact_phone: null,
+          sender_contact_email: null,
+          total_load_tons: null,
+          total_load_volume_m3: null,
+          special_requirements: null,
+        },
+        undefined,
+        { changeLogInsertMock }
+      );
+      // Stops z samymi istniejącymi (bez nowych) żeby stops audit trail nie dodawał wpisów
+      const params = makeUpdateOrderParams({
+        stops: [
+          { id: "s0000000-0000-0000-0000-000000000001", kind: "LOADING" as const, dateLocal: "2026-02-20", timeLocal: "08:00", locationId: null, notes: null, sequenceNo: 1, _deleted: false },
+          { id: "s0000000-0000-0000-0000-000000000002", kind: "UNLOADING" as const, dateLocal: "2026-02-21", timeLocal: "14:00", locationId: null, notes: null, sequenceNo: 2, _deleted: false },
+        ],
+        items: [],
+      });
+
+      await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
+
+      // Nie powinno być wpisu business fields — bo żadne pole się nie zmieniło
+      // (stops audit trail może dodać wpisy dla stopów, ale nie dla pól biznesowych)
+      const businessFieldEntry = findAuditEntry(changeLogInsertMock, "general_notes");
+      expect(businessFieldEntry).toBeUndefined();
     });
   });
 

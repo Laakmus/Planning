@@ -1,5 +1,18 @@
 # Backend Agent — Pamięć
 
+## Sesja 49 (2026-03-26) — M-11 Structured logging z pino (WYKONANE)
+
+### Wykonane
+- Nowy moduł `src/lib/logger.ts` — pino z pino-pretty w DEV, JSON w produkcji
+- `src/lib/api-helpers.ts`: `logError()` używa `logger.error()` zamiast `console.error()`
+- `src/lib/services/cleanup.service.ts`: 5x zamiana console.log/error → logger.info/warn/error
+- `src/lib/services/__tests__/cleanup.service.test.ts`: mock `@/lib/logger` zamiast `console.log` spy
+
+### Learningi
+- `import.meta.env` może nie istnieć w każdym kontekście — bezpieczna detekcja: `typeof import.meta !== "undefined" && import.meta.env?.DEV`
+- Testy API mockują `logError` na poziomie modułu `api-helpers` (vi.mock) — zmiana implementacji `logError` nie wymaga zmian w tych testach
+- ErrorBoundary.tsx (frontend/React) — NIE zamieniać console.error na pino (pino nie działa w przeglądarce)
+
 ## Sesja 33 (2026-03-05) — H-02 rozbicie god service (WYKONANE)
 
 ### Wykonane

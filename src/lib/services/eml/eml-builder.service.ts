@@ -27,10 +27,13 @@ export function encodeRfc2231(value: string): string {
  */
 function encodeSubjectRfc2047(subject: string): string {
   if (!subject) return "";
+  // Sanityzacja CR/LF — zapobiega email header injection
+  const sanitized = subject.replace(/[\r\n]/g, "");
+  if (!sanitized) return "";
   // Sprawdź czy temat zawiera wyłącznie znaki ASCII — wtedy kodowanie zbędne
-  if (/^[\x20-\x7E]*$/.test(subject)) return subject;
+  if (/^[\x20-\x7E]*$/.test(sanitized)) return sanitized;
   // Kodowanie Base64 (RFC 2047 "B" encoding)
-  const base64 = Buffer.from(subject, "utf-8").toString("base64");
+  const base64 = Buffer.from(sanitized, "utf-8").toString("base64");
   return `=?UTF-8?B?${base64}?=`;
 }
 
@@ -50,6 +53,9 @@ export function buildEmlWithPdfAttachment(options: {
   body?: string;
 }): string {
   const { pdfBuffer, pdfFileName, subject, to, body } = options;
+
+  // Sanityzacja CR/LF w nagłówku To — zapobiega email header injection
+  const safeTo = (to ?? "").replace(/[\r\n]/g, "");
 
   // Unikalna granica MIME (timestamp + losowa wartość)
   const boundary = `----=_Part_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`;
@@ -74,7 +80,7 @@ export function buildEmlWithPdfAttachment(options: {
     "MIME-Version: 1.0",
     "X-Unsent: 1",
     `Subject: ${encodedSubject}`,
-    `To: ${to ?? ""}`,
+    `To: ${safeTo}`,
     `Content-Type: multipart/mixed; boundary="${boundary}"`,
     "",
     // Preambuła (ignorowana przez klienty MIME)

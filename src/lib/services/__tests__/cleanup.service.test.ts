@@ -12,6 +12,18 @@ import {
 } from "../cleanup.service";
 import { VALID_ORDER_ID } from "@/test/helpers/fixtures";
 
+// Mock loggera pino — zastępuje console.log/error w cleanup.service
+vi.mock("@/lib/logger", () => ({
+  logger: {
+    info: vi.fn(),
+    warn: vi.fn(),
+    error: vi.fn(),
+    debug: vi.fn(),
+  },
+}));
+
+import { logger } from "@/lib/logger";
+
 // ---------------------------------------------------------------------------
 // Stałe testowe
 // ---------------------------------------------------------------------------
@@ -259,17 +271,13 @@ describe("startCleanupScheduler / stopCleanupScheduler", () => {
   });
 
   it("drugie wywołanie startCleanupScheduler nie tworzy duplikatu", () => {
-    const consoleSpy = vi.spyOn(console, "log").mockImplementation(() => {});
-
     startCleanupScheduler();
     startCleanupScheduler(); // drugie — powinno logować warning
 
-    // Ostatni log powinien zawierać "pomijam duplikat"
-    const calls = consoleSpy.mock.calls;
-    const lastCall = calls[calls.length - 1]?.[0] as string;
-    expect(lastCall).toContain("duplikat");
-
-    consoleSpy.mockRestore();
+    // logger.warn powinien być wywołany z komunikatem o duplikacie
+    const warnMock = vi.mocked(logger.warn);
+    const lastCall = warnMock.mock.calls[warnMock.mock.calls.length - 1];
+    expect(lastCall?.[1]).toContain("duplikat");
   });
 
   it("stopCleanupScheduler zatrzymuje interwał", () => {

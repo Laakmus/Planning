@@ -426,7 +426,7 @@ export function useOrderDrawer({
         setIsSaving(false);
       }
     },
-    [orderId, detail, isSaving, api, onOrderUpdated, doClose, onClose]
+    [orderId, detail, isSaving, api, onOrderUpdated, onClose]
   );
 
   // ---------------------------------------------------------------------------

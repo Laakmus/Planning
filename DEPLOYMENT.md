@@ -275,42 +275,59 @@ docker inspect --format='{{.State.Health.Status}}' planning-app
 
 ## Backup i disaster recovery
 
+### Skrypty
+
+Gotowe skrypty w katalogu `scripts/`:
+
+| Skrypt | Opis |
+|--------|------|
+| `scripts/backup.sh` | Backup pg_dump z checksumem SHA256, retencją 30 dni |
+| `scripts/restore.sh` | Restore z walidacją checksum, trybem `--dry-run`, potwierdzeniem interaktywnym |
+| `scripts/test-restore.sh` | Test restore do tymczasowej bazy z weryfikacją 8 kluczowych tabel |
+
 ### Automatyczne backupy PostgreSQL
 
 ```bash
 # Cron job (codziennie o 3:00)
 # /etc/cron.d/planning-backup
 0 3 * * * root /opt/planning-app/scripts/backup.sh
-```
 
-**scripts/backup.sh:**
-```bash
-#!/bin/bash
-BACKUP_DIR="/opt/backups/planning"
-TIMESTAMP=$(date +%Y%m%d_%H%M%S)
-RETENTION_DAYS=30
+# Zmienne środowiskowe (wymagane)
+DB_HOST=127.0.0.1 DB_PORT=5432 DB_PASSWORD=secret ./scripts/backup.sh
 
-mkdir -p "$BACKUP_DIR"
-
-# pg_dump
-PGPASSWORD="${DB_PASSWORD}" pg_dump \
-  -h "${DB_HOST}" -p "${DB_PORT}" -U postgres -d postgres \
-  --format=custom --compress=9 \
-  -f "${BACKUP_DIR}/planning_${TIMESTAMP}.dump"
-
-# Usuń backupy starsze niż RETENTION_DAYS
-find "$BACKUP_DIR" -name "*.dump" -mtime +${RETENTION_DAYS} -delete
-
-echo "Backup completed: planning_${TIMESTAMP}.dump"
+# Opcjonalne nadpisanie domyślnych wartości
+BACKUP_DIR=/custom/path RETENTION_DAYS=60 ./scripts/backup.sh
 ```
 
 ### Restore
 
 ```bash
-pg_restore -h <host> -p <port> -U postgres -d postgres \
-  --clean --if-exists \
-  /opt/backups/planning/planning_20260319_030000.dump
+# Podgląd zawartości backupu (bez zmian w bazie)
+DB_PASSWORD=secret ./scripts/restore.sh /opt/backups/planning/planning_20260319_030000.dump --dry-run
+
+# Pełne przywrócenie (z potwierdzeniem interaktywnym)
+DB_PASSWORD=secret ./scripts/restore.sh /opt/backups/planning/planning_20260319_030000.dump
 ```
+
+### Testowanie restore
+
+Procedura weryfikacji integralności backupu — uruchamiaj cotygodniowo:
+
+```bash
+# Cron (niedziele o 4:00)
+0 4 * * 0 root DB_PASSWORD=secret /opt/planning-app/scripts/test-restore.sh /opt/backups/planning/latest.dump
+
+# Ręczne uruchomienie
+DB_PASSWORD=secret ./scripts/test-restore.sh /opt/backups/planning/planning_20260319_030000.dump
+```
+
+Co robi `test-restore.sh`:
+1. Tworzy tymczasową bazę `planning_restore_test`
+2. Przywraca backup do tej bazy
+3. Weryfikuje obecność 8 kluczowych tabel: `transport_orders`, `order_stops`, `order_items`, `order_change_log`, `companies`, `locations`, `products`, `user_profiles`
+4. Liczy wiersze w każdej tabeli
+5. Usuwa tymczasową bazę
+6. Exit code: 0 = PASSED, 1 = FAILED
 
 ### RTO/RPO
 
@@ -320,6 +337,15 @@ pg_restore -h <host> -p <port> -U postgres -d postgres \
 | RTO | 1h | Czas przywrócenia z backupu |
 
 Dla niższego RPO: skonfiguruj WAL archiving lub Supabase Point-in-Time Recovery.
+
+### Checklist disaster recovery
+
+1. [ ] Backup cron działa: `crontab -l | grep backup`
+2. [ ] Ostatni backup istnieje: `ls -la /opt/backups/planning/`
+3. [ ] Checksum pasuje: `sha256sum -c latest.dump.sha256`
+4. [ ] Test-restore przechodzi: `./scripts/test-restore.sh latest.dump`
+5. [ ] Dokumentacja aktualna: daty, hosty, porty
+6. [ ] Osoby kontaktowe: kto ma dostęp do serwera, kto przywraca
 
 ## Monitoring
 

@@ -99,8 +99,8 @@ describe("GET /api/v1/health", () => {
     expect(response.status).toBe(200);
     const body = await response.json();
     expect(body).toHaveProperty("status", "ok");
-    expect(body).toHaveProperty("db", "connected");
     expect(body).toHaveProperty("timestamp");
+    expect(body).not.toHaveProperty("db");
   });
 
   it("calls supabase.from('order_statuses').select('code').limit(1)", async () => {

@@ -15,7 +15,6 @@ import {
   batchBuildSnapshotsForLocations,
   buildSearchText,
   buildSnapshotsForCarrier,
-  buildSnapshotsForShipperReceiver,
   computeDenormalizedFields,
   generateOrderNo,
   MAX_LOADING_STOPS,
@@ -124,14 +123,17 @@ export async function createOrder(
   const derivedShipperLocationId = firstLoadingStop?.locationId ?? null;
   const derivedReceiverLocationId = lastUnloadingStop?.locationId ?? null;
 
-  let shipperSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
-  if (derivedShipperLocationId) {
-    shipperSnapshots = await buildSnapshotsForShipperReceiver(supabase, derivedShipperLocationId);
-  }
-  let receiverSnapshots = { nameSnapshot: null as string | null, addressSnapshot: null as string | null };
-  if (derivedReceiverLocationId) {
-    receiverSnapshots = await buildSnapshotsForShipperReceiver(supabase, derivedReceiverLocationId);
-  }
+  // Shipper/receiver snapshoty z locationSnapMap (batch-pobrana) — bez dodatkowych DB queries
+  const shipperLocSnap = derivedShipperLocationId ? locationSnapMap.get(derivedShipperLocationId) ?? null : null;
+  const shipperSnapshots = {
+    nameSnapshot: shipperLocSnap?.companyNameSnapshot ?? null,
+    addressSnapshot: shipperLocSnap?.addressSnapshot ?? null,
+  };
+  const receiverLocSnap = derivedReceiverLocationId ? locationSnapMap.get(derivedReceiverLocationId) ?? null : null;
+  const receiverSnapshots = {
+    nameSnapshot: receiverLocSnap?.companyNameSnapshot ?? null,
+    addressSnapshot: receiverLocSnap?.addressSnapshot ?? null,
+  };
 
   // 7. Snapshoty items z batch mapy
   const itemsWithSnapshots = params.items.map((item) => {

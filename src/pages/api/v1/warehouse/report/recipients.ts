@@ -11,6 +11,7 @@ import {
   isValidUUID,
   jsonResponse,
   logError,
+  requireWriteAccess,
 } from "../../../../../lib/api-helpers";
 
 export const GET: APIRoute = async ({ locals, request }) => {
@@ -20,6 +21,9 @@ export const GET: APIRoute = async ({ locals, request }) => {
 
   const authResult = await getAuthenticatedUser(locals.supabase);
   if (authResult instanceof Response) return authResult;
+
+  const writeCheck = requireWriteAccess(authResult);
+  if (writeCheck) return writeCheck;
 
   const url = new URL(request.url);
   const locationId = url.searchParams.get("locationId");

@@ -44,6 +44,10 @@ export class ErrorBoundary extends Component<ErrorBoundaryProps, ErrorBoundarySt
   componentDidCatch(error: Error, info: ErrorInfo): void {
     // Logowanie do konsoli w każdym środowisku
     console.error("[ErrorBoundary] Przechwycono błąd:", error, info);
+    // Sentry: dynamiczny import żeby uniknąć @sentry/node w kliencie (client:load)
+    import("@/lib/sentry")
+      .then(({ captureException }) => captureException(error, { componentStack: info?.componentStack }))
+      .catch(() => { /* Sentry niedostępny w przeglądarce — ignoruj */ });
     this.props.onError?.(error, info);
   }
 

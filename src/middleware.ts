@@ -8,7 +8,11 @@ import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types";
 import { getCorsOrigin } from "./lib/api-helpers";
+import { initSentry } from "./lib/sentry";
 import { startCleanupScheduler } from "./lib/services/cleanup.service";
+
+// Inicjalizacja Sentry — no-op gdy brak PUBLIC_SENTRY_DSN
+initSentry();
 
 // ---------------------------------------------------------------------------
 // Jednorazowe uruchomienie schedulera czyszczenia anulowanych zleceń (co 1h)
