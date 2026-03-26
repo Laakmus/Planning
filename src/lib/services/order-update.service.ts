@@ -463,6 +463,8 @@ export async function updateOrder(
       snapshotByItemId.set(snap.id, snap);
     }
   }
+  // Snapshoty nowych itemów (bez id) — oddzielna tablica do indeksowania
+  const newItemSnapshots = itemsWithSnapshots.filter(snap => !snap.id);
 
   // Numeracja aktywnych items w UI (1-based) — do czytelnych nazw pól w audit trail
   let displayItemNum = 0;
@@ -482,7 +484,7 @@ export async function updateOrder(
     } else if (item.id == null) {
       // Nowa pozycja — snapshot z kolejności nowych itemów
       displayItemNum++;
-      const snap = itemsWithSnapshots[newItemSnapIdx] ?? null;
+      const snap = newItemSnapshots[newItemSnapIdx] ?? null;
       newItemSnapIdx++;
       itemChangeLogRows.push({
         order_id: orderId,

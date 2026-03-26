@@ -204,6 +204,21 @@ export type Database = {
           },
         ]
       }
+      order_no_counters: {
+        Row: {
+          year: number
+          last_seq: number
+        }
+        Insert: {
+          year: number
+          last_seq?: number
+        }
+        Update: {
+          year?: number
+          last_seq?: number
+        }
+        Relationships: []
+      }
       order_status_history: {
         Row: {
           changed_at: string
@@ -376,7 +391,7 @@ export type Database = {
           carrier_location_name_snapshot: string | null
           carrier_name_snapshot: string | null
           complaint_reason: string | null
-          confidentiality_clause: boolean | null
+          confidentiality_clause: string | null
           created_at: string
           created_by_user_id: string
           currency_code: string
@@ -436,7 +451,7 @@ export type Database = {
           carrier_location_name_snapshot?: string | null
           carrier_name_snapshot?: string | null
           complaint_reason?: string | null
-          confidentiality_clause?: boolean | null
+          confidentiality_clause?: string | null
           created_at?: string
           created_by_user_id: string
           currency_code: string
@@ -496,7 +511,7 @@ export type Database = {
           carrier_location_name_snapshot?: string | null
           carrier_name_snapshot?: string | null
           complaint_reason?: string | null
-          confidentiality_clause?: boolean | null
+          confidentiality_clause?: string | null
           created_at?: string
           created_by_user_id?: string
           currency_code?: string
@@ -757,6 +772,10 @@ export type Database = {
         Returns: {
           order_id: string
         }[]
+      }
+      require_write_role: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
       }
       try_lock_order: {
         Args: {

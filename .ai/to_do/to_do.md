@@ -1,52 +1,238 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-25 (sesja 54 — fix duplikowania numerów zleceń po fizycznym usunięciu)
+> Ostatnia aktualizacja: 2026-03-26 (sesja: naprawiono H-01, H-02, H-03 → przenumerowano na H-04, H-05)
 
 ---
 
 ## Do zrobienia — HIGH
 
-### PP-01. P1-01 — Przeniesienie Microsoft Graph API na backend (Confidential Client)
-- Token Mail.ReadWrite w przeglądarce = ryzyko XSS → pełny dostęp do skrzynki
-- Status zmienia się na "wysłane" ZANIM draft powstanie (race condition)
-- Wymaga rejestracji app w Azure AD jako Confidential Client
-- **Effort**: L (8-12h), **Zależność**: Azure AD app registration
-- **Pliki**: graph-mail.server.ts (nowy), prepare-email.ts, order-misc.service.ts, useOrderActions.ts, useOrderDrawer.ts, OrdersApp.tsx, MicrosoftAuthContext.tsx (usunąć)
+### H-04. Przeniesienie Microsoft Graph API na backend (Confidential Client)
+- **Kategoria:** security
+- **Pliki:** `graph-mail.server.ts` (nowy), `prepare-email.ts`, `order-misc.service.ts`, `useOrderActions.ts`, `useOrderDrawer.ts`, `OrdersApp.tsx`, `MicrosoftAuthContext.tsx` (usunąć)
+- **Opis:** Token Mail.ReadWrite w przeglądarce = ryzyko XSS → pełny dostęp do skrzynki. Status zmienia się na "wysłane" ZANIM draft powstanie (race condition). Wymaga rejestracji app w Azure AD jako Confidential Client.
+- **Effort:** L (8-12h), **Zależność:** Azure AD app registration
 
-### PP-02. P2-01 — Integracja dictionary-sync z Comarch ERP XL
-- **ZABLOKOWANE**: Brak dokumentacji API Comarch ERP XL od działu IT
-- Krok wstępny: IT → typ API (SOAP? REST? SQL?), dane dostępowe, struktura tabel
-- **Effort**: XL (16-24h), **Zależność**: zewnętrzna (Comarch API)
+### H-05. Integracja dictionary-sync z Comarch ERP XL
+- **Kategoria:** architecture
+- **Pliki:** `src/pages/api/v1/dictionary-sync/`
+- **Opis:** **ZABLOKOWANE**: Brak dokumentacji API Comarch ERP XL od działu IT. Krok wstępny: IT → typ API (SOAP? REST? SQL?), dane dostępowe, struktura tabel.
+- **Effort:** XL (16-24h), **Zależność:** zewnętrzna (Comarch API)
 
 ---
 
 ## Do zrobienia — MEDIUM
 
-### PP-03. P3-01 — Sentry integration (error tracking)
-- SDK Sentry dla Node.js (backend) + React (frontend)
-- `logError()` → Sentry.captureException(), ErrorBoundary → Sentry.ErrorBoundary
-- **Effort**: M (2-3h)
+### M-01. IDOR na locationId w warehouse report endpoints
+- **Kategoria:** security
+- **Pliki:** `src/pages/api/v1/warehouse/report/pdf.ts:52`, `src/pages/api/v1/warehouse/report/send-email.ts:47`
+- **Opis:** Endpointy PDF i send-email przyjmują dowolny `locationId` bez walidacji, czy user ma prawo do danej lokalizacji (typ INTERNAL). GET /warehouse/orders ma tę walidację — brak spójności.
+- **Sugerowany fix:** Skopiować walidację lokalizacji (typ INTERNAL) z `warehouse/orders.ts:112-125` do obu endpointów report.
+- **Effort:** S
+- *Źródło: SEC-03*
 
-### PP-04. P3-02 — Centralized logging (structured)
-- Zastąpienie `console.error` → pino/winston z rotacją logów
-- **Effort**: M (3-4h)
+### M-02. "Anuluj zlecenie" widoczne w zakładce Zrealizowane
+- **Kategoria:** bug
+- **Pliki:** `src/components/orders/OrderRowContextMenu.tsx:190`
+- **Opis:** Opcja "Anuluj zlecenie" widoczna gdy `statusCode !== "anulowane"` — pojawia się w zakładce Zrealizowane. PRD 3.1.7 mówi: "z widoku zrealizowane nie można bezpośrednio anulować". Backend odrzuci (400), ale UI nie powinno wyświetlać niedozwolonej akcji.
+- **Sugerowany fix:** Dodać warunek `&& activeView !== "COMPLETED"` do widoczności "Anuluj zlecenie".
+- **Effort:** S
+- *Źródło: DOC-03*
 
-### PP-05. P3-03 — Backup strategy + disaster recovery
-- Dokumentacja RTO/RPO, automatyczne backupy DB (pg_dump cron lub Supabase managed)
-- Podstawowe instrukcje w DEPLOYMENT.md — wymaga rozszerzenia o skrypty i testy restore
-- **Effort**: M (2-3h)
+### M-03. Brak walidacji pustego powodu reklamacji z context menu
+- **Kategoria:** bug
+- **Pliki:** `src/components/orders/OrdersPage.tsx:340-346`
+- **Opis:** Zmiana statusu na "reklamacja" z menu kontekstowego pozwala zatwierdzić z pustym polem powodu. Walidacja jest w drawerze (useOrderDrawer.ts:347), ale nie w dialogu zmiany statusu. Niezgodne z ui-plan.md ("Zmiana zablokowana bez wypełnienia").
+- **Sugerowany fix:** Dodać `disabled={pendingStatusChange?.newStatus === "reklamacja" && !complaintReasonInput.trim()}` do AlertDialogAction.
+- **Effort:** S
+- *Źródło: UI-05*
 
-### PP-06. P4-01 — CI/CD deployment pipeline
-- Rozszerzenie `.github/workflows/e2e.yml` o krok deploy (SSH/Docker push)
-- **Effort**: M (3-4h), **Zależność**: Dockerfile (DONE)
+### M-04. Mylący tekst "Tej operacji nie można cofnąć" w dialogu anulowania
+- **Kategoria:** ux
+- **Pliki:** `src/components/orders/OrdersPage.tsx:290`
+- **Opis:** Dialog anulowania mówi "Tej operacji nie można cofnąć" — ale anulowane zlecenia SĄ przywracalne w ciągu 24h ("Przywróć do aktualnych").
+- **Sugerowany fix:** Zmienić tekst na "Zlecenie przejdzie do zakładki Anulowane. Można je przywrócić w ciągu 24h."
+- **Effort:** S
+- *Źródło: UI-02*
 
-### PP-07. P4-03 — Load testing
-- k6 script testujący 50 concurrent users (orders CRUD, list, PDF)
-- **Effort**: M (3-4h)
+### M-05. Select "Typ auta" nie wyświetla wartości spoza listy VEHICLE_TYPES
+- **Kategoria:** bug
+- **Pliki:** `src/components/orders/drawer/CarrierSection.tsx:103-121`
+- **Opis:** Jeśli w bazie istnieje wartość vehicleTypeText, która nie jest w hardcoded liście VEHICLE_TYPES, Select wyświetli placeholder "Wybierz typ..." zamiast faktycznej wartości. Bug przy danych legacy lub wpisanych API.
+- **Sugerowany fix:** Jeśli vehicleTypeText nie jest w VEHICLE_TYPES, dodać ją tymczasowo do listy opcji lub wyświetlić jako fallback text.
+- **Effort:** S
+- *Źródło: UI-09*
 
-### PP-08. P5-01 — Remaining `as any` casts (3 w kodzie produkcyjnym)
-- `warehouse/orders.ts:117`, `useOrderDrawer.ts:439-440`
-- **Effort**: S (30 min)
+### M-06. Fragile index-based matching w audit trail items
+- **Kategoria:** architecture
+- **Pliki:** `src/lib/services/order-update.service.ts:401-446`
+- **Opis:** Audit trail matchuje snapshoty items po indeksach numerycznych (activeItemIdx). Matchowanie poprawne w obecnej implementacji (obie tablice mają ten sam porządek), ale fragile coupling z frontendem — zmiana kolejności items w payload złamie matchowanie.
+- **Sugerowany fix:** Matchuj snapshot po item.id (istniejące) lub buduj mapę ID→snapshot. Dla nowych items — matchuj po pozycji w filtrowanej liście (!snap.id).
+- **Effort:** M
+- *Źródło: BUG-01*
+
+### M-07. Brakujące testy: admin/cleanup + dictionary-sync (4 endpointy)
+- **Kategoria:** test
+- **Pliki:** `src/pages/api/v1/admin/cleanup.ts`, `src/pages/api/v1/dictionary-sync/run.ts`, `src/pages/api/v1/dictionary-sync/jobs/[jobId].ts`
+- **Opis:** 4 endpointy bez testów. Cleanup wymaga roli ADMIN (service_role client). Dictionary-sync wymaga writeAccess. Auth guards nietestowane.
+- **Sugerowany fix:** Dodać testy: 401 niezalogowany, 403 brak uprawnień, 400 zły body, 200 sukces.
+- **Effort:** S
+- *Źródła: TST-02, TST-03*
+
+### M-08. Brakujące testy: warehouse PDF generator + auto-korekta
+- **Kategoria:** test
+- **Pliki:** `src/lib/services/pdf/warehouse-pdf-generator.service.ts`, `src/lib/services/__tests__/order.service.test.ts:610`
+- **Opis:** (1) Warehouse PDF generator (350 linii) bez testów — istniejący pdf.test.ts testuje TYLKO order PDF. (2) Test auto-korekta pokrywa "wysłane"→"korekta", ale brak "korekta wysłane"→"korekta".
+- **Sugerowany fix:** (1) Dodać testy warehouse PDF: minimalny input → ArrayBuffer, pełne dane → nie rzuca, pusta lista. (2) Dodać test auto-korekty "korekta wysłane".
+- **Effort:** M
+- *Źródła: TST-08, TST-04*
+
+### M-09. Słabe assertions w testach audit trail
+- **Kategoria:** test
+- **Pliki:** `src/lib/services/__tests__/order.service.test.ts:814-933`
+- **Opis:** Testy audit trail weryfikują że `from("order_change_log").insert()` wywołane, ale NIE sprawdzają treści INSERT payload (field_name, old_value, new_value). Nie da się zweryfikować poprawności logowanej zmiany.
+- **Sugerowany fix:** Przechwycić argument mock.calls i sprawdzić field_name, old_value, new_value.
+- **Effort:** M
+- *Źródło: TST-05*
+
+### M-10. Sentry integration (error tracking)
+- **Kategoria:** architecture
+- **Pliki:** SDK Sentry dla Node.js (backend) + React (frontend)
+- **Opis:** `logError()` → Sentry.captureException(), ErrorBoundary → Sentry.ErrorBoundary
+- **Effort:** M (2-3h)
+
+### M-11. Centralized logging (structured)
+- **Kategoria:** architecture
+- **Pliki:** Zastąpienie `console.error` → pino/winston z rotacją logów
+- **Effort:** M (3-4h)
+
+### M-12. Backup strategy + disaster recovery
+- **Kategoria:** architecture
+- **Pliki:** Dokumentacja RTO/RPO, automatyczne backupy DB (pg_dump cron lub Supabase managed)
+- **Opis:** Podstawowe instrukcje w DEPLOYMENT.md — wymaga rozszerzenia o skrypty i testy restore
+- **Effort:** M (2-3h)
+
+### M-13. CI/CD deployment pipeline
+- **Kategoria:** architecture
+- **Pliki:** Rozszerzenie `.github/workflows/e2e.yml` o krok deploy (SSH/Docker push)
+- **Effort:** M (3-4h), **Zależność:** Dockerfile (DONE)
+
+### M-14. Load testing
+- **Kategoria:** performance
+- **Pliki:** k6 script testujący 50 concurrent users (orders CRUD, list, PDF)
+- **Effort:** M (3-4h)
+
+### M-15. Remaining `as any` casts (w kodzie produkcyjnym)
+- **Kategoria:** architecture
+- **Pliki:** `warehouse/orders.ts:117`, `useOrderDrawer.ts:439-440`
+- **Effort:** S (30 min)
+
+---
+
+## Do zrobienia — LOW
+
+### L-01. Sanityzacja CRLF w EML builder + Content-Disposition filename
+- **Kategoria:** security
+- **Pliki:** `src/lib/services/eml/eml-builder.service.ts:76-77`, `src/lib/services/order-misc.service.ts:364`
+- **Opis:** (1) `encodeSubjectRfc2047` nie koduje czystych ASCII z CRLF — potencjalny email header injection. (2) Filename sanitization w Content-Disposition nie blokuje backslash, semicolon, NUL.
+- **Sugerowany fix:** (1) Sanityzacja `\r\n` w subject/to/body: `.replace(/[\r\n]/g, "")`. (2) Allowlist regex: `.replace(/[^a-zA-Z0-9._-]/g, "-")`.
+- **Effort:** S
+- *Źródła: SEC-01, SEC-05*
+
+### L-02. Brakujące aria-label w filtrach i formularzach
+- **Kategoria:** a11y
+- **Pliki:** `src/components/orders/FilterBar.tsx:103-119,175-188`, `src/components/orders/drawer/RoutePointCard.tsx:181`, `src/components/orders/drawer/CarrierSection.tsx:79-96`
+- **Opis:** Select (rodzaj transportu, status), input tygodnia, wyszukiwanie, komentarz do punktu trasy, pola firmy transportowej — brak powiązanych etykiet dla screen readerów.
+- **Sugerowany fix:** Dodać `aria-label` do każdego pola.
+- **Effort:** S
+- *Źródła: UI-03, UI-04, UI-11, UI-12*
+
+### L-03. Hardening middleware i konfiguracja
+- **Kategoria:** security
+- **Pliki:** `src/middleware.ts:149-166`, `src/lib/api-helpers.ts:24-36`, `src/pages/api/v1/health.ts`
+- **Opis:** (1) Body size limit oparty na Content-Length header — chunked TE omija (reverse proxy limit zalecany). (2) COMMON_HEADERS stały obiekt, CORS_ORIGIN ewaluowany raz przy starcie. (3) Health endpoint publiczny (minimalny info leak).
+- **Sugerowany fix:** (1) Limit na reverse proxy. (2) Walidacja CORS_ORIGIN przy starcie w production. (3) Rozważyć publiczny/prywatny health check.
+- **Effort:** M
+- *Źródła: SEC-02, SEC-09, SEC-10*
+
+### L-04. Brak requireWriteAccess w PDF i recipients endpoints
+- **Kategoria:** security
+- **Pliki:** `src/pages/api/v1/orders/[orderId]/pdf.ts:23`, `src/pages/api/v1/warehouse/report/recipients.ts:22`
+- **Opis:** READ_ONLY może generować PDF (intensywne obliczeniowo) i widzieć adresy email odbiorców raportów. Niekonsekwentne z innymi endpointami.
+- **Sugerowany fix:** Dodać `requireWriteAccess` lub osobny rate limit dla READ_ONLY.
+- **Effort:** S
+- *Źródła: SEC-04, SEC-06*
+
+### L-05. Unsafe type casts w serwisach
+- **Kategoria:** architecture
+- **Pliki:** `src/lib/services/order-update.service.ts:53-78`, `src/lib/services/warehouse.service.ts:143`
+- **Opis:** `as unknown as Promise<...>` w order-update i `as any` w warehouse.service — pomijają walidację kompilatora. Zmiana schematu DB nie zostanie wykryta.
+- **Sugerowany fix:** Po regeneracji database.types.ts (H-01) zweryfikować czy casty nadal potrzebne. Jeśli tak — dodać Zod runtime validation.
+- **Effort:** M
+- *Źródła: SEC-07, BUG-12*
+
+### L-06. Redundantne DB queries (shipper/receiver snapshots)
+- **Kategoria:** performance
+- **Pliki:** `src/lib/services/order-update.service.ts:177-183`, `src/lib/services/order-create.service.ts:127-134`
+- **Opis:** Shipper/receiver snapshoty budowane osobnymi zapytaniami DB, mimo że dane już dostępne w `locationSnapMap` (batch-pobranej mapie).
+- **Sugerowany fix:** Użyj `locationSnapMap` do budowania shipper/receiver snapshotów.
+- **Effort:** S
+- *Źródła: BUG-08, BUG-09*
+
+### L-07. Drobne poprawki backend (5 items)
+- **Kategoria:** bug
+- **Pliki:** `order-misc.service.ts:370-375`, `cleanup.service.ts:98`, `api-helpers.ts:33`, `order-misc.service.ts:289`, `order-misc.service.ts:460`
+- **Opis:** (1) ArrayBuffer→base64 pętla po bajtach → użyj `Buffer.from().toString("base64")`. (2) Cleanup deduplikacja opiera się na Set insertion order — dodaj komentarz. (3) COMMON_HEADERS brak `Access-Control-Allow-Credentials` (nieistotne bo JWT, nie cookies). (4) Stawka 0 PLN przechodzi walidację prepare-email — do potwierdzenia z biznesem. (5) Brak sprawdzenia błędu INSERT do change_log w `updateEntryFixed()`.
+- **Sugerowany fix:** Każdy punkt to S effort, łącznie ~1h.
+- **Effort:** S (łącznie)
+- *Źródła: BUG-04, BUG-05, BUG-06, BUG-10, BUG-13*
+
+### L-08. Drobne poprawki frontend (7 items)
+- **Kategoria:** ux
+- **Pliki:** `useOrderDrawer.ts:427`, `OrderRowContextMenu.tsx:110`, `OrderForm.tsx:232`, `OrderTable.tsx:133`, `StatusFooter.tsx:61`, `MicrosoftAuthContext.tsx:97`, `AutocompleteField.tsx:60`
+- **Opis:** (1) Martwa dep `doClose` w handleSave deps. (2) Brak guard email z context menu. (3) Brak skeleton przy progressive rendering. (4) z-index do weryfikacji. (5) "System Status: OK" hardcoded. (6) useMemo brak w MicrosoftAuthProvider value. (7) Autocomplete filtruje od 1 znaku (ui-plan: >=2).
+- **Sugerowany fix:** Każdy punkt to S effort.
+- **Effort:** S (łącznie)
+- *Źródła: UI-01, UI-06, UI-08, UI-13, UI-14, UI-15, UI-16*
+
+### L-09. Aktualizacja PRD i dokumentacji (5 rozbieżności)
+- **Kategoria:** docs
+- **Pliki:** `.ai/prd.md`
+- **Opis:** (1) Kolor tła bg-emerald-100/70 vs PRD bg-emerald-50/30. (2) Typy pojazdów hardcoded vs "z bazy" (celowa decyzja sesja 21). (3) Kolumna "Fix" nie wymieniona w specyfikacji kolumn. (4) Przewoźnik "nazwa + kontakt" → tylko nazwa. (5) "Ikona Wyślij maila" → context menu/drawer.
+- **Sugerowany fix:** Zaktualizować PRD — każdy punkt to drobna edycja tekstu.
+- **Effort:** S
+- *Źródła: DOC-01, DOC-02, DOC-05, DOC-06, DOC-07*
+
+### L-10. Aktualizacja db-plan.md (order_no_counters)
+- **Kategoria:** docs
+- **Pliki:** `.ai/db-plan.md`
+- **Opis:** Tabela `order_no_counters` (year PK, last_seq INT NOT NULL DEFAULT 0) dodana w sesji 54 — brak w db-plan.md.
+- **Sugerowany fix:** Dodać sekcję 1.14 z opisem tabeli, RLS, powiązania z RPC.
+- **Effort:** S
+- *Źródło: DB-08*
+
+### L-11. Martwe/rozbieżne interfejsy w order.ts
+- **Kategoria:** architecture
+- **Pliki:** `src/types/order.ts:248-273`
+- **Opis:** (1) `PrepareEmailResponseDto` — nigdy nie importowany (martwy kod). (2) `GeneratePdfCommand` — nigdy nie importowany. (3) `PrepareEmailCommand` z `forceRegeneratePdf` ≠ walidator Zod (`outputFormat`).
+- **Sugerowany fix:** Usunąć martwe interfejsy, zaktualizować PrepareEmailCommand lub usunąć.
+- **Effort:** S
+- *Źródła: DB-04, DB-05, DB-06*
+
+### L-12. Porządki w migracjach (przy następnej konsolidacji)
+- **Kategoria:** architecture
+- **Pliki:** `supabase/migrations/20260207000000_consolidated_schema.sql`
+- **Opis:** (1) Duplikat CHECK constraint `chk_carrier_cell_color` (stary) + `transport_orders_carrier_cell_color_check` (nowy). (2) Tworzenie search_vector + GIN i natychmiastowe usunięcie. (3) Pośrednie wersje `generate_next_order_no()` nadpisywane.
+- **Sugerowany fix:** Przy następnej konsolidacji schematu — wyczyścić redundancje.
+- **Effort:** S
+- *Źródła: DB-03, DB-09, DB-10*
+
+### L-13. Drobne uzupełnienia testów (6 items)
+- **Kategoria:** test
+- **Pliki:** `src/hooks/__tests__/useOrderDrawer.test.ts`, `src/lib/services/__tests__/order.service.test.ts`, `src/contexts/MicrosoftAuthContext.tsx`, `src/lib/validators/warehouse-report.validator.ts`
+- **Opis:** (1) PUT body asercja `expect.any(Object)` → sprawdzić pola. (2) Brak testu dirty form → handleCloseRequest. (3) listOrders test nie weryfikuje mapowania pól. (4) Brak testu self-lock. (5) MicrosoftAuthContext bez testów (thin wrapper). (6) Warehouse report Zod bez dedykowanych testów.
+- **Sugerowany fix:** Dodawać przy okazji zmian w danym obszarze.
+- **Effort:** S (łącznie)
+- *Źródła: TST-07, TST-09, TST-10, TST-11, TST-12, TST-13*
 
 ---
 
@@ -158,6 +344,12 @@
 ---
 
 ## Zrobione
+
+### Sesja 55 — 3x HIGH (H-01, H-02, H-03) naprawione (agent teams)
+- [x] H-01: Ręczna naprawa `database.types.ts` — `confidentiality_clause` boolean→string (3 miejsca), dodano tabelę `order_no_counters`, dodano funkcję `require_write_role`
+- [x] H-02: Fix buga audit trail w `order-update.service.ts` — `newItemSnapshots = itemsWithSnapshots.filter(snap => !snap.id)`, indeksowanie nowych items poprawione
+- [x] H-03: 28 testów warehouse report w 3 plikach: `pdf.test.ts` (9), `send-email.test.ts` (11), `recipients.test.ts` (8). Fix TS `Buffer→ArrayBuffer` w mockach
+- Wynik: 1028/1028 testów, 0 błędów TypeScript. Reviewer potwierdził poprawność H-01 i H-02.
 
 ### Sesja 54 — Fix duplikowania numerów zleceń po fizycznym usunięciu (BUG)
 - [x] **BUG**: Po fizycznym usunięciu anulowanego zlecenia z najwyższym numerem (cleanup po 24h), nowe zlecenie mogło dostać ten sam numer
@@ -401,79 +593,3 @@
 - [x] CR-01 (dokończenie): 43 nowe testy — stops (23), carrier-color (10), entry-fixed (10)
 - [x] CR-02: 34 testy middleware — rate limiting (10), idempotency (8), JWT (5), CORS (3), cleanup (2), integration (6)
 - [x] NEW-03: Pokryte przez CR-01 (stops.test.ts — 23 testy)
-- [x] NEW-04: Pokryte przez CR-01 (carrier-color + entry-fixed — 20 testów)
-- [x] H-03: `DetailRowWithJoins` type — usunięto 4x `(row as any)` w order.service.ts
-- [x] H-04: `formDataDirtyRef` flag zamiast `JSON.stringify` compare w OrderForm.tsx
-- [x] H-06: AbortController w useOrders.ts + useOrderHistory.ts + signal support w api-client.ts
-- [x] H-02 (próba): Agent-based split nie powiódł się (stale worktree) — odroczone
-- [x] Nowy mock: `src/test/mocks/astro-middleware.ts` + alias w vitest.config.ts
-- [x] Fix: 2 testy drawer-e2e zaktualizowane (isDirty behavioral change)
-- [x] Wynik: 782/782 testów (40 plików), 0 błędów TypeScript
-
-### Sesja 31 — 233 nowych testów + DRY buildSaveBody + fix bug week 53
-- [x] NEW-01: 63 testy mapperów OrderView — roundtrip, null handling, carrier resolve
-- [x] NEW-02: 20 testów warehouse endpoint — auth, locationId, walidacja
-- [x] H-05: DRY `buildSaveBody(formData)` w OrderDrawer.tsx
-- [x] H-10: 53 testy ViewModels — matryca przejść, domyślne filtry, typy unii, spójność
-- [x] H-09: 87 testów hooków React — useOrders (19), useOrderDetail (13), useOrderHistory (15), useDictionarySync (18), useWarehouseWeek (22)
-- [x] CR-01 (częściowo): 93 testy endpointów API — orders CRUD, status, lock/unlock, duplicate, prepare-email, restore
-- [x] CR-03: 8 testów access-control (sesja 24)
-- [x] H-01: ErrorBoundary class-based + 6 testów (sesja 24)
-- [x] H-07: `.env.example` — klucze zamienione na placeholdery + 6 testów (sesja 24)
-- [x] H-08: Migracja RPC role guard + anti-spoofing (sesja 24)
-- [x] H-NEW-01: Implementacja OrderView — migracja DB, 8 nowych plików (sesja 23)
-- [x] H-NEW-02: Fix labeli pakowania w CargoSection (sesja 23)
-- [x] Fix bug: `useWarehouseWeek` week >= 52 → >= 53 (obsługa lat z 53 tygodniami ISO)
-- [x] Fix: vehicleVariantCode → vehicleTypeText w fixture'ach testowych
-- [x] Audyt: code reviewer + thought partner — zidentyfikowano NEW-03..05
-- [x] Wynik: 705/705 testów (36 plików), 0 błędów TypeScript
-
-### Sesja 30 — Audyt API (4 agenty) + fix bugów
-- [x] Audyt API: 4 równoległe agenty (audyt endpointów, kontrakt frontend↔API, spójność docs, przegląd TODO)
-- [x] Fix: `notificationDetails`/`confidentialityClause` `.optional()` → `.default(null)` w `order.validator.ts`
-- [x] Fix: Dodanie pól do `TransportOrderRowExtended` w `order.service.ts`
-- [x] Fix: Usunięcie 5x `(row as any)` castów w `order.service.ts`
-- [x] Fix: `duplicateOrder` — kopiowanie `notificationDetails` z oryginału
-- [x] Fix: Dodanie `confidentiality_clause` do SELECT/type assertion w `updateOrder`
-- [x] V-01: Potwierdzono że listOrders filtry SĄ zaimplementowane
-- [x] Wynik: 388/388 testów, 0 błędów TypeScript
-
-### Sesje 26-29 — Widok magazynowy (WM-01..WM-08)
-- [x] WM-01: Aktualizacja specyfikacji
-- [x] WM-02: Migracja DB — location_id, notification_details, indeks
-- [x] WM-03: Types + API — warehouse DTOs, warehouseQuerySchema, warehouse.service
-- [x] WM-04: Frontend — 13 komponentów warehouse, nawigacja w sidebarze
-- [x] WM-05: Testy — 16 testów warehouse
-- [x] WM-06: Aktualizacja dokumentacji
-- [x] WM-07: BranchSelector + locationId w API
-- [x] WM-08: Redesign wizualny — 18 punktów
-
-### Sesja 25 — shadcn/ui Sidebar
-- [x] AppSidebar.tsx, OrdersApp refaktor, dark mode fix, dokumentacja
-
-### Sesja 24 — security fixes + testy
-- [x] H-07, H-08, H-01, CR-03 (częściowo). Wynik: 372/372 testów
-
-### Sesja 23 — implementacja OrderView (podgląd A4 z edycją inline)
-- [x] Migracja DB (confidentiality_clause), 8 nowych plików order-view/, integracja z drawerem, PreviewUnsavedDialog, fix labeli pakowania
-
-### Sesja 22 — analiza i aktualizacja planu + dokumentacji
-- [x] Rozwiązanie 8 rozbieżności, aktualizacja api-plan.md, ui-plan.md, prd.md, order.md. M-12, M-13 DONE.
-
-### Sesja 21 — rozdzielenie pól pojazdu
-- [x] vehicleVariantCode → vehicleTypeText + vehicleCapacityVolumeM3 (migracja DB, typy, backend, frontend, testy). M-09 DONE.
-
-### Sesja 20 — audyt 4 agentów
-- [x] Zidentyfikowano CR-01..04, H-01..11, M-01..16, L-20..29
-
-### Sesja 19 — fix vehicle variant auto-fill + testy E2E drawera
-- [x] Bug fix auto-wypełnienia objętości, 97 testów E2E drawera (tymczasowe)
-
-### Sesja 18 — rozszerzenie audit trail
-- [x] 7 faz: wpis "Utworzono zlecenie", śledzenie zmian items/stops, czytelne FK, polskie nazwy pól
-
-### Sesja 17 — sync docs z PRD + READ_ONLY audit
-- [x] 6 plików docs naprawionych, READ_ONLY audit 58 komponentów
-
-### Sesja 16 — security audit + MEDIUM fixes
-- [x] 20+ fixów: C-01..C-03, H-01..H-10, M-01..M-17
