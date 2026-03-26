@@ -127,7 +127,7 @@ export function DateCombobox({ value, onChange, disabled = false }: DateCombobox
     if (!open) return;
 
     const timer = setTimeout(() => {
-      let targetValue = value;
+      let targetValue = value || toIso(new Date());
       if (value && !dateSlots.find((s) => s.value === value)) {
         const valTime = new Date(value).getTime();
         targetValue = dateSlots.reduce((closest, slot) =>
@@ -143,7 +143,7 @@ export function DateCombobox({ value, onChange, disabled = false }: DateCombobox
           `[cmdk-list] [data-value="${targetValue.toLowerCase()}"]`
         );
         if (el) {
-          el.scrollIntoView({ block: "center" });
+          el.scrollIntoView({ block: "start" });
         }
       }
     }, 80);

@@ -415,9 +415,7 @@ export function useOrderDrawer({
           }
 
           toast.success("Zlecenie zapisane.");
-          // Najpierw zwolnij blokadę, potem odśwież listę — minimalizuje okno,
-          // w którym inny użytkownik widzi wciąż zablokowane zlecenie.
-          await doClose();
+          setIsDirty(false);
           onOrderUpdated();
         }
       } catch (err) {

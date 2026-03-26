@@ -71,7 +71,7 @@ export function TimeCombobox({ value, onChange, disabled = false }: TimeCombobox
     if (!open) return;
 
     const timer = setTimeout(() => {
-      let targetValue = value;
+      let targetValue = value || "08:00";
       if (value && !TIME_SLOTS.includes(value)) {
         const valueMinutes = timeToMinutes(value);
         targetValue = TIME_SLOTS.reduce((closest, slot) =>
@@ -86,7 +86,7 @@ export function TimeCombobox({ value, onChange, disabled = false }: TimeCombobox
           `[cmdk-list] [data-value="${targetValue.toLowerCase()}"]`
         );
         if (el) {
-          el.scrollIntoView({ block: "center" });
+          el.scrollIntoView({ block: "start" });
         }
       }
     }, 80);
