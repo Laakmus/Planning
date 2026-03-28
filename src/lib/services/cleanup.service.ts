@@ -32,8 +32,8 @@ const SCHEDULER_INTERVAL_MS = 60 * 60 * 1000;
  * Wymaga zmiennych środowiskowych SUPABASE_URL i SUPABASE_SERVICE_ROLE_KEY.
  */
 export function createServiceRoleClient(): SupabaseClient<Database> {
-  const url = import.meta.env.SUPABASE_URL;
-  const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY;
+  const url = import.meta.env.SUPABASE_URL ?? process.env.SUPABASE_URL;
+  const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
 
   if (!url || !serviceRoleKey) {
     throw new Error(

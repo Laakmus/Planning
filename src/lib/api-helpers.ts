@@ -19,7 +19,7 @@ const UUID_REGEX =
 
 /** Zwraca skonfigurowany CORS origin (env lub domyślny localhost). */
 export function getCorsOrigin(): string {
-  return import.meta.env.CORS_ORIGIN ?? "http://localhost:4321";
+  return import.meta.env.CORS_ORIGIN ?? process.env.CORS_ORIGIN ?? "http://localhost:4321";
 }
 
 // Walidacja CORS_ORIGIN w produkcji
