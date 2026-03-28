@@ -15,6 +15,14 @@ WORKDIR /app
 COPY package.json package-lock.json* ./
 RUN npm ci
 COPY . .
+
+# Astro PUBLIC_* zmienne muszą być dostępne w czasie buildu (Vite je wbudowuje w kod)
+ARG PUBLIC_SUPABASE_URL
+ARG PUBLIC_SUPABASE_ANON_KEY
+ARG PUBLIC_MICROSOFT_CLIENT_ID
+ARG PUBLIC_MICROSOFT_TENANT_ID
+ARG PUBLIC_SENTRY_DSN
+
 RUN npm run build
 
 # --- Stage 3: Runtime ---
@@ -35,12 +43,12 @@ COPY --from=build /app/package.json ./package.json
 USER astro
 
 ENV HOST=0.0.0.0
-ENV PORT=4321
+ENV PORT=${PORT:-4321}
 ENV NODE_ENV=production
 
-EXPOSE 4321
+EXPOSE ${PORT:-4321}
 
 HEALTHCHECK --interval=30s --timeout=5s --start-period=10s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:4321/api/v1/health || exit 1
+  CMD wget --no-verbose --tries=1 --spider http://localhost:${PORT:-4321}/api/v1/health || exit 1
 
 CMD ["node", "dist/server/entry.mjs"]
