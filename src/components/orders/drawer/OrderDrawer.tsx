@@ -5,10 +5,9 @@
  * Przy zamknięciu: sprawdza isDirty → dialog → unlock.
  */
 
-import { useCallback, useEffect, useRef, useState } from "react";
-import { toast } from "sonner";
+import { lazy, Suspense } from "react";
 
-import { History, X } from "lucide-react";
+import { AlertTriangle, History, RefreshCw, X } from "lucide-react";
 
 import {
   Sheet,
@@ -16,85 +15,19 @@ import {
   SheetDescription,
   SheetTitle,
 } from "@/components/ui/sheet";
-import { useAuth } from "@/contexts/AuthContext";
-import { formatDateFromTimestamp } from "@/lib/format-utils";
-import type { OrderFormData, OrderStatusCode } from "@/lib/view-models";
-import type {
-  CreateOrderResponseDto,
-  OrderDetailResponseDto,
-  PrepareEmailResponseDto,
-} from "@/types";
+import { useOrderDrawer } from "@/hooks/useOrderDrawer";
+import { formatDateTimeFromTimestamp } from "@/lib/format-utils";
 
 import { StatusBadge } from "../StatusBadge";
 
-import { DrawerFooter } from "./DrawerFooter";
-import { OrderForm } from "./OrderForm";
-import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
+const OrderView = lazy(() => import("../order-view/OrderView"));
 
-/** Empty defaults for new order creation. */
-function createEmptyDetail(): OrderDetailResponseDto {
-  return {
-    order: {
-      id: crypto.randomUUID(),
-      orderNo: "",
-      statusCode: "robocze",
-      transportTypeCode: "PL",
-      currencyCode: "PLN",
-      priceAmount: null,
-      paymentTermDays: null,
-      paymentMethod: null,
-      totalLoadTons: null,
-      totalLoadVolumeM3: null,
-      summaryRoute: null,
-      firstLoadingDate: null,
-      firstLoadingTime: null,
-      firstUnloadingDate: null,
-      firstUnloadingTime: null,
-      lastLoadingDate: null,
-      lastLoadingTime: null,
-      lastUnloadingDate: null,
-      lastUnloadingTime: null,
-      transportYear: null,
-      firstLoadingCountry: null,
-      firstUnloadingCountry: null,
-      carrierCompanyId: null,
-      carrierNameSnapshot: null,
-      carrierLocationNameSnapshot: null,
-      carrierAddressSnapshot: null,
-      shipperLocationId: null,
-      shipperNameSnapshot: null,
-      shipperAddressSnapshot: null,
-      receiverLocationId: null,
-      receiverNameSnapshot: null,
-      receiverAddressSnapshot: null,
-      vehicleVariantCode: null,
-      mainProductName: null,
-      specialRequirements: null,
-      requiredDocumentsText: null,
-      generalNotes: null,
-      complaintReason: null,
-      senderContactName: null,
-      senderContactPhone: null,
-      senderContactEmail: null,
-      createdAt: new Date().toISOString(),
-      createdByUserId: "",
-      updatedAt: new Date().toISOString(),
-      updatedByUserId: null,
-      lockedByUserId: null,
-      lockedAt: null,
-      // Pola z JOINów (api-plan §2.3)
-      statusName: "Robocze",
-      weekNumber: null,
-      sentAt: null,
-      sentByUserName: null,
-      createdByUserName: null,
-      updatedByUserName: null,
-      lockedByUserName: null,
-    },
-    stops: [],
-    items: [],
-  };
-}
+import { ValidationErrorDialog } from "../ValidationErrorDialog";
+import { DrawerFooter } from "./DrawerFooter";
+import { DrawerSkeleton } from "./DrawerSkeleton";
+import { OrderForm } from "./OrderForm";
+import { PreviewUnsavedDialog } from "./PreviewUnsavedDialog";
+import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
 
 interface OrderDrawerProps {
   orderId: string | null;
@@ -111,294 +44,62 @@ export function OrderDrawer({
   onOrderUpdated,
   onShowHistory,
 }: OrderDrawerProps) {
-  const { user, api } = useAuth();
-
-  const [detail, setDetail] = useState<OrderDetailResponseDto | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isSaving, setIsSaving] = useState(false);
-  const [isDirty, setIsDirty] = useState(false);
-  const [showUnsavedDialog, setShowUnsavedDialog] = useState(false);
-
-  // Czy zlecenie jest zablokowane przez INNEGO użytkownika
-  const [lockedByUserName, setLockedByUserName] = useState<string | null>(null);
-
-  const submitRef = useRef<(() => void) | null>(null);
-  const isReadOnly = user?.role === "READ_ONLY" || !!lockedByUserName;
-
-  // ---------------------------------------------------------------------------
-  // Fetch detali + lock
-  // ---------------------------------------------------------------------------
-
-  const loadDetail = useCallback(async (id: string) => {
-    setIsLoading(true);
-    try {
-      const data = await api.get<OrderDetailResponseDto>(`/api/v1/orders/${id}`);
-      setDetail(data);
-
-      // Sprawdź blokadę przez innego użytkownika
-      if (data.order.lockedByUserId && data.order.lockedByUserId !== user?.id) {
-        // Zlecenie zajęte — nie lockujemy, otwieramy readonly
-        // Próbujemy pobrać nazwę z detali (brak wprost w DTO — user może nie być w słowniku)
-        setLockedByUserName("inny użytkownik");
-      } else if (user?.role !== "READ_ONLY") {
-        // Lockujemy zlecenie
-        try {
-          await api.post(`/api/v1/orders/${id}/lock`, {});
-        } catch {
-          // Lock mógł się nie udać (409 conflict lub błąd serwera) — otwieramy readonly
-          setLockedByUserName("inny użytkownik");
-        }
-      }
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Błąd ładowania zlecenia.");
-    } finally {
-      setIsLoading(false);
-    }
-  }, [api, user]);
-
-  const isNewOrder = isOpen && !orderId;
-
-  useEffect(() => {
-    if (isOpen && orderId) {
-      setDetail(null);
-      setIsDirty(false);
-      setLockedByUserName(null);
-      loadDetail(orderId);
-    } else if (isOpen && !orderId) {
-      // New order mode — empty defaults, no lock
-      setDetail(createEmptyDetail());
-      setIsDirty(false);
-      setLockedByUserName(null);
-      setIsLoading(false);
-    }
-  }, [isOpen, orderId, loadDetail]);
-
-  // Ostrzeżenie przy próbie odświeżenia/zamknięcia karty z niezapisanymi zmianami
-  useEffect(() => {
-    if (!isDirty) return;
-    function handleBeforeUnload(e: BeforeUnloadEvent) {
-      e.preventDefault();
-    }
-    window.addEventListener("beforeunload", handleBeforeUnload);
-    return () => window.removeEventListener("beforeunload", handleBeforeUnload);
-  }, [isDirty]);
-
-  // ---------------------------------------------------------------------------
-  // Unlock przy zamknięciu
-  // ---------------------------------------------------------------------------
-
-  const doClose = useCallback(async () => {
-    if (orderId && !lockedByUserName && user?.role !== "READ_ONLY") {
-      try {
-        await api.post(`/api/v1/orders/${orderId}/unlock`, {});
-      } catch {
-        // ignorujemy błąd unlock
-      }
-    }
-    setDetail(null);
-    setIsDirty(false);
-    setLockedByUserName(null);
-    onClose();
-  }, [orderId, lockedByUserName, user, api, onClose]);
-
-  function handleCloseRequest() {
-    if (isDirty) {
-      setShowUnsavedDialog(true);
-    } else {
-      doClose();
-    }
-  }
-
-  // ---------------------------------------------------------------------------
-  // Zapis
-  // ---------------------------------------------------------------------------
-
-  const handleSave = useCallback(
-    async (formData: OrderFormData, pendingStatus: OrderStatusCode | null, complaintReason: string | null) => {
-      if (!detail) return;
-
-      // Walidacja: powód reklamacji wymagany
-      if (pendingStatus === "reklamacja" && !complaintReason?.trim()) {
-        toast.error("Podaj powód reklamacji.");
-        return;
-      }
-
-      setIsSaving(true);
-      try {
-        if (!orderId) {
-          // ---- CREATE NEW ORDER (POST) ----
-          const result = await api.post<CreateOrderResponseDto>("/api/v1/orders", {
-            transportTypeCode: formData.transportTypeCode,
-            currencyCode: formData.currencyCode,
-            priceAmount: formData.priceAmount,
-            paymentTermDays: formData.paymentTermDays,
-            paymentMethod: formData.paymentMethod,
-            totalLoadTons: formData.totalLoadTons,
-            totalLoadVolumeM3: formData.totalLoadVolumeM3,
-            carrierCompanyId: formData.carrierCompanyId,
-            shipperLocationId: formData.shipperLocationId ?? null,
-            receiverLocationId: formData.receiverLocationId ?? null,
-            vehicleVariantCode: formData.vehicleVariantCode || null,
-            specialRequirements: formData.specialRequirements,
-            requiredDocumentsText: formData.requiredDocumentsText,
-            generalNotes: formData.generalNotes,
-            senderContactName: formData.senderContactName,
-            senderContactPhone: formData.senderContactPhone,
-            senderContactEmail: formData.senderContactEmail?.trim() || null,
-            stops: formData.stops
-              .filter((s) => !s._deleted)
-              .map((s) => ({
-                kind: s.kind,
-                dateLocal: s.dateLocal,
-                timeLocal: s.timeLocal,
-                locationId: s.locationId,
-                notes: s.notes,
-              })),
-            items: formData.items
-              .filter((it) => !it._deleted)
-              .map((it) => ({
-                productId: it.productId,
-                productNameSnapshot: it.productNameSnapshot,
-                loadingMethodCode: it.loadingMethodCode,
-                quantityTons: it.quantityTons,
-                notes: it.notes,
-              })),
-          });
-
-          toast.success(`Zlecenie ${result.orderNo} utworzone.`);
-          setIsDirty(false);
-          onOrderUpdated();
-          onClose();
-        } else {
-          // ---- UPDATE EXISTING ORDER (PUT) ----
-          await api.put(`/api/v1/orders/${orderId}`, {
-            transportTypeCode: formData.transportTypeCode,
-            currencyCode: formData.currencyCode,
-            priceAmount: formData.priceAmount,
-            paymentTermDays: formData.paymentTermDays,
-            paymentMethod: formData.paymentMethod,
-            totalLoadTons: formData.totalLoadTons,
-            totalLoadVolumeM3: formData.totalLoadVolumeM3,
-            carrierCompanyId: formData.carrierCompanyId,
-            shipperLocationId: formData.shipperLocationId ?? null,
-            receiverLocationId: formData.receiverLocationId ?? null,
-            vehicleVariantCode: formData.vehicleVariantCode || null,
-            specialRequirements: formData.specialRequirements,
-            requiredDocumentsText: formData.requiredDocumentsText,
-            generalNotes: formData.generalNotes,
-            senderContactName: formData.senderContactName,
-            senderContactPhone: formData.senderContactPhone,
-            senderContactEmail: formData.senderContactEmail?.trim() || null,
-            stops: formData.stops.map((s) => ({
-              id: s.id,
-              kind: s.kind,
-              sequenceNo: s.sequenceNo,
-              dateLocal: s.dateLocal,
-              timeLocal: s.timeLocal,
-              locationId: s.locationId,
-              notes: s.notes,
-              _deleted: s._deleted,
-            })),
-            items: formData.items.map((it) => ({
-              id: it.id,
-              productId: it.productId,
-              productNameSnapshot: it.productNameSnapshot,
-              loadingMethodCode: it.loadingMethodCode,
-              quantityTons: it.quantityTons,
-              notes: it.notes,
-              _deleted: it._deleted,
-            })),
-          });
-
-          // Zmień status jeśli wybrano
-          if (pendingStatus) {
-            await api.post(`/api/v1/orders/${orderId}/status`, {
-              newStatusCode: pendingStatus,
-              ...(complaintReason ? { complaintReason } : {}),
-            });
-          }
-
-          toast.success("Zlecenie zapisane.");
-          // Najpierw zwolnij blokadę, potem odśwież listę — minimalizuje okno,
-          // w którym inny użytkownik widzi wciąż zablokowane zlecenie.
-          await doClose();
-          onOrderUpdated();
-        }
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd zapisu.");
-      } finally {
-        setIsSaving(false);
-      }
-    },
-    [orderId, detail, api, onOrderUpdated, doClose, onClose]
-  );
-
-  // ---------------------------------------------------------------------------
-  // Generuj PDF
-  // ---------------------------------------------------------------------------
-
-  const handleGeneratePdf = useCallback(async () => {
-    if (!orderId) return;
-    try {
-      const response = await api.postRaw(`/api/v1/orders/${orderId}/pdf`, {});
-      const blob = await response.blob();
-      const url = URL.createObjectURL(blob);
-      const a = document.createElement("a");
-      a.href = url;
-      a.download = `zlecenie-${detail?.order.orderNo ?? orderId}.pdf`;
-      document.body.appendChild(a);
-      a.click();
-      a.remove();
-      URL.revokeObjectURL(url);
-      toast.success("PDF pobrany.");
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Błąd generowania PDF.");
-    }
-  }, [orderId, detail, api]);
-
-  const handleSendEmailFromDrawer = useCallback(async () => {
-    if (!orderId) return;
-    try {
-      const result = await api.post<PrepareEmailResponseDto>(
-        `/api/v1/orders/${orderId}/prepare-email`,
-        {}
-      );
-      if (result.emailOpenUrl) {
-        window.open(result.emailOpenUrl, "_blank", "noopener,noreferrer");
-      }
-      toast.success("Email przygotowany — otwórz klienta pocztowego.");
-      onOrderUpdated();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Błąd przygotowania maila.");
-    }
-  }, [orderId, api, onOrderUpdated]);
-
-  // ---------------------------------------------------------------------------
-  // Render
-  // ---------------------------------------------------------------------------
-
-  // Status name lookup
-  const statusName = detail?.order.statusCode
-    ? detail.order.statusCode
-        .split(" ")
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(" ")
-    : "";
-
-  const historyHandler =
-    onShowHistory && orderId && detail
-      ? () => onShowHistory(orderId, detail.order.orderNo)
-      : undefined;
+  const {
+    detail,
+    isLoading,
+    isSaving,
+    isSendingEmail,
+    isDirty,
+    isReadOnly,
+    isNewOrder,
+    statusName,
+    lockedByUserName,
+    loadError,
+    showUnsavedDialog,
+    showOrderView,
+    orderViewInitialData,
+    showPreviewUnsavedDialog,
+    submitRef,
+    formDataRef,
+    orderViewDirtyRef,
+    setIsDirty,
+    setShowUnsavedDialog,
+    setShowPreviewUnsavedDialog,
+    handleCloseRequest,
+    handleSave,
+    handleGeneratePdf,
+    handleSendEmailFromDrawer,
+    handleOpenOrderView,
+    handlePreviewSaveAndGo,
+    handlePreviewDiscardAndGo,
+    handleOrderViewSave,
+    handleOrderViewCancel,
+    doClose,
+    retryLoadDetail,
+    historyHandler,
+    emailValidationErrors,
+    clearEmailValidationErrors,
+  } = useOrderDrawer({
+    orderId,
+    isOpen,
+    onClose,
+    onOrderUpdated,
+    onShowHistory,
+  });
 
   return (
     <>
       <Sheet open={isOpen} onOpenChange={(open) => !open && handleCloseRequest()}>
         <SheetContent
           side="right"
-          className="w-full sm:max-w-[800px] p-0 flex flex-col"
+          className={`w-full p-0 flex flex-col overflow-hidden ${showOrderView ? "sm:max-w-[65vw]" : "sm:max-w-[800px]"}`}
           showCloseButton={false}
+          data-testid="order-drawer"
           onInteractOutside={(e) => {
             e.preventDefault();
+            // Nie zamykaj drawera gdy kliknięto w nasz AlertDialog (renderowany w Portal poza Sheet)
+            const target = e.target as HTMLElement;
+            if (target?.closest?.('[role="alertdialog"]')) return;
             handleCloseRequest();
           }}
           onEscapeKeyDown={(e) => {
@@ -422,6 +123,7 @@ export function OrderDrawer({
                 onClick={handleCloseRequest}
                 className="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg text-slate-500"
                 title="Zamknij (Escape)"
+                aria-label="Zamknij"
               >
                 <X className="w-5 h-5" />
               </button>
@@ -436,7 +138,7 @@ export function OrderDrawer({
                 </div>
                 {detail && (
                   <p className="text-xs text-slate-500 mt-0.5">
-                    Utworzono: {formatDateFromTimestamp(detail.order.createdAt)}
+                    Utworzono: {formatDateTimeFromTimestamp(detail.order.createdAt)}
                   </p>
                 )}
               </div>
@@ -453,13 +155,40 @@ export function OrderDrawer({
             )}
           </header>
 
-          {isLoading && (
-            <div className="flex-1 flex items-center justify-center">
-              <div className="text-sm text-slate-400">Ładowanie zlecenia…</div>
+          {isLoading && <DrawerSkeleton />}
+
+          {/* Widok błędu — gdy loadDetail zwrócił błąd */}
+          {!isLoading && !detail && loadError && (
+            <div className="flex-1 flex flex-col items-center justify-center gap-4 px-6">
+              <AlertTriangle className="w-10 h-10 text-amber-500" />
+              <p className="text-sm text-slate-600 dark:text-slate-400 text-center max-w-sm">
+                {loadError}
+              </p>
+              <button
+                type="button"
+                onClick={retryLoadDetail}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+              >
+                <RefreshCw className="w-4 h-4" />
+                Spróbuj ponownie
+              </button>
             </div>
           )}
 
-          {!isLoading && detail && (
+          {!isLoading && detail && showOrderView && orderViewInitialData && (
+            <Suspense fallback={<DrawerSkeleton />}>
+              <OrderView
+                initialData={orderViewInitialData}
+                isReadOnly={isReadOnly}
+                onSave={handleOrderViewSave}
+                onCancel={handleOrderViewCancel}
+                onGeneratePdf={handleGeneratePdf}
+                onDirtyChange={(dirty) => { orderViewDirtyRef.current = dirty; }}
+              />
+            </Suspense>
+          )}
+
+          {!isLoading && detail && !showOrderView && (
             <>
               <OrderForm
                 order={detail.order}
@@ -469,16 +198,22 @@ export function OrderDrawer({
                 onDirtyChange={setIsDirty}
                 onSave={handleSave}
                 submitRef={submitRef}
+                formDataRef={formDataRef}
               />
 
               <DrawerFooter
                 isReadOnly={isReadOnly}
                 isSaving={isSaving}
+                isSendingEmail={isSendingEmail}
                 isDirty={isDirty}
                 lockedByUserName={lockedByUserName}
                 onSave={() => submitRef.current?.()}
                 onClose={handleCloseRequest}
-                onGeneratePdf={handleGeneratePdf}
+                onShowPreview={
+                  !isNewOrder && !isReadOnly
+                    ? handleOpenOrderView
+                    : undefined
+                }
                 onSendEmail={
                   !isReadOnly &&
                   detail &&
@@ -499,6 +234,21 @@ export function OrderDrawer({
           doClose();
         }}
         onCancel={() => setShowUnsavedDialog(false)}
+      />
+
+      <PreviewUnsavedDialog
+        open={showPreviewUnsavedDialog}
+        isSaving={isSaving}
+        onSave={handlePreviewSaveAndGo}
+        onDiscard={handlePreviewDiscardAndGo}
+        onCancel={() => setShowPreviewUnsavedDialog(false)}
+      />
+
+      {/* Dialog walidacji email — brakujące pola (422) */}
+      <ValidationErrorDialog
+        open={emailValidationErrors.length > 0}
+        onClose={clearEmailValidationErrors}
+        missingFields={emailValidationErrors}
       />
     </>
   );

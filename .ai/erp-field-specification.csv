@@ -1,0 +1,14 @@
+Nr,Sekcja,Pole,Typ danych,Wymagane,Opis biznesowy,Przyklad wartosci,Uwagi
+1,Slownik: Firmy,erp_id,string,TAK,Unikalny identyfikator firmy w Comarch ERP. Musi byc stabilny i niezmienny.,KNT-00451,Klucz glowny slownika
+2,Slownik: Firmy,name,string (max 500),TAK,Pelna nazwa firmy (jak w rejestrze / KRS),Trans-Pol Sp. z o.o.,
+3,Slownik: Firmy,tax_id,string (max 50),TAK,NIP (Polska) lub zagraniczny identyfikator podatkowy,PL5213000011,
+4,Slownik: Lokalizacje,erp_id,string,TAK,Unikalny identyfikator lokalizacji w Comarch ERP. Musi byc stabilny i niezmienny.,LOK-00012,Klucz glowny slownika
+5,Slownik: Lokalizacje,company_erp_id,string,TAK,ID firmy nadrzednej w ERP - klucz laczacy z tabela Firmy (pole #1),KNT-00100,FK do Firmy.erp_id
+6,Slownik: Lokalizacje,name,string (max 500),TAK,"Nazwa lokalizacji (np. Magazyn Centralny, Oddzial Wroclaw)",Magazyn Centralny Poznan,
+7,Slownik: Lokalizacje,country,string (max 100),TAK,Kod kraju (ISO 3166-1 alpha-2) lub pelna nazwa,PL,
+8,Slownik: Lokalizacje,city,string (max 200),TAK,Nazwa miasta,Poznan,
+9,Slownik: Lokalizacje,postal_code,string (max 20),TAK,Kod pocztowy,61-001,
+10,Slownik: Lokalizacje,street_and_number,string (max 200),TAK,Ulica i numer budynku/lokalu,ul. Przemyslowa 15,
+11,Slownik: Lokalizacje,is_active,boolean,TAK,Czy lokalizacja jest aktywna (true/false). Nieaktywne nie pojawiaja sie w listach wyboru.,true,
+12,Slownik: Produkty,erp_id,string,TAK,Unikalny identyfikator produktu w Comarch ERP. Musi byc stabilny i niezmienny.,PRD-00023,Klucz glowny slownika
+13,Slownik: Produkty,name,string (max 500),TAK,Nazwa produktu/towaru,Granulat PP czarny,

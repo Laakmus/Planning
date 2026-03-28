@@ -1,31 +1,35 @@
 /**
  * Stopka draweru zlecenia.
- * Tryb edycji: lewa = Generuj PDF + Wyślij maila | prawa = Zamknij + Zapisz.
- * Tryb readonly: lewa = Generuj PDF | prawa = Zamknij.
+ * Tryb edycji: lewa = Podgląd + Wyślij maila | prawa = Zamknij + Zapisz.
+ * Tryb readonly: prawa = Zamknij.
  * Lock banner: gdy zlecenie zablokowane przez innego użytkownika.
  */
 
-import { FileText, Loader2, Lock, Mail } from "lucide-react";
+import { memo } from "react";
+
+import { Eye, Loader2, Lock, Mail } from "lucide-react";
 
 interface DrawerFooterProps {
   isReadOnly: boolean;
   isSaving: boolean;
+  isSendingEmail: boolean;
   isDirty: boolean;
   lockedByUserName: string | null;
   onSave: () => void;
   onClose: () => void;
-  onGeneratePdf?: () => void;
+  onShowPreview?: () => void;
   onSendEmail?: () => void;
 }
 
-export function DrawerFooter({
+export const DrawerFooter = memo(function DrawerFooter({
   isReadOnly,
   isSaving,
+  isSendingEmail,
   isDirty,
   lockedByUserName,
   onSave,
   onClose,
-  onGeneratePdf,
+  onShowPreview,
   onSendEmail,
 }: DrawerFooterProps) {
   if (lockedByUserName) {
@@ -38,18 +42,7 @@ export function DrawerFooter({
           </span>
         </div>
         <footer className="shrink-0 flex items-center justify-between p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-          <div className="flex items-center gap-2">
-            {onGeneratePdf && (
-              <button
-                type="button"
-                onClick={onGeneratePdf}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-              >
-                <FileText className="w-4 h-4" />
-                Generuj PDF
-              </button>
-            )}
-          </div>
+          <div />
           <button
             type="button"
             onClick={onClose}
@@ -65,18 +58,7 @@ export function DrawerFooter({
   if (isReadOnly) {
     return (
       <footer className="shrink-0 flex items-center justify-between p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
-        <div className="flex items-center gap-2">
-          {onGeneratePdf && (
-            <button
-              type="button"
-              onClick={onGeneratePdf}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
-            >
-              <FileText className="w-4 h-4" />
-              Generuj PDF
-            </button>
-          )}
-        </div>
+        <div />
         <button
           type="button"
           onClick={onClose}
@@ -92,24 +74,34 @@ export function DrawerFooter({
     <footer className="shrink-0 flex items-center justify-between p-6 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-950">
       {/* Lewa strona */}
       <div className="flex items-center gap-2">
-        {onGeneratePdf && (
+        {onShowPreview && (
           <button
             type="button"
-            onClick={onGeneratePdf}
+            onClick={onShowPreview}
             className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
           >
-            <FileText className="w-4 h-4" />
-            Generuj PDF
+            <Eye className="w-4 h-4" />
+            Podgląd
           </button>
         )}
         {onSendEmail && (
           <button
             type="button"
             onClick={onSendEmail}
-            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors"
+            disabled={isSendingEmail}
+            className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium border border-slate-200 dark:border-slate-800 rounded-lg hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
           >
-            <Mail className="w-4 h-4" />
-            Wyślij maila
+            {isSendingEmail ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Wysyłanie…
+              </>
+            ) : (
+              <>
+                <Mail className="w-4 h-4" />
+                Wyślij maila
+              </>
+            )}
           </button>
         )}
       </div>
@@ -129,6 +121,7 @@ export function DrawerFooter({
           onClick={onSave}
           disabled={isSaving || !isDirty}
           className="px-8 py-2 text-sm font-bold bg-primary text-white rounded-lg hover:bg-primary/90 shadow-lg shadow-primary/20 transition-all active:scale-[0.98] disabled:opacity-50 disabled:cursor-not-allowed"
+          data-testid="drawer-save"
         >
           {isSaving ? (
             <span className="flex items-center gap-1.5">
@@ -142,4 +135,4 @@ export function DrawerFooter({
       </div>
     </footer>
   );
-}
+});

@@ -77,7 +77,8 @@ INSERT INTO public.companies (id, name, type, tax_id, is_active) VALUES
   ('a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',    'CARRIER',  '7250004004', true),
   ('a0000000-0000-0000-0000-000000000005', 'Huta Silesia S.A.',        'CLIENT',   '6310005005', true),
   ('a0000000-0000-0000-0000-000000000006', 'BerlinBau GmbH',           'CLIENT',   'DE123456789', true),
-  ('a0000000-0000-0000-0000-000000000007', 'ChemTrans International',  'CARRIER',  '8130007007', true);
+  ('a0000000-0000-0000-0000-000000000007', 'ChemTrans International',  'CARRIER',  '8130007007', true),
+  ('a0000000-0000-0000-0000-000000000020', 'Odylion Sp. z o.o. Sp.k.', 'INTERNAL', '9512370578', true);
 
 -- ============================================================
 -- 4. Lokalizacje
@@ -90,7 +91,15 @@ INSERT INTO public.locations (id, company_id, name, country, city, street_and_nu
   ('b0000000-0000-0000-0000-000000000004', 'a0000000-0000-0000-0000-000000000005', 'Huta - Brama Główna','PL','Ruda Śląska','ul. 1 Maja 100',      '41-710', true),
   ('b0000000-0000-0000-0000-000000000005', 'a0000000-0000-0000-0000-000000000006', 'Lager Berlin',      'DE', 'Berlin',     'Industriestr. 22',    '10115', true),
   ('b0000000-0000-0000-0000-000000000006', 'a0000000-0000-0000-0000-000000000006', 'Baustelle München', 'DE', 'München',    'Bauweg 5',            '80331', true),
-  ('b0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000003', 'Baza TransBud',     'PL', 'Wrocław',    'ul. Logistyczna 3',   '50-001', true);
+  ('b0000000-0000-0000-0000-000000000007', 'a0000000-0000-0000-0000-000000000003', 'Baza TransBud',     'PL', 'Wrocław',    'ul. Logistyczna 3',   '50-001', true),
+  -- Oddziały Odylion Sp. z o.o. Sp.k.
+  ('b0000000-0000-0000-0000-000000000101', 'a0000000-0000-0000-0000-000000000020', 'BED',  'PL', 'Będzin',    'Sielecka 63',         '42-500', true),
+  ('b0000000-0000-0000-0000-000000000102', 'a0000000-0000-0000-0000-000000000020', 'GDY',  'PL', 'Gdynia',   'Handlowa 10',         '81-061', true),
+  ('b0000000-0000-0000-0000-000000000103', 'a0000000-0000-0000-0000-000000000020', 'LOD',  'PL', 'Łódź',     'Okopowa 70/106',      '91-849', true),
+  ('b0000000-0000-0000-0000-000000000104', 'a0000000-0000-0000-0000-000000000020', 'OTW',  'PL', 'Otwock',   'Kraszewskiego 2A',    '05-400', true),
+  ('b0000000-0000-0000-0000-000000000105', 'a0000000-0000-0000-0000-000000000020', 'POZ',  'PL', 'Gądki',    'Zbożowa 1a',          '62-023', true),
+  ('b0000000-0000-0000-0000-000000000106', 'a0000000-0000-0000-0000-000000000020', 'TAR',  'PL', 'Warszawa', 'Przecławska 2',       '03-879', true),
+  ('b0000000-0000-0000-0000-000000000107', 'a0000000-0000-0000-0000-000000000020', 'WRO',  'PL', 'Wrocław',  'Opolska 19c',         '52-010', true);
 
 -- ============================================================
 -- 5. Produkty
@@ -117,7 +126,7 @@ INSERT INTO public.transport_orders (
   sender_contact_name, sender_contact_phone, sender_contact_email,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000001', 'ZT/2026/02/001', 'robocze', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000001', 'ZT2026/0001', 'robocze', 'PL', 'PLN',
   4500.00, 22.5, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'MEGA_24T', 'Pilne — dostarczyć przed weekendem', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-20', '08:00:00', '2026-02-21', '14:00:00',
@@ -135,7 +144,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000002', 'ZT/2026/02/002', 'wysłane', 'EXP', 'EUR',
+  'd0000000-0000-0000-0000-000000000002', 'ZT2026/0002', 'wysłane', 'EXP', 'EUR',
   2800.00, 18.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-18', '06:00:00', '2026-02-19', '16:00:00',
@@ -152,7 +161,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000003', 'ZT/2026/02/003', 'korekta', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000003', 'ZT2026/0003', 'korekta', 'PL', 'PLN',
   3200.00, 12.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'SOLO_12T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-22', '10:00:00', '2026-02-22', '18:00:00',
@@ -169,7 +178,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000004', 'ZT/2026/02/004', 'korekta wysłane', 'EXP', 'EUR',
+  'd0000000-0000-0000-0000-000000000004', 'ZT2026/0004', 'korekta wysłane', 'EXP', 'EUR',
   5100.00, 24.0, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
   'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-25', '07:00:00', '2026-02-26', '12:00:00',
@@ -186,7 +195,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000005', 'ZT/2026/01/015', 'zrealizowane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000005', 'ZT2026/0005', 'zrealizowane', 'PL', 'PLN',
   3800.00, 20.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-01-28', '09:00:00', '2026-01-29', '15:00:00',
@@ -203,7 +212,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000006', 'ZT/2026/02/005', 'reklamacja', 'IMP', 'PLN',
+  'd0000000-0000-0000-0000-000000000006', 'ZT2026/0006', 'reklamacja', 'IMP', 'PLN',
   6500.00, 3.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'BUS_3T', 'Towar uszkodzony podczas transportu — pęknięcia opakowań', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-15', '14:00:00', '2026-02-15', '20:00:00',
@@ -220,7 +229,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000007', 'ZT/2026/02/006', 'anulowane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000007', 'ZT2026/0007', 'anulowane', 'PL', 'PLN',
   2000.00, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'SOLO_12T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-28', '2026-03-01',
@@ -237,7 +246,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   special_requirements, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000008', 'ZT/2026/02/007', 'robocze', 'IMP', 'PLN',
+  'd0000000-0000-0000-0000-000000000008', 'ZT2026/0008', 'robocze', 'IMP', 'PLN',
   8500.00, 3.2, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
   'BUS_3T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-19', '05:30:00', '2026-02-19', '22:00:00',
@@ -363,7 +372,7 @@ INSERT INTO public.transport_orders (
   sender_contact_name, sender_contact_phone,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000009', 'ZT/2026/02/008', 'robocze', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000009', 'ZT2026/0009', 'robocze', 'PL', 'PLN',
   3900.00, 20.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-24', '07:00:00', '2026-02-25', '13:00:00',
@@ -381,12 +390,12 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   carrier_cell_color, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000010', 'ZT/2026/02/009', 'robocze', 'EXP', 'EUR',
+  'd0000000-0000-0000-0000-000000000010', 'ZT2026/0010', 'robocze', 'EXP', 'EUR',
   3200.00, 22.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'MEGA_24T', 'Dokumenty celne przygotowane', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-26', '06:00:00', '2026-02-27', '18:00:00',
   'PL', 'DE', 2026,
-  '#48A111', 14, 'Przelew'
+  '#34d399', 14, 'Przelew'
 );
 
 -- Zlecenie 11: wysłane, krajowe, multi-stop: Warszawa → Łódź → Katowice → Ruda Śląska
@@ -399,13 +408,13 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, carrier_cell_color, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000011', 'ZT/2026/02/010', 'wysłane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000011', 'ZT2026/0011', 'wysłane', 'PL', 'PLN',
   5800.00, 23.5, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
   'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-23', '06:00:00', '2026-02-24', '16:00:00',
   '2026-02-23', '11:00:00', '2026-02-24', '16:00:00',
   'PL', 'PL', 2026,
-  '2026-02-22T08:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '#FFEF5F', 21, 'Przelew'
+  '2026-02-22T08:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '#fde047', 21, 'Przelew'
 );
 
 -- Zlecenie 12: wysłane, kontener morski, Gdynia → Hamburg
@@ -417,7 +426,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000012', 'ZT/2026/02/011', 'wysłane', 'EXP_K', 'EUR',
+  'd0000000-0000-0000-0000-000000000012', 'ZT2026/0012', 'wysłane', 'EXP_K', 'EUR',
   4200.00, 24.0, 'a0000000-0000-0000-0000-000000000008', 'EuroLog Transport GmbH',
   'MEGA_24T', 'WZE, Aneks VII, CMR, Bill of Lading', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-24', '05:00:00', '2026-02-25', '14:00:00',
@@ -434,7 +443,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000013', 'ZT/2026/02/012', 'korekta', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000013', 'ZT2026/0013', 'korekta', 'PL', 'PLN',
   2600.00, 10.5, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'SOLO_12T', 'Korekta: zmiana adresu rozładunku', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-27', '09:00:00', '2026-02-27', '17:00:00',
@@ -452,13 +461,13 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, carrier_cell_color, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000014', 'ZT/2026/02/013', 'korekta wysłane', 'IMP', 'EUR',
+  'd0000000-0000-0000-0000-000000000014', 'ZT2026/0014', 'korekta wysłane', 'IMP', 'EUR',
   3600.00, 18.5, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-22', '08:00:00', '2026-02-23', '10:00:00',
   '2026-02-23', '18:00:00',
   'DE', 'PL', 2026,
-  '2026-02-21T14:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '#EEA727', 14, 'Przelew'
+  '2026-02-21T14:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '#f97316', 14, 'Przelew'
 );
 
 -- Zlecenie 15: zrealizowane, krajowe, Gdańsk → Wrocław
@@ -470,7 +479,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000015', 'ZT/2026/01/016', 'zrealizowane', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000015', 'ZT2026/0015', 'zrealizowane', 'PL', 'PLN',
   4100.00, 23.0, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
   'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-01-20', '07:00:00', '2026-01-21', '15:00:00',
@@ -488,7 +497,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000016', 'ZT/2026/01/017', 'zrealizowane', 'EXP', 'EUR',
+  'd0000000-0000-0000-0000-000000000016', 'ZT2026/0016', 'zrealizowane', 'EXP', 'EUR',
   5500.00, 24.0, 'a0000000-0000-0000-0000-000000000008', 'EuroLog Transport GmbH',
   'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-01-15', '06:00:00', '2026-01-16', '12:00:00',
@@ -506,7 +515,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000017', 'ZT/2026/02/014', 'reklamacja', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000017', 'ZT2026/0017', 'reklamacja', 'PL', 'PLN',
   1800.00, 2.8, 'a0000000-0000-0000-0000-000000000010', 'GreenWaste Recycling',
   'BUS_3T', 'Opóźnienie dostawy o 6h — kara umowna', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-17', '10:00:00', '2026-02-17', '18:00:00',
@@ -524,13 +533,13 @@ INSERT INTO public.transport_orders (
   sender_contact_name, sender_contact_phone, sender_contact_email,
   carrier_cell_color, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000018', 'ZT/2026/02/015', 'robocze', 'PL', 'PLN',
+  'd0000000-0000-0000-0000-000000000018', 'ZT2026/0018', 'robocze', 'PL', 'PLN',
   3500.00, 18.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
   'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-28', '08:00:00', '2026-03-01', '12:00:00',
   'PL', 'PL', 2026,
   'Marek Wiśniewski', '+48 605 666 777', 'marek.w@metalurgica.pl',
-  '#25671E', 21, 'Przelew'
+  '#047857', 21, 'Przelew'
 );
 
 -- Zlecenie 19: wysłane, eksport, Gdańsk → Berlin (USD)
@@ -542,7 +551,7 @@ INSERT INTO public.transport_orders (
   first_loading_country, first_unloading_country, transport_year,
   sent_at, sent_by_user_id, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000019', 'ZT/2026/02/016', 'wysłane', 'EXP', 'USD',
+  'd0000000-0000-0000-0000-000000000019', 'ZT2026/0019', 'wysłane', 'EXP', 'USD',
   2900.00, 20.0, 'a0000000-0000-0000-0000-000000000004', 'SpeedCargo Sp. z o.o.',
   'MEGA_24T', 'WZE, Aneks VII, CMR', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
   '2026-02-25', '07:00:00', '2026-02-26', '15:00:00',
@@ -550,21 +559,21 @@ INSERT INTO public.transport_orders (
   '2026-02-24T11:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', 14, 'Przelew'
 );
 
--- Zlecenie 20: anulowane, krajowe
+-- Zlecenie 20: robocze, krajowe, BED → Katowice (widok magazynowy)
 INSERT INTO public.transport_orders (
   id, order_no, status_code, transport_type_code, currency_code,
-  price_amount, carrier_company_id, carrier_name_snapshot,
+  price_amount, total_load_tons, carrier_company_id, carrier_name_snapshot,
   vehicle_variant_code, general_notes, created_by_user_id,
-  first_loading_date, first_unloading_date,
+  first_loading_date, first_loading_time, first_unloading_date, first_unloading_time,
   first_loading_country, first_unloading_country, transport_year,
-  payment_term_days, payment_method
+  notification_details, payment_term_days, payment_method
 ) VALUES (
-  'd0000000-0000-0000-0000-000000000020', 'ZT/2026/02/017', 'anulowane', 'PL', 'PLN',
-  2200.00, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
-  'SOLO_12T', 'Klient zrezygnował z zamówienia', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
-  '2026-03-05', '2026-03-06',
+  'd0000000-0000-0000-0000-000000000020', 'ZT2026/0020', 'robocze', 'PL', 'PLN',
+  2200.00, 12.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
+  'SOLO_12T', 'Załadunek rano, pilne', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
+  '2026-03-05', '07:00:00', '2026-03-05', '15:00:00',
   'PL', 'PL', 2026,
-  30, 'Przelew'
+  E'Jan Nowak\nWGM 12345\nWGM 67890\n+48 601 111 222', 30, 'Przelew'
 );
 
 -- ============================================================
@@ -630,10 +639,10 @@ INSERT INTO public.order_stops (order_id, kind, sequence_no, date_local, time_lo
   ('d0000000-0000-0000-0000-000000000019', 'LOADING',    1, '2026-02-25', '07:00:00', 'b0000000-0000-0000-0000-000000000001', 'Magazyn Główny',    'NordMetal Sp. z o.o.',   'ul. Portowa 15, 80-001 Gdańsk, PL'),
   ('d0000000-0000-0000-0000-000000000019', 'UNLOADING',  2, '2026-02-26', '15:00:00', 'b0000000-0000-0000-0000-000000000005', 'Lager Berlin',       'BerlinBau GmbH',         'Industriestr. 22, 10115 Berlin, DE');
 
--- Zlecenie 20: L1 Katowice → U1 Warszawa
+-- Zlecenie 20: L1 BED (Odylion) → U1 Katowice
 INSERT INTO public.order_stops (order_id, kind, sequence_no, date_local, time_local, location_id, location_name_snapshot, company_name_snapshot, address_snapshot) VALUES
-  ('d0000000-0000-0000-0000-000000000020', 'LOADING',    1, '2026-03-05', NULL, 'b0000000-0000-0000-0000-000000000003', 'Zakład Recyklingu',  'Recykling Plus S.A.',    'ul. Hutnicza 8, 40-001 Katowice, PL'),
-  ('d0000000-0000-0000-0000-000000000020', 'UNLOADING',  2, '2026-03-06', NULL, 'b0000000-0000-0000-0000-000000000002', 'Oddział Warszawa',  'NordMetal Sp. z o.o.',   'ul. Przemysłowa 42, 02-001 Warszawa, PL');
+  ('d0000000-0000-0000-0000-000000000020', 'LOADING',    1, '2026-03-05', '07:00:00', 'b0000000-0000-0000-0000-000000000101', 'BED',  'Odylion Sp. z o.o. Sp.k.',    'Sielecka 63, 42-500 Będzin, PL'),
+  ('d0000000-0000-0000-0000-000000000020', 'UNLOADING',  2, '2026-03-05', '15:00:00', 'b0000000-0000-0000-0000-000000000003', 'Zakład Recyklingu',  'Recykling Plus S.A.',    'ul. Hutnicza 8, 40-001 Katowice, PL');
 
 -- ============================================================
 -- 12. Pozycje towarowe dla nowych zleceń (9–20)
@@ -686,6 +695,275 @@ INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, def
 INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, default_loading_method_snapshot, loading_method_code, quantity_tons) VALUES
   ('d0000000-0000-0000-0000-000000000019', 'c0000000-0000-0000-0000-000000000001', 'Stal walcowana', 'PALETA', 'PALETA', 20.0);
 
--- (Zlecenie 20 — anulowane, bez pozycji towarowych)
+-- Zlecenie 20 (zmienione na robocze)
+INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, default_loading_method_snapshot, loading_method_code, quantity_tons) VALUES
+  ('d0000000-0000-0000-0000-000000000020', 'c0000000-0000-0000-0000-000000000002', 'Złom stalowy', 'LUZEM', 'LUZEM', 12.0);
+
+-- ============================================================
+-- Uzupełnienie nowych kolumn vehicle_type_text / vehicle_capacity_volume_m3
+-- z tabeli vehicle_variants (po dodaniu kolumn w migracji)
+-- ============================================================
+UPDATE public.transport_orders o
+SET vehicle_type_text = vv.vehicle_type,
+    vehicle_capacity_volume_m3 = vv.capacity_volume_m3
+FROM public.vehicle_variants vv
+WHERE o.vehicle_variant_code = vv.code
+  AND o.vehicle_type_text IS NULL;
+
+-- ============================================================
+-- 13. Ustawienie oddziału (location_id) na test userze
+--     dla widoku magazynowego (filtruje po user_profiles.location_id)
+-- ============================================================
+UPDATE public.user_profiles
+  SET location_id = 'b0000000-0000-0000-0000-000000000101'
+  WHERE id = 'c94a20d0-16ca-4f9d-873a-05f31be633ff';
+
+-- ============================================================
+-- 14. Zlecenia magazynowe (21–25) — tydzień 10 (2-6 marca 2026)
+--     Stopy w oddziale BED (b0000000-..101) Odylion
+-- ============================================================
+
+-- Zlecenie 21: wysłane, krajowe, Gdańsk → BED (rozładunek w BED)
+INSERT INTO public.transport_orders (
+  id, order_no, status_code, transport_type_code, currency_code,
+  price_amount, total_load_tons, carrier_company_id, carrier_name_snapshot,
+  vehicle_variant_code, created_by_user_id,
+  first_loading_date, first_loading_time, first_unloading_date, first_unloading_time,
+  first_loading_country, first_unloading_country, transport_year,
+  notification_details,
+  sent_at, sent_by_user_id, payment_term_days, payment_method
+) VALUES (
+  'd0000000-0000-0000-0000-000000000021', 'ZT2026/0021', 'wysłane', 'PL', 'PLN',
+  4800.00, 22.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
+  'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
+  '2026-03-02', '06:00:00', '2026-03-02', '14:00:00',
+  'PL', 'PL', 2026,
+  E'Tomasz Kowalczyk\nSK 98765\nSK 43210\n+48 607 333 444\n000012345',
+  '2026-03-01T08:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', 30, 'Przelew'
+);
+
+-- Zlecenie 22: korekta, krajowe, BED → Wrocław (załadunek z BED)
+INSERT INTO public.transport_orders (
+  id, order_no, status_code, transport_type_code, currency_code,
+  price_amount, total_load_tons, carrier_company_id, carrier_name_snapshot,
+  vehicle_variant_code, general_notes, created_by_user_id,
+  first_loading_date, first_loading_time, first_unloading_date, first_unloading_time,
+  first_loading_country, first_unloading_country, transport_year,
+  payment_term_days, payment_method
+) VALUES (
+  'd0000000-0000-0000-0000-000000000022', 'ZT2026/0022', 'korekta', 'PL', 'PLN',
+  3100.00, 10.0, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
+  'SOLO_12T', 'Korekta: zmieniony termin załadunku na wtorek', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
+  '2026-03-03', '08:00:00', '2026-03-03', '16:00:00',
+  'PL', 'PL', 2026,
+  14, 'Przelew'
+);
+
+-- Zlecenie 23: robocze, eksport, BED → Berlin (załadunek z BED)
+INSERT INTO public.transport_orders (
+  id, order_no, status_code, transport_type_code, currency_code,
+  price_amount, total_load_tons, carrier_company_id, carrier_name_snapshot,
+  vehicle_variant_code, created_by_user_id,
+  first_loading_date, first_loading_time, first_unloading_date, first_unloading_time,
+  first_loading_country, first_unloading_country, transport_year,
+  notification_details,
+  sender_contact_name, sender_contact_phone, sender_contact_email,
+  payment_term_days, payment_method
+) VALUES (
+  'd0000000-0000-0000-0000-000000000023', 'ZT2026/0023', 'robocze', 'EXP', 'EUR',
+  3500.00, 20.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
+  'STAND_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
+  '2026-03-04', '05:30:00', '2026-03-04', '18:00:00',
+  'PL', 'DE', 2026,
+  E'Marek Zieliński\nKR 11111\nKR 22222\n+48 609 555 666',
+  'Anna Nowak', '+48 601 222 333', 'anna.nowak@nordmetal.pl',
+  14, 'Przelew'
+);
+
+-- Zlecenie 24: wysłane, import, Warszawa → BED → GDY (multi-stop rozładunek w BED)
+INSERT INTO public.transport_orders (
+  id, order_no, status_code, transport_type_code, currency_code,
+  price_amount, total_load_tons, carrier_company_id, carrier_name_snapshot,
+  vehicle_variant_code, created_by_user_id,
+  first_loading_date, first_loading_time, first_unloading_date, first_unloading_time,
+  last_unloading_date, last_unloading_time,
+  first_loading_country, first_unloading_country, transport_year,
+  sent_at, sent_by_user_id, payment_term_days, payment_method
+) VALUES (
+  'd0000000-0000-0000-0000-000000000024', 'ZT2026/0024', 'wysłane', 'IMP', 'EUR',
+  5200.00, 24.0, 'a0000000-0000-0000-0000-000000000007', 'ChemTrans International',
+  'MEGA_24T', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
+  '2026-03-04', '07:00:00', '2026-03-04', '13:00:00',
+  '2026-03-05', '10:00:00',
+  'PL', 'PL', 2026,
+  '2026-03-03T12:00:00Z', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', 30, 'Przelew'
+);
+
+-- Zlecenie 25: reklamacja, krajowe, Poznań → BED (rozładunek w BED)
+INSERT INTO public.transport_orders (
+  id, order_no, status_code, transport_type_code, currency_code,
+  price_amount, total_load_tons, carrier_company_id, carrier_name_snapshot,
+  vehicle_variant_code, complaint_reason, created_by_user_id,
+  first_loading_date, first_loading_time, first_unloading_date, first_unloading_time,
+  first_loading_country, first_unloading_country, transport_year,
+  payment_term_days, payment_method
+) VALUES (
+  'd0000000-0000-0000-0000-000000000025', 'ZT2026/0025', 'reklamacja', 'PL', 'PLN',
+  2900.00, 18.0, 'a0000000-0000-0000-0000-000000000003', 'TransBud Logistyka',
+  'STAND_24T', 'Brak dokumentów przewozowych przy dostawie', 'c94a20d0-16ca-4f9d-873a-05f31be633ff',
+  '2026-03-06', '09:00:00', '2026-03-06', '17:00:00',
+  'PL', 'PL', 2026,
+  21, 'Przelew'
+);
+
+-- ============================================================
+-- 15. Przystanki dla zleceń magazynowych (21–25)
+-- ============================================================
+
+-- Zlecenie 21: L1 Gdańsk → U1 BED
+INSERT INTO public.order_stops (order_id, kind, sequence_no, date_local, time_local, location_id, location_name_snapshot, company_name_snapshot, address_snapshot) VALUES
+  ('d0000000-0000-0000-0000-000000000021', 'LOADING',    1, '2026-03-02', '06:00:00', 'b0000000-0000-0000-0000-000000000001', 'Magazyn Główny',    'NordMetal Sp. z o.o.',   'ul. Portowa 15, 80-001 Gdańsk, PL'),
+  ('d0000000-0000-0000-0000-000000000021', 'UNLOADING',  2, '2026-03-02', '14:00:00', 'b0000000-0000-0000-0000-000000000101', 'BED',  'Odylion Sp. z o.o. Sp.k.',    'Sielecka 63, 42-500 Będzin, PL');
+
+-- Zlecenie 22: L1 BED → U1 Wrocław
+INSERT INTO public.order_stops (order_id, kind, sequence_no, date_local, time_local, location_id, location_name_snapshot, company_name_snapshot, address_snapshot) VALUES
+  ('d0000000-0000-0000-0000-000000000022', 'LOADING',    1, '2026-03-03', '08:00:00', 'b0000000-0000-0000-0000-000000000101', 'BED',  'Odylion Sp. z o.o. Sp.k.',    'Sielecka 63, 42-500 Będzin, PL'),
+  ('d0000000-0000-0000-0000-000000000022', 'UNLOADING',  2, '2026-03-03', '16:00:00', 'b0000000-0000-0000-0000-000000000010', 'Sortownia Wrocław',  'GreenWaste Recycling',   'ul. Ekologiczna 7, 50-200 Wrocław, PL');
+
+-- Zlecenie 23: L1 BED → U1 Berlin
+INSERT INTO public.order_stops (order_id, kind, sequence_no, date_local, time_local, location_id, location_name_snapshot, company_name_snapshot, address_snapshot) VALUES
+  ('d0000000-0000-0000-0000-000000000023', 'LOADING',    1, '2026-03-04', '05:30:00', 'b0000000-0000-0000-0000-000000000101', 'BED',  'Odylion Sp. z o.o. Sp.k.',    'Sielecka 63, 42-500 Będzin, PL'),
+  ('d0000000-0000-0000-0000-000000000023', 'UNLOADING',  2, '2026-03-04', '18:00:00', 'b0000000-0000-0000-0000-000000000005', 'Lager Berlin',       'BerlinBau GmbH',         'Industriestr. 22, 10115 Berlin, DE');
+
+-- Zlecenie 24: L1 Warszawa → U1 BED → U2 GDY (multi-stop)
+INSERT INTO public.order_stops (order_id, kind, sequence_no, date_local, time_local, location_id, location_name_snapshot, company_name_snapshot, address_snapshot) VALUES
+  ('d0000000-0000-0000-0000-000000000024', 'LOADING',    1, '2026-03-04', '07:00:00', 'b0000000-0000-0000-0000-000000000002', 'Oddział Warszawa',  'NordMetal Sp. z o.o.',   'ul. Przemysłowa 42, 02-001 Warszawa, PL'),
+  ('d0000000-0000-0000-0000-000000000024', 'UNLOADING',  2, '2026-03-04', '13:00:00', 'b0000000-0000-0000-0000-000000000101', 'BED',  'Odylion Sp. z o.o. Sp.k.',    'Sielecka 63, 42-500 Będzin, PL'),
+  ('d0000000-0000-0000-0000-000000000024', 'UNLOADING',  3, '2026-03-05', '10:00:00', 'b0000000-0000-0000-0000-000000000102', 'GDY',  'Odylion Sp. z o.o. Sp.k.',    'Handlowa 10, 81-061 Gdynia, PL');
+
+-- Zlecenie 25: L1 Poznań → U1 BED
+INSERT INTO public.order_stops (order_id, kind, sequence_no, date_local, time_local, location_id, location_name_snapshot, company_name_snapshot, address_snapshot) VALUES
+  ('d0000000-0000-0000-0000-000000000025', 'LOADING',    1, '2026-03-06', '09:00:00', 'b0000000-0000-0000-0000-000000000009', 'Zakład Metalurgiczny','Metalurgica Poznań S.A.','ul. Metalowa 12, 60-001 Poznań, PL'),
+  ('d0000000-0000-0000-0000-000000000025', 'UNLOADING',  2, '2026-03-06', '17:00:00', 'b0000000-0000-0000-0000-000000000101', 'BED',  'Odylion Sp. z o.o. Sp.k.',    'Sielecka 63, 42-500 Będzin, PL');
+
+-- ============================================================
+-- 16. Pozycje towarowe dla zleceń magazynowych (21–25)
+-- ============================================================
+
+-- Zlecenie 21
+INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, default_loading_method_snapshot, loading_method_code, quantity_tons) VALUES
+  ('d0000000-0000-0000-0000-000000000021', 'c0000000-0000-0000-0000-000000000001', 'Stal walcowana', 'PALETA', 'PALETA', 14.0),
+  ('d0000000-0000-0000-0000-000000000021', 'c0000000-0000-0000-0000-000000000006', 'Rury stalowe',   'PALETA', 'PALETA', 8.0);
+
+-- Zlecenie 22
+INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, default_loading_method_snapshot, loading_method_code, quantity_tons) VALUES
+  ('d0000000-0000-0000-0000-000000000022', 'c0000000-0000-0000-0000-000000000002', 'Złom stalowy', 'LUZEM', 'LUZEM', 10.0);
+
+-- Zlecenie 23
+INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, default_loading_method_snapshot, loading_method_code, quantity_tons) VALUES
+  ('d0000000-0000-0000-0000-000000000023', 'c0000000-0000-0000-0000-000000000004', 'Granulat PP', 'PALETA_BIGBAG', 'PALETA_BIGBAG', 20.0);
+
+-- Zlecenie 24
+INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, default_loading_method_snapshot, loading_method_code, quantity_tons) VALUES
+  ('d0000000-0000-0000-0000-000000000024', 'c0000000-0000-0000-0000-000000000001', 'Stal walcowana', 'PALETA', 'PALETA', 16.0),
+  ('d0000000-0000-0000-0000-000000000024', 'c0000000-0000-0000-0000-000000000007', 'Drut miedziany', 'PALETA', 'PALETA', 8.0);
+
+-- Zlecenie 25
+INSERT INTO public.order_items (order_id, product_id, product_name_snapshot, default_loading_method_snapshot, loading_method_code, quantity_tons) VALUES
+  ('d0000000-0000-0000-0000-000000000025', 'c0000000-0000-0000-0000-000000000006', 'Rury stalowe', 'PALETA', 'PALETA', 18.0);
+
+-- ============================================================
+-- 17. Historia statusów dla zleceń magazynowych (20–25)
+-- ============================================================
+
+-- Zlecenie 20: utworzenie (robocze)
+INSERT INTO public.order_status_history (order_id, old_status_code, new_status_code, changed_by_user_id, changed_at) VALUES
+  ('d0000000-0000-0000-0000-000000000020', 'robocze', 'robocze', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-04T08:00:00Z');
+
+-- Zlecenie 21: robocze → wysłane
+INSERT INTO public.order_status_history (order_id, old_status_code, new_status_code, changed_by_user_id, changed_at) VALUES
+  ('d0000000-0000-0000-0000-000000000021', 'robocze', 'robocze',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-02-28T09:00:00Z'),
+  ('d0000000-0000-0000-0000-000000000021', 'robocze', 'wysłane',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-01T08:00:00Z');
+
+-- Zlecenie 22: robocze → wysłane → korekta
+INSERT INTO public.order_status_history (order_id, old_status_code, new_status_code, changed_by_user_id, changed_at) VALUES
+  ('d0000000-0000-0000-0000-000000000022', 'robocze', 'robocze',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-02-27T10:00:00Z'),
+  ('d0000000-0000-0000-0000-000000000022', 'robocze', 'wysłane',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-02-28T11:00:00Z'),
+  ('d0000000-0000-0000-0000-000000000022', 'wysłane', 'korekta',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-02T09:00:00Z');
+
+-- Zlecenie 23: utworzenie (robocze)
+INSERT INTO public.order_status_history (order_id, old_status_code, new_status_code, changed_by_user_id, changed_at) VALUES
+  ('d0000000-0000-0000-0000-000000000023', 'robocze', 'robocze', 'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-03T14:00:00Z');
+
+-- Zlecenie 24: robocze → wysłane
+INSERT INTO public.order_status_history (order_id, old_status_code, new_status_code, changed_by_user_id, changed_at) VALUES
+  ('d0000000-0000-0000-0000-000000000024', 'robocze', 'robocze',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-02T10:00:00Z'),
+  ('d0000000-0000-0000-0000-000000000024', 'robocze', 'wysłane',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-03T12:00:00Z');
+
+-- Zlecenie 25: robocze → wysłane → korekta → reklamacja
+INSERT INTO public.order_status_history (order_id, old_status_code, new_status_code, changed_by_user_id, changed_at) VALUES
+  ('d0000000-0000-0000-0000-000000000025', 'robocze',  'robocze',     'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-01T08:00:00Z'),
+  ('d0000000-0000-0000-0000-000000000025', 'robocze',  'wysłane',     'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-02T09:00:00Z'),
+  ('d0000000-0000-0000-0000-000000000025', 'wysłane',  'korekta',     'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-04T10:00:00Z'),
+  ('d0000000-0000-0000-0000-000000000025', 'korekta',  'reklamacja',  'c94a20d0-16ca-4f9d-873a-05f31be633ff', '2026-03-05T11:00:00Z');
+
+-- ====================================================================
+-- Backfill: shipper/receiver z pierwszego LOADING i ostatniego UNLOADING stop
+-- (migracja 20260308000000 robi to samo, ale uruchamia się PRZED seedem)
+-- ====================================================================
+
+-- Shipper = pierwszy LOADING stop
+WITH first_loading AS (
+  SELECT DISTINCT ON (os.order_id)
+    os.order_id,
+    os.location_id,
+    c.name AS company_name,
+    concat_ws(', ',
+      nullif(l.street_and_number, ''),
+      nullif(concat_ws(' ', l.postal_code, l.city), ' '),
+      nullif(l.country, '')
+    ) AS address
+  FROM public.order_stops os
+  LEFT JOIN public.locations l ON l.id = os.location_id
+  LEFT JOIN public.companies c ON c.id = l.company_id
+  WHERE os.kind = 'LOADING'
+    AND os.location_id IS NOT NULL
+  ORDER BY os.order_id, os.sequence_no ASC
+)
+UPDATE public.transport_orders t
+SET
+  shipper_location_id = fl.location_id,
+  shipper_name_snapshot = fl.company_name,
+  shipper_address_snapshot = fl.address
+FROM first_loading fl
+WHERE fl.order_id = t.id
+  AND t.shipper_location_id IS NULL;
+
+-- Receiver = ostatni UNLOADING stop
+WITH last_unloading AS (
+  SELECT DISTINCT ON (os.order_id)
+    os.order_id,
+    os.location_id,
+    c.name AS company_name,
+    concat_ws(', ',
+      nullif(l.street_and_number, ''),
+      nullif(concat_ws(' ', l.postal_code, l.city), ' '),
+      nullif(l.country, '')
+    ) AS address
+  FROM public.order_stops os
+  LEFT JOIN public.locations l ON l.id = os.location_id
+  LEFT JOIN public.companies c ON c.id = l.company_id
+  WHERE os.kind = 'UNLOADING'
+    AND os.location_id IS NOT NULL
+  ORDER BY os.order_id, os.sequence_no DESC
+)
+UPDATE public.transport_orders t
+SET
+  receiver_location_id = lu.location_id,
+  receiver_name_snapshot = lu.company_name,
+  receiver_address_snapshot = lu.address
+FROM last_unloading lu
+WHERE lu.order_id = t.id
+  AND t.receiver_location_id IS NULL;
 
 COMMIT;

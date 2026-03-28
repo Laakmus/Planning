@@ -61,6 +61,7 @@ const MOCK_PROFILE: AuthMeDto = {
   fullName: "Jan Kowalski",
   phone: null,
   role: "PLANNER",
+  locationId: null,
 };
 
 function makeSuccessfulLoginMock(token = "mock-access-token") {

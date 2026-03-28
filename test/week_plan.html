@@ -1,0 +1,394 @@
+<!DOCTYPE html>
+
+<html lang="pl"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght@300;400;500;600&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    colors: {
+                        "primary": "#1152d4",
+                        "background-light": "#f6f6f8",
+                        "background-dark": "#101622",
+                    },
+                    fontFamily: {
+                        "display": ["Inter", "sans-serif"]
+                    },
+                    borderRadius: {"DEFAULT": "0.25rem", "lg": "0.5rem", "xl": "0.75rem", "full": "9999px"},
+                },
+            },
+        }
+    </script>
+<title>Odylion Logistics - Harmonogram Tygodniowy</title>
+<style>
+@media print {
+    @page { size: A4; margin: 1cm; }
+    header, .fixed, .shadow-sm, .shadow-2xl, button, .material-symbols-outlined:not(.print-icon) { display: none !important; }
+    body { background-color: white !important; color: black !important; font-size: 10pt !important; }
+    main { padding: 0 !important; max-width: 100% !important; }
+    .rounded-xl, .rounded-lg { border-radius: 0 !important; }
+    .shadow-sm, .shadow-2xl { shadow: none !important; }
+    .bg-white, .bg-slate-50, .bg-slate-100 { background: transparent !important; }
+    .border { border: 1px solid #ddd !important; }
+    .text-primary { color: #1152d4 !important; }
+    .text-emerald-600 { color: #059669 !important; }
+    section { page-break-inside: avoid; margin-bottom: 0.5cm !important; }
+    footer { position: static !important; color: black !important; border-top: 1px solid #000 !important; margin-top: 20px; }
+    footer * { color: black !important; }
+}
+</style></head>
+<body class="bg-background-light dark:bg-background-dark font-display text-slate-900 dark:text-slate-100 text-[13px]">
+<div class="relative flex h-auto min-h-screen w-full flex-col overflow-x-hidden">
+<!-- Top Navigation Bar -->
+<header class="sticky top-0 z-50 w-full border-b border-slate-200 dark:border-slate-800 bg-white/80 dark:bg-background-dark/80 backdrop-blur-md px-6 py-2 print:hidden">
+<div class="max-w-[1600px] mx-auto flex items-center justify-between">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-3">
+<div class="size-8 bg-primary rounded-lg flex items-center justify-center text-white">
+<span class="material-symbols-outlined">conveyor_belt</span>
+</div>
+<h2 class="text-slate-900 dark:text-white text-lg font-bold leading-tight tracking-tight">Odylion Logistics</h2>
+</div>
+</div>
+<div class="flex items-center gap-4">
+</div>
+</div>
+</header>
+<main class="flex-1 w-full max-w-[1600px] mx-auto p-6">
+<!-- Week Selector Header -->
+<div class="flex flex-col md:flex-row md:items-center justify-between gap-4 mb-4">
+<div class="flex items-center gap-4">
+<h1 class="text-2xl font-bold text-slate-900 dark:text-white tracking-tight">Tydzień 12 | 17.03 – 21.03.2025</h1>
+<div class="flex items-center bg-white dark:bg-slate-900 rounded-lg shadow-sm border border-slate-200 dark:border-slate-800 p-1">
+<button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 transition-colors">
+<span class="material-symbols-outlined">chevron_left</span>
+</button>
+<button class="p-1 hover:bg-slate-100 dark:hover:bg-slate-800 rounded text-slate-600 transition-colors">
+<span class="material-symbols-outlined">chevron_right</span>
+</button>
+</div>
+</div>
+<div class="flex items-center gap-3">
+<div class="flex flex-col">
+<span class="text-[10px] font-bold text-slate-500 uppercase px-1">Numer tygodnia</span>
+<div class="flex items-center gap-2">
+<input class="w-16 h-10 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-semibold focus:ring-primary" type="number" value="12"/>
+<select class="h-10 rounded-lg border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900 text-sm font-medium focus:ring-primary pr-10">
+<option>Marzec 2025</option>
+<option>Kwiecień 2025</option>
+</select>
+</div>
+</div>
+</div>
+</div>
+<!-- Schedule Table Header -->
+<div class="bg-white dark:bg-slate-900 py-4 px-6 border-x border-t border-slate-200 dark:border-slate-800 rounded-t-xl shadow-sm flex items-center gap-6">
+<div class="flex items-center gap-2">
+<div class="size-3 rounded-full bg-primary"></div>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Załadunki (Loading)</span>
+</div>
+<div class="flex items-center gap-2">
+<div class="size-3 rounded-full bg-emerald-500"></div>
+<span class="text-xs font-bold uppercase tracking-wider text-slate-600 dark:text-slate-400">Rozładunki (Unloading)</span>
+</div>
+</div>
+<!-- Daily Rows -->
+<div class="flex flex-col mt-4 gap-3">
+<!-- Monday 17.03 -->
+<section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h3 class="font-bold text-slate-800 dark:text-slate-200">Poniedziałek, 17.03.2025</h3>
+<span class="text-xs text-slate-500 font-medium">8 zaplanowanych operacji</span>
+</div>
+<div class="grid divide-x divide-slate-200 dark:divide-slate-800"><div class="p-0 overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead class="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-800">
+<tr><th class="py-2 w-20 text-center px-2">Typ</th>
+<th class="py-2 w-20 px-2">Godzina</th>
+<th class="py-2 w-24 px-2">Nr zlecenia</th>
+<th class="py-2 min-w-[120px] px-2">Towar / Masa</th>
+<th class="py-2 w-48 px-2">Przewoźnik</th>
+<th class="py-2 px-2">Awizacja</th></tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<!-- 07:30 Unloading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-bold uppercase">Roz</span></td>
+<td class="font-bold text-emerald-600 px-2 py-1.5">07:30</td>
+<td class="font-medium px-2 py-1.5">R/2025/1102</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Granulat tworzywa PVC</div>
+<div class="text-slate-500 text-[10px]">BigBag, 22 szt</div>
+<div class="mt-1 font-bold text-emerald-600">Razem: 22,0 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">Logistic Solution SKA</div>
+<div class="text-[10px] text-slate-400">BDO: 000055110/2024</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Dmitro V. • DW 221-AK</div>
+<div class="text-[10px] text-slate-500">+48 733 442 110</div>
+</td>
+</tr>
+<!-- 08:00 Loading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary text-[10px] font-bold uppercase">Zał</span></td>
+<td class="font-bold text-primary px-2 py-1.5">08:00</td>
+<td class="font-medium px-2 py-1.5">Z/2025/0312</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Złom miedzi (Millberry)</div>
+<div class="text-slate-500 text-[10px]">Wiązki, 12 palet</div>
+<div class="mt-1 font-bold text-primary">Razem: 24,5 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">Trans-Log Sp. z o.o.</div>
+<div class="text-[10px] text-slate-400">BDO: 00012345/2024</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Marek Nowicki • WE 4529L</div>
+<div class="text-[10px] text-slate-500">+48 600 123 456</div>
+</td>
+</tr>
+<!-- 11:30 Loading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary text-[10px] font-bold uppercase">Zał</span></td>
+<td class="font-bold text-primary px-2 py-1.5">11:30</td>
+<td class="font-medium px-2 py-1.5">Z/2025/0315</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Profile Aluminiowe</div>
+<div class="text-slate-500 text-[10px]">Długość 6m</div>
+<div class="mt-1 font-bold text-primary">Razem: 18,2 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">Euro-Cargo Express</div>
+<div class="text-[10px] text-slate-400">BDO: 000099231/2023</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Janusz P. • PO 881XP</div>
+<div class="text-[10px] text-slate-500">+48 501 998 112</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</section>
+<!-- Tuesday 18.03 -->
+<section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h3 class="font-bold text-slate-800 dark:text-slate-200">Wtorek, 18.03.2025</h3>
+<span class="text-xs text-slate-500 font-medium">5 zaplanowanych operacji</span>
+</div>
+<div class="grid divide-x divide-slate-200 dark:divide-slate-800"><div class="p-0 overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead class="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-800">
+<tr><th class="py-2 w-20 text-center px-2">Typ</th>
+<th class="py-2 w-20 px-2">Godzina</th>
+<th class="py-2 w-24 px-2">Nr zlecenia</th>
+<th class="py-2 min-w-[120px] px-2">Towar / Masa</th>
+<th class="py-2 w-48 px-2">Przewoźnik</th>
+<th class="py-2 px-2">Awizacja</th></tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<!-- 09:00 Loading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary text-[10px] font-bold uppercase">Zał</span></td>
+<td class="font-bold text-primary px-2 py-1.5">09:00</td>
+<td class="font-medium px-2 py-1.5">Z/2025/0420</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Kable miedziane (mix)</div>
+<div class="text-slate-500 text-[10px]">Kontener 40ft</div>
+<div class="mt-1 font-bold text-primary">Razem: 21,8 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">QuickTransport Ltd</div>
+<div class="text-[10px] text-slate-400">BDO: 000088111/2024</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Adam G. • LU 11223</div>
+<div class="text-[10px] text-slate-500">+48 662 001 992</div>
+</td>
+</tr>
+<!-- 10:00 Unloading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-bold uppercase">Roz</span></td>
+<td class="font-bold text-emerald-600 px-2 py-1.5">10:00</td>
+<td class="font-medium px-2 py-1.5">R/2025/1140</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Odpady papierowe (karton)</div>
+<div class="text-slate-500 text-[10px]">Bele prasowane</div>
+<div class="mt-1 font-bold text-emerald-600">Razem: 15,5 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">Recykling Partner</div>
+<div class="text-[10px] text-slate-400">BDO: 000112233/2025</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Piotr K. • KR 009JS</div>
+<div class="text-[10px] text-slate-500">+48 555 123 009</div>
+</td>
+</tr>
+<!-- 14:00 Unloading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-bold uppercase">Roz</span></td>
+<td class="font-bold text-emerald-600 px-2 py-1.5">14:00</td>
+<td class="font-medium px-2 py-1.5">R/2025/1142</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Surowiec hutniczy</div>
+<div class="text-slate-500 text-[10px]">Luz (wywrotka)</div>
+<div class="mt-1 font-bold text-emerald-600">Razem: 24,0 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">Huta Stalowa Wola</div>
+<div class="text-[10px] text-slate-400">BDO: 000000101/2023</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Andrzej M. • RZ 44100</div>
+<div class="text-[10px] text-slate-500">+48 781 222 111</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</section>
+<!-- Wednesday 19.03 -->
+<section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden opacity-90">
+<div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h3 class="font-bold text-slate-800 dark:text-slate-200">Środa, 19.03.2025</h3>
+<span class="text-xs text-slate-500 font-medium">3 zaplanowane operacje</span>
+</div>
+<div class="grid divide-x divide-slate-200 dark:divide-slate-800 min-h-[100px] items-center justify-center"><div class="p-4 text-center border-t border-slate-100 dark:border-slate-800"><p class="italic text-xs font-medium text-slate-500">Brak zaplanowanych załadunków | Przegląd techniczny ramp rozładunkowych (12:00-14:00)</p></div></div>
+</section>
+<!-- Thursday 20.03 -->
+<section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h3 class="font-bold text-slate-800 dark:text-slate-200">Czwartek, 20.03.2025</h3>
+<span class="text-xs text-slate-500 font-medium">10 zaplanowanych operacji</span>
+</div>
+<div class="grid divide-x divide-slate-200 dark:divide-slate-800"><div class="p-0 overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead class="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-800">
+<tr><th class="py-2 w-20 text-center px-2">Typ</th>
+<th class="py-2 w-20 px-2">Godzina</th>
+<th class="py-2 w-24 px-2">Nr zlecenia</th>
+<th class="py-2 min-w-[120px] px-2">Towar / Masa</th>
+<th class="py-2 w-48 px-2">Przewoźnik</th>
+<th class="py-2 px-2">Awizacja</th></tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<!-- 07:00 Loading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-blue-100 dark:bg-blue-900/30 text-primary text-[10px] font-bold uppercase">Zał</span></td>
+<td class="font-bold text-primary px-2 py-1.5">07:00</td>
+<td class="font-medium px-2 py-1.5">Z/2025/0501</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Elektroodpady</div>
+<div class="text-slate-500 text-[10px]">Mix sprzętu AGD</div>
+<div class="mt-1 font-bold text-primary">Razem: 12,5 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">Eco-Trans Sp. z o.o.</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Tomasz L. • WA 0098C</div>
+</td>
+</tr>
+<!-- 08:30 Unloading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-bold uppercase">Roz</span></td>
+<td class="font-bold text-emerald-600 px-2 py-1.5">08:30</td>
+<td class="font-medium px-2 py-1.5">R/2025/1210</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Elementy stalowe</div>
+<div class="text-slate-500 text-[10px]">Konstrukcje, 3 szt</div>
+<div class="mt-1 font-bold text-emerald-600">Razem: 25,0 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">Heavy Lift Trans</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Oleg B. • BI 889LK</div>
+</td>
+</tr>
+</tbody>
+</table>
+</div></div>
+</section>
+<!-- Friday 21.03 -->
+<section class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+<div class="bg-slate-50 dark:bg-slate-800/50 px-6 py-2 border-b border-slate-200 dark:border-slate-800 flex justify-between items-center">
+<h3 class="font-bold text-slate-800 dark:text-slate-200">Piątek, 21.03.2025</h3>
+<span class="text-xs text-slate-500 font-medium">4 zaplanowane operacje</span>
+</div>
+<div class="grid divide-x divide-slate-200 dark:divide-slate-800"><div class="p-0 overflow-x-auto">
+<table class="w-full text-left text-xs">
+<thead class="bg-slate-50/50 dark:bg-slate-800/30 text-slate-500 font-semibold border-b border-slate-100 dark:border-slate-800">
+<tr><th class="py-2 w-20 text-center px-2">Typ</th>
+<th class="py-2 w-20 px-2">Godzina</th>
+<th class="py-2 w-24 px-2">Nr zlecenia</th>
+<th class="py-2 min-w-[120px] px-2">Towar / Masa</th>
+<th class="py-2 w-48 px-2">Przewoźnik</th>
+<th class="py-2 px-2">Awizacja</th></tr>
+</thead>
+<tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+<!-- 09:15 Unloading -->
+<tr class="hover:bg-slate-50 dark:hover:bg-slate-800/20">
+<td class="text-center px-2 py-1.5"><span class="inline-block px-2 py-0.5 rounded-full bg-emerald-100 dark:bg-emerald-900/30 text-emerald-600 text-[10px] font-bold uppercase">Roz</span></td>
+<td class="font-bold text-emerald-600 px-2 py-1.5">09:15</td>
+<td class="font-medium px-2 py-1.5">R/2025/1330</td>
+<td class="px-2 py-1.5">
+<div class="font-medium text-slate-900 dark:text-slate-100">Części maszyn</div>
+<div class="text-slate-500 text-[10px]">Skrzynie drewniane, 4 szt</div>
+<div class="mt-1 font-bold text-emerald-600">Razem: 8,4 t</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="font-semibold">FastLogistics Pl</div>
+<div class="text-[10px] text-slate-400">BDO: 000223311/2024</div>
+</td>
+<td class="leading-relaxed px-2 py-1.5">
+<div class="text-[10px] text-slate-500 font-medium">Igor S. • EL 99182</div>
+<div class="text-[10px] text-slate-500">+48 443 112 000</div>
+</td>
+</tr>
+<!-- Empty loading placeholder if needed, or just let the list flow -->
+</tbody>
+</table>
+</div></div>
+</section>
+</div>
+</main>
+<!-- Summary Footer bar -->
+<footer class="fixed bottom-0 w-full bg-slate-900 text-white py-3 px-6 shadow-2xl z-40 border-t border-slate-800 print:relative print:bg-transparent print:text-black print:border-t-2">
+<div class="max-w-[1600px] mx-auto flex items-center justify-between text-xs">
+<div class="flex items-center gap-8">
+<div class="flex items-center gap-2">
+<span class="text-slate-400">Łączna masa zaplanowana (W12):</span>
+<span class="font-bold text-primary">164,9 t</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-slate-400">Załadunki:</span>
+<span class="font-bold">77,0 t</span>
+</div>
+<div class="flex items-center gap-2">
+<span class="text-slate-400">Rozładunki:</span>
+<span class="font-bold">87,9 t</span>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<div class="flex items-center gap-1.5">
+<div class="size-2 rounded-full bg-emerald-500"></div>
+<span>System operacyjny aktywny</span>
+</div>
+<div class="text-slate-500 border-l border-slate-700 pl-4 uppercase tracking-widest font-semibold text-[10px]">
+                    Odylion Warehouse v4.2.1
+                </div>
+</div>
+</div>
+</footer>
+</div>
+</body></html>

@@ -11,6 +11,7 @@ import {
   jsonResponse,
   isValidUUID,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { lockOrder } from "../../../../../lib/services/order-lock.service";
 
@@ -41,7 +42,14 @@ export const POST: APIRoute = async ({ params, locals }) => {
         "Zlecenie jest edytowane przez innego użytkownika. Spróbuj ponownie za chwilę."
       );
     }
-    console.error("[POST /api/v1/orders/{orderId}/lock]", err);
+    if (msg === "LOCK_TERMINAL_STATUS") {
+      return errorResponse(
+        422,
+        "Unprocessable Entity",
+        "Nie można zablokować zlecenia w statusie anulowane lub zrealizowane."
+      );
+    }
+    logError("[POST /api/v1/orders/{orderId}/lock]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas blokowania zlecenia.");
   }
 };

@@ -4,11 +4,14 @@
  * Kolorowe przyciski zamiast select. Jeśli wybrano "reklamacja" — wymagane pole powodu.
  */
 
+import { memo } from "react";
+
 import { AlertTriangle, CheckCircle, Info, XCircle } from "lucide-react";
 
 import { Textarea } from "@/components/ui/textarea";
 import {
   ALLOWED_MANUAL_STATUS_TRANSITIONS,
+  STATUS_NAMES,
   type OrderStatusCode,
 } from "@/lib/view-models";
 
@@ -19,19 +22,10 @@ interface StatusSectionProps {
   currentStatusName: string;
   pendingStatusCode: OrderStatusCode | null;
   complaintReason: string | null;
+  isReadOnly?: boolean;
   onStatusChange: (code: OrderStatusCode | null) => void;
   onComplaintReasonChange: (reason: string | null) => void;
 }
-
-const STATUS_NAMES: Record<OrderStatusCode, string> = {
-  robocze: "Robocze",
-  wysłane: "Wysłane",
-  korekta: "Korekta",
-  "korekta wysłane": "Korekta_w",
-  zrealizowane: "Zrealizowane",
-  reklamacja: "Reklamacja",
-  anulowane: "Anulowane",
-};
 
 /** Style per status button */
 const STATUS_BUTTON_STYLES: Partial<Record<OrderStatusCode, { base: string; ring: string; icon: React.ReactNode }>> = {
@@ -58,14 +52,27 @@ const DEFAULT_BUTTON_STYLE = {
   icon: null as React.ReactNode,
 };
 
-export function StatusSection({
+export const StatusSection = memo(function StatusSection({
   currentStatusCode,
   currentStatusName,
   pendingStatusCode,
   complaintReason,
+  isReadOnly,
   onStatusChange,
   onComplaintReasonChange,
 }: StatusSectionProps) {
+  // Defensywny guard — rodzic (OrderForm) ukrywa całą sekcję dla READ_ONLY,
+  // ale gdyby komponent został użyty w innym kontekście, nie renderujemy akcji
+  if (isReadOnly) {
+    return (
+      <div className="flex items-center gap-3">
+        <div className="shrink-0">
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">Aktualny status</label>
+          <StatusBadge statusCode={currentStatusCode} statusName={currentStatusName} />
+        </div>
+      </div>
+    );
+  }
   const allowedTransitions =
     ALLOWED_MANUAL_STATUS_TRANSITIONS[currentStatusCode as OrderStatusCode] ?? [];
 
@@ -150,4 +157,4 @@ export function StatusSection({
       </div>
     </div>
   );
-}
+});

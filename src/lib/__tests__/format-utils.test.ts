@@ -8,6 +8,7 @@ import {
   formatDate,
   formatDateShort,
   formatDateFromTimestamp,
+  formatDateTimeFromTimestamp,
   formatTime,
   formatDateTime,
   formatDateTimeShort,
@@ -73,6 +74,32 @@ describe("formatDateFromTimestamp", () => {
 
   it("timestamp bez części czasowej → formatuje jako datę", () => {
     expect(formatDateFromTimestamp("2026-02-17")).toBe("17.02.2026");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// formatDateTimeFromTimestamp
+// ---------------------------------------------------------------------------
+
+describe("formatDateTimeFromTimestamp", () => {
+  it('timestamp ISO → "17.02.2026 14:32"', () => {
+    expect(formatDateTimeFromTimestamp("2026-02-17T14:32:01.000Z")).toBe("17.02.2026 14:32");
+  });
+
+  it("null → em dash", () => {
+    expect(formatDateTimeFromTimestamp(null)).toBe("—");
+  });
+
+  it("undefined → em dash", () => {
+    expect(formatDateTimeFromTimestamp(undefined)).toBe("—");
+  });
+
+  it("timestamp bez części czasowej → tylko data", () => {
+    expect(formatDateTimeFromTimestamp("2026-02-17")).toBe("17.02.2026");
+  });
+
+  it("pusty string → em dash", () => {
+    expect(formatDateTimeFromTimestamp("")).toBe("—");
   });
 });
 

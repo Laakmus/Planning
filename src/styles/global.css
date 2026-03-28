@@ -133,6 +133,34 @@
     -ms-overflow-style: none;
     scrollbar-width: none;
   }
+
+  /* Animacja pojawiania się sekcji drawera (fade + slide-up) */
+  .animate-section-in {
+    animation: section-fade-in 0.3s ease-out both;
+  }
+}
+
+@keyframes section-fade-in {
+  from {
+    opacity: 0;
+    transform: translateY(8px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+/* Druk widoku magazynowego — A4 landscape, zachowanie kolorów */
+@media print {
+  .warehouse-view {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+  .warehouse-view * {
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
 }
 
 /* Hover wierszy tabeli zleceń */

@@ -6,7 +6,7 @@
  */
 
 import { forwardRef } from "react";
-import { ArrowDown, ArrowUp, ArrowUpDown } from "lucide-react";
+import { ArrowDown, ArrowUp, ArrowUpDown, Loader2 } from "lucide-react";
 
 import type { OrderListItemDto } from "@/types";
 import type { ListViewMode, OrderSortBy, OrderStatusCode, SortDirection, ViewGroup } from "@/lib/view-models";
@@ -24,21 +24,13 @@ interface OrderTableProps {
   onRowClick: (orderId: string) => void;
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
-  onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
-  onDuplicate: (orderId: string) => void;
-  onCancel: (orderId: string) => void;
-  onRestore: (orderId: string) => void;
+  onChangeStatus: (orderId: string, orderNo: string, newStatus: OrderStatusCode) => void;
+  onDuplicate: (orderId: string, orderNo: string) => void;
+  onCancel: (orderId: string, orderNo: string) => void;
+  onRestore: (orderId: string, orderNo: string) => void;
   onSetCarrierColor: (orderId: string, color: string | null) => void;
+  onSetEntryFixed: (orderId: string, value: boolean | null) => void;
 }
-
-type SortableColumn = { label: string; sortKey: OrderSortBy };
-
-const SORTABLE_COLUMNS: Record<string, SortableColumn> = {
-  orderNo: { label: "Nr zlecenia", sortKey: "ORDER_NO" },
-  loadingDate: { label: "Data zał.", sortKey: "FIRST_LOADING_DATETIME" },
-  unloadingDate: { label: "Data rozł.", sortKey: "FIRST_UNLOADING_DATETIME" },
-  carrier: { label: "Firma transp.", sortKey: "CARRIER_NAME" },
-};
 
 function SortIcon({
   column,
@@ -74,6 +66,7 @@ function SortableTh({
 }) {
   return (
     <th
+      scope="col"
       className={`py-2 px-4 cursor-pointer select-none hover:text-slate-700 dark:hover:text-slate-200 ${className ?? ""}`}
       onClick={() => onSort(sortKey)}
       aria-sort={
@@ -108,27 +101,38 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
   onCancel,
   onRestore,
   onSetCarrierColor,
+  onSetEntryFixed,
 }, ref) {
   const minWidth = viewMode === "columns" ? "1500px" : "1280px";
+  // Przeładowanie z istniejącymi danymi — wizualna indykacja ładowania
+  const isReloading = isLoading && orders.length > 0;
 
   return (
     <div
       ref={ref}
-      className="flex-1 min-h-0 overflow-auto bg-white dark:bg-slate-900"
+      className="flex-1 min-h-0 overflow-auto bg-white dark:bg-slate-900 relative"
       style={{
         // Cienki, widoczny scrollbar
         scrollbarWidth: "thin",
         scrollbarColor: "#cbd5e1 transparent",
       }}
     >
+      {/* Pasek ładowania przy zmianie filtrów */}
+      {isReloading && (
+        <div className="sticky top-0 left-0 right-0 z-30 flex items-center justify-center py-1 bg-primary/10 backdrop-blur-sm">
+          <Loader2 className="w-3.5 h-3.5 animate-spin text-primary mr-1.5" />
+          <span className="text-xs text-primary font-medium">Ładowanie...</span>
+        </div>
+      )}
       <table
         className="orders-table w-full border-collapse text-left"
         role="table"
         style={{ minWidth }}
+        data-testid="order-table"
       >
         <thead className="sticky top-0 z-20 bg-slate-50 dark:bg-slate-800 border-b border-slate-200 dark:border-slate-800">
           <tr className="text-[11px] font-bold uppercase tracking-wider text-slate-500 dark:text-slate-400">
-            <th className="py-2 px-4 w-10" />
+            <th scope="col" className="py-2 px-4 w-10" />
             <SortableTh
               sortKey="ORDER_NO"
               label="Nr zlecenia"
@@ -137,14 +141,14 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
               sortDirection={sortDirection}
               onSort={onSort}
             />
-            <th className="py-2 px-4 min-w-[100px]">Status</th>
-            <th className="py-2 px-4 w-12 text-center">Tydz.</th>
-            <th className="py-2 px-4 min-w-[80px]">Rodzaj</th>
+            <th scope="col" className="py-2 px-4 min-w-[100px]">Status</th>
+            <th scope="col" className="py-2 px-4 w-12 text-center">Tydz.</th>
+            <th scope="col" className="py-2 px-4 min-w-[80px]">Rodzaj</th>
 
             {viewMode === "route" ? (
-              <th className="py-2 px-4 min-w-[220px]">Trasa</th>
+              <th scope="col" className="py-2 px-4 min-w-[220px]">Trasa</th>
             ) : (
-              <th className="py-2 px-4 min-w-[200px]">Miejsce załadunku</th>
+              <th scope="col" className="py-2 px-4 min-w-[200px]">Miejsce załadunku</th>
             )}
 
             <SortableTh
@@ -157,7 +161,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
             />
 
             {viewMode === "columns" && (
-              <th className="py-2 px-4 min-w-[200px]">Miejsce rozładunku</th>
+              <th scope="col" className="py-2 px-4 min-w-[200px]">Miejsce rozładunku</th>
             )}
 
             <SortableTh
@@ -169,8 +173,9 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
               onSort={onSort}
             />
 
-            <th className="py-2 px-4 min-w-[160px]">Towar</th>
-            <th className="py-2 px-4 min-w-[120px]">Komentarz</th>
+            <th scope="col" className="py-2 px-4 w-14 text-center">Fix</th>
+            <th scope="col" className="py-2 px-4 min-w-[160px]">Towar</th>
+            <th scope="col" className="py-2 px-4 min-w-[120px]">Komentarz</th>
 
             <SortableTh
               sortKey="CARRIER_NAME"
@@ -181,18 +186,18 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
               onSort={onSort}
             />
 
-            <th className="py-2 px-4 min-w-[90px]">Typ auta</th>
-            <th className="py-2 px-4 w-20">Stawka</th>
-            <th className="py-2 px-4 min-w-[90px]">Data wysł.</th>
+            <th scope="col" className="py-2 px-4 min-w-[90px]">Typ auta</th>
+            <th scope="col" className="py-2 px-4 w-20">Stawka</th>
+            <th scope="col" className="py-2 px-4 min-w-[90px]">Data wysł.</th>
           </tr>
         </thead>
 
-        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
+        <tbody className={`divide-y divide-slate-200 dark:divide-slate-700 ${isReloading ? "opacity-50 pointer-events-none" : ""}`}>
           {isLoading && orders.length === 0 ? (
             // Skeleton loading — 5 wierszy
             Array.from({ length: 5 }).map((_, i) => (
               <tr key={i} className="animate-pulse">
-                {Array.from({ length: viewMode === "columns" ? 15 : 14 }).map((_, j) => (
+                {Array.from({ length: viewMode === "columns" ? 16 : 15 }).map((_, j) => (
                   <td key={j} className="py-2 px-4">
                     <div className="h-3 bg-slate-200 dark:bg-slate-700 rounded w-full" />
                   </td>
@@ -214,6 +219,7 @@ export const OrderTable = forwardRef<HTMLDivElement, OrderTableProps>(function O
                 onCancel={onCancel}
                 onRestore={onRestore}
                 onSetCarrierColor={onSetCarrierColor}
+                onSetEntryFixed={onSetEntryFixed}
               />
             ))
           )}

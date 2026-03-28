@@ -12,6 +12,7 @@ import {
   jsonResponse,
   isValidUUID,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { restoreOrder } from "../../../../../lib/services/order-status.service";
 
@@ -49,7 +50,7 @@ export const POST: APIRoute = async ({ params, locals }) => {
         "Zlecenie anulowane ponad 24h temu — przywracanie niedostępne."
       );
     }
-    console.error("[POST /api/v1/orders/{orderId}/restore]", err);
+    logError("[POST /api/v1/orders/{orderId}/restore]", err);
     return errorResponse(500, "Internal Server Error", "Błąd podczas przywracania zlecenia.");
   }
 };

@@ -1,38 +1,61 @@
 /**
  * POST /api/v1/orders/{orderId}/pdf
  *
- * Generowanie PDF zlecenia. Na razie stub — 501 Not Implemented.
- * Docelowo: auth, pobranie zlecenia, generacja PDF, zwrot application/pdf.
+ * Generowanie PDF zlecenia transportowego.
+ * Auth → pobranie danych → generacja PDF → zwrot application/pdf.
  *
- * Błędy: 400, 401, 404, 501 (stub).
+ * Błędy: 400, 401, 404, 500.
  */
 
 import type { APIRoute } from "astro";
 
 import {
+  COMMON_HEADERS,
   errorResponse,
   getAuthenticatedUser,
   isValidUUID,
+  logError,
+  requireWriteAccess,
 } from "../../../../../lib/api-helpers";
 import { getOrderDetail } from "../../../../../lib/services/order.service";
+import { resolvePdfData } from "../../../../../lib/services/pdf/pdf-data-resolver";
+import { generateOrderPdf } from "../../../../../lib/services/pdf/pdf-generator.service";
 
 export const POST: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);
   if (authResult instanceof Response) return authResult;
+
+  const writeCheck = requireWriteAccess(authResult);
+  if (writeCheck) return writeCheck;
 
   const orderId = params.orderId;
   if (!orderId || !isValidUUID(orderId)) {
     return errorResponse(400, "Bad Request", "Nieprawidłowy identyfikator zlecenia (UUID).");
   }
 
-  const order = await getOrderDetail(locals.supabase, orderId);
-  if (!order) {
-    return errorResponse(404, "Not Found", "Zlecenie nie zostało znalezione.");
-  }
+  try {
+    const detail = await getOrderDetail(locals.supabase, orderId);
+    if (!detail) {
+      return errorResponse(404, "Not Found", "Zlecenie nie zostało znalezione.");
+    }
 
-  return errorResponse(
-    501,
-    "Not Implemented",
-    "Generowanie PDF zlecenia nie jest jeszcze zaimplementowane."
-  );
+    const pdfInput = await resolvePdfData(locals.supabase, detail);
+    const pdfBuffer = generateOrderPdf(pdfInput);
+
+    // Allowlist: tylko bezpieczne znaki w nazwie pliku
+    const sanitizedName = (detail.order.orderNo || orderId).replace(/[^a-zA-Z0-9._-]/g, "-");
+    const fileName = `zlecenie-${sanitizedName}.pdf`;
+
+    return new Response(pdfBuffer, {
+      status: 200,
+      headers: {
+        ...COMMON_HEADERS,
+        "Content-Type": "application/pdf",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+      },
+    });
+  } catch (err) {
+    logError("[POST /api/v1/orders/{orderId}/pdf]", err);
+    return errorResponse(500, "Internal Server Error", "Nie udało się wygenerować PDF.");
+  }
 };

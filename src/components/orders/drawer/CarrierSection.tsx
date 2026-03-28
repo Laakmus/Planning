@@ -1,11 +1,12 @@
 /**
  * Sekcja 3 – Firma transportowa.
- * Autocomplete firmy, NIP (readonly), typ auta + objętość (2 selecty), wymagane dokumenty.
+ * Autocomplete firmy, NIP (readonly), typ auta + objętość (2 niezależne pola), wymagane dokumenty.
  */
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { memo } from "react";
 
 import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Select,
   SelectContent,
@@ -13,7 +14,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import type { CompanyDto, VehicleVariantDto } from "@/types";
+import { Textarea } from "@/components/ui/textarea";
+import type { CompanyDto } from "@/types";
 import type { OrderFormData } from "@/lib/view-models";
 
 import { AutocompleteField } from "./AutocompleteField";
@@ -21,20 +23,28 @@ import { AutocompleteField } from "./AutocompleteField";
 interface CarrierSectionProps {
   formData: OrderFormData;
   companies: CompanyDto[];
-  vehicleVariants: VehicleVariantDto[];
   isReadOnly: boolean;
   onChange: (patch: Partial<OrderFormData>) => void;
 }
+
+const VEHICLE_TYPES = [
+  "Ruchoma podłoga",
+  "Firanka",
+  "Wywrotka",
+  "Hakowiec",
+  "Hakowiec z HDS",
+  "Tandem",
+  "Naczepa podkontenerowa",
+] as const;
 
 const REQUIRED_DOCS_OPTIONS = [
   { value: "WZ, KPO, kwit wagowy", label: "WZ, KPO, kwit wagowy" },
   { value: "WZE, Aneks VII, CMR", label: "WZE, Aneks VII, CMR" },
 ];
 
-export function CarrierSection({
+export const CarrierSection = memo(function CarrierSection({
   formData,
   companies,
-  vehicleVariants,
   isReadOnly,
   onChange,
 }: CarrierSectionProps) {
@@ -42,52 +52,6 @@ export function CarrierSection({
     ? companies.find((c) => c.id === formData.carrierCompanyId)
     : null;
 
-  // Derive initial vehicleType from current vehicleVariantCode
-  const currentVariant = vehicleVariants.find(
-    (v) => v.code === formData.vehicleVariantCode,
-  );
-
-  const [selectedVehicleType, setSelectedVehicleType] = useState<string>(
-    currentVariant?.vehicleType ?? "",
-  );
-
-  const [volumeInput, setVolumeInput] = useState<string>(
-    currentVariant?.capacityVolumeM3 != null
-      ? String(currentVariant.capacityVolumeM3)
-      : "",
-  );
-
-  // M-08: Synchronizacja lokalnego stanu przy zmianie zlecenia/wariantu pojazdu
-  useEffect(() => {
-    const variant = vehicleVariants.find(
-      (v) => v.code === formData.vehicleVariantCode,
-    );
-    setSelectedVehicleType(variant?.vehicleType ?? "");
-    setVolumeInput(
-      variant?.capacityVolumeM3 != null
-        ? String(variant.capacityVolumeM3)
-        : "",
-    );
-  }, [formData.vehicleVariantCode, vehicleVariants]);
-
-  const uniqueVehicleTypes = useMemo(() => {
-    const types = new Set(
-      vehicleVariants.filter((v) => v.isActive).map((v) => v.vehicleType),
-    );
-    return Array.from(types);
-  }, [vehicleVariants]);
-
-  const findVariantByVolume = useCallback(
-    (type: string, volume: number) => {
-      return vehicleVariants.find(
-        (v) =>
-          v.isActive &&
-          v.vehicleType === type &&
-          v.capacityVolumeM3 === volume,
-      );
-    },
-    [vehicleVariants],
-  );
 
   function handleCarrierChange(
     _id: string | null,
@@ -97,26 +61,13 @@ export function CarrierSection({
   }
 
   function handleVehicleTypeChange(type: string) {
-    setSelectedVehicleType(type);
-    // Try to match current volume input to new type
-    const vol = parseFloat(volumeInput);
-    if (!isNaN(vol)) {
-      const match = findVariantByVolume(type, vol);
-      onChange({ vehicleVariantCode: match?.code ?? null });
-    } else {
-      onChange({ vehicleVariantCode: null });
-    }
+    // Specjalna wartość "__clear__" = wyczyść pole (null)
+    onChange({ vehicleTypeText: type === "__clear__" ? null : type });
   }
 
   function handleVolumeInputChange(value: string) {
-    setVolumeInput(value);
-    const vol = parseFloat(value);
-    if (!isNaN(vol) && selectedVehicleType) {
-      const match = findVariantByVolume(selectedVehicleType, vol);
-      onChange({ vehicleVariantCode: match?.code ?? null });
-    } else {
-      onChange({ vehicleVariantCode: null });
-    }
+    const parsed = value === "" ? null : parseFloat(value);
+    onChange({ vehicleCapacityVolumeM3: parsed != null && !isNaN(parsed) ? parsed : null });
   }
 
   return (
@@ -125,7 +76,7 @@ export function CarrierSection({
       <div className="flex gap-2">
         {/* Firma transportowa (autocomplete) */}
         <div className="basis-1/2 min-w-0">
-          <label className="text-xs font-semibold text-slate-400 block mb-1">
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
             Nazwa firmy (przewoźnik) *
           </label>
           <AutocompleteField
@@ -146,11 +97,11 @@ export function CarrierSection({
 
         {/* Typ auta — 30% */}
         <div className="basis-[30%] min-w-0">
-          <label className="text-xs font-semibold text-slate-400 block mb-1">
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
             Typ auta *
           </label>
           <Select
-            value={selectedVehicleType}
+            value={formData.vehicleTypeText ?? ""}
             onValueChange={handleVehicleTypeChange}
             disabled={isReadOnly}
           >
@@ -158,18 +109,32 @@ export function CarrierSection({
               <SelectValue placeholder="Wybierz typ..." />
             </SelectTrigger>
             <SelectContent>
-              {uniqueVehicleTypes.map((type) => (
+              <SelectItem value="__clear__" className="text-sm text-slate-400">
+                — Brak —
+              </SelectItem>
+              {VEHICLE_TYPES.map((type) => (
                 <SelectItem key={type} value={type} className="text-sm">
                   {type}
                 </SelectItem>
               ))}
+              {/* Fallback dla wartości spoza listy (legacy/API) */}
+              {formData.vehicleTypeText &&
+                !(VEHICLE_TYPES as readonly string[]).includes(formData.vehicleTypeText) && (
+                <SelectItem
+                  key={formData.vehicleTypeText}
+                  value={formData.vehicleTypeText}
+                  className="text-sm italic text-slate-500"
+                >
+                  {formData.vehicleTypeText}
+                </SelectItem>
+              )}
             </SelectContent>
           </Select>
         </div>
 
         {/* Objętość m³ — 20% */}
         <div className="basis-[20%] min-w-0">
-          <label className="text-xs font-semibold text-slate-400 block mb-1">
+          <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
             m³ *
           </label>
           <Input
@@ -177,9 +142,9 @@ export function CarrierSection({
             min={0}
             step={1}
             placeholder="m³"
-            value={volumeInput}
+            value={formData.vehicleCapacityVolumeM3 ?? ""}
             onChange={(e) => handleVolumeInputChange(e.target.value)}
-            disabled={isReadOnly || !selectedVehicleType}
+            disabled={isReadOnly}
             className="h-8 text-sm"
           />
         </div>
@@ -187,7 +152,7 @@ export function CarrierSection({
 
       {/* Row 2: Wymagane dokumenty — full width */}
       <div>
-        <label className="text-xs font-semibold text-slate-400 block mb-1">
+        <label className="text-xs font-semibold text-slate-400 dark:text-slate-500 block mb-1">
           Wymagane dokumenty
         </label>
         <Select
@@ -207,6 +172,25 @@ export function CarrierSection({
           </SelectContent>
         </Select>
       </div>
+
+      {/* Row 3: Dane do awizacji — full width */}
+      <div>
+        <div className="flex items-center justify-between">
+          <Label className="text-xs font-medium">Dane do awizacji</Label>
+          <span className="text-[10px] text-slate-400 dark:text-slate-500">
+            {(formData.notificationDetails ?? "").length}/500
+          </span>
+        </div>
+        <Textarea
+          value={formData.notificationDetails ?? ""}
+          onChange={(e) => onChange({ notificationDetails: e.target.value || null })}
+          disabled={isReadOnly}
+          rows={4}
+          maxLength={500}
+          className="text-sm resize-none mt-1"
+          placeholder="Informacje do awizacji dla przewoźnika…"
+        />
+      </div>
     </div>
   );
-}
+});

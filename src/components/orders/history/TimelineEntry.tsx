@@ -25,12 +25,14 @@ function getInitials(name: string | null, userId: string): string {
   return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
 }
 
-/** Formatuje czas: HH:MM z ISO timestamp */
+/** Formatuje czas: HH:MM z ISO timestamp (explicit timezone Europe/Warsaw) */
 function formatTime(iso: string): string {
   const d = new Date(iso);
-  const h = String(d.getHours()).padStart(2, "0");
-  const m = String(d.getMinutes()).padStart(2, "0");
-  return `${h}:${m}`;
+  return d.toLocaleTimeString("pl-PL", {
+    hour: "2-digit",
+    minute: "2-digit",
+    timeZone: "Europe/Warsaw",
+  });
 }
 
 /** StatusBadge dla historii — uproszczone kolory */

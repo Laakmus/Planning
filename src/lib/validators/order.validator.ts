@@ -29,7 +29,7 @@ export const orderListQuerySchema = z.object({
   loadingCompanyId: z.string().uuid().optional(),
   unloadingLocationId: z.string().uuid().optional(),
   unloadingCompanyId: z.string().uuid().optional(),
-  search: z.string().optional(),
+  search: z.string().max(200).optional(),
   dateFrom: isoDateSchema.optional(),
   dateTo: isoDateSchema.optional(),
   sortBy: z
@@ -99,7 +99,8 @@ export const createOrderSchema = z.object({
   carrierCompanyId: z.string().uuid().nullable(),
   shipperLocationId: z.string().uuid().nullable(),
   receiverLocationId: z.string().uuid().nullable(),
-  vehicleVariantCode: z.string().min(1).nullable(),
+  vehicleTypeText: z.string().max(100).nullable(),
+  vehicleCapacityVolumeM3: z.number().nonnegative().nullable(),
   priceAmount: z.number().nonnegative().nullable(),
   paymentTermDays: z.number().int().nonnegative().nullable(),
   paymentMethod: z.string().max(100).nullable(),
@@ -108,13 +109,15 @@ export const createOrderSchema = z.object({
   specialRequirements: z.string().max(500).nullable(),
   requiredDocumentsText: z.string().max(500).nullable(),
   generalNotes: z.string().max(500).nullable(),
+  notificationDetails: z.string().max(500).nullable().default(null),
+  confidentialityClause: z.string().max(2000).nullable().default(null),
   senderContactName: z.string().max(200).nullable(),
   senderContactPhone: z.string().max(100).nullable(),
   senderContactEmail: z.preprocess(
     (v) => (v === "" ? null : v),
     z.string().max(320).email().nullable()
   ),
-  stops: z.array(createOrderStopSchema).min(1).max(11),
+  stops: z.array(createOrderStopSchema).max(11),
   items: z.array(createOrderItemSchema).max(50),
 });
 
@@ -135,11 +138,12 @@ export const updateOrderItemSchema = createOrderItemSchema.extend({
 
 /** Body PUT /api/v1/orders/{orderId} — pełna aktualizacja zlecenia. */
 export const updateOrderSchema = createOrderSchema.extend({
-  vehicleVariantCode: z.string().min(1).nullable(),
   generalNotes: z.string().max(500).nullable(),
   complaintReason: z.string().max(500).nullable().optional(),
-  stops: z.array(updateOrderStopSchema).min(1).max(11),
-  items: z.array(updateOrderItemSchema).max(50),
+  // Limit 22 = max 11 aktywnych + 11 usuniętych (_deleted: true). Serwis waliduje aktywne stopy osobno.
+  stops: z.array(updateOrderStopSchema).max(22),
+  // Limit 100 = max 50 aktywnych + 50 usuniętych (_deleted: true). Serwis waliduje aktywne pozycje osobno.
+  items: z.array(updateOrderItemSchema).max(100),
 });
 
 export type UpdateOrderParams = z.infer<typeof updateOrderSchema>;
@@ -155,7 +159,7 @@ export type DuplicateOrderParams = z.infer<typeof duplicateOrderSchema>;
 
 /** Body POST /api/v1/orders/{orderId}/prepare-email. */
 export const prepareEmailSchema = z.object({
-  forceRegeneratePdf: z.boolean().optional().default(false),
+  outputFormat: z.enum(["eml", "pdf-base64"]).optional().default("eml"),
 });
 
 export type PrepareEmailParams = z.infer<typeof prepareEmailSchema>;
@@ -185,12 +189,19 @@ export const dictionarySyncSchema = z.object({
 
 export type DictionarySyncParams = z.infer<typeof dictionarySyncSchema>;
 
+/** Body PATCH /api/v1/orders/{orderId}/entry-fixed. */
+export const entryFixedSchema = z.object({
+  isEntryFixed: z.boolean().nullable(),
+});
+
+export type EntryFixedParams = z.infer<typeof entryFixedSchema>;
+
 /** Allowed carrier cell colors (hex). */
 export const ALLOWED_CARRIER_CELL_COLORS = [
-  "#48A111",
-  "#25671E",
-  "#FFEF5F",
-  "#EEA727",
+  "#34d399",
+  "#047857",
+  "#fde047",
+  "#f97316",
 ] as const;
 
 /** Body PATCH /api/v1/orders/{orderId}/carrier-color. */
@@ -199,3 +210,16 @@ export const carrierCellColorSchema = z.object({
 });
 
 export type CarrierCellColorParams = z.infer<typeof carrierCellColorSchema>;
+
+// ---------------------------------------------------------------------------
+// Widok magazynowy
+// ---------------------------------------------------------------------------
+
+/** Query params GET /api/v1/warehouse/orders. */
+export const warehouseQuerySchema = z.object({
+  week: z.coerce.number().int().min(1).max(53),
+  year: z.coerce.number().int().min(2020).max(2099),
+  locationId: z.string().uuid().optional(),
+});
+
+export type WarehouseQueryParams = z.infer<typeof warehouseQuerySchema>;

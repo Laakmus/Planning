@@ -9,6 +9,11 @@
 
 import { shortenName } from "@/lib/format-utils";
 import type { OrderListStopDto } from "@/types";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface RouteSummaryCellProps {
   stops: OrderListStopDto[];
@@ -38,7 +43,12 @@ export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
       ? "bg-emerald-100 dark:bg-emerald-900/30 border border-emerald-500/30 dark:border-emerald-400/30 text-emerald-700 dark:text-emerald-400"
       : "bg-blue-100 dark:bg-blue-900/30 border border-blue-500/30 dark:border-blue-400/30 text-blue-700 dark:text-blue-400";
 
-    return { prefix, name, cls };
+    return {
+      prefix,
+      name,
+      cls,
+      locationFull: stop.locationNameSnapshot,
+    };
   });
 
   // Podziel na grupy po NODES_PER_LINE
@@ -56,11 +66,18 @@ export function RouteSummaryCell({ stops }: RouteSummaryCellProps) {
             const isLast = globalIdx === nodes.length - 1;
             return (
               <span key={nodeIdx} className="flex items-center gap-1">
-                <span
-                  className={`${node.cls} px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap`}
-                >
-                  {node.prefix}:{node.name}
-                </span>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <span
+                      className={`${node.cls} px-1.5 py-0.5 rounded text-[10px] font-bold whitespace-nowrap cursor-default`}
+                    >
+                      {node.prefix}:{node.name}
+                    </span>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" className="text-xs">
+                    <p>{node.locationFull ?? "—"}</p>
+                  </TooltipContent>
+                </Tooltip>
                 {!isLast && (
                   <span className="text-slate-300 dark:text-slate-600 text-[10px]">→</span>
                 )}

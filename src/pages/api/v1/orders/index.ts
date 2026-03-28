@@ -15,6 +15,7 @@ import {
   parseJsonBody,
   parseQueryParams,
   requireWriteAccess,
+  logError,
 } from "../../../../lib/api-helpers";
 import { createOrder, listOrders } from "../../../../lib/services/order.service";
 import { createOrderSchema, orderListQuerySchema } from "../../../../lib/validators/order.validator";
@@ -70,7 +71,7 @@ export const GET: APIRoute = async ({ locals, request }) => {
     const result = await listOrders(locals.supabase, parsed.data);
     return jsonResponse(result, 200);
   } catch (err) {
-    console.error("[GET /api/v1/orders]", err);
+    logError("[GET /api/v1/orders]", err);
     return errorResponse(
       500,
       "Internal Server Error",
@@ -119,7 +120,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
     if (msg === "STOPS_ORDER") {
       return errorResponse(400, "Bad Request", "Pierwszy punkt trasy musi być załadunkiem, ostatni rozładunkiem.");
     }
-    console.error("[POST /api/v1/orders]", err);
+    logError("[POST /api/v1/orders]", err);
     return errorResponse(
       500,
       "Internal Server Error",

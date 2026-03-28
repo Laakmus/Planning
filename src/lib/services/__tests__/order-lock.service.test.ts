@@ -60,6 +60,7 @@ function buildLockMock(opts: {
 describe("lockOrder", () => {
   it('RPC "OK" → LockOrderResponseDto', async () => {
     const supabase = buildLockMock({
+      orderSelect: { data: { status_code: "robocze" }, error: null },
       rpcResult: {
         data: {
           status: "OK",
@@ -80,6 +81,7 @@ describe("lockOrder", () => {
 
   it('RPC "NOT_FOUND" → null', async () => {
     const supabase = buildLockMock({
+      orderSelect: { data: { status_code: "robocze" }, error: null },
       rpcResult: { data: { status: "NOT_FOUND" }, error: null },
     });
 
@@ -89,6 +91,7 @@ describe("lockOrder", () => {
 
   it('RPC "CONFLICT" → throws "LOCK_CONFLICT" z lockedByUserName', async () => {
     const supabase = buildLockMock({
+      orderSelect: { data: { status_code: "robocze" }, error: null },
       rpcResult: {
         data: {
           status: "CONFLICT",
@@ -109,6 +112,7 @@ describe("lockOrder", () => {
 
   it("RPC null → throws", async () => {
     const supabase = buildLockMock({
+      orderSelect: { data: { status_code: "robocze" }, error: null },
       rpcResult: { data: null, error: null },
     });
 
@@ -119,6 +123,7 @@ describe("lockOrder", () => {
 
   it("RPC error → throws", async () => {
     const supabase = buildLockMock({
+      orderSelect: { data: { status_code: "robocze" }, error: null },
       rpcResult: { data: null, error: { message: "RPC error" } },
     });
 
@@ -127,8 +132,38 @@ describe("lockOrder", () => {
     });
   });
 
+  it('status "anulowane" → throws "LOCK_TERMINAL_STATUS"', async () => {
+    const supabase = buildLockMock({
+      orderSelect: { data: { status_code: "anulowane" }, error: null },
+    });
+
+    await expect(lockOrder(supabase, VALID_USER_ID, VALID_ORDER_ID)).rejects.toThrow(
+      "LOCK_TERMINAL_STATUS"
+    );
+  });
+
+  it('status "zrealizowane" → throws "LOCK_TERMINAL_STATUS"', async () => {
+    const supabase = buildLockMock({
+      orderSelect: { data: { status_code: "zrealizowane" }, error: null },
+    });
+
+    await expect(lockOrder(supabase, VALID_USER_ID, VALID_ORDER_ID)).rejects.toThrow(
+      "LOCK_TERMINAL_STATUS"
+    );
+  });
+
+  it("order not found (status select returns null) → null", async () => {
+    const supabase = buildLockMock({
+      orderSelect: { data: null, error: null },
+    });
+
+    const result = await lockOrder(supabase, VALID_USER_ID, VALID_ORDER_ID);
+    expect(result).toBeNull();
+  });
+
   it("sprawdź p_lock_expiry_minutes = 15", async () => {
     const supabase = buildLockMock({
+      orderSelect: { data: { status_code: "robocze" }, error: null },
       rpcResult: { data: { status: "OK" }, error: null },
     });
 

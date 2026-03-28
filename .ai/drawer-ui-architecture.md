@@ -13,7 +13,7 @@ Drawer edycji zlecenia to główny interfejs do tworzenia i modyfikacji szczegó
 
 ### Kluczowe cechy architektoniczne
 - **Tryb edycji vs readonly**: Automatyczne przełączanie w zależności od blokady i roli użytkownika
-- **7 sekcji tematycznych**: Logiczne grupowanie pól formularza
+- **7 sekcji tematycznych (0–6)**: Logiczne grupowanie pól formularza
 - **Sticky header i footer**: Nawigacja i akcje zawsze widoczne
 - **Dynamiczne zależności**: Auto-aktualizacja pól zależnych (waluta, oddział, sposób załadunku)
 - **Graceful degradation**: Obsługa stanów błędów i konfliktów blokad
@@ -86,13 +86,13 @@ OrderDrawer (główny kontener)
 │
 ├─ DrawerContent (scrollable)
 │  │
-│  ├─ Section1_Header
+│  ├─ Section0_Header
 │  │  ├─ OrderNumberField (readonly)
 │  │  ├─ CreatedDateField (readonly)
 │  │  ├─ CreatedByField (readonly)
 │  │  └─ HistoryLinkField
 │  │
-│  ├─ Section2_Route
+│  ├─ Section1_Route
 │  │  ├─ TransportTypeSelect (wymagane)
 │  │  ├─ StopsList
 │  │  │  └─ StopItem[] (LOADING / UNLOADING)
@@ -107,7 +107,7 @@ OrderDrawer (główny kontener)
 │  │  ├─ AddLoadingStopButton (max 8)
 │  │  └─ AddUnloadingStopButton (max 3)
 │  │
-│  ├─ Section3_Cargo
+│  ├─ Section2_Cargo
 │  │  ├─ CargoItemsList
 │  │  │  └─ CargoItem[]
 │  │  │     ├─ ProductAutocomplete (wymagane)
@@ -117,23 +117,23 @@ OrderDrawer (główny kontener)
 │  │  │     └─ DeleteButton
 │  │  └─ AddCargoItemButton
 │  │
-│  ├─ Section4_Carrier
+│  ├─ Section3_Carrier
 │  │  ├─ CarrierAutocomplete (wymagane)
 │  │  ├─ TaxIdField (readonly, auto z firmy)
 │  │  ├─ VehicleTypeSelect (wymagane)
 │  │  ├─ VehicleVolumeCombobox (wymagane, 10-100 m³)
 │  │  └─ RequiredDocumentsSelect (2 opcje)
 │  │
-│  ├─ Section5_Finance
+│  ├─ Section4_Finance
 │  │  ├─ PriceInput (wymagane do wysyłki)
 │  │  ├─ CurrencySelect (wymagane, auto z typu transportu)
 │  │  ├─ PaymentTermInput (domyślnie 21 dni)
 │  │  └─ PaymentMethodSelect (domyślnie "Przelew")
 │  │
-│  ├─ Section6_Notes
-│  │  └─ GeneralNotesTextarea (max 1000 znaków)
+│  ├─ Section5_Notes
+│  │  └─ GeneralNotesTextarea (max 500 znaków)
 │  │
-│  └─ Section7_Status
+│  └─ Section6_Status
 │     ├─ CurrentStatusBadge (readonly)
 │     ├─ NewStatusSelect (tylko dozwolone przejścia)
 │     ├─ ChangeStatusButton (zmienia przy "Zapisz")
@@ -151,7 +151,7 @@ OrderDrawer (główny kontener)
 
 ## 4. Szczegółowa specyfikacja sekcji formularza
 
-### Sekcja 1: Nagłówek
+### Sekcja 0: Nagłówek
 
 **Cel**: Wyświetlenie metadanych zlecenia (kto, kiedy, identyfikator)
 
@@ -166,7 +166,7 @@ OrderDrawer (główny kontener)
 
 ---
 
-### Sekcja 2: Trasa
+### Sekcja 1: Trasa
 
 **Cel**: Definicja rodzaju transportu i pełnej trasy (załadunki + rozładunki)
 
@@ -208,7 +208,7 @@ OrderDrawer (główny kontener)
 | Oddział firmy | Select + ikona | - | - | **Zależne od Firmy**: `GET /api/v1/locations?companyId={id}`. **Przy wyborze: auto-wypełnienie Adresu i NIP**. Ikona Material: `location_on` |
 | Adres | Text (readonly, pod grid) | `stop.addressSnapshot` | - | Auto z wybranego oddziału. Format: "ulica, kod, miasto, kraj". Ikona Material: `home`, styl: `text-xs text-slate-500 dark:text-slate-400` |
 | Data załadunku/rozładunku | Input text + ikona | `stop.dateLocal` | Format dd.mm | Ręczny wpis format dd.mm (frontend konwertuje na YYYY-MM-DD). Ikona Material: `calendar_today` jako overlay (absolute right) |
-| Godzina | Input time | `stop.timeLocal` | Format HH:MM | HTML5 time picker. Styl: `flex-1 min-w-0 text-sm` |
+| Godzina | Combobox (Popover + Command) | `stop.timeLocal` | Format HH:MM | Lista slotów co 30 min (04:00–22:00) z możliwością wpisania niestandardowego czasu. Auto-scroll do wybranej/najbliższej wartości. Przycisk X do wyczyszczenia. Wzorzec identyczny z `AutocompleteField`. Implementacja: prywatny `TimeCombobox` w `RoutePointCard.tsx` |
 | Uwagi do punktu | Input text + ikona (pod grid) | `stop.notes` | Max 500 znaków | Opcjonalne. Ikona Material: `comment`, styl: `text-xs` |
 
 **Przyciski akcji**:
@@ -227,7 +227,7 @@ OrderDrawer (główny kontener)
 
 ---
 
-### Sekcja 3: Towar
+### Sekcja 2: Towar
 
 **Cel**: Lista pozycji towarowych (produkty, ilości, sposób załadunku)
 
@@ -269,7 +269,7 @@ OrderDrawer (główny kontener)
 
 ---
 
-### Sekcja 4: Firma transportowa
+### Sekcja 3: Firma transportowa
 
 **Cel**: Wybór przewoźnika i specyfikacja pojazdu
 
@@ -303,36 +303,36 @@ OrderDrawer (główny kontener)
 
 ---
 
-### Sekcja 5: Finanse
+### Sekcja 4: Finanse
 
 **Cel**: Warunki finansowe transportu
 
 | Pole | Typ | Źródło | Walidacja | Logika |
 |------|-----|--------|-----------|--------|
 | Stawka* | Number | `order.priceAmount` | Wymagane do wysyłki, ≥0 | Kwota za cały transport. Przy nowym zleceniu: puste |
-| Waluta* | Select | `order.currencyCode` | Wymagane | PLN, EUR, USD. **Auto-ustawiana z Rodzaju transportu** (Sekcja 2): kraj→PLN, eksport/import→EUR lub USD. **Auto-aktualizacja przy każdej zmianie rodzaju transportu**, ale użytkownik może ręcznie wybrać inną |
+| Waluta* | Select | `order.currencyCode` | Wymagane | PLN, EUR, USD. **Auto-ustawiana z Rodzaju transportu** (Sekcja 1): kraj→PLN, eksport/import→EUR lub USD. **Auto-aktualizacja przy każdej zmianie rodzaju transportu**, ale użytkownik może ręcznie wybrać inną |
 | Termin płatności | Number | `order.paymentTermDays` | - | Dni. Domyślnie: 21 |
 | Forma płatności | Select | `order.paymentMethod` | - | Domyślnie: "Przelew" |
 
-**Zależność z Sekcją 2**:
+**Zależność z Sekcją 1**:
 - Zmiana `Rodzaj transportu` → auto-aktualizacja `Waluta` (ale nie nadpisuje ręcznej zmiany użytkownika w tej samej sesji edycji)
 - Logika: przy zmianie `transportTypeCode` sprawdzamy, czy użytkownik ręcznie zmienił walutę; jeśli nie → aktualizujemy
 
 ---
 
-### Sekcja 6: Uwagi
+### Sekcja 5: Uwagi
 
 **Cel**: Uwagi ogólne do zlecenia
 
 | Pole | Typ | Źródło | Walidacja | Logika |
 |------|-----|--------|-----------|--------|
-| Uwagi ogólne do zlecenia | Textarea | `order.generalNotes` | Max 1000 znaków | Wielowierszowe pole tekstowe |
+| Uwagi ogólne do zlecenia | Textarea | `order.generalNotes` | Max 500 znaków | Wielowierszowe pole tekstowe |
 
 **Układ**: Jedno pole na całą szerokość drawera
 
 ---
 
-### Sekcja 7: Sekcja zmian (Status)
+### Sekcja 6: Sekcja zmian (Status)
 
 **Cel**: Zarządzanie statusem zlecenia i powodem reklamacji
 
@@ -388,12 +388,12 @@ OrderDrawer (główny kontener)
 | **Historia zmian** | Link (opcjonalnie) | - | Otwiera panel historii. Alternatywnie dostępne z nagłówka | Zawsze (readonly: tylko odczyt) |
 
 **Zachowanie "Zapisz"**:
-1. Wywołanie `PUT /orders/{id}` z całym formularzem (wszystkie 7 sekcji)
+1. Wywołanie `PUT /orders/{id}` z całym formularzem (wszystkie sekcje 0–6)
 2. Payload zawiera:
    - Pola nagłówkowe (transportTypeCode, currencyCode, priceAmount, etc.)
    - `stops[]` z flagą `_deleted` dla usuniętych punktów
    - `items[]` z flagą `_deleted` dla usuniętych pozycji
-   - Ewentualnie zmiana statusu (jeśli użytkownik użył Sekcji 7)
+   - Ewentualnie zmiana statusu (jeśli użytkownik użył Sekcji 6)
 3. Po sukcesie (200):
    - Odświeżenie danych drawera (`GET /orders/{id}` lub wykorzystanie odpowiedzi)
    - Toast: "Zmiany zapisane"
@@ -427,7 +427,7 @@ OrderDrawer (główny kontener)
 **Sprawdzane**:
 - Formaty dat (YYYY-MM-DD), godzin (HH:MM:SS), liczb
 - Limity punktów trasy (8 załadunków, 3 rozładunki)
-- Limity znaków (uwagi max 1000)
+- Limity znaków (uwagi max 500)
 - `quantityTons ≥ 0`
 
 **Prezentacja błędów**:
@@ -498,10 +498,10 @@ OrderDrawer (główny kontener)
 
 ## 7. Dynamiczne zależności między sekcjami
 
-### 7.1 Rodzaj transportu → Waluta (Sekcja 2 → Sekcja 5)
+### 7.1 Rodzaj transportu → Waluta (Sekcja 1 → Sekcja 4)
 
 **Logika**:
-1. Użytkownik zmienia `Rodzaj transportu` w Sekcji 2
+1. Użytkownik zmienia `Rodzaj transportu` w Sekcji 1
 2. Frontend sprawdza, czy użytkownik ręcznie zmienił walutę w **bieżącej sesji edycji**
 3. Jeśli NIE (waluta nie była ręcznie modyfikowana):
    - Auto-aktualizacja `Waluta`:
@@ -517,7 +517,7 @@ OrderDrawer (główny kontener)
 
 ---
 
-### 7.2 Firma → Oddziały → Adres + NIP (Sekcja 2)
+### 7.2 Firma → Oddziały → Adres + NIP (Sekcja 1)
 
 **Przepływ dla punktu trasy**:
 
@@ -546,7 +546,7 @@ Lista oddziałów ładuje się do pola "Oddział firmy" (select)
 
 ---
 
-### 7.3 Towar → Domyślny sposób załadunku (Sekcja 3)
+### 7.3 Towar → Domyślny sposób załadunku (Sekcja 2)
 
 **Przepływ**:
 
@@ -566,7 +566,7 @@ Auto-ustawienie pola "Sposób załadunku"
 
 ---
 
-### 7.4 Status → Powód reklamacji (Sekcja 7)
+### 7.4 Status → Powód reklamacji (Sekcja 6)
 
 **Logika widoczności**:
 - Pole "Powód reklamacji" widoczne **tylko gdy**:
@@ -744,7 +744,7 @@ interface OrderDrawerState {
 3. Serwer zwraca `{ id, orderNo, statusCode: "robocze" }`
 4. Drawer otwiera się z nowym ID (bez lock, bo nowe)
 5. Status początkowy: **robocze**
-6. Sekcja 7 widoczna od razu
+6. Sekcja 6 widoczna od razu
 
 **Alternatywny przepływ** (bez POST, tylko local state):
 - Drawer otwiera się w trybie "create" bez ID
@@ -870,10 +870,10 @@ Analogicznie dla rozładunków (limit: 3)
 ### 15.1 Unit tests (komponenty)
 
 - **DrawerHeader**: Renderowanie numeru zlecenia, zamknięcie
-- **Section2_Route**: Dodawanie/usuwanie punktów, zmiana kolejności, limity (8/3)
-- **Section3_Cargo**: Dodawanie/usuwanie pozycji, auto-ustawienie sposobu załadunku
-- **Section5_Finance**: Auto-aktualizacja waluty przy zmianie rodzaju transportu
-- **Section7_Status**: Widoczność powodu reklamacji, dozwolone przejścia
+- **Section1_Route**: Dodawanie/usuwanie punktów, zmiana kolejności, limity (8/3)
+- **Section2_Cargo**: Dodawanie/usuwanie pozycji, auto-ustawienie sposobu załadunku
+- **Section4_Finance**: Auto-aktualizacja waluty przy zmianie rodzaju transportu
+- **Section6_Status**: Widoczność powodu reklamacji, dozwolone przejścia
 
 ### 15.2 Integration tests
 
@@ -896,17 +896,17 @@ Analogicznie dla rozładunków (limit: 3)
 ### Priorytet 1 (MVP)
 1. **OrderDrawer** (główny kontener + routing modów)
 2. **DrawerHeader** + **DrawerFooter** (sticky)
-3. **Section2_Route** (trasa + punkty + limity + zależności firma→oddział→adres)
-4. **Section3_Cargo** (pozycje towarowe + auto sposób załadunku)
-5. **Section4_Carrier** (przewoźnik + vehicle variant)
-6. **Section5_Finance** (finanse + auto waluta)
-7. **Section7_Status** (zmiana statusu + powód reklamacji)
+3. **Section1_Route** (trasa + punkty + limity + zależności firma→oddział→adres)
+4. **Section2_Cargo** (pozycje towarowe + auto sposób załadunku)
+5. **Section3_Carrier** (przewoźnik + vehicle variant)
+6. **Section4_Finance** (finanse + auto waluta)
+7. **Section6_Status** (zmiana statusu + powód reklamacji)
 8. **UnsavedChangesModal** (3 opcje przy zamknięciu)
 9. **ValidationAlert** (sticky alert biznesowy na górze)
 
 ### Priorytet 2 (post-MVP)
-1. **Section1_Header** (metadane readonly)
-2. **Section6_Notes** (uwagi ogólne)
+1. **Section0_Header** (metadane readonly)
+2. **Section5_Notes** (uwagi ogólne)
 3. **HistoryPanel** (historia zmian obok drawera)
 4. **DragAndDrop** dla punktów trasy (zmiana kolejności)
 5. **Keyboard shortcuts** (Ctrl+S, Escape, Ctrl+Enter)
@@ -919,7 +919,7 @@ Analogicznie dla rozładunków (limit: 3)
 
 | Problem z PRD | Rozwiązanie w Drawer UI |
 |---------------|-------------------------|
-| 2.1: Arkusz z ~120 kolumnami, trudna czytelnośćą | **7 sekcji tematycznych** w logicznej kolejności; formularz przewijalny, sticky header/footer |
+| 2.1: Arkusz z ~120 kolumnami, trudna czytelnośćą | **7 sekcji tematycznych (0–6)** w logicznej kolejności; formularz przewijalny, sticky header/footer |
 | 2.2: Konflikty przy równoczesnej edycji | **Mechanizm blokad** (lock/unlock); tryb readonly przy konflikcie (409) |
 | 2.3: Nieaktualne dane słownikowe | **Autocomplete z live data** (GET /companies, /products, /locations) |
 | 2.4: Trudne filtrowanie i analiza | (N/A dla drawera; rozwiązane w głównym widoku listy) |
@@ -929,10 +929,10 @@ Analogicznie dla rozładunków (limit: 3)
 
 | Wymaganie | Sekcja UI | Implementacja |
 |-----------|-----------|---------------|
-| 3.1.5: Formularz zlecenia (nagłówek, strony, ładunek, trasa, finanse, uwagi) | Wszystkie 7 sekcji | Pełne odwzorowanie struktury PRD |
+| 3.1.5: Formularz zlecenia (nagłówek, strony, ładunek, trasa, finanse, uwagi) | Wszystkie sekcje 0–6 | Pełne odwzorowanie struktury PRD |
 | 3.1.6: Blokada współbieżna | Lock flow (sekcja 2.1) | POST /lock przy otwarciu, POST /unlock przy zamknięciu |
-| 3.1.7: Statusy i cykl życia | Sekcja 7 | Dozwolone przejścia, auto-zmiana przy wysyłce |
-| 3.1.9: Integracja z ERP (słowniki) | Autocomplete w Sekcjach 2, 3, 4 | GET /companies, /products, /locations |
+| 3.1.7: Statusy i cykl życia | Sekcja 6 | Dozwolone przejścia, auto-zmiana przy wysyłce |
+| 3.1.9: Integracja z ERP (słowniki) | Autocomplete w Sekcjach 1, 2, 3 | GET /companies, /products, /locations |
 | 3.1.10: Generowanie PDF | Przycisk w stopce | POST /orders/{id}/pdf |
 | 3.1.11: Wysyłka maila | Przycisk w stopce | POST /orders/{id}/prepare-email + walidacja biznesowa |
 | 3.1.13: Walidacja danych | Sekcje 6.1, 6.2 | Techniczna (inline), biznesowa (alert) |
@@ -942,12 +942,12 @@ Analogicznie dla rozładunków (limit: 3)
 
 | US ID | Tytuł | Realizacja w UI |
 |-------|-------|-----------------|
-| US-021 | Edycja zlecenia w widoku szczegółowym | **Cały drawer** = widok szczegółowy; 7 sekcji tematycznych |
+| US-021 | Edycja zlecenia w widoku szczegółowym | **Cały drawer** = widok szczegółowy; sekcje 0–6 |
 | US-022 | Blokada edycji przez wielu użytkowników | **Lock flow** (sekcja 2.1); tryb readonly przy konflikcie |
-| US-023 | Zmiana statusu | **Sekcja 7** + przycisk "Zapisz"; dozwolone przejścia |
+| US-023 | Zmiana statusu | **Sekcja 6** + przycisk "Zapisz"; dozwolone przejścia |
 | US-024 | Status korekta i korekta wysłane | Auto-zmiana przy PUT (wykrycie zmian) + przy prepare-email |
-| US-030-032 | Trasa: min 1L+1U, max 8L+3U, zmiana kolejności | **Sekcja 2**: limity, przyciski dodaj/usuń, drag-and-drop |
-| US-040-042 | Autocomplete firm, lokalizacji, towarów | **Sekcje 2, 3, 4**: autocomplete z GET /api |
+| US-030-032 | Trasa: min 1L+1U, max 8L+3U, zmiana kolejności | **Sekcja 1**: limity, przyciski dodaj/usuń, drag-and-drop |
+| US-040-042 | Autocomplete firm, lokalizacji, towarów | **Sekcje 1, 2, 3**: autocomplete z GET /api |
 | US-050 | Generowanie PDF | **Przycisk "Generuj PDF"** w stopce |
 | US-051 | Otwarcie Outlooka z PDF | **Przycisk "Wyślij maila"** w stopce; walidacja biznesowa (422) |
 | US-080-081 | Ręczny zapis, ostrzeżenie przed utratą | **Przycisk "Zapisz"**; modal przy zamknięciu z niezapisanymi zmianami |
@@ -963,10 +963,10 @@ Analogicznie dla rozładunków (limit: 3)
 4. `UnsavedChangesModal` (3 opcje)
 
 ### Faza 2: Sekcje krytyczne (tydzień 2)
-1. **Sekcja 2 (Trasa)**: Punkty, autocomplete firm, zależności oddział→adres, limity
-2. **Sekcja 3 (Towar)**: Pozycje, autocomplete produktów, auto sposób załadunku
-3. **Sekcja 4 (Przewoźnik)**: Autocomplete firm, vehicle variant
-4. **Sekcja 5 (Finanse)**: Auto waluta z rodzaju transportu
+1. **Sekcja 1 (Trasa)**: Punkty, autocomplete firm, zależności oddział→adres, limity
+2. **Sekcja 2 (Towar)**: Pozycje, autocomplete produktów, auto sposób załadunku
+3. **Sekcja 3 (Przewoźnik)**: Autocomplete firm, vehicle variant
+4. **Sekcja 4 (Finanse)**: Auto waluta z rodzaju transportu
 
 ### Faza 3: Walidacja i akcje (tydzień 3)
 1. Walidacja techniczna (inline errors przy zapisie)
@@ -975,9 +975,9 @@ Analogicznie dla rozładunków (limit: 3)
 4. **Przycisk "Wyślij maila"**: POST /prepare-email, obsługa 422, otwarcie Outlooka
 
 ### Faza 4: Pozostałe sekcje i polish (tydzień 4)
-1. **Sekcja 1 (Nagłówek)**: Metadane readonly
-2. **Sekcja 6 (Uwagi)**: Textarea
-3. **Sekcja 7 (Status)**: Select, powód reklamacji
+1. **Sekcja 0 (Nagłówek)**: Metadane readonly
+2. **Sekcja 5 (Uwagi)**: Textarea
+3. **Sekcja 6 (Status)**: Select, powód reklamacji
 4. **Historia zmian**: Panel obok drawera
 5. Accessibility (keyboard nav, screen readers)
 6. Responsywność (mobile, tablet)
@@ -1004,14 +1004,14 @@ Analogicznie dla rozładunków (limit: 3)
 
 | Decyzja | Uzasadnienie |
 |---------|--------------|
-| **7 sekcji tematycznych** | Zgodność z PRD 3.1.5a; logiczne grupowanie pól |
+| **7 sekcji tematycznych (0–6)** | Zgodność z PRD 3.1.5a; logiczne grupowanie pól |
 | **Sticky header + footer** | Nawigacja i akcje zawsze widoczne przy przewijaniu długiego formularza |
 | **Lock/unlock przy otwarciu/zamknięciu** | Bezpieczeństwo współbieżności; proste API (2 endpointy) |
 | **Tryb readonly przy konflikcie** | Alternatywa: odrzucenie otwarcia; readonly pozwala na podgląd |
 | **Modal przy niezapisanych zmianach** | Ochrona przed utratą danych; standardowy pattern UX |
 | **Walidacja dwupoziomowa** (techniczna + biznesowa) | Elastyczność draftu; blokada wysyłki dopiero przy kompletnych danych |
 | **Auto-aktualizacja zależnych pól** (waluta, oddział, sposób załadunku) | Redukcja błędów; zgodność z PRD (domyślne wartości) |
-| **Zmiana statusu w Sekcji 7, zapis przy "Zapisz"** | Spójność: wszystkie zmiany (dane + status) zapisywane razem |
+| **Zmiana statusu w Sekcji 6, zapis przy "Zapisz"** | Spójność: wszystkie zmiany (dane + status) zapisywane razem |
 | **Powód reklamacji wymagany** | Egzekwowanie reguły biznesowej z PRD 3.1.7 |
 | **Autocomplete z live data** | Integracja z ERP (PRD 3.1.9); zawsze aktualne dane |
 | **Optimistic updates dla UI** (kolejność punktów, dodawanie pozycji) | Responsywność UI; rzeczywisty zapis przy "Zapisz" |

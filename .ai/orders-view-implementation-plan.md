@@ -12,7 +12,7 @@ Widok zleceń transportowych to główny ekran aplikacji, dostępny po zalogowan
 
 Widok realizuje historyjki: US-001, US-010–US-013, US-020–US-028, US-030–US-032, US-040–US-042, US-050–US-051, US-070–US-071, US-080–US-081.
 
-Stos: Astro 5 (SSR) + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui (styl New York, Lucide icons). Backend API jest już zaimplementowany — endpointy w `src/pages/api/v1/`, serwisy w `src/lib/services/`, typy w `src/types.ts`.
+Stos: Astro 5 (SSR) + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui (styl New York, Lucide icons). Backend API jest już zaimplementowany — endpointy w `src/pages/api/v1/`, serwisy w `src/lib/services/`, typy w `src/types/` (re-export hub `src/types/index.ts`).
 
 ---
 
@@ -31,14 +31,18 @@ Strona `/orders` renderuje pojedynczą wyspę React (`<OrdersApp client:load />`
 
 ```
 OrdersApp (React island — korzenny komponent)
-├── AuthProvider
-│   └── DictionaryProvider
-│       ├── AppHeader
-│       │   ├── OrderTabs          ← zakładki w nagłówku
-│       │   ├── SyncButton
-│       │   └── UserInfo           ← bez avatara: imię i nazwisko, rola (tekst), Wyloguj
-│       └── OrdersPage
-│           ├── (OrderTabs przeniesione do AppHeader)
+├── AppProviders (ThemeProvider → ErrorBoundary → AuthProvider → DictionaryProvider → TooltipProvider)
+│   └── MicrosoftAuthProvider (opcjonalny — gdy skonfigurowane PUBLIC_MICROSOFT_CLIENT_ID/TENANT_ID)
+│       └── SidebarProvider
+│                       ├── AppSidebar
+│                       │   ├── SidebarHeader (logo Truck + tytuł)
+│                       │   ├── SidebarContent (nawigacja: Aktualne, Zrealizowane, Anulowane)
+│                       │   └── SidebarFooter (SyncButton, ThemeToggle, UserInfo — bez avatara)
+│                       └── SidebarInset
+│                           ├── header (SidebarTrigger + tytuł widoku)
+│                           ├── OrdersPage
+│                           └── Toaster
+│       OrdersPage
 │           ├── FilterBar
 │           │   ├── TransportTypeFilter
 │           │   ├── AutocompleteFilter (×4: przewoźnik, towar, załadunek, rozładunek)
@@ -96,43 +100,31 @@ OrdersApp (React island — korzenny komponent)
 ### 4.1 OrdersApp
 
 - **Opis**: Komponent korzenny montowany jako wyspa React w stronie Astro `/orders`. Opakowuje całą aplikację w providery (Auth, Dictionary). Przekazuje token Supabase z cookie/localStorage do kontekstu.
-- **Główne elementy**: `<AuthProvider>` → `<DictionaryProvider>` → `<AppHeader />` + `<OrdersPage />`
+- **Główne elementy**: `<ThemeProvider>` → `<ErrorBoundary>` → `<AuthProvider>` → `<DictionaryProvider>` → `<TooltipProvider>` → `<SidebarProvider>` → `<AppSidebar />` + `<SidebarInset>` (header + `<OrdersPage />` + `<Toaster />`)
 - **Obsługiwane interakcje**: Brak bezpośrednich — deleguje do dzieci.
 - **Walidacja**: Brak.
 - **Typy**: `AuthMeDto`, `DictionaryState`
 - **Propsy**: `initialToken?: string` (opcjonalnie token JWT z Astro SSR)
 
-### 4.2 AppHeader
+### 4.2 AppSidebar
 
-- **Opis**: Sticky nagłówek aplikacji (`h-14`) z logo, tytułem (UPPERCASE), zakładkami widoków, przyciskiem synchronizacji i blokiem użytkownika. Zgodnie z PRD 3.1.2a i ui-plan: **BEZ avatara i zdjęcia użytkownika**.
-- **Główne elementy**: `<header class="bg-white dark:bg-slate-900 border-b border-slate-200 dark:border-slate-700 h-14 sticky top-0 z-50 flex items-center justify-between px-4">`, `<OrderTabs />` (w środku nagłówka), `<SyncButton />`, `<UserInfo />`
-- **Styl nagłówka**:
-  - **Logo**: `w-8 h-8 bg-primary rounded` z białą ikoną (np. Lucide `Truck` lub Material `local_shipping`)
-  - **Tytuł**: `font-bold tracking-tight text-slate-800 dark:text-slate-100 uppercase text-sm` (np. „ZLECENIA TRANSPORTOWE")
-  - **Zakładki** (w środku nagłówka): `bg-slate-100 dark:bg-slate-800 rounded-lg p-1`
-    - Aktywna: `bg-white dark:bg-slate-900 shadow-sm text-primary font-semibold`
-    - Nieaktywna: `text-slate-500 dark:text-slate-400 hover:text-slate-700 dark:hover:text-slate-300`
-  - **UserInfo (prawa strona)**: **BEZ avatara**. Layout:
-    ```html
-    <div class="flex items-center gap-3">
-      <div class="text-right">
-        <div class="text-sm font-semibold text-slate-800 dark:text-slate-100">{fullName}</div>
-        <div class="text-xs text-slate-500 dark:text-slate-400">{role}</div>
-      </div>
-      <button class="text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">
-        Wyloguj
-      </button>
-    </div>
-    ```
-    - **Wiersz 1**: imię i nazwisko (`fullName`)
-    - **Wiersz 2**: rola zwykłym tekstem — „Admin", „Planner" lub „Read only"
-    - **Przycisk Wyloguj**: po prawej od bloku imienia i roli
+- **Opis**: Lewy sidebar nawigacyjny (shadcn/ui Sidebar). Zastępuje dawny AppHeader. Collapsible (Cmd+B/Ctrl+B), na mobile jako Sheet overlay. Zgodnie z PRD 3.1.2a i ui-plan: **BEZ avatara i zdjęcia użytkownika**.
+- **Plik**: `src/components/orders/AppSidebar.tsx`
+- **Główne elementy**: `<Sidebar>` → `<SidebarHeader>` (logo Truck + tytuł) + `<SidebarContent>` (3 pozycje nawigacji z ikonami Lucide) + `<SidebarFooter>` (SyncButton + Separator + ThemeToggle + UserInfo)
+- **Styl**:
+  - **Logo**: `w-8 h-8 bg-primary rounded-lg shadow-md` z ikoną `text-primary-foreground`
+  - **Tytuł**: `font-bold tracking-tight text-sm uppercase`
+  - **Nawigacja**: `SidebarMenuButton` z `isActive` prop, ikony: ClipboardList (Aktualne), CheckCircle2 (Zrealizowane), XCircle (Anulowane)
+  - **UserInfo (stopka)**: **BEZ avatara**. Wiersz 1: imię i nazwisko, Wiersz 2: rola zwykłym tekstem, przycisk „Wyloguj".
+- **Inline header** (w SidebarInset): `SidebarTrigger` (hamburger) + `Separator vertical` + `<h1>` z tytułem aktywnego widoku
 - **Obsługiwane interakcje**:
-  - Klik „Aktualizuj dane" → `POST /api/v1/dictionary-sync/run`, polling `GET /dictionary-sync/jobs/{jobId}`
+  - Klik na pozycję nawigacji → zmiana `activeView` → nowe zapytanie GET `/orders`
+  - Klik „Aktualizuj dane" → `POST /api/v1/dictionary-sync/run`
   - Klik „Wyloguj" → Supabase `signOut()`, redirect na `/`
+  - Cmd+B / Ctrl+B → toggle sidebar
 - **Walidacja**: Brak.
-- **Typy**: `AuthMeDto`, `DictionarySyncResponseDto`, `DictionarySyncJobDto`
-- **Propsy**: Brak (korzysta z `useAuth()` i `useDictionarySync()`)
+- **Typy**: `ViewGroup`, `AuthMeDto`
+- **Propsy**: `activeView: ViewGroup`, `onViewChange: (view: ViewGroup) => void`
 
 ### 4.3 SyncButton
 
@@ -146,20 +138,9 @@ OrdersApp (React island — korzenny komponent)
 - **Typy**: `DictionarySyncCommand`, `DictionarySyncResponseDto`, `DictionarySyncJobDto`
 - **Propsy**: Brak (korzysta z hooków)
 
-### 4.4 OrderTabs
+### 4.4 OrderTabs (ZASTĄPIONY przez AppSidebar)
 
-- **Opis**: Trzy zakładki przełączające widok listy: Aktualne, Zrealizowane, Anulowane. Umieszczone wewnątrz `AppHeader` (nie nad tabelą).
-- **Główne elementy**: `<nav class="flex space-x-1 p-1 bg-slate-100 dark:bg-slate-800 rounded-lg">` z przyciskami. Aktywna: `bg-white shadow-sm text-primary font-semibold`, nieaktywna: `text-slate-500 hover:text-slate-700`.
-- **Obsługiwane interakcje**: Klik na zakładkę → zmiana `view` w stanie filtrów → nowe zapytanie GET `/orders`.
-- **Walidacja**: Brak.
-- **Typy**: `ViewGroup`
-- **Propsy**:
-  ```ts
-  interface OrderTabsProps {
-    activeView: ViewGroup;
-    onViewChange: (view: ViewGroup) => void;
-  }
-  ```
+- **Status**: Zastąpiony. Nawigacja widoków przeniesiona do AppSidebar jako SidebarMenu. Plik `OrderTabs.tsx` jest nadal używany jako komponent zakładek w headerze OrdersApp (inline tabs w headerze, obok SidebarTrigger). Plik `AppHeader.tsx` został usunięty (dead code).
 
 ### 4.5 FilterBar
 
@@ -295,8 +276,8 @@ OrdersApp (React island — korzenny komponent)
 - **Opis**: Pojedynczy wiersz tabeli zleceń. Kompaktowy (`py-1 px-4 text-[12px]`), tło wg statusu (jaśniejszy odcień koloru statusu). Zawartość kolumn i format zgodnie z **PRD 3.1.2a**.
 - **Główne elementy** (widok Kolumny): `<tr class={getRowBgClass(statusCode)} role="row">` z:
   - **(bez etykiety)** `<LockIndicator>` — ikona blokady tylko gdy zlecenie zablokowane przez innego użytkownika (`lockedByUserId !== null && lockedByUserId !== currentUserId`)
-  - **Nr zlecenia** — np. ZT-2026-0042; styl: `text-[12px] font-medium`
-  - **StatusBadge** — pełna nazwa statusu (`statusName` z API), np. "Wysłane", "Robocze"
+  - **Nr zlecenia** — np. ZT2026/0042; styl: `text-[12px] font-medium`
+  - **StatusBadge** — skrócona nazwa statusu z `STATUS_DISPLAY_NAMES[statusCode]`, np. "Wysłane", "Korekta_w"
   - **Tydzień** — numer tygodnia ISO 8601 (`order.weekNumber` z API), wyświetlany jako liczba całkowita (np. `7`); pole obliczane automatycznie przez backend, **nie edytowalne**; styl: `text-[12px]`
   - **Rodzaj transportu** — nazwa (np. "eksport drogowy"); styl: `text-[12px]`
   - **Miejsce załadunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`:
@@ -314,7 +295,7 @@ OrdersApp (React island — korzenny komponent)
       <span class="whitespace-nowrap">{dateLocal} {timeLocal}</span>
     </div>
     ```
-    **Format daty: DD.MM.YYYY HH:MM** (backend zwraca YYYY-MM-DD + HH:MM:SS, frontend formatuje przez `formatDate()` i `formatTime()`)
+    **Format daty: DD.MM HH:MM** (bez roku; backend zwraca YYYY-MM-DD + HH:MM:SS, frontend formatuje przez `formatDateShort()` i `formatTime()`)
   - **Miejsce rozładunku** — każdy punkt w osobnym bloku `<div class="space-y-2">`:
     - `<div class="space-y-1">`:
       - **Wiersz 1**: `<div class="flex items-center gap-1.5">` z okrągłym badge'm:
@@ -323,17 +304,17 @@ OrdersApp (React island — korzenny komponent)
         <span class="font-medium">{companyName}</span>
         ```
       - **Wiersz 2**: `<div class="text-[11px] text-slate-500 pl-6">{locationName}</div>` (np. "oddział Berlin")
-  - **Data rozładunku** — lista dat z godzinami dla każdego punktu rozładunku (analogicznie do daty załadunku); **format: DD.MM.YYYY HH:MM**
-  - **Towar** — pozycje numerowane z `order.items`:
+  - **Data rozładunku** — lista dat z godzinami dla każdego punktu rozładunku (analogicznie do daty załadunku); **format: DD.MM HH:MM** (bez roku)
+  - **Towar** — pozycje numerowane z `order.items`. Nazwa produktu **pogrubiona** (`font-medium`), tonaż i metoda ładowania w przygaszonym kolorze (`text-slate-400 dark:text-slate-500`), `loadingMethodCode` w lowercase. Wiersz "Razem" oddzielony `border-t`. Rozmiar: `text-xs` (12px, spójny z resztą tabeli):
     ```html
     <div class="space-y-0.5">
-      <div class="text-[11px] whitespace-nowrap">1. {productNameSnapshot} ({quantityTons}t, {loadingMethodCode})</div>
-      <div class="text-[11px] whitespace-nowrap">2. ...</div>
-      <div class="text-[10px] text-slate-500 font-semibold">Razem: {sumaTon}t</div>
+      <div class="text-xs whitespace-nowrap">1. <span class="font-medium">{productNameSnapshot}</span> <span class="text-slate-400">({quantityTons}t, {loadingMethodCode.toLowerCase()})</span></div>
+      <div class="text-xs whitespace-nowrap">2. ...</div>
+      <div class="text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-0.5 mt-0.5">Razem: {sumaTon}t</div>
     </div>
     ```
   - **Komentarz** — lista ponumerowana uwag z `order.items[].notes` (powiązana z pozycjami towaru); jeśli brak — puste pole; styl: `text-[11px] text-slate-500`
-  - **Firma transportowa** — **tylko nazwa firmy** (`carrierName` z API), **bez** osoby kontaktowej i telefonu; styl: `text-[12px]`. Komórka może mieć kolorowe tło (inline style z `carrierCellColor`): `#48A111`, `#25671E` (biały tekst), `#FFEF5F`, `#EEA727`. Kolor ukryty gdy status = wysłane/korekta wysłane (zielone tło wiersza przejmuje).
+  - **Firma transportowa** — **tylko nazwa firmy** (`carrierName` z API), **bez** osoby kontaktowej i telefonu; styl: `text-[12px]`. Komórka może mieć kolorowe tło (inline style z `carrierCellColor`): `#34d399` (emerald-400), `#047857` (emerald-700, biały tekst), `#fde047` (amber-400), `#f97316` (orange-500). Kolor ukryty gdy status = wysłane/korekta wysłane (zielone tło wiersza przejmuje).
   - **Typ auta** — `vehicleVariantName` + objętość w nawiasie (`vehicleCapacityVolumeM3`), np. „firanka (90m³)"; styl: `text-[12px]`
   - **Stawka** — `priceAmount` + `currencyCode` (np. "1450 PLN"); styl: `text-[12px] font-medium`
   - **Data wysłania zlecenia** — dwulinijkowa:
@@ -350,8 +331,9 @@ OrdersApp (React island — korzenny komponent)
   - **Kolumna "Data załadunku"** — **tylko PIERWSZA** data załadunku, format DD.MM HH:MM. Jeśli brak daty — `—`.
   - **Kolumna "Data rozładunku"** — **tylko PIERWSZA** data rozładunku, format DD.MM HH:MM. Jeśli brak daty — `—`.
   - Pozostałe kolumny (Lock, Nr zlecenia, Status, Tydzień, Rodzaj transportu, Towar, Komentarz, Firma transportowa, Typ auta, Stawka, Data wysłania, Akcje) — identyczne jak w widoku Kolumny
-- **Mapowanie tła wiersza wg statusu** (statusCode/statusName z API; w UI pełna nazwa):
-  - Robocze: `bg-white`, Wysłane: `bg-blue-50/30`, Korekta: `bg-orange-50/30`, Korekta wysłane: `bg-teal-50/30`, Zrealizowane: `bg-green-50/30`, Anulowane: `bg-gray-50/50`, Reklamacja: `bg-red-50/30`
+- **Mapowanie tła wiersza wg statusu** (PRD §3.1.2a):
+  - Wysłane, Korekta wysłane: `bg-emerald-50/30` (zielone tło)
+  - Wszystkie pozostałe statusy (Robocze, Korekta, Zrealizowane, Anulowane, Reklamacja): `bg-white` (białe tło)
 - **Obsługiwane interakcje**:
   - Lewy klik → `onRowClick(orderId)`
   - Prawy klik → `onRowContextMenu(orderId, event)` (menu kontekstowe tylko prawy klik — PRD)
@@ -371,8 +353,8 @@ OrdersApp (React island — korzenny komponent)
 ### 4.10 StatusBadge
 
 - **Opis**: Badge statusu zlecenia z mapowaniem koloru. **BEZ animacji pulse**. Styl base: `inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full`.
-- **Główne elementy**: `<span>` z pełną nazwą statusu (`statusName`), bez ikony pulsowania, bez klasy `animate-pulse`.
-- **Mapowanie kolorów** (wyświetlana pełna nazwa z `statusName`):
+- **Główne elementy**: `<span>` z nazwą statusu z `STATUS_DISPLAY_NAMES[statusCode]` (skrócone nazwy per PRD §3.1.2a), bez ikony pulsowania, bez klasy `animate-pulse`.
+- **Mapowanie kolorów** (klucze = `statusCode` z API, np. `"robocze"`, `"wysłane"`, `"korekta wysłane"`):
   - **Robocze** → `bg-slate-100 text-slate-700` **(BEZ border)**
   - **Wysłane** → `bg-blue-50 text-blue-600 border border-blue-200`
   - **Korekta** → `bg-orange-50 text-orange-600 border border-orange-200`
@@ -380,27 +362,39 @@ OrdersApp (React island — korzenny komponent)
   - **Zrealizowane** → `bg-emerald-50 text-emerald-700 border border-emerald-200`
   - **Anulowane** → `bg-slate-100 text-slate-500 border border-slate-200` **(z borderem, inaczej niż Robocze)**
   - **Reklamacja** → `bg-red-50 text-red-600 border border-red-200`
+- **Mapowanie nazw wyświetlanych** (PRD §3.1.2a kolumna 3 — skrócone nazwy w UI):
+  ```ts
+  const STATUS_DISPLAY_NAMES: Record<string, string> = {
+    "robocze": "Robocze",
+    "wysłane": "Wysłane",
+    "korekta": "Korekta",
+    "korekta wysłane": "Korekta_w",
+    "zrealizowane": "Zrealizowane",
+    "reklamacja": "Reklamacja",
+    "anulowane": "Anulowane",
+  };
+  ```
 - **Implementacja**:
   ```tsx
-  function StatusBadge({ statusCode, statusName }: StatusBadgeProps) {
+  function StatusBadge({ statusCode }: StatusBadgeProps) {
     const baseClass = "inline-flex items-center gap-1.5 text-[11px] font-semibold px-2 py-0.5 rounded-full";
-    const colorMap = {
-      ROBOCZE: "bg-slate-100 text-slate-700",
-      WYSLANE: "bg-blue-50 text-blue-600 border border-blue-200",
-      KOREKTA: "bg-orange-50 text-orange-600 border border-orange-200",
-      KOREKTA_WYSLANE: "bg-amber-50 text-amber-700 border border-amber-200",
-      ZREALIZOWANE: "bg-emerald-50 text-emerald-700 border border-emerald-200",
-      ANULOWANE: "bg-slate-100 text-slate-500 border border-slate-200",
-      REKLAMACJA: "bg-red-50 text-red-600 border border-red-200",
+    const colorMap: Record<string, string> = {
+      "robocze": "bg-slate-100 text-slate-700",
+      "wysłane": "bg-blue-50 text-blue-600 border border-blue-200",
+      "korekta": "bg-orange-50 text-orange-600 border border-orange-200",
+      "korekta wysłane": "bg-amber-50 text-amber-700 border border-amber-200",
+      "zrealizowane": "bg-emerald-50 text-emerald-700 border border-emerald-200",
+      "anulowane": "bg-slate-100 text-slate-500 border border-slate-200",
+      "reklamacja": "bg-red-50 text-red-600 border border-red-200",
     };
-    return <span className={`${baseClass} ${colorMap[statusCode]}`}>{statusName}</span>;
+    const displayName = STATUS_DISPLAY_NAMES[statusCode] ?? statusCode;
+    return <span className={`${baseClass} ${colorMap[statusCode] ?? ""}`}>{displayName}</span>;
   }
   ```
 - **Propsy**:
   ```ts
   interface StatusBadgeProps {
-    statusCode: OrderStatusCode;  // do mapowania koloru
-    statusName: string;           // pełna nazwa do wyświetlenia (Robocze, Wysłane, …)
+    statusCode: OrderStatusCode;  // do mapowania koloru i nazwy wyświetlanej (via STATUS_DISPLAY_NAMES)
   }
   ```
 
@@ -409,7 +403,7 @@ OrdersApp (React island — korzenny komponent)
 - **Opis**: Menu kontekstowe wyświetlane po prawym kliku na wierszu. Opcje zależą od statusu zlecenia i roli użytkownika.
 - **Główne elementy**: shadcn `<ContextMenu>` (lub `<DropdownMenu>` pozycjonowane programatycznie) z `<ContextMenuItem>` i `<ContextMenuSub>` dla statusu.
 - **Obsługiwane interakcje**:
-  - „Wyślij maila" → `POST /orders/{id}/prepare-email`
+  - „Wyślij maila" → `POST /orders/{id}/prepare-email` → Graph API draft w Outlook Web (M365) / blob .eml (fallback)
   - „Zmień status" → podmenu z dozwolonymi przejściami (z `ALLOWED_MANUAL_STATUS_TRANSITIONS`)
   - „Kolor" → podmenu z 4 kolorami + „Usuń kolor" → `PATCH /orders/{id}/carrier-color`; trigger z kolorowymi kwadracikami + tekst "Kolor"
   - „Skopiuj zlecenie" → `POST /orders/{id}/duplicate`
@@ -481,9 +475,9 @@ OrdersApp (React island — korzenny komponent)
   - **Sekcja 0 – Nagłówek** *(tylko do odczytu)*: Nr zlecenia (readonly), data wystawienia (`createdAt` readonly), autor (readonly), aktualny badge statusu (readonly), link „Historia zmian".
   - **Sekcja 1 – Trasa**: Rodzaj transportu* (Select u góry sekcji — zmiana auto-aktualizuje dokumenty w Sekcji 3 i walutę w Sekcji 4); następnie punkty L1, U1, L2, U2 (i kolejne) — każdy punkt: data, godzina, firma (autocomplete), oddział (select zależny od firmy), adres (readonly), NIP (readonly), uwagi; uchwyt drag-and-drop; przycisk usuń; przyciski „+ Dodaj załadunek" i „+ Dodaj rozładunek" (limity 8/3); na końcu sekcji: pola Osoba kontaktowa (`senderContactName`, `senderContactPhone`, `senderContactEmail`).
   - **Sekcja 2 – Towar**: lista pozycji towarowych z polami: nazwa towaru* (autocomplete), waga t* (Input ≥ 0), sposób załadunku (Select PALETA/PALETA_BIGBAG/LUZEM/KOSZE — domyślnie z produktu, nadpisywalny), komentarz (Input); na dole przycisk „+ Dodaj towar"; podsumowanie „Razem: Xt". *(Pola globalne `totalLoadTons`, `totalLoadVolumeM3`, `specialRequirements` istnieją w DB/API, ale usunięte z UI drawera.)*
-  - **Sekcja 3 – Firma transportowa**: nazwa firmy (autocomplete carriers), NIP (Input `disabled` — auto), wariant pojazdu* (Select `vehicleVariantCode` — jeden select łączący typ + objętość, np. „firanka 90m³"), wymagane dokumenty (Select 2 opcje: „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR" — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny).
+  - **Sekcja 3 – Firma transportowa**: nazwa firmy (autocomplete carriers), NIP (Input `disabled` — auto), **Typ auta** (Select — z wariantów pojazdu, np. Firanka, Hakowiec, Wywrotka, Bus), **Objętość w m³** (Combobox — wartości: 10, 20, 30, …, 100 m³; wpis filtruje listę; na MVP dozwolone tylko wartości z listy co 10), wymagane dokumenty (Select 2 opcje: „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR" — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny).
   - **Sekcja 4 – Finanse**: stawka* (Input ≥ 0), waluta* (Select PLN/EUR/USD — auto-wybór wg Rodzaju transportu z Sekcji 1, nadpisywalny), termin płatności (Input dni, default 21), forma płatności (Select, default „Przelew").
-  - **Sekcja 5 – Uwagi**: `<Textarea generalNotes>` z licznikiem znaków (max 1000). Tylko to jedno pole.
+  - **Sekcja 5 – Uwagi**: `<Textarea generalNotes>` z licznikiem znaków (max 500). Tylko to jedno pole.
   - **Sekcja 6 – Zmiana statusu** (niewidoczna w trybie readonly): aktualny badge statusu + Select dozwolonych przejść ręcznych (wg `ALLOWED_MANUAL_STATUS_TRANSITIONS`); pole „Powód reklamacji" (Textarea, max 500 znaków) — widoczne tylko gdy status = Reklamacja lub wybrano przejście na Reklamację, wymagane przy zapisie; przycisk „Zmień status" — zmiana zapisywana przy „Zapisz".
 - **Główne elementy**: `<form>` z sekcjami `<fieldset>`, pola shadcn (`<Input>`, `<Select>`, `<Textarea>`, `<AutocompleteField>`), sekcja trasy `<RouteSection>`, sekcja pozycji `<CargoSection>`.
 - **Obsługiwane interakcje**:
@@ -492,14 +486,15 @@ OrdersApp (React island — korzenny komponent)
 - **Walidacja techniczna** (przy zapisie):
   - `transportTypeCode` — wymagane (enum PL|EXP|EXP_K|IMP)
   - `currencyCode` — wymagane (enum PLN|EUR|USD)
-  - `vehicleVariantCode` — wymagane (string min 1)
+  - Typ auta (`vehicleTypeName`) — wymagane (Select z wariantów pojazdu)
+  - Objętość m³ (`vehicleCapacityVolumeM3`) — wymagane (Combobox 10–100 m³ co 10; na MVP tylko wartości z listy)
   - `priceAmount` — ≥ 0 (jeśli podane)
   - `quantityTons` — ≥ 0 (jeśli podane)
   - `paymentTermDays` — integer ≥ 0 (jeśli podane)
   - `senderContactEmail` — format email (jeśli podane)
   - Daty w formacie YYYY-MM-DD, czasy HH:MM lub HH:MM:SS
   - Max 8 punktów LOADING, max 3 punkty UNLOADING
-  - Łańcuchy: `generalNotes` ≤ 1000, `requiredDocumentsText` ≤ 500, `specialRequirements` ≤ 1000, `notes` (na stop/item) ≤ 500
+  - Łańcuchy: `generalNotes` ≤ 500, `requiredDocumentsText` ≤ 500, `specialRequirements` ≤ 1000, `notes` (na stop/item) ≤ 500
 - **Walidacja biznesowa** (przy wysyłce maila — realizowana przez API 422):
   - Wszystkie pola oznaczone (*) w formularzu
 - **Typy**: `OrderFormData` (ViewModel), `OrderDetailDto`, `OrderDetailStopDto[]`, `OrderDetailItemDto[]`, `UpdateOrderCommand`
@@ -636,7 +631,7 @@ OrdersApp (React island — korzenny komponent)
   - „Zapisz" → walidacja techniczna → `PUT /orders/{id}` → toast sukcesu
   - „Zamknij" → zamknięcie draweru (z ostrzeżeniem jeśli dirty w trybie edycji)
   - „Generuj PDF" → `POST /orders/{id}/pdf` → pobranie pliku
-  - „Wyślij maila" → `POST /orders/{id}/prepare-email` → otwarcie `mailto:` URL / wyświetlenie 422
+  - „Wyślij maila" → `POST /orders/{id}/prepare-email` → Graph API draft w Outlook Web (M365) / blob .eml (fallback) / wyświetlenie 422
   - „Historia zmian" → otwarcie panelu `<HistoryPanel>`
 - **Walidacja**: Brak bezpośrednio — deleguje do handlera.
 - **Propsy**:
@@ -828,7 +823,7 @@ OrdersApp (React island — korzenny komponent)
 
 ## 5. Typy
 
-### 5.1 Istniejące typy DTO (z `src/types.ts`)
+### 5.1 Istniejące typy DTO (z `src/types/`)
 
 Wszystkie typy DTO są już zdefiniowane i gotowe do użycia:
 
@@ -841,7 +836,7 @@ Wszystkie typy DTO są już zdefiniowane i gotowe do użycia:
 - **Blokada**: `LockOrderResponseDto`, `UnlockOrderResponseDto`
 - **Duplikacja**: `DuplicateOrderCommand`, `DuplicateOrderResponseDto`
 - **PDF**: `GeneratePdfCommand`
-- **Email**: `PrepareEmailCommand`, `PrepareEmailResponseDto`
+- **Email**: endpoint `prepare-email` zwraca blob `message/rfc822` (.eml z PDF attachment) LUB JSON `{ pdfBase64, pdfFileName }` (gdy `outputFormat: "pdf-base64"` — do użycia z Microsoft Graph API)
 - **Historia**: `StatusHistoryItemDto`, `ChangeLogItemDto`
 - **Słowniki**: `CompanyDto`, `LocationDto`, `ProductDto`, `TransportTypeDto`, `OrderStatusDto`, `VehicleVariantDto`
 - **Sync**: `DictionarySyncCommand`, `DictionarySyncResponseDto`, `DictionarySyncJobDto`
@@ -992,7 +987,7 @@ interface ContextMenuState {
 #### useOrderDetail
 - **Cel**: Pobieranie i zarządzanie szczegółami zlecenia w drawerze + lock/unlock.
 - **Stan**: `{ orderData: OrderDetailResponseDto | null; isLoading: boolean; isLocked: boolean; isReadOnly: boolean; lockError: string | null }`
-- **Akcje**: `openOrder(id)`, `closeOrder()`, `saveOrder(data)`, `generatePdf()`, `sendEmail()`
+- **Akcje**: `openOrder(id)`, `closeOrder()`, `saveOrder(data)`, `generatePdf()`, `sendEmail()` (Graph API draft / fallback .eml)
 - **Przepływ**: `openOrder` → POST lock → GET detail. `closeOrder` → POST unlock. `saveOrder` → PUT.
 
 #### useOrderHistory
@@ -1044,7 +1039,7 @@ Parametry zapytań zgodne z **api-plan** sekcja 2.2. GET `/api/v1/orders`: `view
 | Odblokuj | POST | `/api/v1/orders/{id}/unlock` | — | `UnlockOrderResponseDto` | Zamknięcie draweru |
 | Duplikuj | POST | `/api/v1/orders/{id}/duplicate` | Body: `DuplicateOrderCommand` | `DuplicateOrderResponseDto` | Menu → „Skopiuj" (etap 2) |
 | Generuj PDF | POST | `/api/v1/orders/{id}/pdf` | Body?: `{ regenerate }` | Blob (application/pdf) | Klik „Generuj PDF" |
-| Przygotuj email | POST | `/api/v1/orders/{id}/prepare-email` | Body?: `PrepareEmailCommand` | `PrepareEmailResponseDto` | Klik „Wyślij maila" |
+| Przygotuj email | POST | `/api/v1/orders/{id}/prepare-email` | Body?: `{ outputFormat? }` | blob `.eml` lub JSON `{ pdfBase64, pdfFileName }` | Klik „Wyślij maila" |
 | Historia statusów | GET | `/api/v1/orders/{id}/history/status` | — | `ListResponse<StatusHistoryItemDto>` | Otwarcie panelu historii |
 | Historia zmian | GET | `/api/v1/orders/{id}/history/changes` | — | `ListResponse<ChangeLogItemDto>` | Otwarcie panelu historii |
 | Firmy | GET | `/api/v1/companies` | Query?: `search`, `activeOnly` | `ListResponse<CompanyDto>` | Load dictionaries |
@@ -1072,14 +1067,14 @@ Parametry zapytań zgodne z **api-plan** sekcja 2.2. GET `/api/v1/orders`: `view
 | Przełączenie widoku listy (Trasa/Kolumny) | Zmiana kolumn tabeli (bez nowego zapytania) |
 | Lewy klik na wiersz | POST lock → GET detail → otwarcie draweru edycji |
 | Prawy klik na wiersz | Otwarcie menu kontekstowego |
-| Klik ikony „Wyślij maila" w wierszu | POST prepare-email → otwarcie mailto: lub 422 z listą braków |
+| Klik ikony „Wyślij maila" w wierszu | POST prepare-email → Graph API draft / blob .eml (fallback) lub 422 z listą braków |
 | Klik „+ Dodaj nowy wiersz" | POST create → nowy wiersz na liście → otwarcie draweru |
 
 ### 8.2 Menu kontekstowe
 
 | Interakcja | Wynik |
 |---|---|
-| „Wyślij maila" | POST prepare-email → otwarcie mailto: lub 422 |
+| „Wyślij maila" | POST prepare-email → Graph API draft / blob .eml (fallback) lub 422 |
 | „Historia zmian" | Otwarcie panelu historii |
 | „Zmień status" → wybór statusu | POST status → odświeżenie listy (wiersz może zmienić zakładkę) |
 | „Zmień status" → Reklamacja | Panel na dole widoku lub modal z polem „Powód reklamacji" (wymagane) → POST status |
@@ -1101,7 +1096,7 @@ Parametry zapytań zgodne z **api-plan** sekcja 2.2. GET `/api/v1/orders`: `view
 | Klik „Zapisz" | Walidacja techniczna → PUT → toast sukcesu → isDirty=false |
 | Klik „Anuluj" / X / Escape | Sprawdzenie isDirty → modal „Odrzucić?" lub zamknięcie + unlock |
 | Klik „Generuj PDF" | POST pdf → pobranie pliku |
-| Klik „Wyślij maila" | POST prepare-email → mailto: URL lub 422 alert |
+| Klik „Wyślij maila" | POST prepare-email → Graph API draft / blob .eml (fallback) lub 422 alert |
 | Klik „Historia zmian" | Otwarcie panelu historii obok draweru |
 | Zmiana statusu w sekcji | POST status → aktualizacja badge'a statusu |
 | Klik backdrop | Jak „Anuluj" (z ostrzeżeniem o zmianach) |
@@ -1125,14 +1120,15 @@ Realizowana na froncie (inline pod polami) i potwierdzana przez API (400):
 |---|---|---|
 | `transportTypeCode` | Wymagane, ∈ {PL, EXP, EXP_K, IMP} | HeaderSection |
 | `currencyCode` | Wymagane, ∈ {PLN, EUR, USD} | HeaderSection |
-| `vehicleVariantCode` | Wymagane, niepusty | CargoSection |
+| Typ auta (`vehicleTypeName`) | Wymagane (Select z wariantów pojazdu) | CarrierSection |
+| Objętość m³ (`vehicleCapacityVolumeM3`) | Wymagane (10–100 m³ co 10) | CarrierSection |
 | `priceAmount` | ≥ 0 (jeśli podane) | FinanceSection |
 | `paymentTermDays` | Integer ≥ 0 (jeśli podane) | FinanceSection |
 | `quantityTons` | ≥ 0 (jeśli podane) | ItemRow |
 | `senderContactEmail` | Format email (jeśli podane) | PartiesSection |
 | `dateLocal` (stop) | Format YYYY-MM-DD (jeśli podane) | RoutePointCard |
 | `timeLocal` (stop) | Format HH:MM lub HH:MM:SS (jeśli podane) | RoutePointCard |
-| `generalNotes` | Max 1000 znaków | DocumentsSection |
+| `generalNotes` | Max 500 znaków | DocumentsSection |
 | `requiredDocumentsText` | Max 500 znaków | DocumentsSection |
 | `notes` (stop/item) | Max 500 znaków | RoutePointCard / ItemRow |
 | Punkty trasy | Max 8 LOADING, max 3 UNLOADING | RoutePointList |
@@ -1148,7 +1144,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 | `shipperLocationId` | Niepuste | „Nadawca (lokalizacja) jest wymagany" |
 | `receiverLocationId` | Niepuste | „Odbiorca (lokalizacja) jest wymagany" |
 | `priceAmount` | Niepuste | „Cena frachtu jest wymagana" |
-| `vehicleVariantCode` | Niepuste | „Wariant pojazdu jest wymagany" |
+| Typ auta + Objętość m³ → `vehicleVariantCode` | Niepuste (oba pola wymagane) | „Typ auta i objętość są wymagane" |
 | `items` | Min 1 z nazwą + ilością | „Wymagana min. 1 pozycja z nazwą towaru i ilością" |
 | `stops` (LOADING) | Min 1 z datą i godziną | „Wymagany min. 1 punkt załadunku z datą i godziną" |
 | `stops` (UNLOADING) | Min 1 z datą i godziną | „Wymagany min. 1 punkt rozładunku z datą i godziną" |
@@ -1214,7 +1210,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
    │   ├── auth/
    │   │   └── LoginCard.tsx
 │   ├── layout/
-│   │   ├── AppHeader.tsx
+│   │   ├── AppSidebar.tsx
 │   │   ├── SyncButton.tsx
 │   │   └── UserInfo.tsx
    │   ├── orders/
@@ -1307,14 +1303,14 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 7. **Zaimplementować `DictionaryContext.tsx`** — provider + hook `useDictionaries()` z ładowaniem 6 słowników po zalogowaniu.
 8. **Zaimplementować stronę logowania** (`src/pages/index.astro` + `LoginCard.tsx`) — formularz, Supabase Auth, redirect.
 9. **Zaimplementować `Layout.astro`** — aktualizacja tytułu, meta, font Inter.
-10. **Zaimplementować `AppHeader.tsx`** — sticky header (`h-14`) z logo (primary ikona), tytułem (UPPERCASE), zakładkami OrderTabs (w środku), SyncButton, **UserInfo** (bez avatara: wiersz 1 — imię i nazwisko, wiersz 2 — rola zwykłym tekstem „Admin" / „Planner" / „Read only", przycisk „Wyloguj"). Zgodnie z PRD 3.1.2a i ui-plan.
+10. **Zaimplementować `AppSidebar.tsx`** — lewy sidebar (shadcn/ui Sidebar) z SidebarHeader (logo Truck + tytuł), SidebarContent (nawigacja widoków: Aktualne, Zrealizowane, Anulowane z ikonami Lucide), SidebarFooter (SyncButton, ThemeToggle, UserInfo bez avatara). Collapsible Cmd+B/Ctrl+B. Inline header w SidebarInset: SidebarTrigger + tytuł widoku. Zgodnie z PRD 3.1.2a i ui-plan.
 
 ### Faza 2: Lista zleceń
 
 11. **Zaimplementować stronę `/orders`** (`src/pages/orders.astro`) — wyspa React `<OrdersApp>` z providerami.
 12. **Zaimplementować hook `useOrders.ts`** — stan filtrów, pobieranie listy, debounce, odświeżanie.
-13. **Zaimplementować `OrdersPage.tsx`** — główny kontener: FilterBar + ListSettings + OrderTable + EmptyState + StatusFooter (zakładki przeniesione do AppHeader).
-14. **Zaimplementować `OrderTabs.tsx`** — trzy zakładki w nagłówku: `bg-slate-100 rounded-lg p-1`, aktywna: `bg-white shadow-sm text-primary`.
+13. **Zaimplementować `OrdersPage.tsx`** — główny kontener: FilterBar + ListSettings + OrderTable + EmptyState + StatusFooter (nawigacja widoków w AppSidebar).
+14. ~~Zaimplementować `OrderTabs.tsx`~~ — **ZASTĄPIONY** (nawigacja widoków przeniesiona do AppSidebar).
 15. **Zaimplementować `FilterBar.tsx`** — kolejność filtrów zgodna z PRD 3.1.2a: rodzaj transportu, status (select), firma załadunku, firma rozładunku, Firma transportowa, towar, numer tygodnia (pole tekstowe), wyszukiwanie pełnotekstowe; przycisk „Wyczyść filtry"; z prawej przycisk „Nowe zlecenie" (tylko Aktualne + Admin/Planner). Debounce 300ms na polach tekstowych/autocomplete.
 16. **Zaimplementować `AutocompleteFilter`** — generyczny komponent filtra z autocomplete (shadcn Command).
 17. **Zaimplementować `ListSettings.tsx`** — pageSize + viewMode toggle.
@@ -1335,7 +1331,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 
 ### Faza 4: Drawer edycji zlecenia
 
-29. **Zaimplementować hook `useOrderDetail.ts`** — lock/unlock, GET detail, PUT update, PDF, email.
+29. **Zaimplementować hook `useOrderDetail.ts`** — lock/unlock, GET detail, PUT update, PDF, email (Graph API draft / fallback .eml).
 30. **Zaimplementować `OrderDrawer.tsx`** — Sheet z logiką lock/unlock i trybu readonly.
 31. **Zaimplementować `AutocompleteField.tsx`** — generyczny autocomplete formularza z debounce i auto-uzupełnianiem.
 32. **Zaimplementować `HeaderSection.tsx`** — nr zlecenia, data, typ transportu, waluta, status.
@@ -1362,7 +1358,7 @@ Realizowana wyłącznie przez API (422). Frontend wyświetla listę braków:
 47. **Zaimplementować hook `useDictionarySync.ts`** — start, polling, callback.
 48. **Zaimplementować `SyncButton.tsx`** — przycisk z obsługą stanu synchronizacji.
 49. **Zaimplementować pobieranie PDF** — POST `/orders/{id}/pdf` → blob → download file.
-50. **Zaimplementować wysyłkę maila** — POST `/orders/{id}/prepare-email` → otwarcie `mailto:` URL lub wyświetlenie 422.
+50. **Zaimplementować wysyłkę maila** — POST `/orders/{id}/prepare-email` → Graph API draft w Outlook Web (M365) / blob download .eml (fallback) lub wyświetlenie 422.
 
 ### Faza 7: Polerowanie wizualne i przypadki brzegowe
 

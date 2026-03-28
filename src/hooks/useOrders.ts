@@ -7,7 +7,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 
 import { useAuth } from "@/contexts/AuthContext";
 import { weekNumberToDateRange } from "@/lib/week-utils";
-import type { OrderListResponseDto } from "@/types";
+import type { OrderListItemDto, OrderListResponseDto } from "@/types";
 import type { OrderListFilters } from "@/lib/view-models";
 
 export interface UseOrdersResult {
@@ -15,11 +15,14 @@ export interface UseOrdersResult {
   isLoading: boolean;
   error: string | null;
   refetch: () => Promise<void>;
+  silentRefetch: () => Promise<void>;
+  updateOrderLocally: (orderId: string, patch: Partial<OrderListItemDto>) => void;
 }
 
 /**
  * Pobiera stronę listy zleceń zgodnie z podanymi filtrami.
  * Automatycznie przelicza `weekNumber` na `dateFrom`/`dateTo` przed wysłaniem zapytania.
+ * Anuluje poprzednie żądanie HTTP przy zmianie zależności (AbortController).
  *
  * @param filters - bieżące filtry listy (widok, sortowanie, strona, itp.)
  * @param page - bieżący numer strony (1-based)
@@ -29,12 +32,15 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
   const [data, setData] = useState<OrderListResponseDto | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  // Flaga "przestarzałe" — zapobiega ustawianiu stanu po odmontowaniu lub zmianie zależności
-  const staleRef = useRef(false);
+  const controllerRef = useRef<AbortController | null>(null);
 
-  const fetchData = useCallback(async () => {
-    staleRef.current = false;
-    setIsLoading(true);
+  const fetchDataInternal = useCallback(async (silent: boolean) => {
+    // Anuluj poprzednie żądanie
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
+    if (!silent) setIsLoading(true);
     setError(null);
 
     // Buduj parametry zapytania — undefined pomijane przez ApiClient
@@ -62,7 +68,6 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
         params.dateFrom = range.dateFrom;
         params.dateTo = range.dateTo;
       }
-      // Ignoruj dateFrom/dateTo z filtrów gdy ustawiony weekNumber
     } else {
       params.dateFrom = filters.dateFrom;
       params.dateTo = filters.dateTo;
@@ -70,27 +75,41 @@ export function useOrders(filters: OrderListFilters, page: number): UseOrdersRes
 
     try {
       const result = await api.get<OrderListResponseDto>("/api/v1/orders", params);
-      if (!staleRef.current) {
-        setData(result);
-      }
+      setData(result);
     } catch (err) {
-      if (!staleRef.current) {
-        setError(err instanceof Error ? err.message : "Błąd pobierania listy zleceń.");
-      }
+      if (controller.signal.aborted) return; // Anulowane — ignoruj
+      setError(err instanceof Error ? err.message : "Błąd pobierania listy zleceń.");
     } finally {
-      if (!staleRef.current) {
+      if (!controller.signal.aborted) {
         setIsLoading(false);
       }
     }
   }, [api, filters, page]);
 
+  const fetchData = useCallback(() => fetchDataInternal(false), [fetchDataInternal]);
+  const silentRefetch = useCallback(() => fetchDataInternal(true), [fetchDataInternal]);
+
+  const updateOrderLocally = useCallback(
+    (orderId: string, patch: Partial<OrderListItemDto>) => {
+      setData((prev) => {
+        if (!prev) return prev;
+        return {
+          ...prev,
+          items: prev.items.map((item) =>
+            item.id === orderId ? { ...item, ...patch } : item
+          ),
+        };
+      });
+    },
+    []
+  );
+
   useEffect(() => {
-    staleRef.current = false;
     fetchData();
     return () => {
-      staleRef.current = true;
+      controllerRef.current?.abort();
     };
   }, [fetchData]);
 
-  return { data, isLoading, error, refetch: fetchData };
+  return { data, isLoading, error, refetch: fetchData, silentRefetch, updateOrderLocally };
 }

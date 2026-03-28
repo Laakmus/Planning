@@ -44,7 +44,7 @@ OrderDetailDto { id, orderNo, weekNumber, transportTypeCode, statusCode,
 
 // Komendy
 CreateOrderCommand, UpdateOrderCommand
-CreateOrderResponseDto, LockResponseDto, PrepareEmailResponseDto
+CreateOrderResponseDto, LockResponseDto
 StatusHistoryDto, ChangeHistoryDto
 
 // Paginacja

@@ -204,6 +204,21 @@ export type Database = {
           },
         ]
       }
+      order_no_counters: {
+        Row: {
+          year: number
+          last_seq: number
+        }
+        Insert: {
+          year: number
+          last_seq?: number
+        }
+        Update: {
+          year?: number
+          last_seq?: number
+        }
+        Relationships: []
+      }
       order_status_history: {
         Row: {
           changed_at: string
@@ -376,6 +391,7 @@ export type Database = {
           carrier_location_name_snapshot: string | null
           carrier_name_snapshot: string | null
           complaint_reason: string | null
+          confidentiality_clause: string | null
           created_at: string
           created_by_user_id: string
           currency_code: string
@@ -387,6 +403,7 @@ export type Database = {
           first_unloading_time: string | null
           general_notes: string | null
           id: string
+          is_entry_fixed: boolean | null
           last_loading_date: string | null
           last_loading_time: string | null
           last_unloading_date: string | null
@@ -394,6 +411,7 @@ export type Database = {
           locked_at: string | null
           locked_by_user_id: string | null
           main_product_name: string | null
+          notification_details: string | null
           order_no: string
           order_seq_no: number | null
           payment_method: string | null
@@ -404,7 +422,6 @@ export type Database = {
           receiver_name_snapshot: string | null
           required_documents_text: string | null
           search_text: string | null
-          search_vector: unknown
           sender_contact_email: string | null
           sender_contact_name: string | null
           sender_contact_phone: string | null
@@ -422,6 +439,8 @@ export type Database = {
           transport_year: number | null
           updated_at: string
           updated_by_user_id: string | null
+          vehicle_capacity_volume_m3: number | null
+          vehicle_type_text: string | null
           vehicle_variant_code: string | null
           week_number: number | null
         }
@@ -432,6 +451,7 @@ export type Database = {
           carrier_location_name_snapshot?: string | null
           carrier_name_snapshot?: string | null
           complaint_reason?: string | null
+          confidentiality_clause?: string | null
           created_at?: string
           created_by_user_id: string
           currency_code: string
@@ -443,6 +463,7 @@ export type Database = {
           first_unloading_time?: string | null
           general_notes?: string | null
           id?: string
+          is_entry_fixed?: boolean | null
           last_loading_date?: string | null
           last_loading_time?: string | null
           last_unloading_date?: string | null
@@ -450,6 +471,7 @@ export type Database = {
           locked_at?: string | null
           locked_by_user_id?: string | null
           main_product_name?: string | null
+          notification_details?: string | null
           order_no: string
           order_seq_no?: number | null
           payment_method?: string | null
@@ -460,7 +482,6 @@ export type Database = {
           receiver_name_snapshot?: string | null
           required_documents_text?: string | null
           search_text?: string | null
-          search_vector?: unknown
           sender_contact_email?: string | null
           sender_contact_name?: string | null
           sender_contact_phone?: string | null
@@ -478,6 +499,8 @@ export type Database = {
           transport_year?: number | null
           updated_at?: string
           updated_by_user_id?: string | null
+          vehicle_capacity_volume_m3?: number | null
+          vehicle_type_text?: string | null
           vehicle_variant_code?: string | null
           week_number?: number | null
         }
@@ -488,6 +511,7 @@ export type Database = {
           carrier_location_name_snapshot?: string | null
           carrier_name_snapshot?: string | null
           complaint_reason?: string | null
+          confidentiality_clause?: string | null
           created_at?: string
           created_by_user_id?: string
           currency_code?: string
@@ -499,6 +523,7 @@ export type Database = {
           first_unloading_time?: string | null
           general_notes?: string | null
           id?: string
+          is_entry_fixed?: boolean | null
           last_loading_date?: string | null
           last_loading_time?: string | null
           last_unloading_date?: string | null
@@ -506,6 +531,7 @@ export type Database = {
           locked_at?: string | null
           locked_by_user_id?: string | null
           main_product_name?: string | null
+          notification_details?: string | null
           order_no?: string
           order_seq_no?: number | null
           payment_method?: string | null
@@ -516,7 +542,6 @@ export type Database = {
           receiver_name_snapshot?: string | null
           required_documents_text?: string | null
           search_text?: string | null
-          search_vector?: unknown
           sender_contact_email?: string | null
           sender_contact_name?: string | null
           sender_contact_phone?: string | null
@@ -534,6 +559,8 @@ export type Database = {
           transport_year?: number | null
           updated_at?: string
           updated_by_user_id?: string | null
+          vehicle_capacity_volume_m3?: number | null
+          vehicle_type_text?: string | null
           vehicle_variant_code?: string | null
           week_number?: number | null
         }
@@ -601,13 +628,6 @@ export type Database = {
             referencedRelation: "user_profiles"
             referencedColumns: ["id"]
           },
-          {
-            foreignKeyName: "transport_orders_vehicle_variant_code_fkey"
-            columns: ["vehicle_variant_code"]
-            isOneToOne: false
-            referencedRelation: "vehicle_variants"
-            referencedColumns: ["code"]
-          },
         ]
       }
       transport_types: {
@@ -637,6 +657,7 @@ export type Database = {
           email: string
           full_name: string | null
           id: string
+          location_id: string | null
           phone: string | null
           role: string
           updated_at: string
@@ -646,6 +667,7 @@ export type Database = {
           email: string
           full_name?: string | null
           id: string
+          location_id?: string | null
           phone?: string | null
           role: string
           updated_at?: string
@@ -655,11 +677,20 @@ export type Database = {
           email?: string
           full_name?: string | null
           id?: string
+          location_id?: string | null
           phone?: string | null
           role?: string
           updated_at?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "user_profiles_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       vehicle_variants: {
         Row: {
@@ -691,6 +722,38 @@ export type Database = {
         }
         Relationships: []
       }
+      warehouse_report_recipients: {
+        Row: {
+          id: string
+          location_id: string
+          email: string
+          name: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          location_id: string
+          email: string
+          name?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          location_id?: string
+          email?: string
+          name?: string | null
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "warehouse_report_recipients_location_id_fkey"
+            columns: ["location_id"]
+            isOneToOne: false
+            referencedRelation: "locations"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -698,6 +761,22 @@ export type Database = {
     Functions: {
       current_user_is_admin_or_planner: { Args: never; Returns: boolean }
       generate_next_order_no: { Args: never; Returns: string }
+      filter_order_ids: {
+        Args: {
+          p_product_id?: string | null
+          p_loading_location_id?: string | null
+          p_unloading_location_id?: string | null
+          p_loading_company_id?: string | null
+          p_unloading_company_id?: string | null
+        }
+        Returns: {
+          order_id: string
+        }[]
+      }
+      require_write_role: {
+        Args: Record<PropertyKey, never>
+        Returns: undefined
+      }
       try_lock_order: {
         Args: {
           p_lock_expiry_minutes?: number

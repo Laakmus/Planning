@@ -1,7 +1,7 @@
 # Planning App — Instrukcje dla Claude Code
 
 ## Projekt
-System zarządzania zleceniami transportowymi. Stack: Astro 5 + React 19 + TypeScript strict + Tailwind CSS 4 + shadcn/ui (New York) + Supabase + PostgreSQL 15+.
+System zarządzania zleceniami transportowymi i raportami magazynowymi. Stack: Astro 5 + React 19 + TypeScript strict + Tailwind CSS 4 + shadcn/ui (New York) + Supabase + PostgreSQL 15+. Testy: Vitest (unit) + Playwright (E2E) + k6 (load).
 
 ## Język
 - **Odpowiedzi**: po polsku
@@ -33,8 +33,8 @@ Główny agent (ty) pełni rolę **orkiestratora/managera**. Analizujesz zadania
 | **Frontend** | `/project:frontend` | React, Tailwind, hooks, contexts, ViewModels | Tak |
 | **Backend** | `/project:backend` | API routes, services, middleware | Tak |
 | **Database** | `/project:database` | SQL migracje, RPC, triggers, RLS | Tak |
-| **Types** | `/project:types` | types.ts, view-models.ts, validators | Tak |
-| **Tester** | `/project:tester` | Testy Vitest, fixtures, build checks | Tak (tylko testy) |
+| **Types** | `/project:types` | types/, view-models.ts, validators | Tak |
+| **Tester** | `/project:tester` | Testy Vitest, Playwright E2E, fixtures, build checks | Tak (tylko testy) |
 | **Reviewer** | `/project:reviewer` | Code review, security, docs compliance | Nie (read-only) |
 | **Coordinator** | `/project:coordinator` | Analiza postępu, rozbieżności docs↔kod | Nie (read-only) |
 
@@ -49,11 +49,12 @@ Persystentna: `.claude/agent-memory/{name}.md` — agenci czytają na starcie, a
 ## Reguły delegowania
 
 ### Automatyczne przypisanie na podstawie zakresu plików
-- `src/components/**`, `src/hooks/**`, `src/contexts/**` → **Frontend**
+- `src/components/**`, `src/hooks/**`, `src/contexts/**`, `src/lib/view-models.ts` → **Frontend**
 - `src/pages/api/**`, `src/lib/services/**`, `src/middleware.ts` → **Backend**
+- `src/components/warehouse/**`, `src/pages/api/v1/warehouse/**` → **Frontend** / **Backend** (wg domeny)
 - `supabase/migrations/**`, `src/db/**` → **Database**
-- `src/types.ts`, `src/lib/validators/**` → **Types**
-- `src/**/__tests__/**`, `vitest.config.*` → **Tester**
+- `src/types/**`, `src/lib/validators/**` → **Types**
+- `src/**/__tests__/**`, `e2e/**`, `vitest.config.*`, `playwright.config.*` → **Tester**
 
 ### Zadanie cross-domain
 Gdy zadanie wymaga zmian w wielu domenach:
@@ -93,7 +94,7 @@ Orkiestrator wykonuje sam, bez delegowania.
 
 ## Mechanizm wywołania agentów
 
-Używaj `Task tool` z parametrami:
+Używaj `Agent tool` z parametrami:
 - `subagent_type: "general-purpose"`
 - `prompt`: załaduj zawartość `.claude/agents/{name}.md` + konkretne zadanie
 - `isolation: "worktree"` — dla agentów piszących kod (frontend, backend, database, types, tester)

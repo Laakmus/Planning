@@ -50,6 +50,7 @@ Obecnie planowanie i zlecanie transportów odbywa się w rozbudowanym arkuszu Ex
 
 - Generowanie zlecenia i dodawanie go do Outlooka jest dziś ściśle związane z Excelem.
 - Chociaż PDF i wysyłka działają, brakuje lepszego, stabilniejszego środowiska do planowania, które następnie generuje zlecenia PDF.
+- Nowy system rozwiązuje problem wysyłki przez integrację z Microsoft Graph API (tworzenie draftu w Outlook Web z PDF w załączniku) z fallback na pobieranie pliku .eml dla środowisk bez konfiguracji M365.
 
 Nowy produkt ma przede wszystkim poprawić:
 
@@ -70,7 +71,7 @@ Nowy produkt ma przede wszystkim poprawić:
 - System definiuje trzy role użytkowników:
   - ADMIN: pełny dostęp do wszystkich funkcji, w tym synchronizacji słowników i zarządzania użytkownikami,
   - PLANNER: pełny dostęp do planowania zleceń (tworzenie, edycja, wysyłka, zmiana statusów) oraz synchronizacji słowników,
-  - READ_ONLY: podgląd listy zleceń, szczegółów i historii zmian bez możliwości edycji, tworzenia ani zmiany statusów.
+  - READ_ONLY: podgląd listy zleceń, szczegółów, historii zmian i generowanie PDF — bez możliwości edycji, tworzenia ani zmiany statusów.
 - Rola przypisywana jest na poziomie konta użytkownika w systemie.
 
   3.1.2 Widok planistyczny aktualnych zleceń
@@ -83,7 +84,7 @@ Nowy produkt ma przede wszystkim poprawić:
   - sekwencję punktów trasy w formie wizualnej (node-string): skrócone kody miejsc załadunku (zielone) i rozładunku (niebieskie) połączone strzałkami i linią, np. L1:KRK → L2:KAT → U1:BER,
   - datę i godzinę pierwszego i ostatniego załadunku i rozładunku (w formie czytelnego skrótu),
   - przewoźnika (nazwa firmy + skrócona informacja o kontakcie),
-  - opis towaru (nazwa produktu + ikona typu opakowania, np. Kontener, Big-Bag, Luzem),
+  - opis towaru (nazwa produktu + typ opakowania, np. luzem, bigbag, paleta, inne),
   - koszt transportu (cena globalna za transport z walutą),
   - status zlecenia (np. robocze, wysłane, korekta, korekta wysłane, zrealizowane, anulowane, reklamacja) — jako kolorowy badge,
   - podstawowe uwagi do zlecenia (skrócone),
@@ -104,14 +105,19 @@ Nowy produkt ma przede wszystkim poprawić:
 
 Poniższa sekcja definiuje układ, kolejność elementów, zawartość kolumn tabeli oraz sposób wyświetlania z przykładami. Dotyczy ekranu `/orders` po zalogowaniu. Nagłówek strony, pasek filtrów oraz nagłówek tabeli (nazwy kolumn) są sticky; przewija się wyłącznie lista wierszy (ciało tabeli). Na wąskich ekranach tabela przewija się w poziomie z widocznym paskiem przewijania u dołu.
 
-**1. Nagłówek aplikacji (sticky, jeden blok)**
+**1. Nawigacja (sidebar + header)**
 
-- Kolejność elementów od lewej do prawej: logo aplikacji, tytuł aplikacji, zakładki (Aktualne | Zrealizowane | Anulowane), przycisk „Aktualizuj dane”, blok użytkownika.
-- Blok użytkownika (prawa strona nagłówka):
+- **Sidebar (lewy panel)**: Collapsible sidebar (shadcn/ui Sidebar) z elementami:
+  - Nagłówek: logo aplikacji (ikona Truck) + tytuł „Zlecenia Transportowe”
+  - Nawigacja: 3 pozycje — Aktualne, Zrealizowane, Anulowane (ikony Lucide: ClipboardList, CheckCircle2, XCircle)
+  - Stopka: przycisk „Aktualizuj dane” (SyncButton), przełącznik motywu (ThemeToggle), blok użytkownika (UserInfo)
+  - Collapsible: Cmd+B / Ctrl+B. Na mobile: Sheet overlay.
+- **Blok użytkownika** (w stopce sidebara):
   - Wiersz 1: imię i nazwisko zalogowanego użytkownika (np. „Jan Kowalski”).
   - Wiersz 2: rola zwykłym tekstem — „Admin”, „Planner” lub „Read only” (bez badge’a).
-  - Na prawo od bloku imienia i roli: przycisk „Wyloguj”.
+  - Przycisk „Wyloguj” obok bloku imienia i roli.
 - Bez avatara i zdjęcia użytkownika.
+- **Inline header** (w main content area): SidebarTrigger (hamburger) + separator + tytuł aktywnego widoku (np. „Aktualne zlecenia”).
 
 **2. Pasek filtrów (sticky pod nagłówkiem)**
 
@@ -142,7 +148,7 @@ Minimalna szerokość tabeli (np. 1280px); nagłówek tabeli jest sticky. Sortow
 | Lp | Nazwa kolumny | Zawartość i format wyświetlania | Przykład |
 |----|----------------|----------------------------------|----------|
 | 1 | (bez etykiety) | Ikona blokady (np. kłódka), tylko gdy zlecenie jest zablokowane przez innego użytkownika; brak etykiety w nagłówku. | 🔒 lub puste |
-| 2 | Nr zlecenia | Numer zlecenia (np. generowany przez system). | ZT-2026-0042 |
+| 2 | Nr zlecenia | Numer zlecenia (np. generowany przez system). | ZT2026/0042 |
 | 3 | Status | Nazwa statusu jako badge; wyświetlana jest skrócona nazwa w UI: robocze, wysłane, korekta, **Korekta_w** (dla „korekta wysłane"), zrealizowane, reklamacja, anulowane. | wysłane |
 | 4 | Tydzień | Numer tygodnia ISO 8601 **obliczany automatycznie** z daty pierwszego załadunku; wyświetlany jako liczba całkowita (np. 7); **nie edytowalny** przez użytkownika. | 7 |
 | 5 | Rodzaj transportu | Nazwa rodzaju (kraj, eksport drogowy, kontener morski, import itd.). | kraj |
@@ -235,12 +241,13 @@ Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowan
     - firma odbiorcy (gdzie dostarczamy towar) wraz z lokalizacją (oddział),
     - osoba kontaktowa po stronie nadawcy z danymi (imię, telefon, e-mail),
   - informacje o ładunku (pozycje towarowe per zlecenie + parametry globalne):
-    - pozycje towarowe (1…N): każda zawiera towar (z autocomplete), ilość (tony), oraz sposób załadunku (domyślnie z produktu, nadpisywalny przez użytkownika: paleta, paleta + BigBag, luzem, kosze),
+    - pozycje towarowe (1…N): każda zawiera towar (z autocomplete), ilość (tony), oraz sposób załadunku (domyślnie z produktu, nadpisywalny przez użytkownika: luzem, bigbag, paleta, inne),
     - masa całkowita, objętość (opcjonalne parametry globalne),
-    - wariant pojazdu (wybór z listy rozwijanych łączący typ pojazdu i pojemność/objętość, np. „Hakowiec 30m³", „Firanka 90m³", „Wywrotka 25m³", „Bus 10m³", „Hakowiec z HDS 30m³"; każdy wariant ma przypisany kod, typ pojazdu, nośność w tonach i objętość w m³),
+    - typ auta (rodzaj auta — select z listy typów pojazdów z bazy, np. „Firanka", „Hakowiec", „Wywrotka", „Bus") + objętość w m³ (osobne pole liczbowe, dowolna wartość) — dwa niezależne pola, nie powiązane FK z tabelą wariantów pojazdów,
     - wymagania specjalne (np. ADR, chłodnia),
   - trasa:
-    - minimalnie 1 punkt załadunku i 1 punkt rozładunku,
+    - **do wysłania zlecenia (email/PDF)** wymagane minimalnie 1 punkt załadunku i 1 punkt rozładunku,
+    - **w trakcie planowania** (status robocze/korekta) zlecenie może mieć dowolną liczbę stopów (0, tylko załadunki, tylko rozładunki) — planista może nie znać jeszcze wszystkich punktów trasy (np. wie kto kupuje towar, ale nie wie z którego magazynu wyśle),
     - przyciski dodaj miejsce załadunku i dodaj miejsce rozładunku,
     - maksymalnie 8 punktów załadunku i 3 punkty rozładunku,
     - każdy punkt zawiera:
@@ -257,11 +264,12 @@ Uwaga: kolejność kolumn oraz lista kolumn mogą być w przyszłości korygowan
     - forma płatności,
   - dokumenty dla kierowcy i uwagi:
     - lista wymaganych dokumentów dla kierowcy,
-    - uwagi do zlecenia (tekst wielowierszowy).
+    - uwagi do zlecenia (tekst wielowierszowy),
+  - klauzula poufności (`confidentialityClause`): edytowalny tekst zapisywany per zlecenie w bazie danych; nowe zlecenia inicjalizowane domyślnym tekstem. Edytowalna wyłącznie w widoku OrderView (podgląd A4), nie w drawerze.
 
   3.1.5a Szczegółowa specyfikacja widoku Drawer edycji zlecenia
 
-Poniższa sekcja definiuje układ, zawartość i zachowanie panelu bocznego (drawer / sheet) edycji zlecenia transportowego. Drawer jest jedynym miejscem, w którym użytkownik edytuje szczegółowe dane zlecenia. Jest to autorytatywna specyfikacja — w razie rozbieżności z innymi dokumentami obowiązuje ta sekcja.
+Poniższa sekcja definiuje układ, zawartość i zachowanie panelu bocznego (drawer / sheet) edycji zlecenia transportowego. Drawer jest głównym miejscem edycji szczegółowych danych zlecenia. Alternatywny widok edycji: OrderView (podgląd A4 z edycją inline) — patrz sekcja 3.1.5b. Jest to autorytatywna specyfikacja — w razie rozbieżności z innymi dokumentami obowiązuje ta sekcja.
 
 **1. Ogólne cechy drawera**
 
@@ -285,7 +293,7 @@ Poniższa sekcja definiuje układ, zawartość i zachowanie panelu bocznego (dra
 
 Nagłówek jest stałym (sticky) elementem na górze drawera. Nie zawiera tytułu „Edycja zlecenia". Elementy:
 
-- **Numer zlecenia** (np. „Zlecenie #ZT-2026-0042") — readonly, generowany przez serwer.
+- **Numer zlecenia** (np. „Zlecenie #ZT2026/0042") — readonly, generowany przez serwer.
 - **Link „Historia zmian"** — otwiera panel historii zmian obok drawera. Aktywny także w trybie readonly.
 - **Przycisk X** — zamknięcie drawera (z obsługą niezapisanych zmian).
 - Opcjonalna linia metadanych: „Utworzone przez [imię], [data] | Ostatnia zmiana: [imię], [data]".
@@ -328,7 +336,7 @@ Zmiana kolejności: drag-and-drop + przyciski góra/dół. Reguła kolejności p
 | **Na każdą pozycję towarową:** | | | |
 | 1 | Nazwa towaru* | Autocomplete | Z słownika towarów (`products`) |
 | 2 | Ilość w t* | Pole liczbowe | Tony; ≥ 0 |
-| 3 | Sposób załadunku | Lista zamknięta (select) | Wartości: paleta, paleta + BigBag, luzem, kosze; domyślnie ustawiany z produktu po wyborze towaru, ale nadpisywalny przez użytkownika per pozycja |
+| 3 | Sposób załadunku | Lista zamknięta (select) | Wartości: luzem, bigbag, paleta, inne; domyślnie ustawiany z produktu po wyborze towaru, ale nadpisywalny przez użytkownika per pozycja |
 | 4 | Komentarz | Pole tekstowe (input lub textarea) | Uwagi do pozycji |
 | — | Przycisk dodania kolejnego asortymentu | Przycisk | Dodaje kolejny zestaw pól |
 
@@ -340,9 +348,10 @@ Przycisk „Usuń pozycję" przy każdej pozycji towarowej.
 |-----|------|----------|-------|
 | 1 | Nazwa firmy (przewoźnik)* | Autocomplete | Firmy typu przewoźnik z bazy (`companies`) |
 | 2 | NIP | Tylko do odczytu (tekst) | Auto po wyborze firmy przewoźnika |
-| 3 | Typ auta | Lista zamknięta (select) | Z wariantów pojazdu (np. Firanka, Hakowiec, Wywrotka, Bus) |
-| 4 | Objętość w m³ | Lista zamknięta z wpisywaniem (combobox) | Wartości: 10, 20, 30, …, 100 m³; wpis filtruje listę; klik bez wpisu = pełna lista. Na MVP dozwolone tylko wartości z listy (co 10) |
+| 3 | Typ auta | Lista zamknięta (select) | Z unikalnych typów pojazdów z bazy (np. Firanka, Hakowiec, Wywrotka, Bus). Pole `vehicleTypeText` — niezależne od tabeli wariantów pojazdów |
+| 4 | Objętość w m³ | Pole liczbowe (input) | Dowolna wartość liczbowa (np. 30, 90). Pole `vehicleCapacityVolumeM3` — niezależne od typu auta |
 | 5 | Wymagane dokumenty | Lista zamknięta (select, **2 opcje**) | **1.** „WZ, KPO, kwit wagowy" **2.** „WZE, Aneks VII, CMR". Użytkownik wybiera **jedną** z dwóch opcji (select, nie checkboxy). **Automatyczny wybór** przy zmianie rodzaju transportu (Sekcja 1): jeśli eksport / eksport kontener / import → „WZE, Aneks VII, CMR"; jeśli kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić automatycznie wybraną wartość |
+| 6 | Dane do awizacji | Pole tekstowe (textarea, max 500 znaków) | Informacje do awizacji przekazywane przewoźnikowi (planowany załadunek/rozładunek). Opcjonalne, nullable. Licznik znaków (x/500). **Nie kopiowane** przy duplikowaniu zlecenia. **Nie wyświetlane** na podglądzie A4 / PDF |
 
 **Sekcja 4 — Finanse**
 
@@ -378,8 +387,9 @@ Stopka jest stałym elementem na dole drawera z przyciskami akcji:
 
 - **Zapisz** (primary) — zapisuje wszystkie zmiany (dane formularza + ewentualną zmianę statusu) → `PUT /orders/{id}`. Po zapisie odświeżenie danych zlecenia (GET lub z odpowiedzi), żeby status (np. Korekta) i Sekcja 6 były aktualne. Toast sukcesu.
 - **Zamknij** — zamyka drawer; przy niezapisanych zmianach: modal „Zapisać?" z opcjami (Zapisz i zamknij / Odrzuć i zamknij / Zostań).
-- **Generuj PDF** — `POST /orders/{id}/pdf` → pobranie pliku PDF.
-- **Wyślij maila** — `POST /orders/{id}/prepare-email`. Przed wysyłką system sprawdza kompletność pól wymaganych. Przy brakach (422) — alert na górze formularza z listą brakujących pól; Outlook nie jest otwierany. Przy sukcesie — otwarcie Outlooka z załączonym PDF; status zmienia się automatycznie (robocze→wysłane, korekta→korekta wysłane).
+- **Podgląd** (ikona Eye) — otwiera widok OrderView (podgląd A4 z edycją inline) wewnątrz tego samego panelu Sheet. Zastępuje dawny przycisk „Generuj PDF". Widoczny tylko dla istniejących zleceń w trybie edycji (nie przy nowym zleceniu, nie w readonly). Szczegóły: patrz sekcja 3.1.5b.
+- **Wyślij maila** — `POST /orders/{id}/prepare-email`. Przed wysyłką system sprawdza kompletność pól wymaganych. Przy brakach (422) — alert na górze formularza z listą brakujących pól; Outlook nie jest otwierany. Przy sukcesie — otwarcie Outlooka z załączonym PDF; status zmienia się automatycznie (robocze→wysłane, korekta→korekta wysłane). **Ponowna wysyłka:** opcja dostępna także dla zleceń w statusie wysłane/korekta wysłane (w zakładce Aktualne) — status nie zmienia się, aktualizowana jest data wysyłki (`sent_at`).
+  - **Temat wiadomości email**: `{orderNo} -{odbiorcy} - {carrier} - {miejsca załadunku} - zał. {DD/MM/YYYY}`. Odbiorcy = unikalne nazwy firm z punktów UNLOADING (joinowane `+`). Carrier = nazwa firmy transportowej. Miejsca załadunku = unikalne nazwy lokalizacji z punktów LOADING (joinowane `+`). Data = data pierwszego załadunku. Puste segmenty pomijane. Przykład: `ZT2026/0014 -NordMetal Sp. z o.o.+Recykling Plus S.A. - SpeedCargo Sp. z o.o. - Lager Berlin - zał. 22/02/2026`.
 - **Historia zmian** (link) — otwiera panel historii zmian obok drawera. Alternatywnie dostępne z nagłówka drawera.
 
 Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 6 formularza i zapisywana razem z innymi zmianami przez „Zapisz".
@@ -396,8 +406,8 @@ Stopka nie zawiera przycisku „Zmień status" — zmiana statusu jest w Sekcji 
 
 Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
 - Wszystkie pola formularza disabled / grayed out.
-- Brak przycisków: Zapisz, Wyślij maila. Sekcja 6 (Zmiana statusu) niewidoczna. (Sekcja 5 Uwagi pozostaje widoczna — tylko do odczytu.)
-- Aktywne: **Generuj PDF**, link „Historia zmian" (tylko odczyt), przycisk „Zamknij".
+- Brak przycisków: Zapisz, Wyślij maila, Podgląd. Sekcja 6 (Zmiana statusu) niewidoczna. (Sekcja 5 Uwagi pozostaje widoczna — tylko do odczytu.)
+- Aktywne: link „Historia zmian" (tylko odczyt), przycisk „Zamknij".
 - Nad formularzem wyświetlany jest bursztynowy (amber) banner informujący o tym, kto aktualnie blokuje zlecenie (np. „Zlecenie edytowane przez Anna Nowak").
 
 **8. Walidacja w drawerze**
@@ -405,6 +415,63 @@ Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
 - **Walidacja techniczna (przy „Zapisz"):** inline pod polami po próbie zapisu; opcjonalnie przy blur dla pól wymaganych. Sprawdzenie formatów dat, liczb, limitów znaków, limitów punktów trasy.
 - **Walidacja biznesowa (przy „Wyślij maila"):** realizowana przez API (422); frontend wyświetla alert na górze formularza z listą brakujących pól.
 - Zlecenie można zapisać jako wersję roboczą z nieuzupełnionymi polami — pełna kompletność sprawdzana dopiero przy wysyłce maila.
+
+---
+
+  3.1.5b Widok OrderView — podgląd A4 z edycją inline
+
+OrderView to alternatywny widok zlecenia transportowego, renderowany wewnątrz tego samego panelu Sheet co drawer. Wygląda jak drukowany dokument A4, ale pola są edytowalne inline. Otwiera się z drawera przyciskiem „Podgląd".
+
+**1. Ogólne cechy**
+
+- Wyświetlany wewnątrz tego samego panelu Sheet — drawer zamienia swoją zawartość na OrderView (bez drugiego nakładki/overlaya).
+- Szerokość Sheet powiększa się do ~80% ekranu (`80vw`) gdy OrderView jest aktywny; po powrocie do drawera wraca do standardowej szerokości (~800px).
+- Dostępny tylko dla istniejących zleceń w trybie edycji (nie dla nowych zleceń, nie w trybie readonly).
+- Blokada zlecenia pozostaje aktywna przez cały czas (drawer + OrderView).
+- Dark mode: dokument A4 zawsze biały, toolbar obsługuje dark mode.
+
+**2. Toolbar (nad dokumentem A4)**
+
+Sticky pasek narzędzi nad dokumentem:
+- **Lewo**: tytuł „Podgląd zlecenia {orderNo}" + badge „Niezapisane zmiany" (bursztynowy, gdy isDirty).
+- **Prawo**: „Generuj PDF" (outline) + „Anuluj" (secondary) + „Zapisz zmiany" (primary, disabled gdy brak zmian).
+- Keyboard shortcuts: Ctrl+S (zapisz), Escape (anuluj).
+- Ukryty przy druku (`print:hidden`).
+
+**3. Dokument A4 — sekcje**
+
+Dokument A4 zawiera ~14 sekcji wizualnych odzwierciedlających dane zlecenia:
+- Nagłówek z logo firmy, numerem zlecenia, datą, danymi osoby zlecającej.
+- Trasa: lista punktów załadunku i rozładunku z datami, godzinami, firmami, lokalizacjami i adresami. Drag-and-drop reordering (zasady jak w drawerze: pierwszy punkt = załadunek, ostatni = rozładunek, środkowe dowolna mieszanka).
+- Pozycje towarowe: tabela z nazwą, sposobem załadunku, uwagami. Minimalna wizualna ilość wierszy = 8, maksymalna = 15.
+- Firma transportowa: nazwa firmy (autocomplete), NIP (readonly), typ auta (select), objętość m³ (input), wymagane dokumenty (select).
+- Finanse: stawka, waluta, termin płatności, forma płatności.
+- Uwagi: pole tekstowe wielowierszowe (max 500 znaków).
+- Klauzula poufności: edytowalne pole tekstowe (`confidentialityClause`), zapisywane per zlecenie w bazie danych. Nowe zlecenia inicjalizowane domyślnym tekstem klauzuli.
+- Warunki realizacji zlecenia (tekst stały, nieedytowalny).
+
+**4. Model danych i synchronizacja**
+
+- Kopia formData z drawera → OrderView edytuje kopię → zapis = PUT API → powrót do drawera z odświeżonymi danymi.
+- OrderView wysyła WSZYSTKIE pola (nawet ukryte: transportTypeCode, senderContact, itp.) — pełny PUT.
+- Bez zmiany statusu — status zmienia się tylko w drawerze (Sekcja 6).
+
+**5. Przepływy**
+
+- **Otwarcie z dirty drawerem**: Dialog 3-opcyjny (Zapisz i przejdź / Odrzuć zmiany i przejdź / Anuluj).
+- **Zapisz w OrderView**: PUT API → toast sukcesu → powrót do drawera.
+- **Anuluj**: jeśli niezapisane zmiany → dialog potwierdzenia; jeśli czyste → powrót do drawera.
+- **Generuj PDF**: przycisk w toolbarze → blob download (POST /orders/{id}/pdf).
+
+**6. Druk**
+
+- @media print: toolbar ukryty, sam dokument A4 na wydruku.
+- Ukryte elementy: ikony edycji, drag handles, przyciski usuwania, dropdowny.
+- Przeglądarka automatycznie dzieli na strony A4.
+
+**7. Pole isEntryFixed**
+
+Pole „Fix" (is_entry_fixed) NIE jest widoczne w OrderView — jest dostępne tylko w tabeli zleceń jako inline dropdown.
 
 ---
 
@@ -511,12 +578,16 @@ Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
 - Po kliknięciu tego przycisku:
   - aplikacja korzysta z aktualnego pliku PDF danego zlecenia (w razie potrzeby generując go na nowo),
   - system w pierwszej kolejności sprawdza kompletność pól wymaganych (zgodnie z sekcją o walidacji danych); w przypadku braków wyświetlany jest komunikat z listą brakujących pól, a Outlook nie jest otwierany,
-  - jeśli wszystkie pola wymagane są uzupełnione, otwierany jest domyślny klient poczty (np. Outlook) z nową wiadomością, do której automatycznie dodany jest wyłącznie ten plik PDF jako załącznik,
-  - użytkownik samodzielnie uzupełnia adresy e-mail, temat oraz treść wiadomości i wysyła ją z poziomu Outlooka,
-  - po poprawnym uruchomieniu akcji wysyłki (otwarciu Outlooka z przygotowaną wiadomością i załączonym PDF):
+  - jeśli wszystkie pola wymagane są uzupełnione, akcja wysyłki zależy od konfiguracji środowiska:
+    - **Flow główny (Microsoft Graph API):** gdy skonfigurowane są zmienne `PUBLIC_MICROSOFT_CLIENT_ID` i `PUBLIC_MICROSOFT_TENANT_ID`, backend zwraca PDF jako base64 (format `outputFormat: "pdf-base64"`). Frontend uzyskuje token MSAL (popup logowania M365), tworzy draft wiadomości z załącznikiem PDF przez Graph API (`POST /me/messages` + fileAttachment), a następnie otwiera Outlook Web z draftem do edycji (`window.open(webLink)`). Użytkownik uzupełnia adresy, temat i treść, po czym wysyła wiadomość z poziomu Outlook Web.
+    - **Fallback (.eml):** gdy zmienne M365 nie są skonfigurowane, plik `.eml` (RFC 822) z PDF w załączniku zostaje pobrany; użytkownik otwiera go w kliencie poczty (np. Outlook desktop), który wyświetla wiadomość jako draft (nagłówek `X-Unsent: 1`). Użytkownik samodzielnie uzupełnia adresy e-mail, temat oraz treść wiadomości i wysyła ją.
+  - po poprawnym uruchomieniu akcji wysyłki (utworzeniu draftu Graph API lub pobraniu pliku .eml):
     - jeśli zlecenie miało status robocze, status zlecenia w systemie zmienia się automatycznie na wysłane,
     - jeśli zlecenie miało status korekta, status zlecenia w systemie zmienia się automatycznie na korekta wysłane.
-- Sam proces wysyłki maila oraz zapis wysłanych maili pozostaje w Outlooku (brak wysyłki bezpośrednio z aplikacji w MVP).
+- Sam proces wysyłki maila oraz zapis wysłanych maili pozostaje w Outlooku (brak wysyłki bezpośrednio z aplikacji).
+- **Wymagane zmienne środowiskowe** (opcjonalne — bez nich działa fallback .eml):
+  - `PUBLIC_MICROSOFT_CLIENT_ID` — Application (client) ID z Azure AD App Registration,
+  - `PUBLIC_MICROSOFT_TENANT_ID` — Directory (tenant) ID organizacji M365.
 
   3.1.12 Widok zrealizowanych i anulowanych zleceń
 
@@ -566,14 +637,86 @@ Drawer w trybie readonly (blokada przez innego użytkownika lub rola READ_ONLY):
   - korzysta z danych z firmowej bazy ERP,
   - startuje z pustą listą zleceń (realnych).
 
-  3.2 Funkcje planowane na etap 2 (poza MVP)
+  3.2 Widok magazynowy (tygodniowy)
+
+Dedykowany widok read-only dla pracowników magazynów poszczególnych oddziałów Odylion. Prezentuje zaplanowane załadunki i rozładunki dla oddziału użytkownika w danym tygodniu.
+
+**Pełna specyfikacja**: `.ai/widok-magazyn-specyfikacja.md`
+
+3.2.1 Dostęp i routing
+
+- URL: `/warehouse?week=12&year=2026` — parametry opcjonalne, domyślnie bieżący tydzień
+- Dostępny dla ról: ADMIN, PLANNER, READ_ONLY — wszyscy jako read-only
+- Oddział użytkownika domyślnie pobierany z `user_profiles.location_id` (server-side)
+- **BranchSelector** (dropdown w nagłówku widoku) — pozwala przełączać się między oddziałami tej samej firmy; ukryty gdy firma ma tylko 1 oddział; walidacja server-side (oddział musi należeć do firmy INTERNAL)
+
+3.2.2 Layout i nawigacja
+
+- Nawigacja: strzałki ◀▶ + pole numeryczne nr tygodnia (bez selektora miesiąca)
+- Nagłówek tygodnia: „Tydzień 12 | 17.03 – 21.03.2026" (sticky, nad scroll containerem)
+- 5 kart dniowych (Pon–Pt), każda z jedną tabelą chronologiczną
+- Stopy weekendowe dołączane do piątku z adnotacją „(sob. DD.MM)"
+- Bez paginacji — scroll pionowy + sticky thead per karta
+- Sekcja „Bez przypisanej daty" na dole (ukryta gdy pusta)
+- Footer tygodniowy (sticky na dole): łączna masa, liczba załadunków/rozładunków
+
+3.2.3 Kolumny tabeli
+
+| # | Kolumna | Opis |
+|---|---------|------|
+| 1 | Typ | Badge: „Zał" (niebieski) / „Roz" (zielony) |
+| 2 | Godzina | HH:MM, bold, kolor typu |
+| 3 | Nr zlecenia | ZT2026/0042, font-medium |
+| 4 | Towar / Masa | Nazwa + opakowanie + „Razem: XX,X t" |
+| 5 | Przewoźnik | Nazwa firmy + typ pojazdu pod spodem |
+| 6 | Awizacja | 5 linii bez etykiet: kierowca, ciągnik, przyczepa, telefon, BDO |
+
+3.2.4 Filtrowanie danych
+
+- Widoczne statusy: robocze, wysłane, korekta, korekta wysłane, reklamacja
+- Niewidoczne: zrealizowane, anulowane
+- Filtrowanie po oddziale: zlecenia z stopem w `location_id` użytkownika
+- Oddział jako L i U w tym samym zleceniu → dwa osobne wiersze
+- Zlecenie z wieloma stopami w różnych dniach → wiersz w każdym dniu
+
+3.2.5 Dane awizacji
+
+Dane awizacji przechowywane są w polu `notification_details` (textarea, max 500 znaków) w Sekcji 3 formularza zlecenia (Firma transportowa). W widoku magazynowym wyświetlane jako tekst wieloliniowy w kolumnie Awizacja.
+
+3.2.6 Druk
+
+- Obsługa `Ctrl+P` / `Cmd+P` — layout A4 landscape
+- Ukryte: nawigacja, sidebar, footer
+- Zachowane kolory badge'ów (`print-color-adjust: exact`)
+
+3.2.7 API
+
+- Dedykowany endpoint: `GET /api/v1/warehouse/orders?week=12&year=2026`
+- Zwraca dane pogrupowane per dzień + sekcja „bez daty" + podsumowanie tygodnia
+
+3.2.8 Eksport PDF + email (plan załadunkowy)
+
+- **Przyciski w headerze**: "Podgląd PDF" (outline) + "Wyślij plan" (default, ikona Mail), widoczne po prawej stronie headera (ml-auto), obok BranchSelector.
+- **Podgląd PDF**: Generuje landscape A4 PDF z planem załadunkowym, otwiera w nowej karcie przeglądarki (natywny PDF viewer z opcją druku).
+- **Wyślij plan**: Dialog potwierdzenia z listą odbiorców z tabeli `warehouse_report_recipients` → plik .eml z PDF w załączniku i pre-filled To:. Gdy brak odbiorców — przycisk disabled z tooltipem "Brak odbiorców".
+- **Format PDF**:
+  - Tytuł: "PLAN ZAŁADUNKOWY — MAGAZYN {NAZWA}", podtytuł z zakresem dat.
+  - Tabele per dzień (nagłówek dnia + nagłówki kolumn: Typ, Godz., Nr zlecenia, Towar/Masa, Przewoźnik, Awizacja).
+  - Kolorowanie: załadunek = emerald-100, rozładunek = blue-100. Weekend = czerwony tekst.
+  - Dynamiczna wysokość wierszy (zawijanie tekstu w kolumnach Towar, Przewoźnik, Awizacja). Towar — każda pozycja w osobnej linii.
+  - Podsumowanie tygodnia: załadunki/rozładunki count+tony, łącznie.
+  - Stopka: data wygenerowania + numeracja stron.
+- **Odbiorcy**: Stała lista email per oddział w tabeli `warehouse_report_recipients` (zmienia się raz na pół roku). Zarządzanie: ADMIN w SQL/Studio, brak UI do zarządzania w MVP.
+- **Auth**: ADMIN + PLANNER mogą generować PDF i wysyłać email. READ_ONLY nie ma dostępu do tych akcji.
+
+  3.3 Funkcje planowane na etap 2 (poza MVP)
 
 - Dokładne odwzorowanie PDF zlecenia transportowego w 100 procentach zgodne z istniejącym sztywnym formularzem firmowym (układ, czcionki, współrzędne).
 - Autozapis w tle:
   - zapis po 2–3 sekundach bezczynności od ostatniej zmiany,
   - okresowe zapisy co określony interwał (np. 60 sekund),
   - komunikaty o powodzeniu/porażce autozapisu.
-- Zaawansowana wysyłka maili z poziomu aplikacji (integracja z Outlook/Exchange/SMTP).
+- Zaawansowana wysyłka maili z poziomu aplikacji (częściowo zrealizowana — integracja z Microsoft Graph API do tworzenia draftów w Outlook Web; pełna automatyzacja wysyłki SMTP/Exchange planowana na etap 2).
 - Zaawansowane raporty (koszty, ilości towarów, liczba transportów per przewoźnik i kierunek).
 - Granularne role i ograniczenia dostępu do danych finansowych lub raportów (w MVP dostępne są trzy podstawowe role: ADMIN, PLANNER, READ_ONLY; rozbudowa ról planowana na etap 2).
 
@@ -593,7 +736,8 @@ Do zakresu MVP należą:
 - generowanie funkcjonalnego PDF (pełne dane, prosty układ),
 - trzy zakładki: aktualne, zrealizowane, anulowane, wraz z logiką retencji anulacji (24 h),
 - prosty mechanizm blokady edycji wiersza przez wielu użytkowników jednocześnie,
-- dwa środowiska: testowe (Supabase) i produkcyjne (ERP).
+- dwa środowiska: testowe (Supabase) i produkcyjne (ERP),
+- widok magazynowy — tygodniowy widok read-only załadunków/rozładunków per oddział (§3.2).
 
   4.2 Poza zakresem MVP (etap 2 i kolejne)
 
@@ -856,19 +1000,21 @@ Kryteria akceptacji:
 - Generowanie nie wymaga żadnej ręcznej edycji układu po stronie użytkownika.
 - W etapie 1 układ może być uproszczony; docelowe odwzorowanie 1:1 zostanie zrealizowane w kolejnym etapie.
 
-ID: US-051  
-Tytuł: Otwarcie Outlooka z załączonym PDF zlecenia  
-Opis:  
-Jako planista chcę z poziomu listy zleceń jednym kliknięciem otworzyć w Outlooku nową wiadomość z automatycznie dołączonym PDF danego zlecenia, aby szybko wysłać je przewoźnikowi.  
+ID: US-051
+Tytuł: Otwarcie Outlooka z załączonym PDF zlecenia
+Opis:
+Jako planista chcę z poziomu listy zleceń jednym kliknięciem otworzyć w Outlooku nową wiadomość z automatycznie dołączonym PDF danego zlecenia, aby szybko wysłać je przewoźnikowi.
 Kryteria akceptacji:
 
 - W widoku planistycznym, obok każdego wiersza zlecenia, dostępny jest przycisk wyślij maila / otwórz w Outlooku.
 - Po kliknięciu przycisku system w pierwszej kolejności sprawdza, czy wszystkie pola wymagane do wysłania zlecenia (zgodnie z sekcją o walidacji danych) są uzupełnione; w przypadku braków wyświetla komunikat z listą brakujących pól i nie otwiera Outlooka.
-- Jeżeli wszystkie pola wymagane są uzupełnione, przeglądarka otwiera domyślny klient poczty (np. Outlook) z nową, pustą wiadomością (bez wypełnionego tematu i treści), do której automatycznie dodany jest PDF danego zlecenia jako załącznik.
+- Jeżeli wszystkie pola wymagane są uzupełnione, system realizuje wysyłkę w jednym z dwóch trybów:
+  - **Microsoft Graph API** (gdy skonfigurowane `PUBLIC_MICROSOFT_CLIENT_ID` + `PUBLIC_MICROSOFT_TENANT_ID`): frontend loguje użytkownika przez MSAL popup, tworzy draft w Outlook Web z PDF jako załącznikiem przez Graph API, a następnie otwiera Outlook Web z draftem wiadomości.
+  - **Fallback .eml** (brak konfiguracji M365): przeglądarka pobiera plik .eml (RFC 822) z PDF w załączniku; użytkownik otwiera go w kliencie poczty.
 - Użytkownik ręcznie uzupełnia adresy e-mail, temat i treść wiadomości, po czym wysyła ją z poziomu Outlooka; w tym momencie z perspektywy systemu:
   - jeżeli zlecenie miało status robocze, status automatycznie zmienia się na wysłane,
   - jeżeli zlecenie miało status korekta, status automatycznie zmienia się na korekta wysłane.
-- Aplikacja nie wysyła maili samodzielnie w MVP.
+- Aplikacja nie wysyła maili samodzielnie — tworzy draft do ręcznego wysłania przez użytkownika.
 
 ### 5.7 Historia zmian
 
@@ -927,6 +1073,53 @@ Kryteria akceptacji:
 - Użytkownik widzi informację o czasie ostatniego autozapisu.
 - W przypadku niepowodzenia autozapisu użytkownik jest o tym informowany.
 - Funkcjonalność może być zaimplementowana w kolejnym etapie, poza MVP, ale jest uwzględniona w wymaganiach.
+
+### 5.9 Widok magazynowy
+
+ID: US-090
+Tytuł: Podgląd tygodniowych załadunków i rozładunków dla oddziału
+Opis:
+Jako pracownik magazynu chcę widzieć tygodniowy widok zaplanowanych załadunków i rozładunków w moim oddziale, aby sprawnie przygotować się do obsługi transportów.
+Kryteria akceptacji:
+
+- Widok dostępny pod `/warehouse` dla ról ADMIN, PLANNER, READ_ONLY (read-only dla wszystkich).
+- Wyświetla 5 kart dniowych (Pon–Pt) z jedną tabelą chronologiczną per dzień.
+- Kolumny: Typ (badge Zał/Roz), Godzina, Nr zlecenia, Towar/Masa, Przewoźnik, Awizacja.
+- Widoczne statusy: robocze, wysłane, korekta, korekta wysłane, reklamacja.
+- Dane filtrowane po oddziale użytkownika (`user_profiles.location_id`).
+- Stopy weekendowe wyświetlane w piątku z adnotacją (sob./niedz.).
+- Footer tygodniowy z łączną masą załadunków/rozładunków.
+
+ID: US-091
+Tytuł: Nawigacja między tygodniami w widoku magazynowym
+Opis:
+Jako pracownik magazynu chcę przełączać się między tygodniami, aby przeglądać plan na kolejne lub poprzednie tygodnie.
+Kryteria akceptacji:
+
+- Strzałki ◀▶ przechodzą do poprzedniego/następnego tygodnia.
+- Pole numeryczne pozwala wpisać nr tygodnia i przejść bezpośrednio.
+- Nagłówek wyświetla „Tydzień X | DD.MM – DD.MM.YYYY".
+- URL aktualizuje się z parametrami `?week=X&year=YYYY`.
+
+ID: US-092
+Tytuł: Dane awizacji w zleceniu transportowym
+Opis:
+Jako planista chcę wprowadzać dane awizacji w zleceniu, aby magazyn mógł je widzieć w widoku tygodniowym.
+Kryteria akceptacji:
+
+- Dane awizacji przechowywane w polu `notificationDetails` (textarea, max 500 znaków) w Sekcji 3 formularza.
+- Pole edytowalne przez ADMIN i PLANNER; READ_ONLY widzi je jako read-only.
+- Dane wyświetlane w kolumnie Awizacja widoku magazynowego jako tekst wieloliniowy.
+
+ID: US-093
+Tytuł: Drukowanie widoku magazynowego
+Opis:
+Jako pracownik magazynu chcę wydrukować widok tygodniowy, aby mieć papierową kopię planu na hali.
+Kryteria akceptacji:
+
+- `Ctrl+P` / `Cmd+P` otwiera podgląd druku w formacie A4 landscape.
+- Nawigacja, sidebar i footer są ukryte na wydruku.
+- Kolory badge'ów zachowane na wydruku.
 
 ## 6. Metryki sukcesu
 

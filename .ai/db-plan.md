@@ -75,14 +75,15 @@ Tabela główna, centralna dla całego systemu.
 - **receiver_address_snapshot**: `varchar(500)`
   - snapshot adresu odbiorcy; **immutable**
 - **vehicle_variant_code**: `text`
-  - wybrany wariant pojazdu (typ + pojemność), `NOT NULL`
-  - FK → `vehicle_variants.code`
+  - dawny wariant pojazdu (typ + pojemność); kolumna zachowana w bazie, ale **nieużywana przez aplikację** od sesji 21. Ograniczenie FK do `vehicle_variants.code` zostało usunięte migracją `20260301000000_decouple_vehicle_fields.sql`. Może być `NULL`
 - **special_requirements**: `varchar(500)`
   - wymagania specjalne (np. ADR, chłodnia); może być `NULL`
 - **required_documents_text**: `varchar(500)`
   - wymagane dokumenty dla kierowcy (np. `CMR, WZ, BDO`)
-- **general_notes**: `varchar(500)`  
+- **general_notes**: `varchar(500)`
   - ogólne uwagi do zlecenia
+- **notification_details**: `text`
+  - dane do awizacji — informacje przekazywane przewoźnikowi o planowanym załadunku/rozładunku; opcjonalne, nullable; max 500 znaków (walidacja w aplikacji); nie kopiowane przy duplikowaniu zlecenia
 - **complaint_reason**: `varchar(500)`  
   - powód reklamacji (gdy status = reklamacja), opcjonalne
 - **sender_contact_name**: `varchar(200)`
@@ -100,8 +101,8 @@ Tabela główna, centralna dla całego systemu.
   - przy ponownym wysłaniu (korekta wysłane) wartość jest **nadpisywana** na aktualną datę i użytkownika
 - **search_text**: `text`
   - zdenormalizowany tekst do globalnego wyszukiwania (numer, firmy, lokalizacje, uwagi itd.)
-- **search_vector**: `tsvector`  
-  - opcjonalny wektor pełnotekstowy wygenerowany z `search_text`
+- ~~**search_vector**~~: *USUNIĘTA* (migracja `20260306000001_drop_search_vector.sql`)
+  - kolumna `tsvector` i indeks GIN były martwe (nigdy nie populowane); `search_text` z ILIKE wystarczy dla MVP
 - **created_at**: `timestamptz`  
   - `DEFAULT now()`, `NOT NULL`
 - **created_by_user_id**: `uuid`  
@@ -116,10 +117,26 @@ Tabela główna, centralna dla całego systemu.
   - kiedy blokada została ustawiona, może być `NULL`
 - **carrier_cell_color**: `varchar(7)`
   - kolor tła komórki „Firma transportowa" w widoku listy; jeden z 4 predefiniowanych hex-ów lub `NULL` (brak koloru)
-  - `CHECK (carrier_cell_color IS NULL OR carrier_cell_color IN ('#48A111','#25671E','#FFEF5F','#EEA727'))`
+  - `CHECK (carrier_cell_color IS NULL OR carrier_cell_color IN ('#34d399','#047857','#fde047','#f97316'))`
   - ustawiany z menu kontekstowego (prawy klik); ukryty gdy status = wysłane/korekta wysłane (wiersz ma zielone tło)
   - NIE kopiowany przy duplikacji zlecenia
   - edytowalny przez ADMIN i PLANNER; READ_ONLY widzi kolor, ale nie może zmieniać
+- **order_seq_no**: `integer`
+  - sekwencyjny numer porządkowy zlecenia (do sortowania numerycznego w widoku listy), nullable
+  - wypełniany automatycznie przez trigger `trg_set_order_seq_no` przy INSERT/UPDATE — wyciąga część numeryczną z `order_no` (np. `ZT2026/0010` → `10`)
+  - używany w ORDER BY zamiast sortowania tekstowego po `order_no`
+- **vehicle_type_text**: `varchar(100)`
+  - typ pojazdu jako tekst (np. "FIRANKA", "HAKOWIEC"); niezależne od `vehicle_variants`, opcjonalne
+  - zastępuje FK do `vehicle_variants.code` (pole `vehicle_variant_code` zachowane w bazie, ale nieużywane przez aplikację)
+- **vehicle_capacity_volume_m3**: `numeric(12,1)`
+  - objętość ładunkowa pojazdu w m³ jako wolne pole numeryczne; opcjonalne
+  - niezależne od `vehicle_type_text` (dwa osobne pola w UI)
+- **is_entry_fixed**: `boolean`
+  - flaga „zafiksowany wjazd" — czysto informacyjna dla planistów; `DEFAULT NULL`
+  - dodana migracją `20260228000001_add_is_entry_fixed.sql`
+- **confidentiality_clause**: `text`
+  - klauzula poufności wyświetlana na podglądzie A4 / PDF zlecenia; opcjonalna, `DEFAULT NULL`
+  - dodana migracją `20260302000000_add_confidentiality_clause.sql`
 
 Klucz główny:  
 - PK(`id`)
@@ -399,11 +416,35 @@ PK:
   - `CHECK (role IN ('ADMIN','PLANNER','READ_ONLY'))`
 - **created_at**: `timestamptz`  
   - `DEFAULT now()`, `NOT NULL`
-- **updated_at**: `timestamptz`  
+- **updated_at**: `timestamptz`
   - `DEFAULT now()`, `NOT NULL`
+- **location_id**: `uuid`
+  - FK → `locations.id`, może być `NULL`
+  - identyfikator oddziału magazynowego użytkownika; wymagany do widoku `/warehouse`
+  - dodane migracją `20260303200000_warehouse_view_fields.sql`
 
-PK:  
+PK:
 - PK(`id`)
+
+---
+
+#### 1.13 `warehouse_report_recipients` – odbiorcy planu załadunkowego per oddział
+
+Stała lista adresów email, na które wysyłany jest tygodniowy plan załadunkowy. Zmienia się raz na pół roku — zarządzanie przez ADMIN (brak UI w MVP, tylko SQL/Studio).
+
+- **id**: `uuid` PK, `DEFAULT gen_random_uuid()`, `NOT NULL`
+- **location_id**: `uuid` FK → `locations.id` (`ON DELETE CASCADE`), `NOT NULL`
+- **email**: `varchar(320)`, `NOT NULL`
+- **name**: `varchar(200)` — opcjonalna nazwa odbiorcy
+- **created_at**: `timestamptz`, `DEFAULT now()`, `NOT NULL`
+
+Indeksy:
+- `wrr_location_email_uq` — UNIQUE INDEX na `(location_id, lower(email))` — case-insensitive unikalność
+- `wrr_location_id_idx` — INDEX na `location_id`
+
+RLS:
+- `select_recipients` — SELECT dla authenticated
+- `manage_recipients` — ALL (INSERT/UPDATE/DELETE) tylko dla ADMIN
 
 ---
 
@@ -454,11 +495,16 @@ PK:
     - `transport_orders.status_code` FK → `order_statuses.code`  
     - `order_status_history.old_status_code` / `new_status_code` FK → `order_statuses.code`
 
-12. **`transport_orders` → `vehicle_variants`**  
-    - relacja N:1  
-    - `transport_orders.vehicle_variant_code` FK → `vehicle_variants.code`
+12. **`transport_orders` → `vehicle_variants`** *(NIEAKTYWNA)*
+    - kolumna `vehicle_variant_code` pozostaje w tabeli, ale ograniczenie FK zostało usunięte (sesja 21)
+    - aplikacja używa teraz pól `vehicle_type_text` i `vehicle_capacity_volume_m3` (niezależnych od `vehicle_variants`)
 
-13. **`transport_orders` / logi → `user_profiles` / `auth.users`**
+13. **`user_profiles` → `locations`**
+    - relacja N:1 (opcjonalna — oddział magazynowy)
+    - `user_profiles.location_id` FK → `locations.id` (`ON DELETE RESTRICT`)
+    - używane przez widok magazynowy do filtrowania operacji wg oddziału użytkownika
+
+14. **`transport_orders` / logi → `user_profiles` / `auth.users`**
     - `transport_orders.created_by_user_id` / `updated_by_user_id` / `sent_by_user_id`,
       `order_status_history.changed_by_user_id`,
       `order_change_log.changed_by_user_id`
@@ -478,8 +524,9 @@ PK:
 - `INDEX` na `carrier_company_id`.  
 - `INDEX` na `(first_loading_date, order_no)` – domyślne sortowanie w widoku „aktualne”.  
 - (opcjonalnie) `INDEX` na `(transport_type_code, first_loading_date)` – filtrowanie po typie transportu i dacie.  
-- (opcjonalnie) `GIN INDEX` na `search_vector` – do pełnotekstowego wyszukiwania (wymaga rozszerzeń `pg_trgm`/`unaccent`/konfiguracji FTS).
+- ~~`GIN INDEX` na `search_vector`~~ — *USUNIĘTY* (migracja `20260306000001_drop_search_vector.sql`; kolumna i indeks były martwe).
 - (opcjonalnie) `INDEX` na `sent_at` – sortowanie / filtrowanie po dacie wysłania.
+- `INDEX` na `order_seq_no` – sortowanie numeryczne w widoku listy.
 
 #### 3.2 Indeksy na `order_stops`
 
@@ -488,6 +535,7 @@ PK:
 - `INDEX` na `order_id`.  
 - `INDEX` na `location_id`.  
 - (opcjonalnie) `INDEX` na `(kind, date_local)` – jeśli często filtrujemy np. „załadunki w danym dniu”.
+- `INDEX` na `(location_id, date_local)` — `idx_order_stops_location_date` — widok magazynowy filtruje stopy po lokalizacji i zakresie dat.
 
 #### 3.3 Indeksy na `order_items`
 
@@ -668,9 +716,9 @@ Przy zmianie pola `transport_type_code` system automatycznie ustawia wartość p
   - Schemat jest zasadniczo w 3NF dla głównych encji (zlecenia, punkty, pozycje, słowniki).
   - Wprowadzono świadome denormalizacje (np. `summary_route`, pierwsze daty załadunku/rozładunku, snapshoty tekstowe firm/lokalizacji/towarów, `search_text`) w celu uproszczenia zapytań i przyspieszenia widoku planistycznego oraz raportów.
 
-- **Wyszukiwanie tekstowe**:  
-  - W MVP globalne wyszukiwanie może działać przez `ILIKE`/`LOWER()` na `search_text`, z wykorzystaniem rozszerzenia `unaccent`, aby ignorować polskie znaki diakrytyczne.  
-  - Docelowo można zbudować `search_vector` jako `tsvector` i indeks GIN, aby uzyskać pełnotekstowe wyszukiwanie.
+- **Wyszukiwanie tekstowe**:
+  - W MVP globalne wyszukiwanie działa przez `ILIKE`/`LOWER()` na `search_text`, z wykorzystaniem rozszerzenia `unaccent`, aby ignorować polskie znaki diakrytyczne.
+  - Kolumna `search_vector` (tsvector) i indeks GIN zostały usunięte (nigdy nie były populowane). Docelowo, przy potrzebie wydajniejszego wyszukiwania, można je odtworzyć z triggerem populującym.
 
 - **Integracja z ERP**:  
   - Kolumny `erp_id` w słownikach firm, lokalizacji i towarów pozwalają później powiązać rekordy z ERP bez zmiany lokalnych kluczy głównych.  

@@ -6,6 +6,7 @@
 
 import { useCallback, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
+import { STATUS_NAMES } from "@/lib/view-models";
 
 import {
   AlertDialog,
@@ -17,19 +18,21 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
+import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
-import type { CarrierColorResponseDto, CreateOrderResponseDto, DuplicateOrderResponseDto, PrepareEmailResponseDto } from "@/types";
+import { useMicrosoftAuth } from "@/contexts/MicrosoftAuthContext";
 import { useOrders } from "@/hooks/useOrders";
-import { DEFAULT_FILTERS } from "@/lib/view-models";
+import { useOrderActions } from "@/hooks/useOrderActions";
+import { DEFAULT_FILTERS, hasActiveFilters } from "@/lib/view-models";
 import type {
   ListViewMode,
   OrderListFilters,
-  OrderStatusCode,
   ViewGroup,
 } from "@/lib/view-models";
 
 import { OrderDrawer } from "./drawer/OrderDrawer";
 import { EmptyState } from "./EmptyState";
+import { ValidationErrorDialog } from "./ValidationErrorDialog";
 import { FilterBar } from "./FilterBar";
 import { HistoryPanel } from "./history/HistoryPanel";
 import { OrderTable } from "./OrderTable";
@@ -41,6 +44,7 @@ interface OrdersPageProps {
 
 export function OrdersPage({ activeView }: OrdersPageProps) {
   const { user, api } = useAuth();
+  const microsoft = useMicrosoftAuth();
 
   // Stan filtrów i paginacji
   const [filters, setFilters] = useState<OrderListFilters>({
@@ -55,13 +59,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   const [selectedOrderId, setSelectedOrderId] = useState<string | null>(null);
   const [drawerOpen, setDrawerOpen] = useState(false);
 
-  // Stan tworzenia nowego zlecenia (blokada przycisku + spinner)
-  const [isCreatingOrder, setIsCreatingOrder] = useState(false);
-  const isCreatingRef = useRef(false);
   const tableScrollRef = useRef<HTMLDivElement>(null);
-
-  // Stan dialogu potwierdzenia anulowania
-  const [cancelOrderId, setCancelOrderId] = useState<string | null>(null);
 
   // Stan panelu historii
   const [historyOrderId, setHistoryOrderId] = useState<string | null>(null);
@@ -75,7 +73,37 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
   }, [activeView]);
 
   // Pobierz listę zleceń
-  const { data, isLoading, error, refetch } = useOrders(filters, page);
+  const { data, isLoading, error, refetch, silentRefetch, updateOrderLocally } = useOrders(filters, page);
+
+  // Akcje na zleceniach (wyekstrahowane do osobnego hooka)
+  const {
+    isCreatingOrder,
+    pendingCancel,
+    setPendingCancel,
+    pendingStatusChange,
+    setPendingStatusChange,
+    pendingDuplicate,
+    setPendingDuplicate,
+    pendingRestore,
+    setPendingRestore,
+    handleAddOrder,
+    handleSendEmail,
+    handleChangeStatusRequest,
+    handleChangeStatusConfirm,
+    handleCancelRequest,
+    handleCancelConfirm,
+    handleRestoreRequest,
+    handleRestoreConfirm,
+    handleSetCarrierColor,
+    handleSetEntryFixed,
+    handleDuplicateRequest,
+    handleDuplicateConfirm,
+    emailValidationErrors,
+    clearEmailValidationErrors,
+  } = useOrderActions({ api, user, refetch, silentRefetch, updateOrderLocally, tableScrollRef, microsoft });
+
+  // Stan pola powodu reklamacji w dialogu zmiany statusu
+  const [complaintReasonInput, setComplaintReasonInput] = useState("");
 
   useEffect(() => {
     if (data) {
@@ -89,18 +117,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     }
   }, [error]);
 
-  // Pomocnicza funkcja do sprawdzenia aktywnych filtrów
-  const hasActiveFilters =
-    !!filters.transportType ||
-    !!filters.status ||
-    !!filters.carrierId ||
-    !!filters.productId ||
-    !!filters.loadingCompanyId ||
-    !!filters.loadingLocationId ||
-    !!filters.unloadingCompanyId ||
-    !!filters.unloadingLocationId ||
-    !!filters.weekNumber ||
-    !!filters.search;
+  const filtersActive = hasActiveFilters(filters);
 
   // Uprawnienia
   const canWrite = user?.role !== "READ_ONLY";
@@ -133,51 +150,11 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     setPage(1);
   }
 
-  // --- Handlery akcji ---
+  // --- Handlery nawigacji ---
   function handleRowClick(orderId: string) {
     setSelectedOrderId(orderId);
     setDrawerOpen(true);
   }
-
-  const handleAddOrder = useCallback(async () => {
-    if (isCreatingRef.current) return;
-    isCreatingRef.current = true;
-    setIsCreatingOrder(true);
-    try {
-      const result = await api.post<CreateOrderResponseDto>("/api/v1/orders", {
-        transportTypeCode: "PL",
-        currencyCode: "PLN",
-        carrierCompanyId: null,
-        shipperLocationId: null,
-        receiverLocationId: null,
-        vehicleVariantCode: null,
-        priceAmount: null,
-        paymentTermDays: null,
-        paymentMethod: null,
-        totalLoadTons: null,
-        totalLoadVolumeM3: null,
-        specialRequirements: null,
-        requiredDocumentsText: null,
-        generalNotes: null,
-        senderContactName: null,
-        senderContactPhone: null,
-        senderContactEmail: null,
-        stops: [],
-        items: [],
-      });
-      toast.success(`Utworzono zlecenie ${result.orderNo}.`);
-      await refetch();
-      // Auto-scroll na dół po wyrenderowaniu nowego wiersza
-      requestAnimationFrame(() => {
-        tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
-      });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Błąd tworzenia zlecenia.");
-    } finally {
-      isCreatingRef.current = false;
-      setIsCreatingOrder(false);
-    }
-  }, [api, refetch]);
 
   const handleDrawerClose = useCallback(() => {
     setDrawerOpen(false);
@@ -190,104 +167,6 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     setHistoryOrderNo(resolvedNo);
     setHistoryPanelOpen(true);
   }
-
-  const handleSendEmail = useCallback(
-    async (orderId: string) => {
-      try {
-        const result = await api.post<PrepareEmailResponseDto>(
-          `/api/v1/orders/${orderId}/prepare-email`,
-          {}
-        );
-        if (result.emailOpenUrl) {
-          window.open(result.emailOpenUrl, "_blank", "noopener,noreferrer");
-        }
-        toast.success("Email przygotowany — otwórz klienta pocztowego.");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd wysyłki maila.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleChangeStatus = useCallback(
-    async (orderId: string, newStatus: OrderStatusCode) => {
-      try {
-        await api.post(`/api/v1/orders/${orderId}/status`, { newStatusCode: newStatus });
-        toast.success("Status zmieniony.");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd zmiany statusu.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleCancelRequest = useCallback((orderId: string) => {
-    setCancelOrderId(orderId);
-  }, []);
-
-  const handleCancelConfirm = useCallback(async () => {
-    if (!cancelOrderId) return;
-    const orderId = cancelOrderId;
-    setCancelOrderId(null);
-    try {
-      await api.delete(`/api/v1/orders/${orderId}`);
-      toast.success("Zlecenie anulowane.");
-      refetch();
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Błąd anulowania zlecenia.");
-    }
-  }, [api, cancelOrderId, refetch]);
-
-  const handleRestore = useCallback(
-    async (orderId: string) => {
-      try {
-        await api.post(`/api/v1/orders/${orderId}/restore`, {});
-        toast.success("Zlecenie przywrócone do Aktualnych (status: Korekta).");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd przywracania zlecenia.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleSetCarrierColor = useCallback(
-    async (orderId: string, color: string | null) => {
-      try {
-        await api.patch<CarrierColorResponseDto>(
-          `/api/v1/orders/${orderId}/carrier-color`,
-          { color }
-        );
-        toast.success(color ? "Kolor ustawiony." : "Kolor usunięty.");
-        refetch();
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd ustawiania koloru.");
-      }
-    },
-    [api, refetch]
-  );
-
-  const handleDuplicate = useCallback(
-    async (orderId: string) => {
-      try {
-        const result = await api.post<DuplicateOrderResponseDto>(
-          `/api/v1/orders/${orderId}/duplicate`,
-          { includeStops: true, includeItems: true, resetStatusToDraft: true }
-        );
-        toast.success(`Zlecenie skopiowane jako ${result.orderNo}.`);
-        await refetch();
-        // Auto-scroll na dół — kopia trafia na koniec listy (null dates, ASC nulls last)
-        requestAnimationFrame(() => {
-          tableScrollRef.current?.scrollTo({ top: tableScrollRef.current.scrollHeight, behavior: "smooth" });
-        });
-      } catch (err) {
-        toast.error(err instanceof Error ? err.message : "Błąd kopiowania zlecenia.");
-      }
-    },
-    [api, refetch]
-  );
 
   const orders = data?.items ?? [];
   const totalItems = data?.totalItems ?? 0;
@@ -313,7 +192,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
       {/* Tabela / EmptyState */}
       {isEmpty ? (
         <EmptyState
-          hasFilters={hasActiveFilters}
+          hasFilters={filtersActive}
           showAddButton={showAddButton}
           isAddingOrder={isCreatingOrder}
           onAddOrder={handleAddOrder}
@@ -332,20 +211,22 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           onRowClick={handleRowClick}
           onSendEmail={handleSendEmail}
           onShowHistory={handleShowHistory}
-          onChangeStatus={handleChangeStatus}
-          onDuplicate={handleDuplicate}
+          onChangeStatus={handleChangeStatusRequest}
+          onDuplicate={handleDuplicateRequest}
           onCancel={handleCancelRequest}
-          onRestore={handleRestore}
+          onRestore={handleRestoreRequest}
           onSetCarrierColor={handleSetCarrierColor}
+          onSetEntryFixed={handleSetEntryFixed}
         />
       )}
 
       {/* Prosta paginacja */}
       {totalPages > 1 && (
-        <div className="shrink-0 flex items-center justify-center gap-2 py-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
+        <div role="navigation" aria-label="Paginacja" className="shrink-0 flex items-center justify-center gap-2 py-2 border-t border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900">
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page <= 1}
+            aria-label="Poprzednia strona"
             className="text-xs px-3 py-1 rounded border border-slate-200 dark:border-slate-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Poprzednia
@@ -356,6 +237,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           <button
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page >= totalPages}
+            aria-label="Następna strona"
             className="text-xs px-3 py-1 rounded border border-slate-200 dark:border-slate-800 disabled:opacity-40 hover:bg-slate-50 dark:hover:bg-slate-800"
           >
             Następna
@@ -371,13 +253,21 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
       />
 
       {/* OrderDrawer */}
-      <OrderDrawer
-        orderId={selectedOrderId}
-        isOpen={drawerOpen}
-        onClose={handleDrawerClose}
-        onOrderUpdated={refetch}
-        onShowHistory={handleShowHistory}
-      />
+      <ErrorBoundary
+        fallback={
+          <div className="p-4 text-center text-sm text-red-600 dark:text-red-400">
+            Błąd ładowania formularza. Zamknij i otwórz ponownie.
+          </div>
+        }
+      >
+        <OrderDrawer
+          orderId={selectedOrderId}
+          isOpen={drawerOpen}
+          onClose={handleDrawerClose}
+          onOrderUpdated={silentRefetch}
+          onShowHistory={handleShowHistory}
+        />
+      </ErrorBoundary>
 
       {/* HistoryPanel */}
       <HistoryPanel
@@ -392,12 +282,12 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
       />
 
       {/* Dialog potwierdzenia anulowania zlecenia */}
-      <AlertDialog open={!!cancelOrderId} onOpenChange={(open) => { if (!open) setCancelOrderId(null); }}>
+      <AlertDialog open={!!pendingCancel} onOpenChange={(open) => { if (!open) setPendingCancel(null); }}>
         <AlertDialogContent>
           <AlertDialogHeader>
             <AlertDialogTitle>Anuluj zlecenie</AlertDialogTitle>
             <AlertDialogDescription>
-              Czy na pewno chcesz anulować to zlecenie? Tej operacji nie można cofnąć.
+              Czy na pewno chcesz anulować zlecenie <span className="font-semibold">{pendingCancel?.orderNo}</span>? Zlecenie przejdzie do zakładki Anulowane. Można je przywrócić w ciągu 24h.
             </AlertDialogDescription>
           </AlertDialogHeader>
           <AlertDialogFooter>
@@ -408,6 +298,102 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      {/* Dialog potwierdzenia zmiany statusu */}
+      <AlertDialog
+        open={!!pendingStatusChange}
+        onOpenChange={(open) => {
+          if (!open) {
+            setPendingStatusChange(null);
+            setComplaintReasonInput("");
+          }
+        }}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Zmień status zlecenia</AlertDialogTitle>
+            <AlertDialogDescription asChild>
+              <div>
+                Czy na pewno chcesz zmienić status zlecenia{" "}
+                <span className="font-semibold">{pendingStatusChange?.orderNo}</span>{" "}
+                na <span className="font-semibold">{pendingStatusChange ? STATUS_NAMES[pendingStatusChange.newStatus] : ""}</span>?
+                {pendingStatusChange?.newStatus === "reklamacja" && (
+                  <label className="block mt-3">
+                    <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
+                      Powód reklamacji
+                    </span>
+                    <textarea
+                      className="mt-1 w-full rounded-md border border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-sm px-3 py-2 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-primary/50 resize-none"
+                      rows={3}
+                      maxLength={500}
+                      placeholder="Opisz powód reklamacji..."
+                      value={complaintReasonInput}
+                      onChange={(e) => setComplaintReasonInput(e.target.value)}
+                    />
+                  </label>
+                )}
+              </div>
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setComplaintReasonInput("")}>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              disabled={pendingStatusChange?.newStatus === "reklamacja" && !complaintReasonInput.trim()}
+              onClick={() => {
+                handleChangeStatusConfirm(
+                  pendingStatusChange?.newStatus === "reklamacja" ? complaintReasonInput : undefined
+                );
+                setComplaintReasonInput("");
+              }}
+            >
+              Tak, zmień status
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog potwierdzenia duplikacji zlecenia */}
+      <AlertDialog open={!!pendingDuplicate} onOpenChange={(open) => { if (!open) setPendingDuplicate(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Skopiuj zlecenie</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz skopiować zlecenie <span className="font-semibold">{pendingDuplicate?.orderNo}</span>?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Nie</AlertDialogCancel>
+            <AlertDialogAction onClick={handleDuplicateConfirm}>
+              Tak, skopiuj
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog potwierdzenia przywrócenia zlecenia */}
+      <AlertDialog open={!!pendingRestore} onOpenChange={(open) => { if (!open) setPendingRestore(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Przywróć zlecenie</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz przywrócić zlecenie <span className="font-semibold">{pendingRestore?.orderNo}</span> do aktualnych?
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Nie</AlertDialogCancel>
+            <AlertDialogAction onClick={handleRestoreConfirm}>
+              Tak, przywróć
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
+      {/* Dialog walidacji email — brakujące pola (422) */}
+      <ValidationErrorDialog
+        open={emailValidationErrors.length > 0}
+        onClose={clearEmailValidationErrors}
+        missingFields={emailValidationErrors}
+      />
     </div>
   );
 }

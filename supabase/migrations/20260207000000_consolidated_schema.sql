@@ -388,7 +388,26 @@ to authenticated
 using (public.current_user_is_admin_or_planner());
 
 -- ------------------------------------------------------------
--- 3.8 transport_orders – nagłówek zlecenia transportowego
+-- 3.8 order_no_counters – liczniki numerów zleceń per rok
+-- ------------------------------------------------------------
+-- Przechowuje ostatni użyty numer sekwencji per rok.
+-- Zapobiega ponownemu przydzieleniu numeru po fizycznym usunięciu zlecenia.
+
+create table public.order_no_counters (
+  year int primary key,
+  last_seq int not null default 0
+);
+
+alter table public.order_no_counters enable row level security;
+
+create policy order_no_counters_select_authenticated
+on public.order_no_counters
+for select
+to authenticated
+using (true);
+
+-- ------------------------------------------------------------
+-- 3.9 transport_orders – nagłówek zlecenia transportowego
 -- ------------------------------------------------------------
 
 create table public.transport_orders (
@@ -464,7 +483,7 @@ create table public.transport_orders (
 -- constraint: kolor komórki przewoźnika — 4 predefiniowane kolory lub null
 alter table public.transport_orders
   add constraint chk_carrier_cell_color
-  check (carrier_cell_color is null or carrier_cell_color in ('#48A111', '#25671E', '#FFEF5F', '#EEA727'));
+  check (carrier_cell_color is null or carrier_cell_color in ('#34d399', '#047857', '#fde047', '#f97316'));
 
 -- unikalny biznesowy numer zlecenia
 create unique index transport_orders_order_no_uq
@@ -906,26 +925,21 @@ as $$
 declare
   v_year int := extract(year from current_date)::int;
   v_prefix text := 'ZT' || v_year || '/';
-  v_max_seq int;
   v_next_seq int;
   v_order_no text;
 begin
   -- advisory lock z kluczem na rok — serializuje równoczesne wywołania
   perform pg_advisory_xact_lock(hashtext('order_no_' || v_year::text));
 
-  -- znajdź najwyższy istniejący numer sekwencji dla tego roku
-  select coalesce(max(
-    case
-      when order_no ~ ('^ZT' || v_year || '/\d+$')
-      then substring(order_no from '/(\d+)$')::int
-    end
-  ), 0)
-  into v_max_seq
-  from public.transport_orders
-  where order_no like v_prefix || '%';
+  -- atomowy UPSERT: inkrementuj licznik lub utwórz nowy wiersz dla nowego roku
+  insert into public.order_no_counters (year, last_seq)
+  values (v_year, 1)
+  on conflict (year) do update
+    set last_seq = order_no_counters.last_seq + 1
+  returning last_seq into v_next_seq;
 
-  v_next_seq := v_max_seq + 1;
-  v_order_no := v_prefix || lpad(v_next_seq::text, 4, '0');
+  -- dynamiczny padding: min 4 cyfry, rośnie automatycznie powyżej 9999
+  v_order_no := v_prefix || lpad(v_next_seq::text, greatest(4, length(v_next_seq::text)), '0');
 
   return v_order_no;
 end;

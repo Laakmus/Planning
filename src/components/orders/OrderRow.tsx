@@ -12,18 +12,12 @@ import type { OrderListItemDto } from "@/types";
 import type { ListViewMode, OrderStatusCode, ViewGroup } from "@/lib/view-models";
 
 import { DatesCell, LocationsCell } from "./LocationsCell";
+import { ExpiryCountdown } from "./ExpiryCountdown";
+import { FixCell } from "./FixCell";
 import { LockIndicator } from "./LockIndicator";
 import { OrderRowContextMenu } from "./OrderRowContextMenu";
 import { RouteSummaryCell } from "./RouteSummaryCell";
 import { StatusBadge } from "./StatusBadge";
-
-/** Mapowanie kodów transportu na skróty wyświetlane w tabeli (PRD §3.1.2a). */
-const TRANSPORT_CODE_DISPLAY: Record<string, string> = {
-  PL: "PL",
-  EXP: "EXP",
-  EXP_K: "EXP_K",
-  IMP: "IMP",
-};
 
 /** Tło wiersza wg statusCode — tylko wysłane i korekta wysłane mają kolor (zielony). */
 const ROW_BG: Record<string, string> = {
@@ -38,11 +32,12 @@ interface OrderRowProps {
   onRowClick: (orderId: string) => void;
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
-  onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
-  onDuplicate: (orderId: string) => void;
-  onCancel: (orderId: string) => void;
-  onRestore: (orderId: string) => void;
+  onChangeStatus: (orderId: string, orderNo: string, newStatus: OrderStatusCode) => void;
+  onDuplicate: (orderId: string, orderNo: string) => void;
+  onCancel: (orderId: string, orderNo: string) => void;
+  onRestore: (orderId: string, orderNo: string) => void;
   onSetCarrierColor: (orderId: string, color: string | null) => void;
+  onSetEntryFixed: (orderId: string, value: boolean | null) => void;
 }
 
 export function OrderRow({
@@ -57,6 +52,7 @@ export function OrderRow({
   onCancel,
   onRestore,
   onSetCarrierColor,
+  onSetEntryFixed,
 }: OrderRowProps) {
   const { user } = useAuth();
   const rowBg = ROW_BG[order.statusCode] ?? "bg-white dark:bg-slate-900";
@@ -75,7 +71,7 @@ export function OrderRow({
     !isGreenRow && order.carrierCellColor
       ? {
           backgroundColor: order.carrierCellColor,
-          color: order.carrierCellColor === "#25671E" ? "#fff" : undefined,
+          color: order.carrierCellColor === "#047857" ? "#fff" : undefined,
         }
       : undefined;
 
@@ -109,6 +105,12 @@ export function OrderRow({
       {/* Status */}
       <td className="py-1 px-4 min-w-[100px]">
         <StatusBadge statusCode={order.statusCode} statusName={order.statusName} />
+        {/* Odliczanie do wygaśnięcia — tylko dla anulowanych zleceń */}
+        {order.statusCode === "anulowane" && (
+          <div className="mt-0.5">
+            <ExpiryCountdown updatedAt={order.updatedAt} />
+          </div>
+        )}
       </td>
 
       {/* Tydzień */}
@@ -118,7 +120,7 @@ export function OrderRow({
 
       {/* Rodzaj transportu */}
       <td className="py-1 px-4 text-[12px] min-w-[80px]">
-        {TRANSPORT_CODE_DISPLAY[order.transportTypeCode] ?? order.transportTypeCode}
+        {order.transportTypeCode}
       </td>
 
       {/* Trasa lub Miejsca załadunku/rozładunku */}
@@ -169,6 +171,18 @@ export function OrderRow({
         )}
       </td>
 
+      {/* Fix */}
+      <td
+        className="py-1 px-4 w-14 text-center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <FixCell
+          orderId={order.id}
+          value={order.isEntryFixed}
+          onSetEntryFixed={onSetEntryFixed}
+        />
+      </td>
+
       {/* Towar */}
       <td className="py-1 px-4 min-w-[160px]">
         {(() => {
@@ -176,14 +190,19 @@ export function OrderRow({
           return (
             <div className="space-y-0.5">
               {validItems.map((item, idx) => (
-                <div key={idx} className="text-[11px] whitespace-nowrap">
-                  {validItems.length > 1 ? `${idx + 1}. ` : ""}{item.productNameSnapshot}
-                  {item.quantityTons != null ? ` (${item.quantityTons}t` : ""}
-                  {item.loadingMethodCode ? `, ${item.loadingMethodCode})` : item.quantityTons != null ? ")" : ""}
+                <div key={`${item.productNameSnapshot}-${idx}`} className="text-xs whitespace-nowrap">
+                  {validItems.length > 1 ? `${idx + 1}. ` : ""}
+                  <span className="font-medium">{item.productNameSnapshot}</span>
+                  {(item.quantityTons != null || item.loadingMethodCode) && (
+                    <span className="text-slate-400 dark:text-slate-500">
+                      {item.quantityTons != null ? ` (${item.quantityTons}t` : " ("}
+                      {item.loadingMethodCode ? `${item.quantityTons != null ? ", " : ""}${item.loadingMethodCode.toLowerCase()})` : ")"}
+                    </span>
+                  )}
                 </div>
               ))}
               {validItems.length > 1 && totalTons > 0 && (
-                <div className="text-[10px] text-slate-500 dark:text-slate-400 font-semibold">
+                <div className="text-[11px] text-slate-500 dark:text-slate-400 font-semibold border-t border-slate-100 dark:border-slate-700 pt-0.5 mt-0.5">
                   Razem: {totalTons}t
                 </div>
               )}
@@ -194,15 +213,18 @@ export function OrderRow({
 
       {/* Komentarz */}
       <td className="py-1 px-4 min-w-[120px]">
-        <div className="space-y-0.5">
-          {order.items
-            .filter((it) => it.notes)
-            .map((item, idx) => (
-              <div key={idx} className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
-                {idx + 1}. {item.notes}
-              </div>
-            ))}
-        </div>
+        {(() => {
+          const notesItems = order.items.filter((it) => it.notes);
+          return (
+            <div className="space-y-0.5">
+              {notesItems.map((item, idx) => (
+                <div key={idx} className="text-[11px] text-slate-500 dark:text-slate-400 whitespace-nowrap">
+                  {notesItems.length > 1 ? `${idx + 1}. ` : ""}{item.notes}
+                </div>
+              ))}
+            </div>
+          );
+        })()}
       </td>
 
       {/* Firma transportowa */}
@@ -212,7 +234,7 @@ export function OrderRow({
 
       {/* Typ auta */}
       <td className="py-1 px-4 text-[12px] min-w-[90px]">
-        {order.vehicleVariantName}
+        {order.vehicleTypeText ?? "—"}
         {order.vehicleCapacityVolumeM3 != null && (
           <span className="text-slate-500 dark:text-slate-400"> ({order.vehicleCapacityVolumeM3}m³)</span>
         )}
@@ -247,6 +269,7 @@ export function OrderRow({
   return (
     <OrderRowContextMenu
       orderId={order.id}
+      orderNo={order.orderNo}
       statusCode={order.statusCode}
       activeView={activeView}
       carrierCellColor={order.carrierCellColor}

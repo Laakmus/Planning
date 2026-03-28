@@ -19,6 +19,7 @@ export interface UseOrderHistoryResult {
 /**
  * Pobiera historię statusów i log zmian kluczowych pól dla zlecenia.
  * Oba endpointy wywoływane równolegle (Promise.all).
+ * Anuluje poprzednie żądania HTTP przy zmianie orderId (AbortController).
  * Gdy `orderId` jest null, zwraca puste listy.
  *
  * @param orderId - UUID zlecenia lub null gdy brak wybranego zlecenia
@@ -29,7 +30,7 @@ export function useOrderHistory(orderId: string | null): UseOrderHistoryResult {
   const [changeLog, setChangeLog] = useState<ChangeLogItemDto[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const staleRef = useRef(false);
+  const controllerRef = useRef<AbortController | null>(null);
 
   const fetchData = useCallback(async () => {
     if (!orderId) {
@@ -39,7 +40,11 @@ export function useOrderHistory(orderId: string | null): UseOrderHistoryResult {
       return;
     }
 
-    staleRef.current = false;
+    // Anuluj poprzednie żądanie
+    controllerRef.current?.abort();
+    const controller = new AbortController();
+    controllerRef.current = controller;
+
     setIsLoading(true);
     setError(null);
 
@@ -53,26 +58,22 @@ export function useOrderHistory(orderId: string | null): UseOrderHistoryResult {
         ),
       ]);
 
-      if (!staleRef.current) {
-        setStatusHistory(statusResult.items);
-        setChangeLog(changesResult.items);
-      }
+      setStatusHistory(statusResult.items);
+      setChangeLog(changesResult.items);
     } catch (err) {
-      if (!staleRef.current) {
-        setError(err instanceof Error ? err.message : "Błąd pobierania historii zlecenia.");
-      }
+      if (controller.signal.aborted) return; // Anulowane — ignoruj
+      setError(err instanceof Error ? err.message : "Błąd pobierania historii zlecenia.");
     } finally {
-      if (!staleRef.current) {
+      if (!controller.signal.aborted) {
         setIsLoading(false);
       }
     }
   }, [api, orderId]);
 
   useEffect(() => {
-    staleRef.current = false;
     fetchData();
     return () => {
-      staleRef.current = true;
+      controllerRef.current?.abort();
     };
   }, [fetchData]);
 

@@ -138,11 +138,13 @@ export function createApiClient(config: ApiClientConfig) {
         const errorBody = await parseErrorBody(response);
         throw new ApiError(errorBody);
       }
+      // Zaufanie do API response — frontend i backend w jednym repo
       return response as unknown as T;
     }
 
     // Odpowiedź 204 No Content — brak ciała
     if (response.status === 204) {
+      // Rzutowanie konieczne — 204 nie ma ciała, T może być void/undefined
       return undefined as T;
     }
 
@@ -152,6 +154,7 @@ export function createApiClient(config: ApiClientConfig) {
     if (!response.ok) {
       // Próbuj sparsować strukturę błędu API
       try {
+        // Rzutowanie konieczne — JSON.parse zwraca unknown
         const errorBody = JSON.parse(text) as ApiErrorResponse;
         throw new ApiError(errorBody);
       } catch (e) {
@@ -167,12 +170,15 @@ export function createApiClient(config: ApiClientConfig) {
 
     // Parsowanie sukcesu
     if (!text.trim()) {
+      // Rzutowanie konieczne — puste ciało przy 200, T może być void/undefined
       return undefined as T;
     }
 
     try {
+      // Rzutowanie konieczne — JSON.parse zwraca unknown
       return JSON.parse(text) as T;
     } catch {
+      // Ignorujemy — niepoprawny JSON powoduje rzucenie czytelnego Error poniżej
       throw new Error(`Nieprawidłowa odpowiedź serwera (nie JSON): ${text.substring(0, 200)}`);
     }
   }
@@ -181,8 +187,10 @@ export function createApiClient(config: ApiClientConfig) {
   async function parseErrorBody(response: Response): Promise<ApiErrorResponse> {
     try {
       const text = await response.text();
+      // Rzutowanie konieczne — JSON.parse zwraca unknown
       return JSON.parse(text) as ApiErrorResponse;
     } catch {
+      // Ignorujemy — niepoprawne ciało odpowiedzi; zwracamy generyczny fallback poniżej
       return {
         statusCode: response.status,
         error: response.statusText || "Error",

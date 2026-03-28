@@ -14,6 +14,7 @@ import {
   isValidUUID,
   parseJsonBody,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { duplicateOrder } from "../../../../../lib/services/order.service";
 import { duplicateOrderSchema } from "../../../../../lib/validators/order.validator";
@@ -64,7 +65,7 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
         "Zlecenie zawiera odniesienia do nieaktywnych lub usuniętych rekordów słownikowych."
       );
     }
-    console.error("[POST /api/v1/orders/{orderId}/duplicate]", err);
+    logError("[POST /api/v1/orders/{orderId}/duplicate]", err);
     return errorResponse(
       500,
       "Internal Server Error",

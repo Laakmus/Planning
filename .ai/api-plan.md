@@ -43,9 +43,11 @@
       "email": "user@example.com",
       "fullName": "string | null",
       "phone": "string | null",
-      "role": "ADMIN | PLANNER | READ_ONLY"
+      "role": "ADMIN | PLANNER | READ_ONLY",
+      "locationId": "uuid | null"
     }
     ```
+  - **Uwaga**: `locationId` to identyfikator oddziału magazynowego użytkownika (`user_profiles.location_id` FK → `locations.id`). Wymagany do korzystania z widoku magazynowego (`/warehouse`). Może być `null` jeśli użytkownik nie ma przypisanego oddziału.
   - **Sukces**: `200 OK`
   - **Błędy**: `401 Unauthorized`
 
@@ -118,8 +120,7 @@
           ],
           "priceAmount": "number | null",
           "currencyCode": "PLN | EUR | USD",
-          "vehicleVariantCode": "string",
-          "vehicleVariantName": "string",
+          "vehicleTypeText": "string | null",
           "vehicleCapacityVolumeM3": "number | null",
           "requiredDocumentsText": "string | null",
           "generalNotes": "string | null",
@@ -133,7 +134,9 @@
           "createdByUserName": "string | null",
           "updatedAt": "timestamp",
           "updatedByUserId": "uuid | null",
-          "updatedByUserName": "string | null"
+          "updatedByUserName": "string | null",
+          "carrierCellColor": "string | null (hex kolor tła komórki przewoźnika, np. #34d399)",
+          "isEntryFixed": "boolean | null (flaga Fix — zafiksowany wjazd)"
         }
       ],
       "page": 1,
@@ -191,12 +194,14 @@
         "receiverLocationId": "uuid | null",
         "receiverNameSnapshot": "string | null",
         "receiverAddressSnapshot": "string | null",
-        "vehicleVariantCode": "string",
+        "vehicleTypeText": "string | null",
         "vehicleCapacityVolumeM3": "number | null",
         "specialRequirements": "string | null",
         "requiredDocumentsText": "string | null",
         "generalNotes": "string | null",
+        "notificationDetails": "string | null",
         "complaintReason": "string | null",
+        "confidentialityClause": "string | null",
         "senderContactName": "string | null",
         "senderContactPhone": "string | null",
         "senderContactEmail": "string | null",
@@ -257,7 +262,8 @@
       "carrierCompanyId": "uuid | null",
       "shipperLocationId": "uuid | null",
       "receiverLocationId": "uuid | null",
-      "vehicleVariantCode": "string",
+      "vehicleTypeText": "string | null",
+      "vehicleCapacityVolumeM3": "number | null",
       "priceAmount": "number | null",
       "paymentTermDays": "number | null",
       "paymentMethod": "string | null",
@@ -266,6 +272,8 @@
       "specialRequirements": "string | null",
       "requiredDocumentsText": "string | null",
       "generalNotes": "string | null",
+      "notificationDetails": "string | null",
+      "confidentialityClause": "string | null",
       "senderContactName": "string | null",
       "senderContactPhone": "string | null",
       "senderContactEmail": "string | null",
@@ -300,7 +308,7 @@
     }
     ```
   - **Walidacja techniczna**:
-    - `transportTypeCode`, `currencyCode`, `vehicleVariantCode` – wymagane.
+    - `transportTypeCode`, `currencyCode` – wymagane. `vehicleTypeText`, `vehicleCapacityVolumeM3` – opcjonalne.
     - `currencyCode ∈ {PLN, EUR, USD}`.
     - `quantityTons` `NULL` lub `>= 0`.
     - Pole `weekNumber` **nie jest przyjmowane** — jest obliczane automatycznie przez trigger bazodanowy po zapisie na podstawie `firstLoadingDate`.
@@ -329,11 +337,14 @@
       "carrierCompanyId": "uuid | null",
       "shipperLocationId": "uuid | null",
       "receiverLocationId": "uuid | null",
-      "vehicleVariantCode": "string",
+      "vehicleTypeText": "string | null",
+      "vehicleCapacityVolumeM3": "number | null",
       "specialRequirements": "string | null",
       "requiredDocumentsText": "string | null",
       "generalNotes": "string | null",
+      "notificationDetails": "string | null",
       "complaintReason": "string | null",
+      "confidentialityClause": "string | null",
       "senderContactName": "string | null",
       "senderContactPhone": "string | null",
       "senderContactEmail": "string | null",
@@ -483,6 +494,7 @@
   - **Body żądania**:
     ```json
     {
+      "kind": "LOADING | UNLOADING",
       "dateLocal": "YYYY-MM-DD",
       "timeLocal": "HH:MM:SS",
       "locationId": "uuid",
@@ -499,7 +511,7 @@
   - **Body żądania**:
     ```json
     {
-      "color": "#48A111 | #25671E | #FFEF5F | #EEA727 | null"
+      "color": "#34d399 | #047857 | #fde047 | #f97316 | null"
     }
     ```
   - **Body odpowiedzi**:
@@ -511,6 +523,28 @@
     ```
   - **Sukces**: `200 OK`
   - **Błędy**: `400 Bad Request`, `401 Unauthorized`, `403 Forbidden`, `404 Not Found`
+
+---
+
+### 2.10b Zlecenia – oznaczenie Fix (is_entry_fixed)
+
+- **PATCH** `/api/v1/orders/{orderId}/entry-fixed`
+  - **Opis**: Ustawia flagę "Fix" (zafiksowany wjazd) na zleceniu. Czysto informacyjna flaga dla planistów. Zmiana logowana w `order_change_log`.
+  - **Body żądania**:
+    ```json
+    {
+      "isEntryFixed": "boolean | null"
+    }
+    ```
+  - **Body odpowiedzi**:
+    ```json
+    {
+      "id": "uuid",
+      "isEntryFixed": "boolean | null"
+    }
+    ```
+  - **Sukces**: `200 OK`
+  - **Błędy**: `400 Bad Request`, `401 Unauthorized`, `403 Forbidden` (READ_ONLY), `404 Not Found`
 
 ---
 
@@ -600,8 +634,14 @@ Wszystkie te endpointy używają standardowego formatu:
   - **Opis**: Sprawdza kompletność danych wymaganych do wysyłki zlecenia, generuje/odświeża PDF i zwraca dane potrzebne do otwarcia Outlooka. Ustawia status **wysłane** (gdy poprzedni status to robocze) lub **korekta wysłane** (gdy poprzedni status to korekta).
   - **Body żądania**:
     ```json
-    { "forceRegeneratePdf": false }
+    {
+      "forceRegeneratePdf": false,
+      "outputFormat": "eml | pdf-base64"
+    }
     ```
+    - `outputFormat` (opcjonalny, domyślnie `"eml"`): określa format odpowiedzi.
+      - `"eml"` — zwraca plik .eml (RFC 822) z PDF w załączniku MIME base64 (dotychczasowy flow, fallback).
+      - `"pdf-base64"` — zwraca JSON z PDF zakodowanym w base64 (do użycia przez frontend z Microsoft Graph API).
   - **Walidacja biznesowa**:
     - wymagany typ transportu, przewoźnik, nadawca, odbiorca,
     - minimalny opis ładunku + ilość,
@@ -612,17 +652,125 @@ Wszystkie te endpointy używają standardowego formatu:
     - Ustawienie `sent_by_user_id` na bieżącego użytkownika i `sent_at` na `now()` (nadpisywane przy każdej wysyłce, w tym ponownej).
     - Zmiana statusu: robocze → wysłane, korekta → korekta wysłane.
     - Aktualizacja `main_product_name` (jeśli jeszcze puste).
-  - **Sukces (przykład)**:
+  - **Sukces (outputFormat = "eml")**: `200 OK` — zwraca plik `.eml` (Content-Type: `message/rfc822`, Content-Disposition: `attachment; filename="zlecenie-ZT2026-0001.eml"`). Plik .eml RFC 822 z PDF w załączniku MIME base64. Frontend pobiera blob.
+  - **Sukces (outputFormat = "pdf-base64")**: `200 OK` — zwraca JSON:
     ```json
     {
-      "orderId": "uuid",
-      "statusBefore": "robocze | korekta",
-      "statusAfter": "wysłane | korekta wysłane",
-      "emailOpenUrl": "string",
-      "pdfFileName": "ZT2026-0001.pdf"
+      "pdfBase64": "JVBERi0xLj... (base64-encoded PDF)",
+      "pdfFileName": "zlecenie-ZT2026-0001.pdf",
+      "emailSubject": "ZT2026/0001 -Recykling Plus S.A. - TransBud Logistyka - Magazyn Główny - zał. 20/02/2026"
     }
     ```
+    `emailSubject` — temat emaila wygenerowany na backendzie w formacie: `{orderNo} -{odbiorcy+} - {carrier} - {załadunki+} - zał. {DD/MM/YYYY}`. Frontend przekazuje go do Microsoft Graph API (`POST /me/messages`) jako `subject`. Fallback: jeśli brak, frontend używa domyślnego tematu.
   - **Błędy**: `401`, `403`, `404`, `422` (lista braków do wysyłki)
+
+---
+
+### 2.16 Widok magazynowy — tygodniowy plan operacji
+
+- **GET** `/api/v1/warehouse/orders`
+  - **Opis**: Zwraca tygodniowy widok operacji załadunków/rozładunków dla oddziału magazynowego zalogowanego użytkownika. Dane grupowane po dniach (pon-pt), z przesunięciem weekendowych stopów do piątku.
+  - **Parametry zapytania** (opcjonalne):
+    - `week` (integer, 1-53): numer tygodnia ISO. Domyślnie bieżący tydzień.
+    - `year` (integer, 2020-2099): rok. Domyślnie bieżący rok.
+  - **Wymagania**: Zalogowany użytkownik z przypisanym oddziałem (`locationId` w profilu). Brak przypisanego oddziału → `403 Forbidden`.
+  - **Filtrowanie**: Wyświetlane są tylko stopy zlecenia pasujące do lokalizacji użytkownika (stop.location_id = user.locationId) i ze statusem zlecenia w zbiorze: robocze, wysłane, korekta, korekta wysłane, reklamacja.
+  - **Struktura odpowiedzi**:
+    ```json
+    {
+      "week": 12,
+      "year": 2026,
+      "weekStart": "2026-03-16",
+      "weekEnd": "2026-03-20",
+      "locationName": "NORD Główny",
+      "days": [
+        {
+          "date": "2026-03-16",
+          "dayName": "Poniedziałek",
+          "entries": [
+            {
+              "orderId": "uuid",
+              "orderNo": "ZT2026/0042",
+              "stopType": "LOADING | UNLOADING",
+              "timeLocal": "08:00 | null",
+              "isWeekend": false,
+              "originalDate": "YYYY-MM-DD | null",
+              "items": [
+                {
+                  "productName": "Granulat PE",
+                  "loadingMethod": "PALETA | null",
+                  "weightTons": 24.5
+                }
+              ],
+              "totalWeightTons": 24.5,
+              "carrierName": "Trans-Pol Sp. z o.o. | null",
+              "vehicleType": "FIRANKA | null",
+              "notificationDetails": "string | null"
+            }
+          ]
+        }
+      ],
+      "noDateEntries": [],
+      "summary": {
+        "loadingCount": 5,
+        "loadingTotalTons": 120.5,
+        "unloadingCount": 3,
+        "unloadingTotalTons": 72.0
+      }
+    }
+    ```
+  - **Logika weekendowa**: Stopy z datą sobota/niedziela są przesuwane do piątku z flagą `isWeekend: true` i `originalDate` zachowującym oryginalną datę.
+  - **Sekcja noDateEntries**: Stopy bez przypisanej daty (date_local IS NULL) wyświetlane w osobnej sekcji na dole widoku.
+  - **Sukces**: `200 OK`
+  - **Błędy**: `400 Bad Request` (nieprawidłowe parametry), `401 Unauthorized`, `403 Forbidden` (brak oddziału), `500 Internal Server Error`
+
+---
+
+### 2.17 Widok magazynowy — plan załadunkowy PDF + email
+
+- **POST** `/api/v1/warehouse/report/pdf`
+  - **Opis**: Generuje PDF planu załadunkowego magazynu (landscape A4) z tabelami per dzień.
+  - **Auth**: `requireWriteAccess` (ADMIN + PLANNER)
+  - **Body żądania**:
+    ```json
+    { "week": 12, "year": 2026, "locationId": "uuid (opcjonalny)" }
+    ```
+  - **Sukces**: `200 OK` (binarne dane PDF, Content-Type: `application/pdf`)
+  - **Błędy**: `400`, `401`, `403` (brak oddziału), `500`
+
+- **POST** `/api/v1/warehouse/report/send-email`
+  - **Opis**: Generuje PDF planu załadunkowego, pobiera odbiorców z `warehouse_report_recipients` i zwraca plik .eml z załącznikiem PDF lub JSON z PDF base64 (do Graph API).
+  - **Auth**: `requireWriteAccess` (ADMIN + PLANNER)
+  - **Body żądania**:
+    ```json
+    { "week": 12, "year": 2026, "locationId": "uuid (opcjonalny)", "outputFormat": "eml | pdf-base64" }
+    ```
+  - **Sukces (eml)**: `200 OK` — plik .eml (Content-Type: `message/rfc822`)
+  - **Sukces (pdf-base64)**: `200 OK` — JSON `{ pdfBase64, pdfFileName, recipients: [{email, name}] }`
+  - **Błędy**: `400`, `401`, `403`, `422` (brak skonfigurowanych odbiorców), `500`
+
+- **GET** `/api/v1/warehouse/report/recipients?locationId=UUID`
+  - **Opis**: Lista odbiorców planu załadunkowego dla danego oddziału.
+  - **Auth**: authenticated (wszyscy zalogowani)
+  - **Odpowiedź**: `{ recipients: [{ id, email, name }] }`
+  - **Błędy**: `400` (brak/nieprawidłowy locationId), `401`, `500`
+
+---
+
+### 2.18 Health check
+
+- **GET** `/api/v1/health`
+  - **Opis**: Sprawdza dostępność serwera i połączenie z bazą danych. Nie wymaga uwierzytelniania.
+  - **Body odpowiedzi (sukces)**:
+    ```json
+    {
+      "status": "ok",
+      "timestamp": "ISO 8601 timestamp",
+      "db": "connected"
+    }
+    ```
+  - **Sukces**: `200 OK`
+  - **Błędy**: `503 Service Unavailable` (brak połączenia z DB)
 
 ---
 

@@ -9,21 +9,41 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../db/database.types";
 import type { AuthMeDto } from "../types";
+import { logger } from "./logger";
+import { captureException } from "./sentry";
 import { getCurrentUser } from "./services/auth.service";
 
 /** Regex dla formatu UUID (8-4-4-4-12 hex). */
 const UUID_REGEX =
   /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
 
+/** Zwraca skonfigurowany CORS origin (env lub domyślny localhost). */
+export function getCorsOrigin(): string {
+  return import.meta.env.CORS_ORIGIN ?? "http://localhost:4321";
+}
+
+// Walidacja CORS_ORIGIN w produkcji
+if (import.meta.env.PROD) {
+  const origin = getCorsOrigin();
+  if (origin.includes("localhost") || origin.includes("127.0.0.1")) {
+    console.warn(
+      "[SECURITY] CORS_ORIGIN zawiera localhost w trybie produkcyjnym. " +
+      "Ustaw zmienną środowiskową CORS_ORIGIN na domenę produkcyjną."
+    );
+  }
+}
+
 /** Security + CORS headers dołączane do każdej odpowiedzi API. */
-const COMMON_HEADERS: Record<string, string> = {
+export const COMMON_HEADERS: Record<string, string> = {
   "Content-Type": "application/json",
+  "Cache-Control": "no-store",
   "X-Content-Type-Options": "nosniff",
   "X-Frame-Options": "DENY",
   "Content-Security-Policy": "default-src 'none'; frame-ancestors 'none'",
   "Referrer-Policy": "strict-origin-when-cross-origin",
   "Strict-Transport-Security": "max-age=31536000; includeSubDomains",
-  "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "http://localhost:4321",
+  "Permissions-Policy": "camera=(), microphone=(), geolocation=()",
+  "Access-Control-Allow-Origin": getCorsOrigin(),
   "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
 };
@@ -171,4 +191,31 @@ export async function parseJsonBody<T>(request: Request): Promise<T> {
  */
 export function isValidUUID(value: string): boolean {
   return UUID_REGEX.test(value);
+}
+
+/**
+ * Strukturalny log błędu w formacie JSON.
+ * Loguje błąd przez pino (structured JSON) i wysyła do Sentry (jeśli skonfigurowany).
+ *
+ * @param context — identyfikator endpointu/operacji (np. "[GET /api/v1/orders]")
+ * @param error — przechwycony błąd
+ * @param requestId — opcjonalny identyfikator żądania
+ */
+export function logError(context: string, error: unknown, requestId?: string): void {
+  const entry: Record<string, unknown> = {
+    level: "error",
+    timestamp: new Date().toISOString(),
+    context,
+  };
+  if (requestId) {
+    entry.requestId = requestId;
+  }
+  if (error instanceof Error) {
+    entry.message = error.message;
+    entry.stack = error.stack;
+  } else {
+    entry.message = String(error);
+  }
+  logger.error(entry, entry.message as string);
+  captureException(error, { context, requestId });
 }

@@ -29,16 +29,27 @@ export async function lockOrder(
   userId: string,
   orderId: string
 ): Promise<LockOrderResponseDto | null> {
-  // Cast needed: generated Supabase types don't include custom RPC functions.
-  // RPC zdefiniowane w supabase/migrations/20260207000000_consolidated_schema.sql (sekcja 7.1).
+  // Sprawdzenie statusu — nie pozwalamy blokować zleceń anulowanych/zrealizowanych
+  const { data: orderStatus, error: statusError } = await supabase
+    .from("transport_orders")
+    .select("status_code")
+    .eq("id", orderId)
+    .maybeSingle();
+
+  if (statusError) throw statusError;
+  if (!orderStatus) return null;
+
+  if (orderStatus.status_code === "anulowane" || orderStatus.status_code === "zrealizowane") {
+    throw new Error("LOCK_TERMINAL_STATUS");
+  }
+
   type TryLockResult = {
     status: string;
     lockedByUserId?: string;
     lockedByUserName?: string;
     lockedAt?: string;
   };
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const { data, error } = await (supabase as any).rpc("try_lock_order", {
+  const { data, error } = await supabase.rpc("try_lock_order", {
     p_order_id: orderId,
     p_user_id: userId,
     p_lock_expiry_minutes: LOCK_EXPIRY_MINUTES,

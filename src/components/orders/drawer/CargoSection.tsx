@@ -3,8 +3,19 @@
  * Lista pozycji towarowych.
  */
 
+import { memo, useState } from "react";
 import { Plus, Trash2 } from "lucide-react";
 
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import {
@@ -27,13 +38,13 @@ interface CargoSectionProps {
 }
 
 const LOADING_METHODS: { code: LoadingMethodCode; label: string }[] = [
-  { code: "PALETA", label: "Paleta" },
-  { code: "PALETA_BIGBAG", label: "Paleta / BigBag" },
   { code: "LUZEM", label: "Luzem" },
-  { code: "KOSZE", label: "Kosze" },
+  { code: "PALETA_BIGBAG", label: "Bigbag" },
+  { code: "PALETA", label: "Paleta" },
+  { code: "KOSZE", label: "Inne" },
 ];
 
-export function CargoSection({
+export const CargoSection = memo(function CargoSection({
   formData,
   products,
   isReadOnly,
@@ -42,12 +53,20 @@ export function CargoSection({
   const activeItems = formData.items.filter((it) => !it._deleted);
   const totalTons = activeItems.reduce((sum, it) => sum + (it.quantityTons ?? 0), 0);
 
+  // Stan dialogu potwierdzenia usunięcia towaru
+  const [pendingRemoveIdx, setPendingRemoveIdx] = useState<number | null>(null);
+
   function patchItem(idx: number, patch: Partial<OrderFormItem>) {
     const updated = formData.items.map((it, i) => (i === idx ? { ...it, ...patch } : it));
     onChange({ items: updated });
   }
 
-  function removeItem(idx: number) {
+  /** Sprawdza czy pozycja towarowa ma wypełnione dane */
+  function itemHasData(item: OrderFormItem): boolean {
+    return item.productId !== null || item.quantityTons !== null || item.notes !== null;
+  }
+
+  function doRemoveItem(idx: number) {
     const item = formData.items[idx];
     let updated: OrderFormItem[];
     if (item.id === null) {
@@ -58,16 +77,27 @@ export function CargoSection({
     onChange({ items: updated });
   }
 
+  function removeItem(idx: number) {
+    const item = formData.items[idx];
+    // Jeśli pozycja ma dane — pokaż dialog potwierdzenia
+    if (itemHasData(item)) {
+      setPendingRemoveIdx(idx);
+    } else {
+      doRemoveItem(idx);
+    }
+  }
+
   function addItem() {
     const newItem: OrderFormItem = {
       id: null,
       productId: null,
       productNameSnapshot: null,
       defaultLoadingMethodSnapshot: null,
-      loadingMethodCode: null,
+      loadingMethodCode: "LUZEM",
       quantityTons: null,
       notes: null,
       _deleted: false,
+      _clientKey: crypto.randomUUID(),
     };
     onChange({ items: [...formData.items, newItem] });
   }
@@ -77,7 +107,6 @@ export function CargoSection({
       productId: item?.id ?? null,
       productNameSnapshot: item?.name ?? null,
       defaultLoadingMethodSnapshot: item?.defaultLoadingMethodCode ?? null,
-      loadingMethodCode: (item?.defaultLoadingMethodCode as LoadingMethodCode) ?? null,
     });
   }
 
@@ -90,7 +119,7 @@ export function CargoSection({
           const itemNo = formData.items.filter((it, i) => !it._deleted && i <= idx).length;
           return (
             <div
-              key={idx}
+              key={item._clientKey || item.id || idx}
               className="rounded-lg border border-slate-200 dark:border-slate-800 bg-white dark:bg-slate-900/30 p-3 space-y-0 hover:border-amber-500/50 transition-all"
             >
               <div className="flex items-center justify-between">
@@ -168,11 +197,6 @@ export function CargoSection({
                       ))}
                     </SelectContent>
                   </Select>
-                  {item.defaultLoadingMethodSnapshot && (
-                    <p className="text-[10px] text-slate-400 dark:text-slate-500">
-                      Domyślnie: {item.defaultLoadingMethodSnapshot}
-                    </p>
-                  )}
                 </div>
               </div>
 
@@ -214,6 +238,32 @@ export function CargoSection({
         </button>
       )}
 
+      {/* Dialog potwierdzenia usunięcia towaru z danymi */}
+      <AlertDialog open={pendingRemoveIdx !== null} onOpenChange={(open) => { if (!open) setPendingRemoveIdx(null); }}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Usunąć pozycję towarową?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Czy na pewno chcesz usunąć tę pozycję? Dane zostaną utracone.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Anuluj</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingRemoveIdx !== null) {
+                  doRemoveItem(pendingRemoveIdx);
+                  setPendingRemoveIdx(null);
+                }
+              }}
+              className="bg-red-600 hover:bg-red-700 text-white"
+            >
+              Usuń
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+
     </div>
   );
-}
+});

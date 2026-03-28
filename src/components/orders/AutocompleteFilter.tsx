@@ -72,7 +72,14 @@ export function AutocompleteFilter({
             {selected && (
               <span
                 role="button"
+                tabIndex={0}
                 onClick={handleClear}
+                onKeyDown={(e) => {
+                  if (e.key === " " || e.key === "Enter") {
+                    e.preventDefault();
+                    handleClear(e as unknown as React.MouseEvent);
+                  }
+                }}
                 className="hover:text-slate-700 dark:hover:text-slate-300 text-slate-400 p-0.5"
               >
                 <X className="w-3 h-3" />

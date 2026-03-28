@@ -1,6 +1,6 @@
 # Plan implementacji REST API — wszystkie endpointy
 
-**Dokumenty źródłowe:** `.ai/api-plan.md` (specyfikacja REST API), `.ai/db-plan.md` (schemat bazy danych), `src/types.ts` (typy DTO i Command), `src/db/database.types.ts` (typy Supabase).
+**Dokumenty źródłowe:** `.ai/api-plan.md` (specyfikacja REST API), `.ai/db-plan.md` (schemat bazy danych), `src/types/` (typy DTO i Command), `src/db/database.types.ts` (typy Supabase).
 
 ---
 
@@ -284,7 +284,7 @@ function isValidUUID(value: string): boolean
 4. Generuj `order_no` — format `ZT{year}/{seqNo}` (np. `ZT2026/0001`):
    - Pobierz najwyższy `order_no` z tego roku lub użyj sekwencji DB.
    - **Rekomendacja:** Funkcja PostgreSQL (`rpc`) `generate_order_no()` z sekwencją.
-   - **Uwaga:** PRD używa formatu `ZT-2026-0042` (z myślnikami). Przyjęto format z db-plan.md (`ZT2026/0001`) jako źródło prawdy dla bazy — do uzgodnienia z właścicielem produktu.
+   - **Format numeru zlecenia:** `ZT{rok}/{seqNo}` np. `ZT2026/0001`. Min. 4 cyfry, dynamiczny padding powyżej 9999. Format uzgodniony i spójny we wszystkich dokumentach (PRD, db-plan, api-plan).
 5. Automatyczne uzupełnienie pól:
    - `required_documents_text` wg `transport_type_code` (sekcja 5.1 db-plan)
    - `currency_code` wg `transport_type_code` (sekcja 5.2 db-plan) — nadpisz tylko jeśli user nie podał innej
@@ -427,9 +427,9 @@ function isValidUUID(value: string): boolean
 1. Auth guard + requireWriteAccess.
 2. Waliduj body.
 3. Pobierz bieżący status zlecenia.
-4. Sprawdź dozwolone przejście wg `ALLOWED_MANUAL_STATUS_TRANSITIONS` z `src/types.ts`:
+4. Sprawdź dozwolone przejście wg `ALLOWED_MANUAL_STATUS_TRANSITIONS` z `src/types/`:
    - `zrealizowane` ← z: robocze, wysłane, korekta, korekta wysłane, reklamacja
-   - `reklamacja` ← z: wysłane, korekta wysłane (+ wymagane `complaintReason`)
+   - `reklamacja` ← z: wysłane, korekta, korekta wysłane (+ wymagane `complaintReason`)
    - `anulowane` ← z: robocze, wysłane, korekta, korekta wysłane, reklamacja (nie z zrealizowane)
 5. Jeśli przejście niedozwolone → 400.
 6. Jeśli reklamacja i brak `complaintReason` → 422.
@@ -637,10 +637,10 @@ function isValidUUID(value: string): boolean
 
 **Plik:** `src/pages/api/v1/orders/[orderId]/prepare-email.ts`
 
-**Cel:** Walidacja biznesowa, generacja PDF, przygotowanie danych do otwarcia Outlooka, zmiana statusu.
+**Cel:** Walidacja biznesowa, generacja PDF, budowa pliku .eml (RFC 822) z PDF w załączniku, zmiana statusu.
 
-**Typ żądania:** `PrepareEmailCommand`
-**Typ odpowiedzi:** `PrepareEmailResponseDto`
+**Typ żądania:** `{}` (pusty obiekt lub brak body)
+**Typ odpowiedzi:** blob `message/rfc822` (.eml z PDF attachment MIME base64)
 
 **Walidacja biznesowa (422 jeśli niespełniona):**
 - Wymagany `transport_type_code`
@@ -665,7 +665,7 @@ function isValidUUID(value: string): boolean
 6. Ustaw `sent_by_user_id = current_user`, `sent_at = now()` (nadpisywane przy każdej wysyłce, w tym ponownej).
 7. Aktualizuj `main_product_name` jeśli puste.
 8. INSERT do `order_status_history`.
-9. Zwróć 200 z `PrepareEmailResponseDto` (w tym `emailOpenUrl` — mailto: link, `pdfFileName`).
+9. Zwróć 200 z plikiem `.eml` (Content-Type: `message/rfc822`, Content-Disposition: attachment). Frontend pobiera blob i inicjuje download.
 
 **Błędy:**
 - 400, 401, 403, 404, 422
@@ -953,7 +953,7 @@ export const dictionarySyncSchema = z.object({
 
 ### 7.1 Format odpowiedzi błędu
 
-Zgodny z `ApiErrorResponse` z `src/types.ts`:
+Zgodny z `ApiErrorResponse` z `src/types/`:
 
 ```json
 {
@@ -1106,7 +1106,7 @@ api-helpers.ts ←── Etap 1
 
 ## 11. Mapowanie camelCase ↔ snake_case
 
-Supabase zwraca dane w `snake_case`. Typy DTO w `src/types.ts` używają `camelCase`. Warstwa serwisowa jest odpowiedzialna za transformację.
+Supabase zwraca dane w `snake_case`. Typy DTO w `src/types/` używają `camelCase`. Warstwa serwisowa jest odpowiedzialna za transformację.
 
 **Przykład mapowania `transport_orders` → `OrderListItemDto`:**
 

@@ -1,0 +1,440 @@
+<!DOCTYPE html>
+<html lang="pl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kolumna Towar — warianty czytelności</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <style>
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif; }
+    .variant-label {
+      background: #1e293b;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-block;
+      margin-bottom: 8px;
+    }
+    .variant-desc {
+      color: #64748b;
+      font-size: 12px;
+      margin-bottom: 12px;
+    }
+    table { border-collapse: collapse; width: 100%; }
+    th { text-align: left; font-size: 11px; color: #94a3b8; text-transform: uppercase; letter-spacing: 0.05em; padding: 6px 16px; border-bottom: 1px solid #e2e8f0; }
+    td { padding: 6px 16px; border-bottom: 1px solid #f1f5f9; vertical-align: top; }
+    .section { border: 1px solid #e2e8f0; border-radius: 8px; padding: 16px; margin-bottom: 24px; background: white; }
+    .winner { border-color: #22c55e; box-shadow: 0 0 0 2px rgba(34,197,94,0.15); }
+  </style>
+</head>
+<body class="bg-slate-50 p-8">
+
+  <h1 class="text-xl font-bold mb-2">Kolumna "Towar" — propozycje poprawy czytelności</h1>
+  <p class="text-sm text-slate-500 mb-6">Obecna wersja: text-[11px] (mniejsza niż reszta tabeli = 12px). Poniżej 6 wariantów do porównania.</p>
+
+  <!-- ======================= WARIANT 0: OBECNY ======================= -->
+  <div class="section" style="border-color: #ef4444;">
+    <span class="variant-label" style="background: #ef4444;">Wariant 0 — Obecny (text-[11px])</span>
+    <div class="variant-desc">Tak jak jest teraz. Czcionka 11px, bez dodatkowego formatowania. Trudna do odczytania.</div>
+    <table>
+      <thead><tr><th>Nr</th><th>Status</th><th>Towar</th><th>Przewoźnik</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0342</td>
+          <td class="text-xs">Nowe</td>
+          <td>
+            <div style="font-size: 11px;" class="space-y-0.5">
+              <div class="whitespace-nowrap">1. Złom stalowy (12.5t, luzem)</div>
+              <div class="whitespace-nowrap">2. Złom aluminium (4.2t, big-bag)</div>
+              <div style="font-size: 10px;" class="text-slate-500 font-semibold">Razem: 16.7t</div>
+            </div>
+          </td>
+          <td class="text-xs">Trans-Sped Sp. z o.o.</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0343</td>
+          <td class="text-xs">Wysłane</td>
+          <td>
+            <div style="font-size: 11px;">
+              <div class="whitespace-nowrap">Papier makulaturowy (22t, luzem)</div>
+            </div>
+          </td>
+          <td class="text-xs">Eco-Trans GmbH</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0344</td>
+          <td class="text-xs">Korekta</td>
+          <td>
+            <div style="font-size: 11px;" class="space-y-0.5">
+              <div class="whitespace-nowrap">1. Tworzywa sztuczne PE (8t, big-bag)</div>
+              <div class="whitespace-nowrap">2. Folia stretch (3.5t, paleta)</div>
+              <div class="whitespace-nowrap">3. Butelki PET (5t, big-bag)</div>
+              <div style="font-size: 10px;" class="text-slate-500 font-semibold">Razem: 16.5t</div>
+            </div>
+          </td>
+          <td class="text-xs">PL-Logistics</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================= WARIANT 1 ======================= -->
+  <div class="section">
+    <span class="variant-label">Wariant 1 — Wyrównanie do 12px</span>
+    <div class="variant-desc">Najprostszy fix: zwiększenie z 11px do 12px (jak reszta kolumn). Razem = 11px. Minimalna zmiana, duża poprawa.</div>
+    <table>
+      <thead><tr><th>Nr</th><th>Status</th><th>Towar</th><th>Przewoźnik</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0342</td>
+          <td class="text-xs">Nowe</td>
+          <td>
+            <div class="text-xs space-y-0.5">
+              <div class="whitespace-nowrap">1. Złom stalowy (12.5t, luzem)</div>
+              <div class="whitespace-nowrap">2. Złom aluminium (4.2t, big-bag)</div>
+              <div style="font-size: 11px;" class="text-slate-500 font-semibold">Razem: 16.7t</div>
+            </div>
+          </td>
+          <td class="text-xs">Trans-Sped Sp. z o.o.</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0343</td>
+          <td class="text-xs">Wysłane</td>
+          <td>
+            <div class="text-xs">
+              <div class="whitespace-nowrap">Papier makulaturowy (22t, luzem)</div>
+            </div>
+          </td>
+          <td class="text-xs">Eco-Trans GmbH</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0344</td>
+          <td class="text-xs">Korekta</td>
+          <td>
+            <div class="text-xs space-y-0.5">
+              <div class="whitespace-nowrap">1. Tworzywa sztuczne PE (8t, big-bag)</div>
+              <div class="whitespace-nowrap">2. Folia stretch (3.5t, paleta)</div>
+              <div class="whitespace-nowrap">3. Butelki PET (5t, big-bag)</div>
+              <div style="font-size: 11px;" class="text-slate-500 font-semibold">Razem: 16.5t</div>
+            </div>
+          </td>
+          <td class="text-xs">PL-Logistics</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================= WARIANT 2 ======================= -->
+  <div class="section winner">
+    <span class="variant-label" style="background: #22c55e;">Wariant 2 — Pogrubiona nazwa + szary tonaż (REKOMENDACJA)</span>
+    <div class="variant-desc">12px, nazwa produktu pogrubiona (font-medium), tonaż i metoda w szarym kolorze. Hierarchia wizualna: co? → ile?</div>
+    <table>
+      <thead><tr><th>Nr</th><th>Status</th><th>Towar</th><th>Przewoźnik</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0342</td>
+          <td class="text-xs">Nowe</td>
+          <td>
+            <div class="text-xs space-y-0.5">
+              <div class="whitespace-nowrap"><span class="font-medium">Złom stalowy</span> <span class="text-slate-400">12.5t · luzem</span></div>
+              <div class="whitespace-nowrap"><span class="font-medium">Złom aluminium</span> <span class="text-slate-400">4.2t · big-bag</span></div>
+              <div style="font-size: 11px;" class="text-slate-500 font-semibold border-t border-slate-100 pt-0.5 mt-0.5">Razem: 16.7t</div>
+            </div>
+          </td>
+          <td class="text-xs">Trans-Sped Sp. z o.o.</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0343</td>
+          <td class="text-xs">Wysłane</td>
+          <td>
+            <div class="text-xs">
+              <div class="whitespace-nowrap"><span class="font-medium">Papier makulaturowy</span> <span class="text-slate-400">22t · luzem</span></div>
+            </div>
+          </td>
+          <td class="text-xs">Eco-Trans GmbH</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0344</td>
+          <td class="text-xs">Korekta</td>
+          <td>
+            <div class="text-xs space-y-0.5">
+              <div class="whitespace-nowrap"><span class="font-medium">Tworzywa sztuczne PE</span> <span class="text-slate-400">8t · big-bag</span></div>
+              <div class="whitespace-nowrap"><span class="font-medium">Folia stretch</span> <span class="text-slate-400">3.5t · paleta</span></div>
+              <div class="whitespace-nowrap"><span class="font-medium">Butelki PET</span> <span class="text-slate-400">5t · big-bag</span></div>
+              <div style="font-size: 11px;" class="text-slate-500 font-semibold border-t border-slate-100 pt-0.5 mt-0.5">Razem: 16.5t</div>
+            </div>
+          </td>
+          <td class="text-xs">PL-Logistics</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================= WARIANT 3 ======================= -->
+  <div class="section">
+    <span class="variant-label">Wariant 3 — Badge z tonażem</span>
+    <div class="variant-desc">12px, nazwa produktu normalna, tonaż w małym badge (pill). Wizualnie wyraźny podział nazwa/waga.</div>
+    <table>
+      <thead><tr><th>Nr</th><th>Status</th><th>Towar</th><th>Przewoźnik</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0342</td>
+          <td class="text-xs">Nowe</td>
+          <td>
+            <div class="text-xs space-y-1">
+              <div class="whitespace-nowrap flex items-center gap-1.5">
+                Złom stalowy
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium">12.5t</span>
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-slate-100 text-slate-500 text-[10px]">luzem</span>
+              </div>
+              <div class="whitespace-nowrap flex items-center gap-1.5">
+                Złom aluminium
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium">4.2t</span>
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-slate-100 text-slate-500 text-[10px]">big-bag</span>
+              </div>
+              <div class="text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-0.5">Razem: 16.7t</div>
+            </div>
+          </td>
+          <td class="text-xs">Trans-Sped Sp. z o.o.</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0343</td>
+          <td class="text-xs">Wysłane</td>
+          <td>
+            <div class="text-xs">
+              <div class="whitespace-nowrap flex items-center gap-1.5">
+                Papier makulaturowy
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium">22t</span>
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-slate-100 text-slate-500 text-[10px]">luzem</span>
+              </div>
+            </div>
+          </td>
+          <td class="text-xs">Eco-Trans GmbH</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0344</td>
+          <td class="text-xs">Korekta</td>
+          <td>
+            <div class="text-xs space-y-1">
+              <div class="whitespace-nowrap flex items-center gap-1.5">
+                Tworzywa sztuczne PE
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium">8t</span>
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-slate-100 text-slate-500 text-[10px]">big-bag</span>
+              </div>
+              <div class="whitespace-nowrap flex items-center gap-1.5">
+                Folia stretch
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium">3.5t</span>
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-slate-100 text-slate-500 text-[10px]">paleta</span>
+              </div>
+              <div class="whitespace-nowrap flex items-center gap-1.5">
+                Butelki PET
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-amber-50 text-amber-700 text-[10px] font-medium">5t</span>
+                <span class="inline-flex items-center px-1.5 py-0 rounded-full bg-slate-100 text-slate-500 text-[10px]">big-bag</span>
+              </div>
+              <div class="text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-0.5">Razem: 16.5t</div>
+            </div>
+          </td>
+          <td class="text-xs">PL-Logistics</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================= WARIANT 4 ======================= -->
+  <div class="section">
+    <span class="variant-label">Wariant 4 — Dwukolumnowy (nazwa | tonaż)</span>
+    <div class="variant-desc">12px, wewnętrzny grid 2-kolumnowy — nazwa po lewej, tonaż + metoda po prawej. Przejrzysty układ tabelaryczny.</div>
+    <table>
+      <thead><tr><th>Nr</th><th>Status</th><th>Towar</th><th>Przewoźnik</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0342</td>
+          <td class="text-xs">Nowe</td>
+          <td>
+            <div class="text-xs space-y-0.5">
+              <div class="flex justify-between gap-3">
+                <span>Złom stalowy</span>
+                <span class="text-slate-500 text-right tabular-nums">12.5t · luz.</span>
+              </div>
+              <div class="flex justify-between gap-3">
+                <span>Złom aluminium</span>
+                <span class="text-slate-500 text-right tabular-nums">4.2t · bb</span>
+              </div>
+              <div class="flex justify-between gap-3 border-t border-slate-100 pt-0.5 mt-0.5">
+                <span class="font-semibold text-slate-500" style="font-size: 11px;">Razem</span>
+                <span class="font-semibold text-slate-500 tabular-nums" style="font-size: 11px;">16.7t</span>
+              </div>
+            </div>
+          </td>
+          <td class="text-xs">Trans-Sped Sp. z o.o.</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0343</td>
+          <td class="text-xs">Wysłane</td>
+          <td>
+            <div class="text-xs">
+              <div class="flex justify-between gap-3">
+                <span>Papier makulaturowy</span>
+                <span class="text-slate-500 text-right tabular-nums">22t · luz.</span>
+              </div>
+            </div>
+          </td>
+          <td class="text-xs">Eco-Trans GmbH</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0344</td>
+          <td class="text-xs">Korekta</td>
+          <td>
+            <div class="text-xs space-y-0.5">
+              <div class="flex justify-between gap-3">
+                <span>Tworzywa PE</span>
+                <span class="text-slate-500 text-right tabular-nums">8t · bb</span>
+              </div>
+              <div class="flex justify-between gap-3">
+                <span>Folia stretch</span>
+                <span class="text-slate-500 text-right tabular-nums">3.5t · pal.</span>
+              </div>
+              <div class="flex justify-between gap-3">
+                <span>Butelki PET</span>
+                <span class="text-slate-500 text-right tabular-nums">5t · bb</span>
+              </div>
+              <div class="flex justify-between gap-3 border-t border-slate-100 pt-0.5 mt-0.5">
+                <span class="font-semibold text-slate-500" style="font-size: 11px;">Razem</span>
+                <span class="font-semibold text-slate-500 tabular-nums" style="font-size: 11px;">16.5t</span>
+              </div>
+            </div>
+          </td>
+          <td class="text-xs">PL-Logistics</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================= WARIANT 5 ======================= -->
+  <div class="section">
+    <span class="variant-label">Wariant 5 — Kompaktowy jednolinijkowy</span>
+    <div class="variant-desc">12px, jedna linia na produkt. Nazwa skrócona, tonaż inline bold. Najkompaktniejszy wariant — dobry gdy kolumna ma mało miejsca.</div>
+    <table>
+      <thead><tr><th>Nr</th><th>Status</th><th>Towar</th><th>Przewoźnik</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0342</td>
+          <td class="text-xs">Nowe</td>
+          <td>
+            <div class="text-xs space-y-0.5">
+              <div class="whitespace-nowrap">Złom stalowy — <strong>12.5t</strong></div>
+              <div class="whitespace-nowrap">Złom aluminium — <strong>4.2t</strong></div>
+              <div class="text-slate-400 font-semibold" style="font-size: 11px;">= 16.7t</div>
+            </div>
+          </td>
+          <td class="text-xs">Trans-Sped Sp. z o.o.</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0343</td>
+          <td class="text-xs">Wysłane</td>
+          <td>
+            <div class="text-xs">
+              <div class="whitespace-nowrap">Papier makulaturowy — <strong>22t</strong></div>
+            </div>
+          </td>
+          <td class="text-xs">Eco-Trans GmbH</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0344</td>
+          <td class="text-xs">Korekta</td>
+          <td>
+            <div class="text-xs space-y-0.5">
+              <div class="whitespace-nowrap">Tworzywa PE — <strong>8t</strong></div>
+              <div class="whitespace-nowrap">Folia stretch — <strong>3.5t</strong></div>
+              <div class="whitespace-nowrap">Butelki PET — <strong>5t</strong></div>
+              <div class="text-slate-400 font-semibold" style="font-size: 11px;">= 16.5t</div>
+            </div>
+          </td>
+          <td class="text-xs">PL-Logistics</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- ======================= WARIANT 6 ======================= -->
+  <div class="section">
+    <span class="variant-label">Wariant 6 — Numerowany z kolorowym indeksem</span>
+    <div class="variant-desc">12px, numerki w małych kolorowych kółkach (jak w kolumnie lokalizacji). Spójny wizualnie z resztą tabeli.</div>
+    <table>
+      <thead><tr><th>Nr</th><th>Status</th><th>Towar</th><th>Przewoźnik</th></tr></thead>
+      <tbody>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0342</td>
+          <td class="text-xs">Nowe</td>
+          <td>
+            <div class="text-xs space-y-1">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold shrink-0">1</span>
+                <span>Złom stalowy <span class="text-slate-400">12.5t</span></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold shrink-0">2</span>
+                <span>Złom aluminium <span class="text-slate-400">4.2t</span></span>
+              </div>
+              <div class="text-[11px] text-slate-500 font-semibold pl-5 border-t border-slate-100 pt-0.5">Razem: 16.7t</div>
+            </div>
+          </td>
+          <td class="text-xs">Trans-Sped Sp. z o.o.</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0343</td>
+          <td class="text-xs">Wysłane</td>
+          <td>
+            <div class="text-xs">
+              <div class="whitespace-nowrap">Papier makulaturowy <span class="text-slate-400">22t</span></div>
+            </div>
+          </td>
+          <td class="text-xs">Eco-Trans GmbH</td>
+        </tr>
+        <tr>
+          <td class="text-xs font-medium">ZLC/2026/0344</td>
+          <td class="text-xs">Korekta</td>
+          <td>
+            <div class="text-xs space-y-1">
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold shrink-0">1</span>
+                <span>Tworzywa PE <span class="text-slate-400">8t</span></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold shrink-0">2</span>
+                <span>Folia stretch <span class="text-slate-400">3.5t</span></span>
+              </div>
+              <div class="flex items-center gap-1.5">
+                <span class="inline-flex items-center justify-center w-4 h-4 rounded-full bg-amber-100 text-amber-700 text-[9px] font-bold shrink-0">3</span>
+                <span>Butelki PET <span class="text-slate-400">5t</span></span>
+              </div>
+              <div class="text-[11px] text-slate-500 font-semibold pl-5 border-t border-slate-100 pt-0.5">Razem: 16.5t</div>
+            </div>
+          </td>
+          <td class="text-xs">PL-Logistics</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <!-- Podsumowanie -->
+  <div class="mt-8 p-4 bg-white border border-slate-200 rounded-lg">
+    <h2 class="font-bold text-sm mb-3">Podsumowanie wariantów</h2>
+    <table class="text-xs">
+      <thead><tr><th class="text-left pr-6">Wariant</th><th class="text-left pr-6">Rozmiar</th><th class="text-left pr-6">Zmiany</th><th class="text-left">Komentarz</th></tr></thead>
+      <tbody>
+        <tr><td class="pr-6 py-1 text-red-500 font-medium">0. Obecny</td><td class="pr-6">11px</td><td class="pr-6">—</td><td>Za mała czcionka, brak hierarchii</td></tr>
+        <tr><td class="pr-6 py-1">1. Wyrównanie</td><td class="pr-6">12px</td><td class="pr-6">Minimalna</td><td>Szybki fix, spójność z resztą tabeli</td></tr>
+        <tr class="text-green-700 font-medium"><td class="pr-6 py-1">2. Pogrubiona nazwa</td><td class="pr-6">12px</td><td class="pr-6">Mała</td><td>Dobra hierarchia wizualna, czytelne</td></tr>
+        <tr><td class="pr-6 py-1">3. Badge tonaż</td><td class="pr-6">12px</td><td class="pr-6">Średnia</td><td>Atrakcyjne, ale może być za szerokie</td></tr>
+        <tr><td class="pr-6 py-1">4. Dwukolumnowy</td><td class="pr-6">12px</td><td class="pr-6">Średnia</td><td>Najczytelniejsze wyrównanie danych</td></tr>
+        <tr><td class="pr-6 py-1">5. Kompaktowy</td><td class="pr-6">12px</td><td class="pr-6">Mała</td><td>Zwięzły, em-dash separator</td></tr>
+        <tr><td class="pr-6 py-1">6. Kółka numerów</td><td class="pr-6">12px</td><td class="pr-6">Średnia</td><td>Spójny z lokalizacjami, nieco wyższy wiersz</td></tr>
+      </tbody>
+    </table>
+  </div>
+
+</body>
+</html>

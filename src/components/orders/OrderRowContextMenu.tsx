@@ -21,48 +21,40 @@ import {
 import { useAuth } from "@/contexts/AuthContext";
 import {
   ALLOWED_MANUAL_STATUS_TRANSITIONS,
+  STATUS_NAMES,
   type OrderStatusCode,
   type ViewGroup,
 } from "@/lib/view-models";
 
-/** Mapowanie kodu statusu → czytelna nazwa do wyświetlenia. */
-const STATUS_NAMES: Record<OrderStatusCode, string> = {
-  robocze: "Robocze",
-  wysłane: "Wysłane",
-  korekta: "Korekta",
-  "korekta wysłane": "Korekta_w",
-  zrealizowane: "Zrealizowane",
-  reklamacja: "Reklamacja",
-  anulowane: "Anulowane",
-};
-
 /** Carrier cell color options. */
 const CARRIER_COLORS = [
-  { hex: "#48A111", label: "Zielony" },
-  { hex: "#25671E", label: "Ciemnozielony" },
-  { hex: "#FFEF5F", label: "Żółty" },
-  { hex: "#EEA727", label: "Pomarańczowy" },
+  { hex: "#34d399", label: "Zielony" },
+  { hex: "#047857", label: "Ciemnozielony" },
+  { hex: "#fde047", label: "Żółty" },
+  { hex: "#f97316", label: "Pomarańczowy" },
 ] as const;
 
 interface OrderRowContextMenuProps {
   children: ReactNode;
   orderId: string;
+  orderNo: string;
   statusCode: string;
   activeView: ViewGroup;
   carrierCellColor: string | null;
   onOpen: (orderId: string) => void;
   onSendEmail: (orderId: string) => void;
   onShowHistory: (orderId: string) => void;
-  onChangeStatus: (orderId: string, newStatus: OrderStatusCode) => void;
-  onDuplicate: (orderId: string) => void;
-  onCancel: (orderId: string) => void;
-  onRestore: (orderId: string) => void;
+  onChangeStatus: (orderId: string, orderNo: string, newStatus: OrderStatusCode) => void;
+  onDuplicate: (orderId: string, orderNo: string) => void;
+  onCancel: (orderId: string, orderNo: string) => void;
+  onRestore: (orderId: string, orderNo: string) => void;
   onSetCarrierColor: (orderId: string, color: string | null) => void;
 }
 
 export function OrderRowContextMenu({
   children,
   orderId,
+  orderNo,
   statusCode,
   activeView,
   carrierCellColor,
@@ -128,7 +120,7 @@ export function OrderRowContextMenu({
                   {allowedTransitions.map((status) => (
                     <ContextMenuItem
                       key={status}
-                      onClick={() => onChangeStatus(orderId, status)}
+                      onClick={() => onChangeStatus(orderId, orderNo, status)}
                     >
                       → {STATUS_NAMES[status]}
                     </ContextMenuItem>
@@ -182,22 +174,22 @@ export function OrderRowContextMenu({
             </ContextMenuSub>
 
             {/* Skopiuj zlecenie */}
-            <ContextMenuItem onClick={() => onDuplicate(orderId)}>
+            <ContextMenuItem onClick={() => onDuplicate(orderId, orderNo)}>
               <Copy className="w-4 h-4 mr-2" />
               Skopiuj zlecenie
             </ContextMenuItem>
 
             {/* Przywróć do aktualnych */}
             {canRestore && (
-              <ContextMenuItem onClick={() => onRestore(orderId)}>
+              <ContextMenuItem onClick={() => onRestore(orderId, orderNo)}>
                 Przywróć do aktualnych
               </ContextMenuItem>
             )}
 
-            {/* Anuluj zlecenie */}
-            {statusCode !== "anulowane" && (
+            {/* Anuluj zlecenie — nie wyświetlaj w zakładce Zrealizowane (PRD 3.1.7) */}
+            {statusCode !== "anulowane" && !isCompleted && (
               <ContextMenuItem
-                onClick={() => onCancel(orderId)}
+                onClick={() => onCancel(orderId, orderNo)}
                 className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
               >
                 Anuluj zlecenie

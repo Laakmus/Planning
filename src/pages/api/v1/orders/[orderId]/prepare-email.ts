@@ -2,21 +2,21 @@
  * POST /api/v1/orders/{orderId}/prepare-email
  *
  * Walidacja biznesowa, zmiana statusu (robocze→wysłane, korekta→korekta wysłane),
- * ustawienie sent_by_user_id i sent_at, zwrot mailto linku i nazwy PDF.
+ * ustawienie sent_by_user_id i sent_at, generacja PDF, zwrot pliku .eml z załącznikiem.
  *
- * Odpowiedź: 200 + PrepareEmailResponseDto.
+ * Odpowiedź: 200 + plik .eml (message/rfc822).
  * Błędy: 400 (status nie pozwala na wysyłkę), 401, 403, 404, 422 (walidacja biznesowa).
  */
 
 import type { APIRoute } from "astro";
 
 import {
+  COMMON_HEADERS,
   errorResponse,
   getAuthenticatedUser,
-  jsonResponse,
   isValidUUID,
-  parseJsonBody,
   requireWriteAccess,
+  logError,
 } from "../../../../../lib/api-helpers";
 import { prepareEmailForOrder } from "../../../../../lib/services/order.service";
 import { prepareEmailSchema } from "../../../../../lib/validators/order.validator";
@@ -75,7 +75,35 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
       );
     }
 
-    return jsonResponse(result.data, 200);
+    // Format pdf-base64: JSON response z PDF w base64 (do Graph API na frontendzie)
+    if (result.format === "pdf-base64") {
+      return new Response(
+        JSON.stringify({
+          pdfBase64: result.pdfBase64,
+          pdfFileName: result.pdfFileName,
+          orderNo: result.orderNo,
+        }),
+        {
+          status: 200,
+          headers: {
+            ...COMMON_HEADERS,
+            "Content-Type": "application/json",
+          },
+        }
+      );
+    }
+
+    // Format eml: plik .eml jako blob
+    const sanitizedName = (result.orderNo || orderId).replace(/["\r\n/]/g, "-");
+    const fileName = `zlecenie-${sanitizedName}.eml`;
+    return new Response(result.emlContent, {
+      status: 200,
+      headers: {
+        ...COMMON_HEADERS,
+        "Content-Type": "message/rfc822",
+        "Content-Disposition": `attachment; filename="${fileName}"`,
+      },
+    });
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
     if (msg === "NOT_ALLOWED_STATUS") {
@@ -92,7 +120,7 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
         "Status zlecenia zmienił się w trakcie operacji. Odśwież dane i spróbuj ponownie."
       );
     }
-    console.error("[POST /api/v1/orders/{orderId}/prepare-email]", err);
+    logError("[POST /api/v1/orders/{orderId}/prepare-email]", err);
     return errorResponse(
       500,
       "Internal Server Error",

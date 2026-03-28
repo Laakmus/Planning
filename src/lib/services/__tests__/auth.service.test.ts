@@ -82,6 +82,7 @@ describe("getCurrentUser — happy path", () => {
       fullName: "Jan Kowalski",
       phone: "+48123456789",
       role: "PLANNER",
+      locationId: null,
     });
   });
 

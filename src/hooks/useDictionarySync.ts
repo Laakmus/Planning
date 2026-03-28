@@ -1,6 +1,6 @@
 /**
  * Hook zarządzający synchronizacją słowników z ERP.
- * Używany przez SyncButton w AppHeader.
+ * Używany przez SyncButton w AppSidebar.
  */
 
 import { useCallback, useEffect, useRef, useState } from "react";

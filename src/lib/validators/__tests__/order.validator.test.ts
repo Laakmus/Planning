@@ -131,7 +131,8 @@ describe("createOrderSchema", () => {
     carrierCompanyId: null,
     shipperLocationId: null,
     receiverLocationId: null,
-    vehicleVariantCode: null,
+    vehicleTypeText: null,
+    vehicleCapacityVolumeM3: null,
     priceAmount: null,
     paymentTermDays: null,
     paymentMethod: null,
@@ -140,6 +141,7 @@ describe("createOrderSchema", () => {
     specialRequirements: null,
     requiredDocumentsText: null,
     generalNotes: null,
+    notificationDetails: null,
     senderContactName: null,
     senderContactPhone: null,
     senderContactEmail: null,
@@ -237,10 +239,9 @@ describe("createOrderSchema", () => {
 
   // --- Limity tablic stops/items ---
 
-  it("stops: 0 elementów → ZodError (min 1)", () => {
-    expect(() =>
-      createOrderSchema.parse({ ...validCreateOrder, stops: [] })
-    ).toThrow(ZodError);
+  it("stops: 0 elementów → OK (zlecenie robocze może nie mieć tras)", () => {
+    const result = createOrderSchema.parse({ ...validCreateOrder, stops: [] });
+    expect(result.stops).toHaveLength(0);
   });
 
   it("stops: 11 elementów → OK (max 11)", () => {
@@ -294,7 +295,8 @@ describe("updateOrderSchema", () => {
       carrierCompanyId: null,
       shipperLocationId: null,
       receiverLocationId: null,
-      vehicleVariantCode: null,
+      vehicleTypeText: null,
+    vehicleCapacityVolumeM3: null,
       priceAmount: null,
       paymentTermDays: null,
       paymentMethod: null,
@@ -303,6 +305,7 @@ describe("updateOrderSchema", () => {
       specialRequirements: null,
       requiredDocumentsText: null,
       generalNotes: null,
+      notificationDetails: null,
       senderContactName: null,
       senderContactPhone: null,
       senderContactEmail: null,
@@ -337,7 +340,8 @@ describe("updateOrderSchema", () => {
         carrierCompanyId: null,
         shipperLocationId: null,
         receiverLocationId: null,
-        vehicleVariantCode: null,
+        vehicleTypeText: null,
+    vehicleCapacityVolumeM3: null,
         priceAmount: null,
         paymentTermDays: null,
         paymentMethod: null,
@@ -346,6 +350,7 @@ describe("updateOrderSchema", () => {
         specialRequirements: null,
         requiredDocumentsText: null,
         generalNotes: null,
+        notificationDetails: null,
         senderContactName: null,
         senderContactPhone: null,
         senderContactEmail: null,
@@ -371,7 +376,8 @@ describe("updateOrderSchema", () => {
       carrierCompanyId: null,
       shipperLocationId: null,
       receiverLocationId: null,
-      vehicleVariantCode: null,
+      vehicleTypeText: null,
+    vehicleCapacityVolumeM3: null,
       priceAmount: null,
       paymentTermDays: null,
       paymentMethod: null,
@@ -380,6 +386,7 @@ describe("updateOrderSchema", () => {
       specialRequirements: null,
       requiredDocumentsText: null,
       generalNotes: null,
+      notificationDetails: null,
       senderContactName: null,
       senderContactPhone: null,
       senderContactEmail: null,
@@ -406,7 +413,8 @@ describe("updateOrderSchema", () => {
     carrierCompanyId: null,
     shipperLocationId: null,
     receiverLocationId: null,
-    vehicleVariantCode: null,
+    vehicleTypeText: null,
+    vehicleCapacityVolumeM3: null,
     priceAmount: null,
     paymentTermDays: null,
     paymentMethod: null,
@@ -415,6 +423,7 @@ describe("updateOrderSchema", () => {
     specialRequirements: null,
     requiredDocumentsText: null,
     generalNotes: null,
+    notificationDetails: null,
     senderContactName: null,
     senderContactPhone: null,
     senderContactEmail: null,
@@ -441,46 +450,45 @@ describe("updateOrderSchema", () => {
     _deleted: false,
   };
 
-  it("stops: 0 elementów → ZodError (min 1)", () => {
-    expect(() =>
-      updateOrderSchema.parse({ ...updateBase, stops: [], items: [] })
-    ).toThrow(ZodError);
+  it("stops: 0 elementów → OK (zlecenie robocze może nie mieć tras)", () => {
+    const result = updateOrderSchema.parse({ ...updateBase, stops: [], items: [] });
+    expect(result.stops).toHaveLength(0);
   });
 
-  it("stops: 11 elementów → OK (max 11)", () => {
+  it("stops: 22 elementów → OK (max 22, uwzględnia _deleted)", () => {
     const result = updateOrderSchema.parse({
       ...updateBase,
-      stops: Array.from({ length: 11 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
+      stops: Array.from({ length: 22 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
       items: [],
     });
-    expect(result.stops).toHaveLength(11);
+    expect(result.stops).toHaveLength(22);
   });
 
-  it("stops: 12 elementów → ZodError (powyżej max 11)", () => {
+  it("stops: 23 elementów → ZodError (powyżej max 22)", () => {
     expect(() =>
       updateOrderSchema.parse({
         ...updateBase,
-        stops: Array.from({ length: 12 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
+        stops: Array.from({ length: 23 }, (_, i) => ({ ...updateStop, sequenceNo: i + 1 })),
         items: [],
       })
     ).toThrow(ZodError);
   });
 
-  it("items: 50 elementów → OK (max 50)", () => {
+  it("items: 100 elementów → OK (max 100, uwzględnia _deleted)", () => {
     const result = updateOrderSchema.parse({
       ...updateBase,
       stops: [updateStop],
-      items: Array.from({ length: 50 }, () => ({ ...updateItem })),
+      items: Array.from({ length: 100 }, () => ({ ...updateItem })),
     });
-    expect(result.items).toHaveLength(50);
+    expect(result.items).toHaveLength(100);
   });
 
-  it("items: 51 elementów → ZodError (powyżej max 50)", () => {
+  it("items: 101 elementów → ZodError (powyżej max 100)", () => {
     expect(() =>
       updateOrderSchema.parse({
         ...updateBase,
         stops: [updateStop],
-        items: Array.from({ length: 51 }, () => ({ ...updateItem })),
+        items: Array.from({ length: 101 }, () => ({ ...updateItem })),
       })
     ).toThrow(ZodError);
   });
@@ -510,9 +518,9 @@ describe("duplicateOrderSchema", () => {
 // ---------------------------------------------------------------------------
 
 describe("carrierCellColorSchema", () => {
-  it('{ color: "#48A111" } → OK', () => {
-    const result = carrierCellColorSchema.parse({ color: "#48A111" });
-    expect(result.color).toBe("#48A111");
+  it('{ color: "#34d399" } → OK', () => {
+    const result = carrierCellColorSchema.parse({ color: "#34d399" });
+    expect(result.color).toBe("#34d399");
   });
 
   it('{ color: "#FF0000" } → ZodError (nie w ALLOWED)', () => {
@@ -553,14 +561,14 @@ describe("patchStopSchema", () => {
 // ---------------------------------------------------------------------------
 
 describe("prepareEmailSchema", () => {
-  it("{} → { forceRegeneratePdf: false }", () => {
+  it("{} → defaults to outputFormat 'eml'", () => {
     const result = prepareEmailSchema.parse({});
-    expect(result.forceRegeneratePdf).toBe(false);
+    expect(result.outputFormat).toBe("eml");
   });
 
-  it("{ forceRegeneratePdf: true } → OK", () => {
-    const result = prepareEmailSchema.parse({ forceRegeneratePdf: true });
-    expect(result.forceRegeneratePdf).toBe(true);
+  it("{ outputFormat: 'pdf-base64' } → OK", () => {
+    const result = prepareEmailSchema.parse({ outputFormat: "pdf-base64" });
+    expect(result.outputFormat).toBe("pdf-base64");
   });
 });
 

@@ -46,9 +46,10 @@ export function ListSettings({
       </Select>
 
       {/* Przełącznik Trasa | Kolumny */}
-      <div className="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-600">
+      <div role="group" aria-label="Tryb widoku listy" className="flex rounded-md overflow-hidden border border-slate-300 dark:border-slate-600">
         <button
           onClick={() => onViewModeChange("route")}
+          aria-pressed={viewMode === "route"}
           className={`px-2 py-1 text-[10px] font-semibold transition-colors ${
             viewMode === "route"
               ? "bg-primary text-white"
@@ -59,6 +60,7 @@ export function ListSettings({
         </button>
         <button
           onClick={() => onViewModeChange("columns")}
+          aria-pressed={viewMode === "columns"}
           className={`px-2 py-1 text-[10px] font-semibold transition-colors ${
             viewMode === "columns"
               ? "bg-primary text-white"

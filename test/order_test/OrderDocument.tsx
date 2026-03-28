@@ -46,6 +46,7 @@ import {
   CONDITIONS_HEADER,
   DOCUMENTS_OPTIONS,
   LOGO_BASE64,
+  MIN_VISIBLE_ITEMS,
   MAX_VISIBLE_ITEMS,
   MAX_LOADING_STOPS,
   MAX_UNLOADING_STOPS,
@@ -1390,10 +1391,13 @@ export default function OrderDocument({
 
   const disabled = isReadOnly;
 
-  // Build the padded items array (always 8 visual slots)
+  // Budowanie tablicy towarów z paddingiem (minimum 8 wizualnych slotów, rośnie dynamicznie)
+  // +1 pusty slot na przycisk "+ dodaj pozycję" dopóki nie osiągnięto limitu
+  const extraSlotForAddButton = data.items.length < MAX_VISIBLE_ITEMS ? 1 : 0;
+  const totalVisualSlots = Math.max(MIN_VISIBLE_ITEMS, data.items.length + extraSlotForAddButton);
   const paddedItems: (OrderViewItem | null)[] = [
     ...data.items,
-    ...Array(MAX_VISIBLE_ITEMS - data.items.length).fill(null),
+    ...Array(totalVisualSlots - data.items.length).fill(null),
   ];
 
   // Count stops by kind for add button limits
@@ -1401,7 +1405,7 @@ export default function OrderDocument({
   const unloadingCount = data.stops.filter((s) => s.kind === "UNLOADING").length;
 
   return (
-    <div className="order-a4-page-container w-[210mm] min-h-[297mm] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.2)] overflow-hidden flex items-start justify-center">
+    <div className="order-a4-page-container w-[210mm] flex items-start justify-center">
       {/* Scoped styles to force black text on the A4 document page */}
       <style>{`
         .order-a4-page, .order-a4-page * { color: #000; }
@@ -1427,15 +1431,14 @@ export default function OrderDocument({
           /* Remove hover/cursor effects */
           .order-a4-page button { cursor: default !important; }
 
-          /* Remove shadow from A4 page container */
-          .order-a4-page-container { box-shadow: none !important; }
+          /* Remove shadow from A4 page in print */
+          .order-a4-page { box-shadow: none !important; }
         }
       `}</style>
       <div
-        className="order-a4-page relative w-[595px] min-h-[842px] p-[32px_34px]"
+        className="order-a4-page relative w-[595px] min-h-[842px] p-[32px_34px] bg-white shadow-[0_2px_10px_rgba(0,0,0,0.2)]"
         style={{
-          transform: "scale(1.3345)",
-          transformOrigin: "top center",
+          zoom: 1.3345,
           fontFamily: "Arial, Helvetica, sans-serif",
           color: "#000",
         }}
@@ -1749,10 +1752,10 @@ export default function OrderDocument({
         </div>
 
         {/* ================================================================ */}
-        {/* 8. ITEMS GRID (8 rows x 30px)                                    */}
+        {/* 8. ITEMS GRID (min 8 rows x 30px, dynamicznie rośnie do 15)       */}
         {/* ================================================================ */}
         {paddedItems.map((item, rowIdx) => {
-          const isLast = rowIdx === MAX_VISIBLE_ITEMS - 1;
+          const isLast = rowIdx === paddedItems.length - 1;
           const borderBottomClass = isLast
             ? "border-b-[0.5px] border-solid border-black"
             : "border-b-[0.5px] border-dashed border-black";
@@ -1766,10 +1769,9 @@ export default function OrderDocument({
             >
               {/* Name column */}
               <div
-                className={`${CELL} w-[234px] ${borderBottomClass} border-r-[0.5px] border-r-dashed text-[7px] font-bold items-end`}
+                className={`${CELL} w-[234px] ${borderBottomClass} text-[7px] font-bold items-end`}
                 style={{
                   padding: "7px 6px",
-                  borderRightStyle: "dashed",
                 }}
               >
                 {hasItem ? (
@@ -1802,8 +1804,8 @@ export default function OrderDocument({
 
               {/* Notes column (merged 90px + 88px) */}
               <div
-                className={`${CELL} w-[178px] ${borderBottomClass} border-r-[0.5px] border-r-dashed`}
-                style={{ borderRightStyle: "dashed" }}
+                className={`${CELL} w-[178px] ${borderBottomClass} border-l-[0.5px]`}
+                style={{ borderLeftStyle: "dashed" }}
               >
                 {hasItem && (
                   <EditableText
@@ -1826,19 +1828,14 @@ export default function OrderDocument({
                         ? "w-[29px]"
                         : "w-[24px]";
                 const isSelected = hasItem && item.packagingType === pt;
-                const isLastPackaging = pt === "INNA";
 
                 return (
                   <div
                     key={pt}
-                    className={`${CELL} ${widthClass} ${borderBottomClass} justify-center ${
-                      !isLastPackaging
-                        ? "border-r-[0.5px] border-r-dashed"
-                        : ""
-                    } ${!disabled && hasItem ? "cursor-pointer hover:bg-gray-50" : ""}`}
-                    style={
-                      !isLastPackaging ? { borderRightStyle: "dashed" } : {}
-                    }
+                    className={`${CELL} ${widthClass} ${borderBottomClass} justify-center border-l-[0.5px] ${
+                      !disabled && hasItem ? "cursor-pointer hover:bg-gray-50" : ""
+                    }`}
+                    style={{ borderLeftStyle: "dashed" }}
                     onClick={() => {
                       if (disabled || !hasItem) return;
                       updateItem(itemIndex, {

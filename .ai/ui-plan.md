@@ -15,21 +15,20 @@ Aplikacja składa się z dwóch głównych stanów: niezalogowany (ekran logowan
 ```
 [Ekran logowania]
     ↓ (po zalogowaniu)
-[Nagłówek aplikacji — sticky, z zakładkami; blok użytkownika: imię i nazwisko + rola (tekst), przycisk Wyloguj; bez avatara]
-[Pasek filtrów + ustawienia listy — sticky; przycisk „Nowe zlecenie" z prawej (tylko zakładka Aktualne, tylko Admin/Planner)]
-[Widok główny — Lista zleceń]
-    ├── Tabela zleceń (sticky nagłówek tabeli; min-width 1280px)
-    │   ├── (lewy klik wiersza) → [Drawer edycji zlecenia]
-    │   │                              └── (link) → [Panel historii zmian]
-    │   └── (prawy klik wiersza) → [Menu kontekstowe]
-    │                                   ├── Wyślij maila
-    │                                   ├── Historia zmian → [Panel historii zmian]
-    │                                   ├── Zmień status
-    │                                   ├── Skopiuj zlecenie
-    │                                   ├── Anuluj zlecenie
-    │                                   └── Przywróć do aktualnych (w Zrealizowane/Anulowane)
-    └── EmptyState (Brak zleceń / Brak wyników dla filtrów — tylko te dwa warianty)
-[Pasek stopki — sticky bottom; liczniki bez „W trasie"/„Załadunek"/„Opóźnione"; po prawej: System Status, Ostatnia aktualizacja]
+┌──────────────────────────────────────────────────────────────────────────┐
+│ [Sidebar (lewy)]               │ [Main content area]                    │
+│  - Logo (Truck) + tytuł        │  [Header: SidebarTrigger + tytuł      │
+│  - Nawigacja widoków:          │   widoku (Aktualne/Zrealizowane/       │
+│    Aktualne/Zrealizowane/      │   Anulowane)]                          │
+│    Anulowane                   │  [Pasek filtrów + ustawienia listy     │
+│  - SyncButton                  │   — sticky; „Nowe zlecenie" z prawej]  │
+│  - ThemeToggle + UserInfo      │  [Widok główny — Lista zleceń]         │
+│    (imię, rola, wyloguj)       │      ├── Tabela zleceń (sticky thead)  │
+│  Collapsible: Cmd+B/Ctrl+B    │      │   ├── (lewy klik) → Drawer      │
+│  Mobile: Sheet overlay         │      │   └── (prawy klik) → Menu kont. │
+│                                │      └── EmptyState                    │
+│                                │  [Pasek stopki — sticky bottom]        │
+└──────────────────────────────────────────────────────────────────────────┘
 ```
 
 ### Mapowanie tras Astro
@@ -38,6 +37,7 @@ Aplikacja składa się z dwóch głównych stanów: niezalogowany (ekran logowan
 |---|---|---|
 | `/` | Strona Astro | Logowanie lub przekierowanie do listy |
 | `/orders` | Strona Astro + wyspy React | Widok główny z listą zleceń |
+| `/warehouse` | Strona Astro + wyspy React | Widok magazynowy — tygodniowy plan operacji |
 | `/api/v1/*` | Endpointy API | Backend REST (istniejący) |
 
 Nawigacja między logowaniem a widokiem głównym realizowana jest przez standardowe przekierowania HTTP/Astro. Wewnątrz widoku głównego całość obsługiwana jest przez React (zakładki, filtry, drawer, panele) bez przeładowywania strony.
@@ -91,10 +91,13 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
 
 #### Kluczowe komponenty widoku
 
-1. **OrderTabs** — trzy zakładki (Aktualne, Zrealizowane, Anulowane) umieszczone w nagłówku aplikacji (nie nad tabelą).
-   - Mapowanie na parametr API `view`: `CURRENT` | `COMPLETED` | `CANCELLED`.
-   - Wizualnie: `bg-slate-100 rounded-lg p-1`, aktywna zakładka: `bg-white shadow-sm text-primary font-semibold`, nieaktywna: `text-slate-500`.
-   - Przełączanie zakładki resetuje filtry (lub zachowuje — do decyzji implementacyjnej) i wywołuje nowe zapytanie GET.
+1. **AppSidebar** — lewy sidebar nawigacyjny (shadcn/ui Sidebar). Zawiera:
+   - **SidebarHeader**: Logo (ikona Truck na `bg-primary` rounded-lg) + tytuł „Zlecenia Transportowe"
+   - **SidebarContent**: Nawigacja widoków — 3 pozycje: Aktualne (ClipboardList), Zrealizowane (CheckCircle2), Anulowane (XCircle). Mapowanie na `ViewGroup`: `CURRENT` | `COMPLETED` | `CANCELLED`.
+   - **SidebarFooter**: SyncButton + Separator + ThemeToggle + UserInfo (imię, rola, wyloguj; bez avatara)
+   - Collapsible (Cmd+B / Ctrl+B). Na mobile: Sheet overlay.
+   - Przełączanie widoku wywołuje nowe zapytanie GET z parametrem `view`.
+   - Inline header w SidebarInset: SidebarTrigger (hamburger) + separator + tytuł aktywnego widoku.
 
 2. **FilterBar** — pasek filtrów (sticky razem z nagłówkiem tabeli). Kolejność filtrów: rodzaj transportu | status | firma załadunku | firma rozładunku | Firma transportowa | towar | numer tygodnia | wyszukiwanie pełnotekstowe. Z prawej: przycisk „Nowe zlecenie".
    - **Rodzaj transportu:** select (lista zamknięta).
@@ -123,7 +126,7 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
    - Prawy klik na wiersz → menu kontekstowe (`ContextMenu`).
    - Widok Trasa: kolumna Trasa jako node-string z linią łączącą (patrz sekcja 6.2). Widok Kolumny: osobne kolumny Miejsce załadunku, Miejsce rozładunku, Data załadunku, Data rozładunku — format i kolejność kolumn według PRD 3.1.2a.
    - Typ auta w tabeli: rodzaj + objętość (wybierane w formularzu oddzielnie, wyświetlane łącznie np. „firanka (90m³)").
-   - Wirtualizacja listy (np. `@tanstack/react-virtual`) przy dużej liczbie wierszy.
+   - *(Planowane)* Wirtualizacja listy przy dużej liczbie wierszy — nie zaimplementowana w bieżącej wersji.
 
 5. **OrderRowContextMenu** — menu kontekstowe (prawy klik na wierszu; na razie **tylko prawy klik**, bez skrótu klawiaturowego).
    - Opcje: „Wyślij maila", „Zmień status" (podmenu), „Kolor" (podmenu z 4 kolorami + „Usuń kolor"), „Skopiuj zlecenie", „Anuluj zlecenie"; w zakładkach Zrealizowane/Anulowane: „Przywróć do aktualnych"; „Historia zmian" (na dole, widoczna dla wszystkich).
@@ -224,7 +227,7 @@ Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z dan
 - Nazwa firmy (przewoźnik)* — autocomplete z `companies` (typ carrier).
 - NIP — wyświetlany jako tekst 11px pod polem autocomplete (nie osobne pole input).
 - Typ auta* — select z unikalnych `vehicleType` z `vehicle_variants`.
-- Objętość m³* — **pole tekstowe** (type=number, wolne wpisywanie). Wpisana wartość jest dopasowywana do istniejącego `vehicleVariantCode` (typ + objętość). Jeśli brak dopasowania — `vehicleVariantCode` pusty.
+- Objętość m³* — **pole tekstowe** (type=number, wolne wpisywanie). Pole `vehicleCapacityVolumeM3` — niezależne od typu auta (dwa osobne pola, brak FK do `vehicle_variants`).
 - Wymagane dokumenty — select (**2 opcje**): „WZ, KPO, kwit wagowy" / „WZE, Aneks VII, CMR". **Automatyczny wybór** przy zmianie Rodzaju transportu (Sekcja 1): eksport/eksport kontener/import → „WZE, Aneks VII, CMR"; kraj → „WZ, KPO, kwit wagowy". Użytkownik może ręcznie zmienić.
 - Brak ikon per pole (usunięte Truck, IdCard, Car, Ruler, FileText).
 
@@ -259,8 +262,8 @@ Autocomplete: po wpisaniu ≥ 2 znaków, debounce 300ms, lista podpowiedzi z dan
 Przyciski akcji (sticky na dole draweru):
 - **Zapisz** (primary) → `PUT /api/v1/orders/{id}`.
 - **Anuluj** (secondary) → zamknięcie draweru (z ostrzeżeniem o niezapisanych zmianach).
-- **Generuj PDF** → `POST /api/v1/orders/{id}/pdf` → pobranie pliku.
-- **Wyślij maila** → `POST /api/v1/orders/{id}/prepare-email`.
+- **Podgląd** (ikona Eye) → otwarcie OrderView (podgląd A4 zlecenia). Widoczny dla istniejących zleceń.
+- **Wyślij maila** → `POST /api/v1/orders/{id}/prepare-email` → Graph API draft w Outlook Web (gdy M365 skonfigurowane) lub blob download .eml (fallback).
 - **Historia zmian** (link/ikona) → otwarcie panelu historii.
 
 #### Kluczowe komponenty draweru
@@ -284,6 +287,46 @@ Przyciski akcji (sticky na dole draweru):
 - Backdrop za drawerem (kliknięcie zamyka drawer z ostrzeżeniem o zmianach).
 - Ochrona przed utratą danych: `beforeunload` + modal przy zamknięciu z niezapisanymi zmianami.
 - Rola READ_ONLY: drawer w trybie pełnego podglądu (wszystkie pola disabled, brak Zapisz).
+
+---
+
+### 2.3a OrderView — podgląd A4 z edycją inline
+
+- **Cel**: Alternatywny widok zlecenia wyglądający jak drukowany dokument A4, z edycją inline pól.
+- **Typ**: Zamiana zawartości wewnątrz tego samego Sheet co drawer (nie osobny overlay).
+- **Powiązane API**: `PUT /api/v1/orders/{id}` (zapis), `POST /api/v1/orders/{id}/pdf` (generowanie PDF).
+- **Aktywacja**: Przycisk „Podgląd" w stopce drawera (zamienia „Generuj PDF"). Widoczny tylko dla istniejących zleceń w trybie edycji.
+- **Szerokość Sheet**: Powiększa się do `~80vw` gdy OrderView jest aktywny.
+
+**Struktura plików** (`src/components/orders/order-view/`):
+
+| Plik | Odpowiedzialność |
+|------|-----------------|
+| `types.ts` | OrderViewData, OrderViewItem, OrderViewStop, mappers (formData ↔ viewData) |
+| `constants.ts` | COMPANY_NAME, DEFAULT_CLAUSE, LOGO_BASE64, TIME_SLOTS, layout constants, limity |
+| `inline-editors.tsx` | EditableText, EditableNumber, EditableTextarea (edycja inline) |
+| `autocompletes.tsx` | 6 autocomplete: Product, Company, Location, Carrier, Documents, VehicleType |
+| `date-time-pickers.tsx` | DatePickerPopover, TimePickerPopover |
+| `StopRows.tsx` | SortableStopWrapper + StopRow (DnD z @dnd-kit) |
+| `OrderDocument.tsx` | Główny layout A4 (~14 sekcji wizualnych) |
+| `OrderView.tsx` | Kontener: toolbar + dirty detection + keyboard shortcuts |
+
+**Integracja z drawerem** (modyfikowane pliki):
+
+| Plik | Zmiana |
+|------|--------|
+| `OrderDrawer.tsx` | Nowy stan `showOrderView`, handlery open/save/cancel/pdf, dynamiczna szerokość Sheet |
+| `OrderForm.tsx` | Nowy prop `formDataRef` (ref do odczytu formData przez OrderDrawer) |
+| `DrawerFooter.tsx` | Zamiana „Generuj PDF" → „Podgląd" (ikona Eye) |
+| `PreviewUnsavedDialog.tsx` | Nowy komponent: dialog 3-opcyjny (Zapisz / Odrzuć / Anuluj) przed otwarciem OrderView z dirty drawerem |
+
+**Kluczowe cechy**:
+- Responsywne skalowanie A4: ResizeObserver + dynamiczny CSS zoom (nie stała skala).
+- Dark mode: dokument A4 zawsze biały, toolbar obsługuje dark mode.
+- Print styles: @media print ukrywa toolbar i elementy edycji.
+- DnD stops: osobna implementacja per widok (nie współdzielona z drawerem).
+- Keyboard shortcuts: Ctrl+S (zapisz), Escape (anuluj).
+- Pole `confidentialityClause`: edytowalne inline, zapisywane per zlecenie w DB.
 
 ---
 
@@ -338,9 +381,11 @@ Przyciski akcji (sticky na dole draweru):
 
 ---
 
-### 2.5 Nagłówek aplikacji (AppHeader)
+### 2.5 Nagłówek aplikacji (AppHeader) — DEPRECATED
 
-- **Cel**: Stały element nawigacyjny widoczny na wszystkich stronach po zalogowaniu. Jeden blok: logo, tytuł, zakładki (OrderTabs), SyncButton, blok użytkownika.
+> **Uwaga:** AppHeader.tsx to dead code od sesji 25 — zastąpiony przez AppSidebar (shadcn/ui Sidebar). Plik zachowany w repozytorium decyzją użytkownika, ale nie jest importowany nigdzie. **OrderTabs.tsx NIE jest dead code** — jest aktywnie używany w inline headerze w `OrdersApp.tsx` (obok SidebarTrigger). Nawigacja w 2 miejscach (sidebar + inline tabs) jest **celowa** — decyzja użytkownika. Funkcjonalność SyncButton, UserInfo, ThemeToggle przeniesiona do AppSidebar (sekcja 2.2 punkt 1).
+
+- **Cel**: ~~Stały element nawigacyjny widoczny na wszystkich stronach po zalogowaniu.~~ Zastąpiony przez AppSidebar. Jeden blok: logo, tytuł, zakładki (OrderTabs), SyncButton, blok użytkownika.
 - **Powiązane API**: `GET /api/v1/auth/me`, `POST /api/v1/dictionary-sync/run`, `GET /api/v1/dictionary-sync/jobs/{jobId}`.
 
 #### Kluczowe komponenty
@@ -364,6 +409,86 @@ Przyciski akcji (sticky na dole draweru):
 
 ---
 
+### 2.6 Widok magazynowy — tygodniowy plan operacji
+
+- **Ścieżka**: `/warehouse?week=12&year=2026`
+- **Główny cel**: Prezentacja tygodniowego planu załadunków/rozładunków dla oddziału magazynowego użytkownika.
+- **Kluczowe informacje**: Karty dzienne (pon-pt) z operacjami chronologicznie, dane awizacyjne, podsumowanie tygodniowe.
+- **Powiązane API**: `GET /api/v1/warehouse/orders?week=12&year=2026`
+- **Warunki dostępu**: Zalogowany użytkownik z przypisanym oddziałem (`locationId` w profilu). Nawigacja przez sidebar: link "Magazyn" z ikoną `Warehouse`.
+- **BranchSelector** — dropdown w nagłówku widoku, pozwala przełączać się między oddziałami tej samej firmy. Ukryty gdy firma ma tylko 1 oddział. Domyślna wartość: oddział użytkownika z profilu.
+
+#### Nawigacja tygodniowa (sticky top)
+- Strzałki ← → do przełączania tygodni
+- Pole input numeru tygodnia (1-53) z natychmiastową nawigacją
+- Wyświetlanie zakresu dat tygodnia: DD.MM – DD.MM.YYYY
+- Rok po prawej stronie
+
+#### Layout dnia (karta per dzień pon-pt)
+- Nagłówek: nazwa dnia + data (DD.MM.YYYY)
+- Jedna tabela chronologiczna z mieszanymi operacjami Zał/Roz (sortowanie po godzinie)
+- Puste dni: komunikat "Brak operacji"
+
+#### Kolumny tabeli operacji
+
+| # | Kolumna | Szerokość | Format |
+|---|---------|-----------|--------|
+| 1 | **Typ** | w-20, text-center | Badge: "Zał" (niebieski bg-blue-100/text-blue-700) / "Roz" (zielony bg-emerald-100/text-emerald-700) |
+| 2 | **Godzina** | w-16 | HH:MM, bold, kolor typu operacji (blue/emerald) |
+| 3 | **Nr zlecenia** | w-24 | ZT2026/0042, font-medium |
+| 4 | **Towar / Masa** | min-w-[140px], flex-1 | Nazwa produktu bold + metoda załadunku small + waga "X t" small; "Razem: XX t" bold kolorowy |
+| 5 | **Przewoźnik** | w-48 | Nazwa firmy bold + typ pojazdu small pod spodem |
+| 6 | **Awizacja** | min-w-[160px] | 5 linii bez etykiet: imię kierowcy, nr ciągnika, nr przyczepy, telefon, BDO |
+
+#### Stopy weekendowe
+- Sobota/niedziela → przesunięte do piątku z adnotacją "(sob. DD.MM)" lub "(niedz. DD.MM)" przy godzinie
+
+#### Sekcja "Bez przypisanej daty"
+- Osobna karta na dole widoku, ukryta gdy pusta
+- Stopy bez date_local
+
+#### Footer tygodniowy (fixed bottom)
+- Załadunki: liczba + łączna masa (blue)
+- Rozładunki: liczba + łączna masa (emerald)
+- Łącznie: suma mas (bold)
+
+#### Druk (print CSS)
+- Ukryte: nawigacja, footer, sidebar
+- Każdy dzień na osobnej stronie (page-break-before)
+
+#### Komponenty
+
+| Komponent | Plik | Opis |
+|-----------|------|------|
+| WarehouseApp | `src/components/warehouse/WarehouseApp.tsx` | Root z AuthProvider, ThemeProvider |
+| WeekNavigation | `src/components/warehouse/WeekNavigation.tsx` | Sticky nawigacja tygodniowa |
+| DayCard | `src/components/warehouse/DayCard.tsx` | Karta dnia z nagłówkiem |
+| OperationsTable | `src/components/warehouse/OperationsTable.tsx` | Tabela z 6 kolumnami |
+| OperationRow | `src/components/warehouse/OperationRow.tsx` | Wiersz operacji |
+| OperationTypeBadge | `src/components/warehouse/OperationTypeBadge.tsx` | Badge Zał/Roz |
+| CargoCell | `src/components/warehouse/CargoCell.tsx` | Lista towarów + waga |
+| DispatchInfoCell | `src/components/warehouse/DispatchInfoCell.tsx` | 5 linii awizacji |
+| WeekSummaryFooter | `src/components/warehouse/WeekSummaryFooter.tsx` | Footer z podsumowaniem |
+| EmptyDayMessage | `src/components/warehouse/EmptyDayMessage.tsx` | Komunikat pustego dnia |
+| NoDateSection | `src/components/warehouse/NoDateSection.tsx` | Sekcja stopów bez daty |
+| BranchSelector | `src/components/warehouse/BranchSelector.tsx` | Dropdown oddziałów firmy użytkownika |
+| OperationLegend | `src/components/warehouse/OperationLegend.tsx` | Legenda typów operacji (Zał/Roz) |
+| ReportActions | `src/components/warehouse/ReportActions.tsx` | Przyciski "Podgląd PDF" + "Wyślij plan" w headerze |
+
+#### Eksport PDF + email
+
+W headerze widoku magazynowego (po prawej stronie, `ml-auto`) dwa przyciski:
+- **Podgląd PDF** (`variant="outline"`, ikona FileText) — generuje landscape A4 PDF z planem załadunkowym i otwiera w nowej karcie przeglądarki.
+- **Wyślij plan** (`variant="default"`, ikona Mail) — otwiera AlertDialog z listą odbiorców z `warehouse_report_recipients`, po potwierdzeniu pobiera plik .eml z PDF w załączniku.
+- Gdy brak odbiorców — przycisk "Wyślij plan" disabled z tooltipem.
+- API: `POST /warehouse/report/pdf`, `POST /warehouse/report/send-email`, `GET /warehouse/report/recipients`.
+
+#### Hook
+
+- `useWarehouseWeek` (`src/hooks/useWarehouseWeek.ts`): obliczanie tygodnia ISO, synchronizacja URL params, fetch danych z API, nawigacja (prevWeek/nextWeek/goToWeek)
+
+---
+
 ## 3. Mapa podróży użytkownika
 
 ### 3.1 Główny przepływ: Logowanie → Planowanie → Wysyłka zlecenia
@@ -376,7 +501,7 @@ Przyciski akcji (sticky na dole draweru):
    ↓ (poprawne dane → Supabase Auth → JWT)
 3. Przekierowanie na /orders
    ↓
-4. [Nagłówek] ładuje profil (GET /auth/me)
+4. [AppSidebar/AuthProvider] ładuje profil (GET /auth/me)
    [Lista zleceń] ładuje słowniki + pierwszą stronę zleceń (GET /orders?view=CURRENT)
    ↓
 5. Użytkownik przegląda listę, filtruje, sortuje
@@ -392,7 +517,7 @@ Przyciski akcji (sticky na dole draweru):
    ↓
 10. Klika „Wyślij maila" (POST /prepare-email)
     ↓ (422 → lista braków → użytkownik uzupełnia brakujące pola → ponowna próba)
-    ↓ (200 → status zmienia się na Wysłane → Outlook otwiera się z załączonym PDF)
+    ↓ (200 → status zmienia się na Wysłane → Graph API tworzy draft w Outlook Web / fallback: pobiera .eml z PDF)
     ↓
 11. Użytkownik wysyła mail z Outlooka
     ↓
@@ -411,7 +536,7 @@ Przyciski akcji (sticky na dole draweru):
 3. Klika „Zapisz" (PUT /orders/{id})
    ↓ → Serwer automatycznie zmienia status na Korekta
 4. Klika „Wyślij maila" (POST /prepare-email)
-   ↓ → Status zmienia się na Korekta wysłane → Outlook z nowym PDF
+   ↓ → Status zmienia się na Korekta wysłane → Graph API draft w Outlook Web / fallback: .eml z nowym PDF
 5. Zamknięcie draweru (POST /unlock)
 ```
 
@@ -451,7 +576,7 @@ Przyciski akcji (sticky na dole draweru):
 ### 3.6 Przepływ: Synchronizacja słowników
 
 ```
-1. Użytkownik klika „Aktualizuj dane" w nagłówku
+1. Użytkownik klika „Aktualizuj dane" w sidebarze (SyncButton w AppSidebar footer)
    ↓
 2. POST /dictionary-sync/run → przycisk disabled + „Synchronizacja..."
    ↓
@@ -460,11 +585,25 @@ Przyciski akcji (sticky na dole draweru):
    ↓ (FAILED → toast „Błąd synchronizacji" → przycisk ponownie aktywny)
 ```
 
-### 3.7 Przepływ: Generowanie PDF
+### 3.7 Przepływ: Podgląd A4 (OrderView)
 
 ```
-1. Z draweru edycji: klika „Generuj PDF"
+1. Z draweru edycji: klika „Podgląd" w stopce
+   ↓ (jeśli niezapisane zmiany w drawerze → dialog 3-opcyjny: Zapisz/Odrzuć/Anuluj)
+2. Sheet poszerza się do 80vw, zawartość zamienia się na OrderView (A4 dokument)
    ↓
+3. Użytkownik edytuje pola inline (klik → input, autocomplete, datepicker itp.)
+   ↓
+4a. „Zapisz zmiany" (lub Ctrl+S) → PUT /orders/{id} → toast → powrót do drawera
+4b. „Anuluj" (lub Escape) → dialog potwierdzenia jeśli dirty → powrót do drawera
+4c. „Generuj PDF" → POST /orders/{id}/pdf → blob download
+```
+
+### 3.7a Przepływ: Generowanie PDF
+
+```
+1. Z OrderView: klika „Generuj PDF" w toolbarze
+   ↓ (lub z drawera — akcja w kontekście)
 2. POST /orders/{id}/pdf → otrzymuje blob PDF
    ↓
 3. Przeglądarka pobiera plik (np. ZT2026-0001.pdf)
@@ -492,9 +631,8 @@ Przyciski akcji (sticky na dole draweru):
 
 ```
 ┌─────────────────────────────────────────────────────────┐
-│ [AppHeader - sticky h-14]                               │
-│ [Logo] Tytuł │ [Akt.|Zreal.|Anul.] │ [Aktualizuj dane] │ Imię Nazwisko [Wyloguj] │
-│                                               │ Admin   │
+│ [AppSidebar (lewy)] │ [SidebarInset — main content]       │
+│  (zastąpił AppHeader — patrz sekcja 2.2 pkt 1)           │
 ├─────────────────────────────────────────────────────────┤
 │ [Pasek filtrów + ustawienia listy — sticky]             │
 │ [Rodzaj] [Status] [Firma zał.] [Firma rozł.] [Firma transport.] [Towar] [Nr tyg.] [Szukaj] [50▼][Trasa|Kolumny] [+ Nowe zlecenie] │
@@ -516,10 +654,10 @@ Przyciski akcji (sticky na dole draweru):
 
 ```
 ┌────────────────────────────┬────────────────────────────┐
-│ [AppHeader]                │                            │
-├────────────────────────────┤   [Drawer edycji zlecenia] │
+│ [AppSidebar] │ [Main]     │                            │
+│ (zastąpił AppHeader)       │   [Drawer edycji zlecenia] │
 │ [Zakładki]                 │   ┌──────────────────────┐ │
-├────────────────────────────┤   │ Nagłówek: ZT-0001    │ │
+├────────────────────────────┤   │ Nagłówek: ZT2026/0001    │ │
 │ [Filtry]                   │   │ Historia zmian ↗     │ │
 ├────────────────────────────┤   ├──────────────────────┤ │
 │                            │   │ Sekcja: Strony       │ │
@@ -542,7 +680,7 @@ Przyciski akcji (sticky na dole draweru):
 │ [Tabela — w tle]     │ [Drawer —    │ [Panel historii]  │
 │                      │  w tle]      │ ┌──────────────┐  │
 │                      │              │ │ Historia zmian│  │
-│                      │              │ │ ZT-0001      │  │
+│                      │              │ │ ZT2026/0001      │  │
 │                      │              │ ├──────────────┤  │
 │                      │              │ │ Dzisiaj      │  │
 │                      │              │ │ ● Status     │  │
@@ -568,7 +706,7 @@ Aplikacja nie ma tradycyjnej nawigacji wielostronicowej. Struktura nawigacji:
 | Lista → Menu kontekstowe | Prawy klik na wiersz |
 | Edycja → Historia | Link w nagłówku draweru |
 | Lista → Historia | Menu kontekstowe → „Historia zmian" |
-| Wylogowanie | Przycisk „Wyloguj" w nagłówku |
+| Wylogowanie | Przycisk „Wyloguj" w sidebarze (AppSidebar footer) |
 | Powrót do listy z draweru | Zamknięcie draweru (X, Escape, klik na backdrop) |
 
 Wszystkie przejścia wewnątrz widoku głównego (`/orders`) odbywają się bez zmiany URL (stan React). Jedyna zmiana URL to logowanie ↔ lista.
@@ -597,6 +735,7 @@ Wszystkie przejścia wewnątrz widoku głównego (`/orders`) odbywają się bez 
 | Komponent / Hook | Opis |
 |---|---|
 | **AuthProvider / useAuth** | Kontekst sesji użytkownika (profil, rola, token). Obsługa 401 → wylogowanie. |
+| **MicrosoftAuthProvider / useMicrosoftAuth** | Kontekst MSAL (opcjonalny — aktywny gdy skonfigurowane `PUBLIC_MICROSOFT_CLIENT_ID` + `PUBLIC_MICROSOFT_TENANT_ID`). Udostępnia `isConfigured`, `getToken()` do uzyskania tokena Graph API. |
 | **DictionaryProvider / useDictionaries** | Globalny cache słowników (companies, locations, products, transport-types, order-statuses, vehicle-variants). Ładowane raz po zalogowaniu, odświeżane po synchronizacji. |
 | **useOrders** | Hook do pobierania listy zleceń z parametrami (view, filtry, sort, pageSize). Obsługa odświeżania po akcjach. |
 | **useOrderDetail** | Hook do pobierania szczegółów zlecenia, lock/unlock, aktualizacji. |
@@ -627,7 +766,7 @@ Wszystkie przejścia wewnątrz widoku głównego (`/orders`) odbywają się bez 
 | US-040 (Podpowiedź firm) | AutocompleteField (companies, locations) |
 | US-041 (Podpowiedź towarów) | AutocompleteField (products) |
 | US-042 (Aktualizacja słowników) | SyncButton, useDictionarySync |
-| US-050 (Generowanie PDF) | Przycisk „Generuj PDF" w stopce draweru |
+| US-050 (Podgląd zlecenia) | Przycisk „Podgląd" w stopce draweru → OrderView |
 | US-051 (Otwarcie Outlooka) | Przycisk „Wyślij maila" w stopce draweru i w wierszu listy |
 | US-070 (Historia zmian) | HistoryPanel, TimelineEntry |
 | US-071 (Autor i data) | OrderForm sekcja nagłówek (readonly) |
@@ -784,31 +923,34 @@ Kolumna Firma transportowa wyświetla **tylko nazwę firmy** (bez osoby kontakto
 
 **Oznaczanie kolorem komórki (carrier cell color):**
 - Użytkownik (ADMIN/PLANNER) może oznaczyć komórkę jednym z 4 kolorów poprzez menu kontekstowe (prawy klik → podmenu "Kolor" z kolorowymi kwadracikami)
-- **Dozwolone kolory**: `#48A111` (zielony), `#25671E` (ciemnozielony), `#FFEF5F` (żółty), `#EEA727` (pomarańczowy)
-- Kolor stosowany jako `backgroundColor` komórki (inline style); `#25671E` wymaga białego tekstu dla kontrastu
+- **Dozwolone kolory**: `#34d399` (zielony, emerald-400), `#047857` (ciemnozielony, emerald-700), `#fde047` (żółty, amber-400), `#f97316` (pomarańczowy, orange-500)
+- Kolor stosowany jako `backgroundColor` komórki (inline style); `#047857` wymaga białego tekstu dla kontrastu
 - **Status override**: gdy status = wysłane/korekta wysłane → kolor komórki ukryty (wiersz przejmuje zielone tło `bg-emerald-100/70`)
 - Kolor zapisywany w DB (`carrier_cell_color` na `transport_orders`) i widoczny dla wszystkich użytkowników
 - READ_ONLY widzi kolor, ale nie ma opcji zmiany w menu kontekstowym
 - Kolor NIE jest kopiowany przy duplikacji zlecenia
-- API: `PATCH /api/v1/orders/{orderId}/carrier-color` z body `{ color: "#48A111" | null }`
+- API: `PATCH /api/v1/orders/{orderId}/carrier-color` z body `{ color: "#34d399" | null }`
 
 **Przykład w HTML:**
 ```html
 <td class="py-1 px-4 text-[12px]">Mega Transport</td>
-<!-- z kolorem: -->
-<td class="py-1 px-4 text-[12px]" style="background-color: #48A111">Mega Transport</td>
-<!-- ciemnozielony z białym tekstem: -->
-<td class="py-1 px-4 text-[12px]" style="background-color: #25671E; color: #fff">Mega Transport</td>
+<!-- z kolorem (emerald-400): -->
+<td class="py-1 px-4 text-[12px]" style="background-color: #34d399">Mega Transport</td>
+<!-- ciemnozielony (emerald-700) z białym tekstem: -->
+<td class="py-1 px-4 text-[12px]" style="background-color: #047857; color: #fff">Mega Transport</td>
 ```
 
-### 6.6 Kolumna Towaru (ikona + badge)
+### 6.6 Kolumna Towaru
 
-Kolumna towaru zawiera:
-- Ikonę (Material Symbols: `inventory`, `view_in_ar`, `recycling` itp.) — `text-sm text-slate-400`
-- Nazwę produktu — `font-medium`
-- Badge opakowania — `text-[10px] px-1 bg-slate-100 rounded text-slate-500 uppercase`
+Kolumna towaru zawiera pozycje z `order.items` w formacie: **Nazwa** (tonaż, metoda):
+- Nazwa produktu — `font-medium` (pogrubiona)
+- Tonaż i metoda ładowania — `text-slate-400 dark:text-slate-500` (przygaszone), `loadingMethodCode` w lowercase
+- Rozmiar: `text-xs` (12px, spójny z resztą kolumn tabeli)
+- Wiersz "Razem" (dla >1 pozycji): `text-[11px] text-slate-500 font-semibold border-t border-slate-100 pt-0.5 mt-0.5`
 
-### 6.7 Nagłówek aplikacji
+### 6.7 Nagłówek aplikacji [DEPRECATED — zastąpiony przez AppSidebar]
+
+> **Uwaga:** AppHeader został zastąpiony przez AppSidebar (shadcn/ui Sidebar) — patrz sekcja 2.2 pkt 1 i sekcja 2.5. Poniższy opis zachowany wyłącznie jako referencja historyczna.
 
 ```
 [Logo 8×8 bg-primary rounded + ikona] [Tytuł UPPERCASE tracking-tight] | [Zakładki w bg-slate-100 rounded-lg] | [Aktualizuj dane] | Imię Nazwisko  [Wyloguj]

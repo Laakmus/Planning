@@ -1,10 +1,24 @@
 /**
  * Astro middleware: Supabase client injection + rate limiting + idempotency-key.
  * Dotyczy wyłącznie endpointów /api/*.
+ *
+ * Zawiera też jednorazowe uruchomienie schedulera czyszczenia anulowanych zleceń.
  */
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@supabase/supabase-js";
 import type { Database } from "./db/database.types";
+import { getCorsOrigin } from "./lib/api-helpers";
+import { initSentry } from "./lib/sentry";
+import { startCleanupScheduler } from "./lib/services/cleanup.service";
+
+// Inicjalizacja Sentry — no-op gdy brak PUBLIC_SENTRY_DSN
+initSentry();
+
+// ---------------------------------------------------------------------------
+// Jednorazowe uruchomienie schedulera czyszczenia anulowanych zleceń (co 1h)
+// Moduł middleware jest importowany raz przy starcie serwera — bezpieczne.
+// ---------------------------------------------------------------------------
+startCleanupScheduler();
 
 // ---------------------------------------------------------------------------
 // Rate limiter (in-memory, per userId or IP)
@@ -89,14 +103,24 @@ function cleanupIfNeeded(): void {
 // JWT helper
 // ---------------------------------------------------------------------------
 
-/** Wyciąga user ID (sub claim) z JWT bez walidacji podpisu. */
+/**
+ * Dekodujemy JWT bez weryfikacji podpisu — używane TYLKO do rate-limitingu.
+ * Auth jest weryfikowany server-side przez Supabase.
+ * Ryzyko: atakujący może sfabrykować JWT z cudzym sub → wyczerpanie
+ * rate limitu ofiary (429).
+ */
+const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/;
+
 function extractSubFromJwt(authHeader: string): string | null {
   try {
     const token = authHeader.replace(/^Bearer\s+/i, "");
     const parts = token.split(".");
     if (parts.length !== 3) return null;
     const payload = JSON.parse(atob(parts[1]));
-    return typeof payload.sub === "string" ? payload.sub : null;
+    if (typeof payload.sub !== "string") return null;
+    // Walidacja formatu UUID — odrzucamy sfabrykowane wartości
+    if (!UUID_PATTERN.test(payload.sub)) return null;
+    return payload.sub;
   } catch {
     return null;
   }
@@ -126,12 +150,31 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   );
 
+  // Body size limit — ochrona przed memory exhaustion (1MB)
+  const contentLength = context.request.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) > 1_048_576) {
+    return new Response(
+      JSON.stringify({
+        error: "Payload Too Large",
+        message: "Rozmiar żądania przekracza limit 1MB.",
+        statusCode: 413,
+      }),
+      {
+        status: 413,
+        headers: {
+          "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": getCorsOrigin(),
+        },
+      }
+    );
+  }
+
   // Allow OPTIONS (CORS preflight) without rate limiting
   if (method === "OPTIONS") {
     return new Response(null, {
       status: 204,
       headers: {
-        "Access-Control-Allow-Origin": import.meta.env.CORS_ORIGIN ?? "http://localhost:4321",
+        "Access-Control-Allow-Origin": getCorsOrigin(),
         "Access-Control-Allow-Methods": "GET, POST, PUT, PATCH, DELETE, OPTIONS",
         "Access-Control-Allow-Headers": "Content-Type, Authorization, Idempotency-Key",
         "Access-Control-Max-Age": "86400",

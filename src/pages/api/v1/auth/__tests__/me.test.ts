@@ -81,6 +81,7 @@ const MOCK_PROFILE: AuthMeDto = {
   fullName: "Jan Kowalski",
   phone: null,
   role: "PLANNER",
+  locationId: null,
 };
 
 function make401Response() {
@@ -228,6 +229,7 @@ describe("GET /api/v1/auth/me — response shape", () => {
       fullName: "Admin User",
       phone: "+48100200300",
       role: "ADMIN",
+      locationId: null,
     };
     mockGetAuthenticatedUser.mockResolvedValue(fullProfile);
     mockJsonResponse.mockReturnValueOnce(make200Response(fullProfile));

@@ -66,7 +66,7 @@ function LoginForm() {
           </p>
         </div>
 
-        <form onSubmit={handleSubmit} className="space-y-4">
+        <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
           <div className="space-y-2">
             <Label htmlFor="email">Login</Label>
             <Input
@@ -95,7 +95,7 @@ function LoginForm() {
           </div>
 
           {error && (
-            <p role="alert" className="text-sm text-destructive">
+            <p role="alert" className="text-sm text-destructive" data-testid="login-error">
               {error}
             </p>
           )}
