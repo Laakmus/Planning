@@ -33,11 +33,20 @@ create table if not exists public.order_no_counters (
 alter table public.order_no_counters enable row level security;
 
 -- RLS: SELECT dla authenticated (potrzebne dla RPC SECURITY DEFINER)
-create policy order_no_counters_select_authenticated
-on public.order_no_counters
-for select
-to authenticated
-using (true);
+do $$
+begin
+  if not exists (
+    select 1 from pg_policies
+    where tablename = 'order_no_counters'
+      and policyname = 'order_no_counters_select_authenticated'
+  ) then
+    create policy order_no_counters_select_authenticated
+    on public.order_no_counters
+    for select
+    to authenticated
+    using (true);
+  end if;
+end $$;
 
 -- Brak policy INSERT/UPDATE/DELETE — dostęp tylko przez RPC (SECURITY DEFINER)
 

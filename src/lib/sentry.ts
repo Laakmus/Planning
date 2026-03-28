@@ -1,8 +1,10 @@
 /**
  * Sentry — integracja error tracking.
  * Graceful no-op gdy brak DSN (np. środowisko lokalne/dev).
+ *
+ * UWAGA: @sentry/node jest importowany dynamicznie, żeby Vite nie bundlował
+ * modułów Node.js (node:diagnostics_channel itp.) do kodu klienta.
  */
-import * as Sentry from "@sentry/node";
 
 const dsn =
   typeof import.meta !== "undefined"
@@ -12,8 +14,9 @@ const dsn =
 let initialized = false;
 
 /** Inicjalizuje Sentry SDK — bezpieczne wielokrotne wywołanie (idempotentne). */
-export function initSentry(): void {
+export async function initSentry(): Promise<void> {
   if (!dsn || initialized) return;
+  const Sentry = await import("@sentry/node");
   Sentry.init({
     dsn,
     environment: import.meta.env?.MODE ?? "production",
@@ -29,12 +32,15 @@ export function captureException(
   context?: Record<string, unknown>
 ): void {
   if (!dsn) return;
-  if (context) {
-    Sentry.withScope((scope) => {
-      scope.setExtras(context);
+  // Dynamiczny import — nie blokuje, fire-and-forget
+  import("@sentry/node").then((Sentry) => {
+    if (context) {
+      Sentry.withScope((scope) => {
+        scope.setExtras(context);
+        Sentry.captureException(error);
+      });
+    } else {
       Sentry.captureException(error);
-    });
-  } else {
-    Sentry.captureException(error);
-  }
+    }
+  }).catch(() => { /* Sentry niedostępny — ignoruj */ });
 }

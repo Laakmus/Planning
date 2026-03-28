@@ -11,8 +11,8 @@ import { getCorsOrigin } from "./lib/api-helpers";
 import { initSentry } from "./lib/sentry";
 import { startCleanupScheduler } from "./lib/services/cleanup.service";
 
-// Inicjalizacja Sentry — no-op gdy brak PUBLIC_SENTRY_DSN
-initSentry();
+// Inicjalizacja Sentry — no-op gdy brak PUBLIC_SENTRY_DSN (async, fire-and-forget)
+initSentry().catch(() => {});
 
 // ---------------------------------------------------------------------------
 // Jednorazowe uruchomienie schedulera czyszczenia anulowanych zleceń (co 1h)

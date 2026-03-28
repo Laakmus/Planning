@@ -11,7 +11,16 @@ export default defineConfig({
   adapter: node({ mode: "standalone" }),
 
   vite: {
-    plugins: [tailwindcss()]
+    plugins: [tailwindcss()],
+    build: {
+      rollupOptions: {
+        // @sentry/node i powiązane moduły Node.js — tylko server-side, wykluczamy z client bundla
+        external: [
+          "@sentry/node",
+          "@sentry/node-core",
+        ],
+      },
+    },
   },
 
   integrations: [react()]
