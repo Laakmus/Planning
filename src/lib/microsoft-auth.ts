@@ -7,13 +7,15 @@
  * Wymagane zmienne środowiskowe:
  *   PUBLIC_MICROSOFT_CLIENT_ID — Application (client) ID z Azure Portal
  *   PUBLIC_MICROSOFT_TENANT_ID — Directory (tenant) ID z Azure Portal
+ *
+ * UWAGA: @azure/msal-browser jest importowany dynamicznie, żeby uniknąć
+ * crashu przy inicjalizacji modułu gdy env vars nie są ustawione.
  */
 
-import {
+import type {
   PublicClientApplication,
-  type Configuration,
-  type AccountInfo,
-  type AuthenticationResult,
+  AccountInfo,
+  AuthenticationResult,
 } from "@azure/msal-browser";
 
 // Scopes wymagane do tworzenia draftów email z załącznikami
@@ -28,6 +30,14 @@ let msalInstance: PublicClientApplication | null = null;
 export function isMsalConfigured(): boolean {
   const clientId = import.meta.env.PUBLIC_MICROSOFT_CLIENT_ID;
   return typeof clientId === "string" && clientId.trim().length > 0;
+}
+
+/**
+ * Dynamicznie ładuje @azure/msal-browser.
+ * Zapobiega crashowi przy inicjalizacji modułu gdy brak konfiguracji.
+ */
+async function loadMsal() {
+  return import("@azure/msal-browser");
 }
 
 /**
@@ -48,18 +58,20 @@ export async function getMsalInstance(): Promise<PublicClientApplication> {
     ? `https://login.microsoftonline.com/${tenantId}`
     : "https://login.microsoftonline.com/common";
 
-  const config: Configuration = {
+  const { PublicClientApplication: PCA } = await loadMsal();
+
+  const config = {
     auth: {
       clientId,
       authority,
       redirectUri: window.location.origin,
     },
     cache: {
-      cacheLocation: "localStorage",
+      cacheLocation: "localStorage" as const,
     },
   };
 
-  msalInstance = new PublicClientApplication(config);
+  msalInstance = new PCA(config);
   await msalInstance.initialize();
   return msalInstance;
 }
