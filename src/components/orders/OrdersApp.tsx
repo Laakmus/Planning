@@ -23,7 +23,6 @@ import { Separator } from "@/components/ui/separator";
 import { SidebarInset, SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import { Toaster } from "@/components/ui/sonner";
 import { useAuth } from "@/contexts/AuthContext";
-import { MicrosoftAuthProvider } from "@/contexts/MicrosoftAuthContext";
 import type { ViewGroup } from "@/lib/view-models";
 
 import { AppSidebar } from "./AppSidebar";
@@ -108,9 +107,7 @@ export default function OrdersApp() {
   return (
     <div data-testid="orders-app">
       <AppProviders>
-        <MicrosoftAuthProvider>
-          <OrdersAppInner />
-        </MicrosoftAuthProvider>
+        <OrdersAppInner />
       </AppProviders>
     </div>
   );

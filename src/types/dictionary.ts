@@ -64,6 +64,16 @@ export interface VehicleVariantDto {
   description: string | null;
 }
 
+/** Combined response GET /api/v1/dictionaries — wszystkie słowniki w jednym zapytaniu. */
+export interface DictionariesResponse {
+  companies: CompanyDto[];
+  locations: LocationDto[];
+  products: ProductDto[];
+  transportTypes: TransportTypeDto[];
+  orderStatuses: OrderStatusDto[];
+  vehicleVariants: VehicleVariantDto[];
+}
+
 /** Body POST /api/v1/dictionary-sync/run. */
 export interface DictionarySyncCommand {
   resources: Array<"COMPANIES" | "LOCATIONS" | "PRODUCTS">;

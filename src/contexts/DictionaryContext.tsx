@@ -20,15 +20,7 @@ import {
 } from "react";
 import { toast } from "sonner";
 
-import type {
-  CompanyDto,
-  LocationDto,
-  ProductDto,
-  TransportTypeDto,
-  OrderStatusDto,
-  VehicleVariantDto,
-  ListResponse,
-} from "@/types";
+import type { DictionariesResponse } from "@/types";
 import type { DictionaryState } from "@/lib/view-models";
 import { useAuth } from "./AuthContext";
 
@@ -72,34 +64,80 @@ export function DictionaryProvider({ children }: DictionaryProviderProps) {
   // Flaga zapobiegająca powtórnemu wyświetlaniu toasta o błędzie słowników
   const errorShownRef = useRef(false);
 
-  // Załaduj wszystkie 6 słowników równolegle
+  // Klucz cache w sessionStorage
+  const CACHE_KEY = "planning:dictionaries";
+  // Czas ważności cache: 1 godzina
+  const CACHE_TTL_MS = 3_600_000;
+
+  /**
+   * Odczytaj słowniki z sessionStorage (jeśli cache < 1h).
+   * Zwraca null gdy brak cache, cache wygasł lub sessionStorage niedostępne.
+   */
+  const readCache = useCallback((): DictionariesResponse | null => {
+    try {
+      const raw = sessionStorage.getItem(CACHE_KEY);
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { data: DictionariesResponse; timestamp: number };
+      if (Date.now() - parsed.timestamp < CACHE_TTL_MS) {
+        return parsed.data;
+      }
+    } catch {
+      // sessionStorage niedostępne lub dane uszkodzone — ignoruj
+    }
+    return null;
+  }, []);
+
+  /** Zapisz słowniki do sessionStorage z aktualnym timestamp. */
+  const writeCache = useCallback((data: DictionariesResponse): void => {
+    try {
+      sessionStorage.setItem(CACHE_KEY, JSON.stringify({ data, timestamp: Date.now() }));
+    } catch {
+      // sessionStorage pełne lub niedostępne — ignoruj
+    }
+  }, []);
+
+  /** Usuń cache słowników z sessionStorage. */
+  const clearCache = useCallback((): void => {
+    try {
+      sessionStorage.removeItem(CACHE_KEY);
+    } catch {
+      // sessionStorage niedostępne — ignoruj
+    }
+  }, []);
+
+  // Załaduj wszystkie słowniki jednym zapytaniem (z cache sessionStorage)
   const loadDictionaries = useCallback(async () => {
+    // Sprawdź cache sessionStorage
+    const cached = readCache();
+    if (cached) {
+      setState({
+        companies: cached.companies,
+        locations: cached.locations,
+        products: cached.products,
+        transportTypes: cached.transportTypes,
+        orderStatuses: cached.orderStatuses,
+        vehicleVariants: cached.vehicleVariants,
+        isLoading: false,
+        error: null,
+      });
+      return;
+    }
+
     setState((prev) => ({ ...prev, isLoading: true, error: null }));
 
     try {
-      const [
-        companiesRes,
-        locationsRes,
-        productsRes,
-        transportTypesRes,
-        orderStatusesRes,
-        vehicleVariantsRes,
-      ] = await Promise.all([
-        api.get<ListResponse<CompanyDto>>("/api/v1/companies"),
-        api.get<ListResponse<LocationDto>>("/api/v1/locations"),
-        api.get<ListResponse<ProductDto>>("/api/v1/products"),
-        api.get<ListResponse<TransportTypeDto>>("/api/v1/transport-types"),
-        api.get<ListResponse<OrderStatusDto>>("/api/v1/order-statuses"),
-        api.get<ListResponse<VehicleVariantDto>>("/api/v1/vehicle-variants"),
-      ]);
+      const data = await api.get<DictionariesResponse>("/api/v1/dictionaries");
+
+      // Zapisz do cache
+      writeCache(data);
 
       setState({
-        companies: companiesRes.items,
-        locations: locationsRes.items,
-        products: productsRes.items,
-        transportTypes: transportTypesRes.items,
-        orderStatuses: orderStatusesRes.items,
-        vehicleVariants: vehicleVariantsRes.items,
+        companies: data.companies,
+        locations: data.locations,
+        products: data.products,
+        transportTypes: data.transportTypes,
+        orderStatuses: data.orderStatuses,
+        vehicleVariants: data.vehicleVariants,
         isLoading: false,
         error: null,
       });
@@ -112,7 +150,7 @@ export function DictionaryProvider({ children }: DictionaryProviderProps) {
         error: message,
       }));
     }
-  }, [api]);
+  }, [api, readCache, writeCache]);
 
   // Ładuj słowniki po zalogowaniu (gdy user się pojawi)
   useEffect(() => {
@@ -121,9 +159,10 @@ export function DictionaryProvider({ children }: DictionaryProviderProps) {
     } else {
       // Wyczyść cache po wylogowaniu
       setState(INITIAL_STATE);
+      clearCache();
       errorShownRef.current = false;
     }
-  }, [user, loadDictionaries]);
+  }, [user, loadDictionaries, clearCache]);
 
   // Jednorazowy toast o błędzie ładowania słowników
   useEffect(() => {

@@ -19,8 +19,8 @@ import {
   type ReactNode,
 } from "react";
 
+import { isMsalConfigured } from "@/lib/microsoft-auth-config";
 import {
-  isMsalConfigured,
   getMsalInstance,
   getActiveAccount,
   signInMsal,

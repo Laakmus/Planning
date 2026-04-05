@@ -140,9 +140,10 @@ export const onRequest = defineMiddleware(async (context, next) => {
   const { url, method } = context.request;
   const pathname = new URL(url).pathname;
 
-  // Only apply to API routes
+  // Dla nie-API routes — stosuj tylko kompresję gzip (bez rate limiting, auth, itp.)
   if (!pathname.startsWith("/api/")) {
-    return next();
+    const pageResponse = await next();
+    return maybeCompress(context.request, pageResponse);
   }
 
   // Inject Supabase client with user's JWT token (enables RLS)
@@ -269,5 +270,104 @@ export const onRequest = defineMiddleware(async (context, next) => {
   response.headers.set("X-RateLimit-Limit", String(limit));
   response.headers.set("X-RateLimit-Remaining", String(rate.remaining));
 
-  return response;
+  return maybeCompress(context.request, response);
 });
+
+// ---------------------------------------------------------------------------
+// Kompresja gzip (OPT-1) — dla odpowiedzi API i stron HTML > 1KB
+// Używa wbudowanego CompressionStream (Node 22+)
+// ---------------------------------------------------------------------------
+
+/** Typy Content-Type, które NIE powinny być kompresowane (binarne). */
+const SKIP_COMPRESSION_TYPES = new Set([
+  "application/pdf",
+  "application/octet-stream",
+  "message/rfc822",
+]);
+
+/** Typy Content-Type kwalifikujące się do kompresji (tekstowe). */
+const COMPRESSIBLE_PREFIXES = [
+  "application/json",
+  "text/html",
+  "text/plain",
+  "text/css",
+  "text/javascript",
+  "application/javascript",
+  "application/xml",
+  "text/xml",
+];
+
+/** Minimalny rozmiar body do kompresji (1KB). */
+const MIN_COMPRESS_SIZE = 1024;
+
+/**
+ * Opakowuje odpowiedź w gzip jeśli spełnione warunki:
+ * 1. Klient akceptuje gzip (Accept-Encoding)
+ * 2. Content-Type jest tekstowy/JSON (nie binarny)
+ * 3. Body > 1KB
+ * 4. Odpowiedź nie jest już skompresowana
+ */
+async function maybeCompress(request: Request, response: Response): Promise<Response> {
+  // Sprawdź czy klient akceptuje gzip
+  const acceptEncoding = request.headers.get("accept-encoding") ?? "";
+  if (!acceptEncoding.includes("gzip")) {
+    return response;
+  }
+
+  // Nie kompresuj jeśli już skompresowane
+  if (response.headers.get("content-encoding")) {
+    return response;
+  }
+
+  // Sprawdź Content-Type — kompresuj tylko tekstowe/JSON
+  const contentType = response.headers.get("content-type") ?? "";
+  const baseContentType = contentType.split(";")[0].trim().toLowerCase();
+
+  if (SKIP_COMPRESSION_TYPES.has(baseContentType)) {
+    return response;
+  }
+
+  const isCompressible = COMPRESSIBLE_PREFIXES.some((prefix) =>
+    baseContentType.startsWith(prefix)
+  );
+  if (!isCompressible) {
+    return response;
+  }
+
+  // Sprawdź rozmiar — nie kompresuj małych odpowiedzi
+  const contentLength = response.headers.get("content-length");
+  if (contentLength && parseInt(contentLength, 10) < MIN_COMPRESS_SIZE) {
+    return response;
+  }
+
+  // Jeśli brak Content-Length, czytamy body i sprawdzamy rozmiar
+  if (!contentLength) {
+    const body = await response.arrayBuffer();
+    if (body.byteLength < MIN_COMPRESS_SIZE) {
+      // Za małe — zwróć oryginał (z Vary header)
+      const headers = new Headers(response.headers);
+      headers.append("Vary", "Accept-Encoding");
+      return new Response(body, { status: response.status, headers });
+    }
+
+    // Kompresuj body
+    const stream = new Blob([body]).stream().pipeThrough(new CompressionStream("gzip"));
+    const headers = new Headers(response.headers);
+    headers.set("Content-Encoding", "gzip");
+    headers.delete("Content-Length");
+    headers.append("Vary", "Accept-Encoding");
+    return new Response(stream, { status: response.status, headers });
+  }
+
+  // Content-Length znany i >= MIN_COMPRESS_SIZE — kompresuj stream
+  if (!response.body) {
+    return response;
+  }
+
+  const compressedStream = response.body.pipeThrough(new CompressionStream("gzip"));
+  const headers = new Headers(response.headers);
+  headers.set("Content-Encoding", "gzip");
+  headers.delete("Content-Length");
+  headers.append("Vary", "Accept-Encoding");
+  return new Response(compressedStream, { status: response.status, headers });
+}

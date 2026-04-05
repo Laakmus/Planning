@@ -24,13 +24,11 @@ const GRAPH_SCOPES = ["Mail.ReadWrite"];
 let msalInstance: PublicClientApplication | null = null;
 
 /**
- * Sprawdza czy konfiguracja Microsoft (env vars) jest obecna.
- * Gdy brak — cały flow Graph API jest wyłączony, fallback na .eml.
+ * Re-export z microsoft-auth-config.ts — backward compat.
+ * Pozwala importować isMsalConfigured z tego pliku bez zmian
+ * w istniejących konsumentach.
  */
-export function isMsalConfigured(): boolean {
-  const clientId = import.meta.env.PUBLIC_MICROSOFT_CLIENT_ID;
-  return typeof clientId === "string" && clientId.trim().length > 0;
-}
+export { isMsalConfigured } from "./microsoft-auth-config";
 
 /**
  * Dynamicznie ładuje @azure/msal-browser.
