@@ -254,11 +254,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
 
       {/* OrderDrawer */}
       <ErrorBoundary
-        fallback={
-          <div className="p-4 text-center text-sm text-red-600 dark:text-red-400">
-            Błąd ładowania formularza. Zamknij i otwórz ponownie.
-          </div>
-        }
+        key={`drawer-${selectedOrderId ?? "new"}-${drawerOpen}`}
       >
         <OrderDrawer
           orderId={selectedOrderId}

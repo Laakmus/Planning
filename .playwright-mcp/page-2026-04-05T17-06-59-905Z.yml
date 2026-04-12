@@ -1,0 +1,30 @@
+- generic [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e5]:
+      - heading "System Zleceń Transportowych" [level=1] [ref=e6]
+      - paragraph [ref=e7]: Zaloguj się, aby kontynuować
+    - generic [ref=e8]:
+      - generic [ref=e9]:
+        - generic [ref=e10]: Login
+        - textbox "Login" [active] [ref=e11]:
+          - /placeholder: email@firma.pl
+      - generic [ref=e12]:
+        - generic [ref=e13]: Hasło
+        - textbox "Hasło" [ref=e14]:
+          - /placeholder: Wprowadź hasło
+      - button "Zaloguj" [ref=e15]
+  - generic [ref=e18]:
+    - button "Menu" [ref=e19]:
+      - img [ref=e21]
+      - generic: Menu
+    - button "Inspect" [ref=e25]:
+      - img [ref=e27]
+      - generic: Inspect
+    - button "Audit" [ref=e29]:
+      - generic [ref=e30]:
+        - img [ref=e31]
+        - img [ref=e34]
+      - generic: Audit
+    - button "Settings" [ref=e37]:
+      - img [ref=e39]
+      - generic: Settings

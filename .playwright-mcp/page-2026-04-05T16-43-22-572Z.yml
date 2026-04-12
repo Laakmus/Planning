@@ -1,0 +1,1148 @@
+- generic [active] [ref=e1]:
+  - generic [ref=e4]:
+    - generic [ref=e6]:
+      - generic [ref=e8]:
+        - img [ref=e10]
+        - generic [ref=e15]: Zlecenia Transportowe
+      - generic [ref=e16]:
+        - generic [ref=e17]:
+          - generic [ref=e18]: Widoki
+          - list [ref=e20]:
+            - listitem [ref=e21]:
+              - button "Aktualne" [ref=e22]:
+                - img [ref=e23]
+                - generic [ref=e26]: Aktualne
+            - listitem [ref=e27]:
+              - button "Zrealizowane" [ref=e28]:
+                - img [ref=e29]
+                - generic [ref=e32]: Zrealizowane
+            - listitem [ref=e33]:
+              - button "Anulowane" [ref=e34]:
+                - img [ref=e35]
+                - generic [ref=e39]: Anulowane
+        - list [ref=e42]:
+          - listitem [ref=e43]:
+            - link "Magazyn" [ref=e44] [cursor=pointer]:
+              - /url: /warehouse
+              - img [ref=e45]
+              - generic [ref=e48]: Magazyn
+      - generic [ref=e49]:
+        - button "Aktualizuj dane" [ref=e50]:
+          - img
+          - text: Aktualizuj dane
+        - generic [ref=e51]:
+          - button "Przełącz na ciemny motyw" [ref=e52]:
+            - img
+          - generic [ref=e53]:
+            - generic [ref=e54]:
+              - generic [ref=e55]: Jan Kowalski
+              - generic [ref=e56]: Admin
+            - button "Wyloguj" [ref=e57]
+    - main [ref=e58]:
+      - generic [ref=e59]:
+        - button "Toggle Sidebar" [ref=e60]:
+          - img
+          - generic [ref=e61]: Toggle Sidebar
+        - navigation "Widoki zleceń" [ref=e63]:
+          - button "Aktualne" [ref=e64]
+          - button "Zrealizowane" [ref=e65]
+          - button "Anulowane" [ref=e66]
+      - generic [ref=e68]:
+        - generic [ref=e69]:
+          - combobox [ref=e70]:
+            - option "Rodzaj transportu" [selected]
+            - option "EXP"
+            - option "IMP"
+            - option "EXP_K"
+            - option "PL"
+          - combobox [ref=e71]:
+            - option "Status" [selected]
+            - option "Robocze"
+            - option "Wysłane"
+            - option "Korekta"
+            - option "Korekta_w"
+            - option "Zrealizowane"
+            - option "Reklamacja"
+            - option "Anulowane"
+          - combobox [ref=e72]:
+            - generic [ref=e73]: Firma załadunku
+            - generic [ref=e74]:
+              - img
+          - combobox [ref=e75]:
+            - generic [ref=e76]: Firma rozładunku
+            - generic [ref=e77]:
+              - img
+          - combobox [ref=e78]:
+            - generic [ref=e79]: Firma transp.
+            - generic [ref=e80]:
+              - img
+          - combobox [ref=e81]:
+            - generic [ref=e82]: Towar
+            - generic [ref=e83]:
+              - img
+          - textbox "Tydzień" [ref=e84]
+          - generic [ref=e85]:
+            - img [ref=e86]
+            - textbox "Szukaj..." [ref=e89]
+          - generic [ref=e90]:
+            - generic [ref=e91]:
+              - combobox [ref=e92]:
+                - generic: "50"
+                - img
+              - group "Tryb widoku listy" [ref=e93]:
+                - button "Trasa" [pressed] [ref=e94]
+                - button "Kolumny" [ref=e95]
+            - button "Nowe zlecenie" [ref=e96]:
+              - img [ref=e97]
+              - text: Nowe zlecenie
+        - table [ref=e99]:
+          - rowgroup [ref=e100]:
+            - row "Nr zlecenia Status Tydz. Rodzaj Trasa Data zał. Data rozł. Fix Towar Komentarz Firma transp. Typ auta Stawka Data wysł." [ref=e101]:
+              - columnheader [ref=e102]
+              - columnheader "Nr zlecenia" [ref=e103] [cursor=pointer]:
+                - generic [ref=e104]:
+                  - text: Nr zlecenia
+                  - img [ref=e105]
+              - columnheader "Status" [ref=e108]
+              - columnheader "Tydz." [ref=e109]
+              - columnheader "Rodzaj" [ref=e110]
+              - columnheader "Trasa" [ref=e111]
+              - columnheader "Data zał." [ref=e112] [cursor=pointer]:
+                - generic [ref=e113]:
+                  - text: Data zał.
+                  - img [ref=e114]
+              - columnheader "Data rozł." [ref=e116] [cursor=pointer]:
+                - generic [ref=e117]:
+                  - text: Data rozł.
+                  - img [ref=e118]
+              - columnheader "Fix" [ref=e121]
+              - columnheader "Towar" [ref=e122]
+              - columnheader "Komentarz" [ref=e123]
+              - columnheader "Firma transp." [ref=e124] [cursor=pointer]:
+                - generic [ref=e125]:
+                  - text: Firma transp.
+                  - img [ref=e126]
+              - columnheader "Typ auta" [ref=e129]
+              - columnheader "Stawka" [ref=e130]
+              - columnheader "Data wysł." [ref=e131]
+          - rowgroup [ref=e132]:
+            - row "ZT2026/0006 Reklamacja 7 IMP L1:NordMetal → U1:Huta 15.02 14:00 15.02 20:00 Odpady przemysłowe (3t, kosze) SpeedCargo Sp. z o.o. Bus (15m³) 6500 PLN —" [ref=e133] [cursor=pointer]:
+              - cell [ref=e134]
+              - cell "ZT2026/0006" [ref=e135]
+              - cell "Reklamacja" [ref=e136]:
+                - generic [ref=e137]: Reklamacja
+              - cell "7" [ref=e138]
+              - cell "IMP" [ref=e139]
+              - cell "L1:NordMetal → U1:Huta" [ref=e140]:
+                - generic [ref=e142]:
+                  - generic [ref=e143]:
+                    - generic [ref=e144]: L1:NordMetal
+                    - generic [ref=e145]: →
+                  - generic [ref=e147]: U1:Huta
+              - cell "15.02 14:00" [ref=e148]
+              - cell "15.02 20:00" [ref=e149]
+              - cell [ref=e150]:
+                - combobox [ref=e151]:
+                  - generic: —
+                  - img
+              - cell "Odpady przemysłowe (3t, kosze)" [ref=e152]:
+                - generic [ref=e154]:
+                  - text: Odpady przemysłowe
+                  - generic [ref=e155]: (3t, kosze)
+              - cell [ref=e156]
+              - cell "SpeedCargo Sp. z o.o." [ref=e157]
+              - cell "Bus (15m³)" [ref=e158]:
+                - text: Bus
+                - generic [ref=e159]: (15m³)
+              - cell "6500 PLN" [ref=e160]
+              - cell "—" [ref=e161]
+            - row "ZT2026/0017 Reklamacja 8 PL L1:NordMetal → U1:Huta 17.02 10:00 17.02 18:00 Odpady przemysłowe (2.8t, kosze) GreenWaste Recycling Bus (15m³) 1800 PLN —" [ref=e162] [cursor=pointer]:
+              - cell [ref=e163]
+              - cell "ZT2026/0017" [ref=e164]
+              - cell "Reklamacja" [ref=e165]:
+                - generic [ref=e166]: Reklamacja
+              - cell "8" [ref=e167]
+              - cell "PL" [ref=e168]
+              - cell "L1:NordMetal → U1:Huta" [ref=e169]:
+                - generic [ref=e171]:
+                  - generic [ref=e172]:
+                    - generic [ref=e173]: L1:NordMetal
+                    - generic [ref=e174]: →
+                  - generic [ref=e176]: U1:Huta
+              - cell "17.02 10:00" [ref=e177]
+              - cell "17.02 18:00" [ref=e178]
+              - cell [ref=e179]:
+                - combobox [ref=e180]:
+                  - generic: —
+                  - img
+              - cell "Odpady przemysłowe (2.8t, kosze)" [ref=e181]:
+                - generic [ref=e183]:
+                  - text: Odpady przemysłowe
+                  - generic [ref=e184]: (2.8t, kosze)
+              - cell [ref=e185]
+              - cell "GreenWaste Recycling" [ref=e186]
+              - cell "Bus (15m³)" [ref=e187]:
+                - text: Bus
+                - generic [ref=e188]: (15m³)
+              - cell "1800 PLN" [ref=e189]
+              - cell "—" [ref=e190]
+            - row "ZT2026/0002 Wysłane 8 EXP L1:NordMetal → U1:BerlinBau 18.02 06:00 19.02 16:00 Granulat PP (18t, paleta_bigbag) SpeedCargo Sp. z o.o. Naczepa standard (90m³) 2800 EUR Jan Kowalski 17.02.2026" [ref=e191] [cursor=pointer]:
+              - cell [ref=e192]
+              - cell "ZT2026/0002" [ref=e193]
+              - cell "Wysłane" [ref=e194]:
+                - generic [ref=e195]: Wysłane
+              - cell "8" [ref=e196]
+              - cell "EXP" [ref=e197]
+              - cell "L1:NordMetal → U1:BerlinBau" [ref=e198]:
+                - generic [ref=e200]:
+                  - generic [ref=e201]:
+                    - generic [ref=e202]: L1:NordMetal
+                    - generic [ref=e203]: →
+                  - generic [ref=e205]: U1:BerlinBau
+              - cell "18.02 06:00" [ref=e206]
+              - cell "19.02 16:00" [ref=e207]
+              - cell [ref=e208]:
+                - combobox [ref=e209]:
+                  - generic: —
+                  - img
+              - cell "Granulat PP (18t, paleta_bigbag)" [ref=e210]:
+                - generic [ref=e212]:
+                  - text: Granulat PP
+                  - generic [ref=e213]: (18t, paleta_bigbag)
+              - cell [ref=e214]
+              - cell "SpeedCargo Sp. z o.o." [ref=e215]
+              - cell "Naczepa standard (90m³)" [ref=e216]:
+                - text: Naczepa standard
+                - generic [ref=e217]: (90m³)
+              - cell "2800 EUR" [ref=e218]
+              - cell "Jan Kowalski 17.02.2026" [ref=e219]:
+                - generic [ref=e220]:
+                  - generic [ref=e221]: Jan Kowalski
+                  - generic [ref=e222]: 17.02.2026
+            - 'row "ZT2026/0008 Robocze 8 IMP L1:NordMetal → L2:Recykling → U1:BerlinBau → U2:BerlinBau 19.02 05:30 19.02 18:00 1. Granulat PP (2t, paleta_bigbag) 2. Cement workowy (1.2t, paleta) Razem: 3.2t ChemTrans International Bus (15m³) 8500 PLN —" [ref=e223] [cursor=pointer]':
+              - cell [ref=e224]
+              - cell "ZT2026/0008" [ref=e225]
+              - cell "Robocze" [ref=e226]:
+                - generic [ref=e227]: Robocze
+              - cell "8" [ref=e228]
+              - cell "IMP" [ref=e229]
+              - cell "L1:NordMetal → L2:Recykling → U1:BerlinBau → U2:BerlinBau" [ref=e230]:
+                - generic [ref=e232]:
+                  - generic [ref=e233]:
+                    - generic [ref=e234]: L1:NordMetal
+                    - generic [ref=e235]: →
+                  - generic [ref=e236]:
+                    - generic [ref=e237]: L2:Recykling
+                    - generic [ref=e238]: →
+                  - generic [ref=e239]:
+                    - generic [ref=e240]: U1:BerlinBau
+                    - generic [ref=e241]: →
+                  - generic [ref=e243]: U2:BerlinBau
+              - cell "19.02 05:30" [ref=e244]
+              - cell "19.02 18:00" [ref=e245]
+              - cell [ref=e246]:
+                - combobox [ref=e247]:
+                  - generic: Tak
+                  - img
+              - 'cell "1. Granulat PP (2t, paleta_bigbag) 2. Cement workowy (1.2t, paleta) Razem: 3.2t" [ref=e248]':
+                - generic [ref=e249]:
+                  - generic [ref=e250]:
+                    - text: 1. Granulat PP
+                    - generic [ref=e251]: (2t, paleta_bigbag)
+                  - generic [ref=e252]:
+                    - text: 2. Cement workowy
+                    - generic [ref=e253]: (1.2t, paleta)
+                  - generic [ref=e254]: "Razem: 3.2t"
+              - cell [ref=e255]
+              - cell "ChemTrans International" [ref=e256]
+              - cell "Bus (15m³)" [ref=e257]:
+                - text: Bus
+                - generic [ref=e258]: (15m³)
+              - cell "8500 PLN" [ref=e259]
+              - cell "—" [ref=e260]
+            - row "ZT2026/0003 Korekta 8 PL L1:Recykling → U1:Huta 22.02 10:00 22.02 18:00 Cement workowy (12t, paleta) TransBud Logistyka Firanka (40m³) 3200 PLN —" [ref=e261] [cursor=pointer]:
+              - cell [ref=e262]
+              - cell "ZT2026/0003" [ref=e263]
+              - cell "Korekta" [ref=e264]:
+                - generic [ref=e265]: Korekta
+              - cell "8" [ref=e266]
+              - cell "PL" [ref=e267]
+              - cell "L1:Recykling → U1:Huta" [ref=e268]:
+                - generic [ref=e270]:
+                  - generic [ref=e271]:
+                    - generic [ref=e272]: L1:Recykling
+                    - generic [ref=e273]: →
+                  - generic [ref=e275]: U1:Huta
+              - cell "22.02 10:00" [ref=e276]
+              - cell "22.02 18:00" [ref=e277]
+              - cell [ref=e278]:
+                - combobox [ref=e279]:
+                  - generic: —
+                  - img
+              - cell "Cement workowy (12t, paleta)" [ref=e280]:
+                - generic [ref=e282]:
+                  - text: Cement workowy
+                  - generic [ref=e283]: (12t, paleta)
+              - cell [ref=e284]
+              - cell "TransBud Logistyka" [ref=e285]
+              - cell "Firanka (40m³)" [ref=e286]:
+                - text: Firanka
+                - generic [ref=e287]: (40m³)
+              - cell "3200 PLN" [ref=e288]
+              - cell "—" [ref=e289]
+            - 'row "ZT2026/0014 Korekta_w 8 IMP L1:BerlinBau → U1:NordMetal → U2:Recykling 22.02 08:00 23.02 10:00 1. Drut miedziany (8.5t, paleta) 2. Granulat PP (10t, paleta_bigbag) Razem: 18.5t SpeedCargo Sp. z o.o. Naczepa standard (90m³) 3600 EUR Jan Kowalski 21.02.2026" [ref=e290] [cursor=pointer]':
+              - cell [ref=e291]
+              - cell "ZT2026/0014" [ref=e292]
+              - cell "Korekta_w" [ref=e293]:
+                - generic [ref=e294]: Korekta_w
+              - cell "8" [ref=e295]
+              - cell "IMP" [ref=e296]
+              - cell "L1:BerlinBau → U1:NordMetal → U2:Recykling" [ref=e297]:
+                - generic [ref=e299]:
+                  - generic [ref=e300]:
+                    - generic [ref=e301]: L1:BerlinBau
+                    - generic [ref=e302]: →
+                  - generic [ref=e303]:
+                    - generic [ref=e304]: U1:NordMetal
+                    - generic [ref=e305]: →
+                  - generic [ref=e307]: U2:Recykling
+              - cell "22.02 08:00" [ref=e308]
+              - cell "23.02 10:00" [ref=e309]
+              - cell [ref=e310]:
+                - combobox [ref=e311]:
+                  - generic: —
+                  - img
+              - 'cell "1. Drut miedziany (8.5t, paleta) 2. Granulat PP (10t, paleta_bigbag) Razem: 18.5t" [ref=e312]':
+                - generic [ref=e313]:
+                  - generic [ref=e314]:
+                    - text: 1. Drut miedziany
+                    - generic [ref=e315]: (8.5t, paleta)
+                  - generic [ref=e316]:
+                    - text: 2. Granulat PP
+                    - generic [ref=e317]: (10t, paleta_bigbag)
+                  - generic [ref=e318]: "Razem: 18.5t"
+              - cell [ref=e319]
+              - cell "SpeedCargo Sp. z o.o." [ref=e320]
+              - cell "Naczepa standard (90m³)" [ref=e321]:
+                - text: Naczepa standard
+                - generic [ref=e322]: (90m³)
+              - cell "3600 EUR" [ref=e323]
+              - cell "Jan Kowalski 21.02.2026" [ref=e324]:
+                - generic [ref=e325]:
+                  - generic [ref=e326]: Jan Kowalski
+                  - generic [ref=e327]: 21.02.2026
+            - 'row "ZT2026/0011 Wysłane 9 PL L1:NordMetal → L2:Recykling → U1:Recykling → U2:Huta 23.02 06:00 24.02 10:00 1. Stal walcowana (12t, paleta) 2. Rury stalowe (11.5t, paleta) Razem: 23.5t ChemTrans International Naczepa mega (100m³) 5800 PLN Jan Kowalski 22.02.2026" [ref=e328] [cursor=pointer]':
+              - cell [ref=e329]
+              - cell "ZT2026/0011" [ref=e330]
+              - cell "Wysłane" [ref=e331]:
+                - generic [ref=e332]: Wysłane
+              - cell "9" [ref=e333]
+              - cell "PL" [ref=e334]
+              - cell "L1:NordMetal → L2:Recykling → U1:Recykling → U2:Huta" [ref=e335]:
+                - generic [ref=e337]:
+                  - generic [ref=e338]:
+                    - generic [ref=e339]: L1:NordMetal
+                    - generic [ref=e340]: →
+                  - generic [ref=e341]:
+                    - generic [ref=e342]: L2:Recykling
+                    - generic [ref=e343]: →
+                  - generic [ref=e344]:
+                    - generic [ref=e345]: U1:Recykling
+                    - generic [ref=e346]: →
+                  - generic [ref=e348]: U2:Huta
+              - cell "23.02 06:00" [ref=e349]
+              - cell "24.02 10:00" [ref=e350]
+              - cell [ref=e351]:
+                - combobox [ref=e352]:
+                  - generic: —
+                  - img
+              - 'cell "1. Stal walcowana (12t, paleta) 2. Rury stalowe (11.5t, paleta) Razem: 23.5t" [ref=e353]':
+                - generic [ref=e354]:
+                  - generic [ref=e355]:
+                    - text: 1. Stal walcowana
+                    - generic [ref=e356]: (12t, paleta)
+                  - generic [ref=e357]:
+                    - text: 2. Rury stalowe
+                    - generic [ref=e358]: (11.5t, paleta)
+                  - generic [ref=e359]: "Razem: 23.5t"
+              - cell [ref=e360]
+              - cell "ChemTrans International" [ref=e361]
+              - cell "Naczepa mega (100m³)" [ref=e362]:
+                - text: Naczepa mega
+                - generic [ref=e363]: (100m³)
+              - cell "5800 PLN" [ref=e364]
+              - cell "Jan Kowalski 22.02.2026" [ref=e365]:
+                - generic [ref=e366]:
+                  - generic [ref=e367]: Jan Kowalski
+                  - generic [ref=e368]: 22.02.2026
+            - row "ZT2026/0009 Robocze 9 PL L1:Recykling → U1:NordMetal 24.02 07:00 25.02 13:00 Stal walcowana (20t, paleta) TransBud Logistyka Naczepa standard (90m³) 3900 PLN —" [ref=e369] [cursor=pointer]:
+              - cell [ref=e370]
+              - cell "ZT2026/0009" [ref=e371]
+              - cell "Robocze" [ref=e372]:
+                - generic [ref=e373]: Robocze
+              - cell "9" [ref=e374]
+              - cell "PL" [ref=e375]
+              - cell "L1:Recykling → U1:NordMetal" [ref=e376]:
+                - generic [ref=e378]:
+                  - generic [ref=e379]:
+                    - generic [ref=e380]: L1:Recykling
+                    - generic [ref=e381]: →
+                  - generic [ref=e383]: U1:NordMetal
+              - cell "24.02 07:00" [ref=e384]
+              - cell "25.02 13:00" [ref=e385]
+              - cell [ref=e386]:
+                - combobox [ref=e387]:
+                  - generic: Tak
+                  - img
+              - cell "Stal walcowana (20t, paleta)" [ref=e388]:
+                - generic [ref=e390]:
+                  - text: Stal walcowana
+                  - generic [ref=e391]: (20t, paleta)
+              - cell [ref=e392]
+              - cell "TransBud Logistyka" [ref=e393]
+              - cell "Naczepa standard (90m³)" [ref=e394]:
+                - text: Naczepa standard
+                - generic [ref=e395]: (90m³)
+              - cell "3900 PLN" [ref=e396]
+              - cell "—" [ref=e397]
+            - row "ZT2026/0012 Wysłane 9 EXP_K L1:NordMetal → U1:EuroLog 24.02 05:00 25.02 14:00 Stal walcowana (24t, paleta) EuroLog Transport GmbH Naczepa mega (100m³) 4200 EUR Jan Kowalski 23.02.2026" [ref=e398] [cursor=pointer]:
+              - cell [ref=e399]
+              - cell "ZT2026/0012" [ref=e400]
+              - cell "Wysłane" [ref=e401]:
+                - generic [ref=e402]: Wysłane
+              - cell "9" [ref=e403]
+              - cell "EXP_K" [ref=e404]
+              - cell "L1:NordMetal → U1:EuroLog" [ref=e405]:
+                - generic [ref=e407]:
+                  - generic [ref=e408]:
+                    - generic [ref=e409]: L1:NordMetal
+                    - generic [ref=e410]: →
+                  - generic [ref=e412]: U1:EuroLog
+              - cell "24.02 05:00" [ref=e413]
+              - cell "25.02 14:00" [ref=e414]
+              - cell [ref=e415]:
+                - combobox [ref=e416]:
+                  - generic: —
+                  - img
+              - cell "Stal walcowana (24t, paleta)" [ref=e417]:
+                - generic [ref=e419]:
+                  - text: Stal walcowana
+                  - generic [ref=e420]: (24t, paleta)
+              - cell [ref=e421]
+              - cell "EuroLog Transport GmbH" [ref=e422]
+              - cell "Naczepa mega (100m³)" [ref=e423]:
+                - text: Naczepa mega
+                - generic [ref=e424]: (100m³)
+              - cell "4200 EUR" [ref=e425]
+              - cell "Jan Kowalski 23.02.2026" [ref=e426]:
+                - generic [ref=e427]:
+                  - generic [ref=e428]: Jan Kowalski
+                  - generic [ref=e429]: 23.02.2026
+            - 'row "ZT2026/0004 Korekta_w 9 EXP L1:NordMetal → L2:NordMetal → U1:BerlinBau 25.02 07:00 26.02 12:00 1. Stal walcowana (16t, paleta) 2. Granulat PP (8t, paleta_bigbag) Razem: 24t ChemTrans International Naczepa mega (100m³) 5100 EUR Jan Kowalski 16.02.2026" [ref=e430] [cursor=pointer]':
+              - cell [ref=e431]
+              - cell "ZT2026/0004" [ref=e432]
+              - cell "Korekta_w" [ref=e433]:
+                - generic [ref=e434]: Korekta_w
+              - cell "9" [ref=e435]
+              - cell "EXP" [ref=e436]
+              - cell "L1:NordMetal → L2:NordMetal → U1:BerlinBau" [ref=e437]:
+                - generic [ref=e439]:
+                  - generic [ref=e440]:
+                    - generic [ref=e441]: L1:NordMetal
+                    - generic [ref=e442]: →
+                  - generic [ref=e443]:
+                    - generic [ref=e444]: L2:NordMetal
+                    - generic [ref=e445]: →
+                  - generic [ref=e447]: U1:BerlinBau
+              - cell "25.02 07:00" [ref=e448]
+              - cell "26.02 12:00" [ref=e449]
+              - cell [ref=e450]:
+                - combobox [ref=e451]:
+                  - generic: —
+                  - img
+              - 'cell "1. Stal walcowana (16t, paleta) 2. Granulat PP (8t, paleta_bigbag) Razem: 24t" [ref=e452]':
+                - generic [ref=e453]:
+                  - generic [ref=e454]:
+                    - text: 1. Stal walcowana
+                    - generic [ref=e455]: (16t, paleta)
+                  - generic [ref=e456]:
+                    - text: 2. Granulat PP
+                    - generic [ref=e457]: (8t, paleta_bigbag)
+                  - generic [ref=e458]: "Razem: 24t"
+              - cell [ref=e459]
+              - cell "ChemTrans International" [ref=e460]
+              - cell "Naczepa mega (100m³)" [ref=e461]:
+                - text: Naczepa mega
+                - generic [ref=e462]: (100m³)
+              - cell "5100 EUR" [ref=e463]
+              - cell "Jan Kowalski 16.02.2026" [ref=e464]:
+                - generic [ref=e465]:
+                  - generic [ref=e466]: Jan Kowalski
+                  - generic [ref=e467]: 16.02.2026
+            - row "ZT2026/0019 Wysłane 9 EXP L1:NordMetal → U1:BerlinBau 25.02 07:00 26.02 15:00 Stal walcowana (20t, paleta) SpeedCargo Sp. z o.o. Naczepa mega (100m³) 2900 USD Jan Kowalski 24.02.2026" [ref=e468] [cursor=pointer]:
+              - cell [ref=e469]
+              - cell "ZT2026/0019" [ref=e470]
+              - cell "Wysłane" [ref=e471]:
+                - generic [ref=e472]: Wysłane
+              - cell "9" [ref=e473]
+              - cell "EXP" [ref=e474]
+              - cell "L1:NordMetal → U1:BerlinBau" [ref=e475]:
+                - generic [ref=e477]:
+                  - generic [ref=e478]:
+                    - generic [ref=e479]: L1:NordMetal
+                    - generic [ref=e480]: →
+                  - generic [ref=e482]: U1:BerlinBau
+              - cell "25.02 07:00" [ref=e483]
+              - cell "26.02 15:00" [ref=e484]
+              - cell [ref=e485]:
+                - combobox [ref=e486]:
+                  - generic: —
+                  - img
+              - cell "Stal walcowana (20t, paleta)" [ref=e487]:
+                - generic [ref=e489]:
+                  - text: Stal walcowana
+                  - generic [ref=e490]: (20t, paleta)
+              - cell [ref=e491]
+              - cell "SpeedCargo Sp. z o.o." [ref=e492]
+              - cell "Naczepa mega (100m³)" [ref=e493]:
+                - text: Naczepa mega
+                - generic [ref=e494]: (100m³)
+              - cell "2900 USD" [ref=e495]
+              - cell "Jan Kowalski 24.02.2026" [ref=e496]:
+                - generic [ref=e497]:
+                  - generic [ref=e498]: Jan Kowalski
+                  - generic [ref=e499]: 24.02.2026
+            - row "ZT2026/0010 Robocze 9 EXP L1:NordMetal → U1:BerlinBau → U2:? 26.02 06:00 27.02 18:00 Granulat PP (22t, paleta_bigbag) SpeedCargo Sp. z o.o. Naczepa mega (100m³) 3200 EUR —" [ref=e500] [cursor=pointer]:
+              - cell [ref=e501]
+              - cell "ZT2026/0010" [ref=e502]
+              - cell "Robocze" [ref=e503]:
+                - generic [ref=e504]: Robocze
+              - cell "9" [ref=e505]
+              - cell "EXP" [ref=e506]
+              - cell "L1:NordMetal → U1:BerlinBau → U2:?" [ref=e507]:
+                - generic [ref=e509]:
+                  - generic [ref=e510]:
+                    - generic [ref=e511]: L1:NordMetal
+                    - generic [ref=e512]: →
+                  - generic [ref=e513]:
+                    - generic [ref=e514]: U1:BerlinBau
+                    - generic [ref=e515]: →
+                  - generic [ref=e517]: U2:?
+              - cell "26.02 06:00" [ref=e518]
+              - cell "27.02 18:00" [ref=e519]
+              - cell [ref=e520]:
+                - combobox [ref=e521]:
+                  - generic: —
+                  - img
+              - cell "Granulat PP (22t, paleta_bigbag)" [ref=e522]:
+                - generic [ref=e524]:
+                  - text: Granulat PP
+                  - generic [ref=e525]: (22t, paleta_bigbag)
+              - cell [ref=e526]
+              - cell "SpeedCargo Sp. z o.o." [ref=e527]
+              - cell "Naczepa mega (100m³)" [ref=e528]:
+                - text: Naczepa mega
+                - generic [ref=e529]: (100m³)
+              - cell "3200 EUR" [ref=e530]
+              - cell "—" [ref=e531]
+            - row "ZT2026/0013 Korekta 9 PL L1:GreenWaste → U1:Metalurgic 27.02 09:00 27.02 17:00 Cement workowy (10.5t, paleta) TransBud Logistyka Samochód solo (40m³) 2600 PLN —" [ref=e532] [cursor=pointer]:
+              - cell [ref=e533]
+              - cell "ZT2026/0013" [ref=e534]
+              - cell "Korekta" [ref=e535]:
+                - generic [ref=e536]: Korekta
+              - cell "9" [ref=e537]
+              - cell "PL" [ref=e538]
+              - cell "L1:GreenWaste → U1:Metalurgic" [ref=e539]:
+                - generic [ref=e541]:
+                  - generic [ref=e542]:
+                    - generic [ref=e543]: L1:GreenWaste
+                    - generic [ref=e544]: →
+                  - generic [ref=e546]: U1:Metalurgic
+              - cell "27.02 09:00" [ref=e547]
+              - cell "27.02 17:00" [ref=e548]
+              - cell [ref=e549]:
+                - combobox [ref=e550]:
+                  - generic: —
+                  - img
+              - cell "Cement workowy (10.5t, paleta)" [ref=e551]:
+                - generic [ref=e553]:
+                  - text: Cement workowy
+                  - generic [ref=e554]: (10.5t, paleta)
+              - cell [ref=e555]
+              - cell "TransBud Logistyka" [ref=e556]
+              - cell "Samochód solo (40m³)" [ref=e557]:
+                - text: Samochód solo
+                - generic [ref=e558]: (40m³)
+              - cell "2600 PLN" [ref=e559]
+              - cell "—" [ref=e560]
+            - row "ZT2026/0018 Robocze 9 PL L1:Metalurgic → U1:NordMetal 28.02 08:00 01.03 12:00 Rury stalowe (18t, paleta) TransBud Logistyka Naczepa standard (90m³) 3500 PLN —" [ref=e561] [cursor=pointer]:
+              - cell [ref=e562]
+              - cell "ZT2026/0018" [ref=e563]
+              - cell "Robocze" [ref=e564]:
+                - generic [ref=e565]: Robocze
+              - cell "9" [ref=e566]
+              - cell "PL" [ref=e567]
+              - cell "L1:Metalurgic → U1:NordMetal" [ref=e568]:
+                - generic [ref=e570]:
+                  - generic [ref=e571]:
+                    - generic [ref=e572]: L1:Metalurgic
+                    - generic [ref=e573]: →
+                  - generic [ref=e575]: U1:NordMetal
+              - cell "28.02 08:00" [ref=e576]
+              - cell "01.03 12:00" [ref=e577]
+              - cell [ref=e578]:
+                - combobox [ref=e579]:
+                  - generic: —
+                  - img
+              - cell "Rury stalowe (18t, paleta)" [ref=e580]:
+                - generic [ref=e582]:
+                  - text: Rury stalowe
+                  - generic [ref=e583]: (18t, paleta)
+              - cell [ref=e584]
+              - cell "TransBud Logistyka" [ref=e585]
+              - cell "Naczepa standard (90m³)" [ref=e586]:
+                - text: Naczepa standard
+                - generic [ref=e587]: (90m³)
+              - cell "3500 PLN" [ref=e588]
+              - cell "—" [ref=e589]
+            - 'row "ZT2026/0021 Korekta 10 PL L1:NordMetal → U1:Odylion 02.03 06:00 02.03 14:00 1. Stal walcowana (14t, paleta) 2. Rury stalowe (8t, paleta) Razem: 22t 1. test komentarza 2. tylko wziąć próbki, bez dorobienia. TransBud Logistyka — 4800 PLN Jan Kowalski 01.03.2026" [ref=e590] [cursor=pointer]':
+              - cell [ref=e591]
+              - cell "ZT2026/0021" [ref=e592]
+              - cell "Korekta" [ref=e593]:
+                - generic [ref=e594]: Korekta
+              - cell "10" [ref=e595]
+              - cell "PL" [ref=e596]
+              - cell "L1:NordMetal → U1:Odylion" [ref=e597]:
+                - generic [ref=e599]:
+                  - generic [ref=e600]:
+                    - generic [ref=e601]: L1:NordMetal
+                    - generic [ref=e602]: →
+                  - generic [ref=e604]: U1:Odylion
+              - cell "02.03 06:00" [ref=e605]
+              - cell "02.03 14:00" [ref=e606]
+              - cell [ref=e607]:
+                - combobox [ref=e608]:
+                  - generic: Tak
+                  - img
+              - 'cell "1. Stal walcowana (14t, paleta) 2. Rury stalowe (8t, paleta) Razem: 22t" [ref=e609]':
+                - generic [ref=e610]:
+                  - generic [ref=e611]:
+                    - text: 1. Stal walcowana
+                    - generic [ref=e612]: (14t, paleta)
+                  - generic [ref=e613]:
+                    - text: 2. Rury stalowe
+                    - generic [ref=e614]: (8t, paleta)
+                  - generic [ref=e615]: "Razem: 22t"
+              - cell "1. test komentarza 2. tylko wziąć próbki, bez dorobienia." [ref=e616]:
+                - generic [ref=e617]:
+                  - generic [ref=e618]: 1. test komentarza
+                  - generic [ref=e619]: 2. tylko wziąć próbki, bez dorobienia.
+              - cell "TransBud Logistyka" [ref=e620]
+              - cell "—" [ref=e621]
+              - cell "4800 PLN" [ref=e622]
+              - cell "Jan Kowalski 01.03.2026" [ref=e623]:
+                - generic [ref=e624]:
+                  - generic [ref=e625]: Jan Kowalski
+                  - generic [ref=e626]: 01.03.2026
+            - row "ZT2026/0022 Korekta 10 PL L1:Odylion → U1:GreenWaste 03.03 08:00 03.03 16:00 Złom stalowy (10t, luzem) ChemTrans International — 3100 PLN —" [ref=e627] [cursor=pointer]:
+              - cell [ref=e628]
+              - cell "ZT2026/0022" [ref=e629]
+              - cell "Korekta" [ref=e630]:
+                - generic [ref=e631]: Korekta
+              - cell "10" [ref=e632]
+              - cell "PL" [ref=e633]
+              - cell "L1:Odylion → U1:GreenWaste" [ref=e634]:
+                - generic [ref=e636]:
+                  - generic [ref=e637]:
+                    - generic [ref=e638]: L1:Odylion
+                    - generic [ref=e639]: →
+                  - generic [ref=e641]: U1:GreenWaste
+              - cell "03.03 08:00" [ref=e642]
+              - cell "03.03 16:00" [ref=e643]
+              - cell [ref=e644]:
+                - combobox [ref=e645]:
+                  - generic: —
+                  - img
+              - cell "Złom stalowy (10t, luzem)" [ref=e646]:
+                - generic [ref=e648]:
+                  - text: Złom stalowy
+                  - generic [ref=e649]: (10t, luzem)
+              - cell [ref=e650]
+              - cell "ChemTrans International" [ref=e651]
+              - cell "—" [ref=e652]
+              - cell "3100 PLN" [ref=e653]
+              - cell "—" [ref=e654]
+            - row "ZT2026/0023 Robocze 10 EXP L1:Odylion → U1:BerlinBau 04.03 05:30 04.03 18:00 Granulat PP (20t, paleta_bigbag) TransBud Logistyka — 3500 EUR —" [ref=e655] [cursor=pointer]:
+              - cell [ref=e656]
+              - cell "ZT2026/0023" [ref=e657]
+              - cell "Robocze" [ref=e658]:
+                - generic [ref=e659]: Robocze
+              - cell "10" [ref=e660]
+              - cell "EXP" [ref=e661]
+              - cell "L1:Odylion → U1:BerlinBau" [ref=e662]:
+                - generic [ref=e664]:
+                  - generic [ref=e665]:
+                    - generic [ref=e666]: L1:Odylion
+                    - generic [ref=e667]: →
+                  - generic [ref=e669]: U1:BerlinBau
+              - cell "04.03 05:30" [ref=e670]
+              - cell "04.03 18:00" [ref=e671]
+              - cell [ref=e672]:
+                - combobox [ref=e673]:
+                  - generic: —
+                  - img
+              - cell "Granulat PP (20t, paleta_bigbag)" [ref=e674]:
+                - generic [ref=e676]:
+                  - text: Granulat PP
+                  - generic [ref=e677]: (20t, paleta_bigbag)
+              - cell [ref=e678]
+              - cell "TransBud Logistyka" [ref=e679]
+              - cell "—" [ref=e680]
+              - cell "3500 EUR" [ref=e681]
+              - cell "—" [ref=e682]
+            - 'row "ZT2026/0024 Wysłane 10 IMP L1:NordMetal → U1:Odylion → U2:Odylion 04.03 07:00 04.03 13:00 1. Stal walcowana (16t, paleta) 2. Drut miedziany (8t, paleta) Razem: 24t ChemTrans International — 5200 EUR Jan Kowalski 03.03.2026" [ref=e683] [cursor=pointer]':
+              - cell [ref=e684]
+              - cell "ZT2026/0024" [ref=e685]
+              - cell "Wysłane" [ref=e686]:
+                - generic [ref=e687]: Wysłane
+              - cell "10" [ref=e688]
+              - cell "IMP" [ref=e689]
+              - cell "L1:NordMetal → U1:Odylion → U2:Odylion" [ref=e690]:
+                - generic [ref=e692]:
+                  - generic [ref=e693]:
+                    - generic [ref=e694]: L1:NordMetal
+                    - generic [ref=e695]: →
+                  - generic [ref=e696]:
+                    - generic [ref=e697]: U1:Odylion
+                    - generic [ref=e698]: →
+                  - generic [ref=e700]: U2:Odylion
+              - cell "04.03 07:00" [ref=e701]
+              - cell "04.03 13:00" [ref=e702]
+              - cell [ref=e703]:
+                - combobox [ref=e704]:
+                  - generic: —
+                  - img
+              - 'cell "1. Stal walcowana (16t, paleta) 2. Drut miedziany (8t, paleta) Razem: 24t" [ref=e705]':
+                - generic [ref=e706]:
+                  - generic [ref=e707]:
+                    - text: 1. Stal walcowana
+                    - generic [ref=e708]: (16t, paleta)
+                  - generic [ref=e709]:
+                    - text: 2. Drut miedziany
+                    - generic [ref=e710]: (8t, paleta)
+                  - generic [ref=e711]: "Razem: 24t"
+              - cell [ref=e712]
+              - cell "ChemTrans International" [ref=e713]
+              - cell "—" [ref=e714]
+              - cell "5200 EUR" [ref=e715]
+              - cell "Jan Kowalski 03.03.2026" [ref=e716]:
+                - generic [ref=e717]:
+                  - generic [ref=e718]: Jan Kowalski
+                  - generic [ref=e719]: 03.03.2026
+            - row "ZT2026/0020 Robocze 10 PL L1:Odylion → U1:Recykling 05.03 07:00 05.03 15:00 Złom stalowy (12t, luzem) TransBud Logistyka Samochód solo (40m³) 2200 PLN —" [ref=e720] [cursor=pointer]:
+              - cell [ref=e721]
+              - cell "ZT2026/0020" [ref=e722]
+              - cell "Robocze" [ref=e723]:
+                - generic [ref=e724]: Robocze
+              - cell "10" [ref=e725]
+              - cell "PL" [ref=e726]
+              - cell "L1:Odylion → U1:Recykling" [ref=e727]:
+                - generic [ref=e729]:
+                  - generic [ref=e730]:
+                    - generic [ref=e731]: L1:Odylion
+                    - generic [ref=e732]: →
+                  - generic [ref=e734]: U1:Recykling
+              - cell "05.03 07:00" [ref=e735]
+              - cell "05.03 15:00" [ref=e736]
+              - cell [ref=e737]:
+                - combobox [ref=e738]:
+                  - generic: —
+                  - img
+              - cell "Złom stalowy (12t, luzem)" [ref=e739]:
+                - generic [ref=e741]:
+                  - text: Złom stalowy
+                  - generic [ref=e742]: (12t, luzem)
+              - cell [ref=e743]
+              - cell "TransBud Logistyka" [ref=e744]
+              - cell "Samochód solo (40m³)" [ref=e745]:
+                - text: Samochód solo
+                - generic [ref=e746]: (40m³)
+              - cell "2200 PLN" [ref=e747]
+              - cell "—" [ref=e748]
+            - row "ZT2026/0025 Reklamacja 10 PL L1:Metalurgic → U1:Odylion 06.03 09:00 06.03 17:00 Rury stalowe (18t, paleta) TransBud Logistyka — 2900 PLN —" [ref=e749] [cursor=pointer]:
+              - cell [ref=e750]
+              - cell "ZT2026/0025" [ref=e751]
+              - cell "Reklamacja" [ref=e752]:
+                - generic [ref=e753]: Reklamacja
+              - cell "10" [ref=e754]
+              - cell "PL" [ref=e755]
+              - cell "L1:Metalurgic → U1:Odylion" [ref=e756]:
+                - generic [ref=e758]:
+                  - generic [ref=e759]:
+                    - generic [ref=e760]: L1:Metalurgic
+                    - generic [ref=e761]: →
+                  - generic [ref=e763]: U1:Odylion
+              - cell "06.03 09:00" [ref=e764]
+              - cell "06.03 17:00" [ref=e765]
+              - cell [ref=e766]:
+                - combobox [ref=e767]:
+                  - generic: —
+                  - img
+              - cell "Rury stalowe (18t, paleta)" [ref=e768]:
+                - generic [ref=e770]:
+                  - text: Rury stalowe
+                  - generic [ref=e771]: (18t, paleta)
+              - cell [ref=e772]
+              - cell "TransBud Logistyka" [ref=e773]
+              - cell "—" [ref=e774]
+              - cell "2900 PLN" [ref=e775]
+              - cell "—" [ref=e776]
+            - row "ZT2026/0035 Robocze 12 EXP L1:Odylion → U1:EuroLog 20.03 08:00 22.03 07:30 Drut miedziany (22t, luzem) NordMetal Sp. z o.o. Ruchoma podłoga (90m³) 1000 EUR —" [ref=e777] [cursor=pointer]:
+              - cell [ref=e778]
+              - cell "ZT2026/0035" [ref=e779]
+              - cell "Robocze" [ref=e780]:
+                - generic [ref=e781]: Robocze
+              - cell "12" [ref=e782]
+              - cell "EXP" [ref=e783]
+              - cell "L1:Odylion → U1:EuroLog" [ref=e784]:
+                - generic [ref=e786]:
+                  - generic [ref=e787]:
+                    - generic [ref=e788]: L1:Odylion
+                    - generic [ref=e789]: →
+                  - generic [ref=e791]: U1:EuroLog
+              - cell "20.03 08:00" [ref=e792]
+              - cell "22.03 07:30" [ref=e793]
+              - cell [ref=e794]:
+                - combobox [ref=e795]:
+                  - generic: —
+                  - img
+              - cell "Drut miedziany (22t, luzem)" [ref=e796]:
+                - generic [ref=e798]:
+                  - text: Drut miedziany
+                  - generic [ref=e799]: (22t, luzem)
+              - cell [ref=e800]
+              - cell "NordMetal Sp. z o.o." [ref=e801]
+              - cell "Ruchoma podłoga (90m³)" [ref=e802]:
+                - text: Ruchoma podłoga
+                - generic [ref=e803]: (90m³)
+              - cell "1000 EUR" [ref=e804]
+              - cell "—" [ref=e805]
+            - 'row "ZT2026/0001 Robocze 12 PL L1:NordMetal → U1:EuroLog → L2:GreenWaste → L3:Odylion → U2:Recykling 22.03 08:00 — 1. Stal walcowana (15t, paleta) 2. Złom stalowy (7.5t, luzem) Razem: 22.5t delikatna zabawa z łychtaczką TransBud Logistyka Naczepa mega (100m³) 4500 PLN —" [ref=e806] [cursor=pointer]':
+              - cell [ref=e807]
+              - cell "ZT2026/0001" [ref=e808]
+              - cell "Robocze" [ref=e809]:
+                - generic [ref=e810]: Robocze
+              - cell "12" [ref=e811]
+              - cell "PL" [ref=e812]
+              - cell "L1:NordMetal → U1:EuroLog → L2:GreenWaste → L3:Odylion → U2:Recykling" [ref=e813]:
+                - generic [ref=e814]:
+                  - generic [ref=e815]:
+                    - generic [ref=e816]:
+                      - generic [ref=e817]: L1:NordMetal
+                      - generic [ref=e818]: →
+                    - generic [ref=e819]:
+                      - generic [ref=e820]: U1:EuroLog
+                      - generic [ref=e821]: →
+                    - generic [ref=e822]:
+                      - generic [ref=e823]: L2:GreenWaste
+                      - generic [ref=e824]: →
+                    - generic [ref=e825]:
+                      - generic [ref=e826]: L3:Odylion
+                      - generic [ref=e827]: →
+                  - generic [ref=e830]: U2:Recykling
+              - cell "22.03 08:00" [ref=e831]
+              - cell "—" [ref=e832]
+              - cell [ref=e833]:
+                - combobox [ref=e834]:
+                  - generic: —
+                  - img
+              - 'cell "1. Stal walcowana (15t, paleta) 2. Złom stalowy (7.5t, luzem) Razem: 22.5t" [ref=e835]':
+                - generic [ref=e836]:
+                  - generic [ref=e837]:
+                    - text: 1. Stal walcowana
+                    - generic [ref=e838]: (15t, paleta)
+                  - generic [ref=e839]:
+                    - text: 2. Złom stalowy
+                    - generic [ref=e840]: (7.5t, luzem)
+                  - generic [ref=e841]: "Razem: 22.5t"
+              - cell "delikatna zabawa z łychtaczką" [ref=e842]:
+                - generic [ref=e844]: delikatna zabawa z łychtaczką
+              - cell "TransBud Logistyka" [ref=e845]
+              - cell "Naczepa mega (100m³)" [ref=e846]:
+                - text: Naczepa mega
+                - generic [ref=e847]: (100m³)
+              - cell "4500 PLN" [ref=e848]
+              - cell "—" [ref=e849]
+            - 'row "ZT2026/0038 Robocze 12 PL L1:NordMetal → U1:EuroLog → L2:GreenWaste → L3:Odylion → U2:Recykling 22.03 08:00 — 1. Stal walcowana (15t, paleta) 2. Złom stalowy (7.5t, luzem) Razem: 22.5t TransBud Logistyka Naczepa mega (100m³) 4500 PLN —" [ref=e850] [cursor=pointer]':
+              - cell [ref=e851]
+              - cell "ZT2026/0038" [ref=e852]
+              - cell "Robocze" [ref=e853]:
+                - generic [ref=e854]: Robocze
+              - cell "12" [ref=e855]
+              - cell "PL" [ref=e856]
+              - cell "L1:NordMetal → U1:EuroLog → L2:GreenWaste → L3:Odylion → U2:Recykling" [ref=e857]:
+                - generic [ref=e858]:
+                  - generic [ref=e859]:
+                    - generic [ref=e860]:
+                      - generic [ref=e861]: L1:NordMetal
+                      - generic [ref=e862]: →
+                    - generic [ref=e863]:
+                      - generic [ref=e864]: U1:EuroLog
+                      - generic [ref=e865]: →
+                    - generic [ref=e866]:
+                      - generic [ref=e867]: L2:GreenWaste
+                      - generic [ref=e868]: →
+                    - generic [ref=e869]:
+                      - generic [ref=e870]: L3:Odylion
+                      - generic [ref=e871]: →
+                  - generic [ref=e874]: U2:Recykling
+              - cell "22.03 08:00" [ref=e875]
+              - cell "—" [ref=e876]
+              - cell [ref=e877]:
+                - combobox [ref=e878]:
+                  - generic: —
+                  - img
+              - 'cell "1. Stal walcowana (15t, paleta) 2. Złom stalowy (7.5t, luzem) Razem: 22.5t" [ref=e879]':
+                - generic [ref=e880]:
+                  - generic [ref=e881]:
+                    - text: 1. Stal walcowana
+                    - generic [ref=e882]: (15t, paleta)
+                  - generic [ref=e883]:
+                    - text: 2. Złom stalowy
+                    - generic [ref=e884]: (7.5t, luzem)
+                  - generic [ref=e885]: "Razem: 22.5t"
+              - cell [ref=e886]
+              - cell "TransBud Logistyka" [ref=e887]
+              - cell "Naczepa mega (100m³)" [ref=e888]:
+                - text: Naczepa mega
+                - generic [ref=e889]: (100m³)
+              - cell "4500 PLN" [ref=e890]
+              - cell "—" [ref=e891]
+            - row "ZT2026/0026 Robocze 13 PL L1:Odylion → U1:Metalurgic 27.03 08:00 30.03 07:00 Granulat PP (22t, luzem) Odylion Sp. z o.o. Sp.k. Naczepa standard (90m³) 2000 PLN —" [ref=e892] [cursor=pointer]:
+              - cell [ref=e893]
+              - cell "ZT2026/0026" [ref=e894]
+              - cell "Robocze" [ref=e895]:
+                - generic [ref=e896]: Robocze
+              - cell "13" [ref=e897]
+              - cell "PL" [ref=e898]
+              - cell "L1:Odylion → U1:Metalurgic" [ref=e899]:
+                - generic [ref=e901]:
+                  - generic [ref=e902]:
+                    - generic [ref=e903]: L1:Odylion
+                    - generic [ref=e904]: →
+                  - generic [ref=e906]: U1:Metalurgic
+              - cell "27.03 08:00" [ref=e907]
+              - cell "30.03 07:00" [ref=e908]
+              - cell [ref=e909]:
+                - combobox [ref=e910]:
+                  - generic: —
+                  - img
+              - cell "Granulat PP (22t, luzem)" [ref=e911]:
+                - generic [ref=e913]:
+                  - text: Granulat PP
+                  - generic [ref=e914]: (22t, luzem)
+              - cell [ref=e915]
+              - cell "Odylion Sp. z o.o. Sp.k." [ref=e916]
+              - cell "Naczepa standard (90m³)" [ref=e917]:
+                - text: Naczepa standard
+                - generic [ref=e918]: (90m³)
+              - cell "2000 PLN" [ref=e919]
+              - cell "—" [ref=e920]
+            - row "ZT2026/0036 Robocze 13 PL L1:GreenWaste → U1:Metalurgic 29.03 08:00 02.04 10:00 Odpady przemysłowe (0.05t, luzem) — — — —" [ref=e921] [cursor=pointer]:
+              - cell [ref=e922]
+              - cell "ZT2026/0036" [ref=e923]
+              - cell "Robocze" [ref=e924]:
+                - generic [ref=e925]: Robocze
+              - cell "13" [ref=e926]
+              - cell "PL" [ref=e927]
+              - cell "L1:GreenWaste → U1:Metalurgic" [ref=e928]:
+                - generic [ref=e930]:
+                  - generic [ref=e931]:
+                    - generic [ref=e932]: L1:GreenWaste
+                    - generic [ref=e933]: →
+                  - generic [ref=e935]: U1:Metalurgic
+              - cell "29.03 08:00" [ref=e936]
+              - cell "02.04 10:00" [ref=e937]
+              - cell [ref=e938]:
+                - combobox [ref=e939]:
+                  - generic: —
+                  - img
+              - cell "Odpady przemysłowe (0.05t, luzem)" [ref=e940]:
+                - generic [ref=e942]:
+                  - text: Odpady przemysłowe
+                  - generic [ref=e943]: (0.05t, luzem)
+              - cell [ref=e944]
+              - cell "—" [ref=e945]
+              - cell "—" [ref=e946]
+              - cell "—" [ref=e947]
+              - cell "—" [ref=e948]
+            - 'row "ZT2026/0029 Robocze 15 PL L1:Odylion → L2:Odylion → U1:NordMetal 07.04 08:00 08.04 08:30 1. Rury stalowe (10t, luzem) 2. Złom stalowy (13t, luzem) Razem: 23t BerlinBau GmbH Naczepa mega (90m³) 2700 PLN —" [ref=e949] [cursor=pointer]':
+              - cell [ref=e950]
+              - cell "ZT2026/0029" [ref=e951]
+              - cell "Robocze" [ref=e952]:
+                - generic [ref=e953]: Robocze
+              - cell "15" [ref=e954]
+              - cell "PL" [ref=e955]
+              - cell "L1:Odylion → L2:Odylion → U1:NordMetal" [ref=e956]:
+                - generic [ref=e958]:
+                  - generic [ref=e959]:
+                    - generic [ref=e960]: L1:Odylion
+                    - generic [ref=e961]: →
+                  - generic [ref=e962]:
+                    - generic [ref=e963]: L2:Odylion
+                    - generic [ref=e964]: →
+                  - generic [ref=e966]: U1:NordMetal
+              - cell "07.04 08:00" [ref=e967]
+              - cell "08.04 08:30" [ref=e968]
+              - cell [ref=e969]:
+                - combobox [ref=e970]:
+                  - generic: —
+                  - img
+              - 'cell "1. Rury stalowe (10t, luzem) 2. Złom stalowy (13t, luzem) Razem: 23t" [ref=e971]':
+                - generic [ref=e972]:
+                  - generic [ref=e973]:
+                    - text: 1. Rury stalowe
+                    - generic [ref=e974]: (10t, luzem)
+                  - generic [ref=e975]:
+                    - text: 2. Złom stalowy
+                    - generic [ref=e976]: (13t, luzem)
+                  - generic [ref=e977]: "Razem: 23t"
+              - cell [ref=e978]
+              - cell "BerlinBau GmbH" [ref=e979]
+              - cell "Naczepa mega (90m³)" [ref=e980]:
+                - text: Naczepa mega
+                - generic [ref=e981]: (90m³)
+              - cell "2700 PLN" [ref=e982]
+              - cell "—" [ref=e983]
+            - row "ZT2026/0032 Robocze — IMP — — — 1. Granulat PP (paleta_bigbag) 2. Drut miedziany (luzem) ChemTrans International Ruchoma podłoga (90m³) — —" [ref=e984] [cursor=pointer]:
+              - cell [ref=e985]
+              - cell "ZT2026/0032" [ref=e986]
+              - cell "Robocze" [ref=e987]:
+                - generic [ref=e988]: Robocze
+              - cell "—" [ref=e989]
+              - cell "IMP" [ref=e990]
+              - cell "—" [ref=e991]
+              - cell "—" [ref=e992]
+              - cell "—" [ref=e993]
+              - cell [ref=e994]:
+                - combobox [ref=e995]:
+                  - generic: —
+                  - img
+              - cell "1. Granulat PP (paleta_bigbag) 2. Drut miedziany (luzem)" [ref=e996]:
+                - generic [ref=e997]:
+                  - generic [ref=e998]:
+                    - text: 1. Granulat PP
+                    - generic [ref=e999]: (paleta_bigbag)
+                  - generic [ref=e1000]:
+                    - text: 2. Drut miedziany
+                    - generic [ref=e1001]: (luzem)
+              - cell [ref=e1002]
+              - cell "ChemTrans International" [ref=e1003]
+              - cell "Ruchoma podłoga (90m³)" [ref=e1004]:
+                - text: Ruchoma podłoga
+                - generic [ref=e1005]: (90m³)
+              - cell "—" [ref=e1006]
+              - cell "—" [ref=e1007]
+            - row "ZT2026/0033 Robocze — PL — — — Drut miedziany (80t, luzem) — — — —" [ref=e1008] [cursor=pointer]:
+              - cell [ref=e1009]
+              - cell "ZT2026/0033" [ref=e1010]
+              - cell "Robocze" [ref=e1011]:
+                - generic [ref=e1012]: Robocze
+              - cell "—" [ref=e1013]
+              - cell "PL" [ref=e1014]
+              - cell "—" [ref=e1015]
+              - cell "—" [ref=e1016]
+              - cell "—" [ref=e1017]
+              - cell [ref=e1018]:
+                - combobox [ref=e1019]:
+                  - generic: —
+                  - img
+              - cell "Drut miedziany (80t, luzem)" [ref=e1020]:
+                - generic [ref=e1022]:
+                  - text: Drut miedziany
+                  - generic [ref=e1023]: (80t, luzem)
+              - cell [ref=e1024]
+              - cell "—" [ref=e1025]
+              - cell "—" [ref=e1026]
+              - cell "—" [ref=e1027]
+              - cell "—" [ref=e1028]
+            - row "ZT2026/0034 Robocze — IMP L1:? — — EuroLog Transport GmbH Hakowiec (70m³) — —" [ref=e1029] [cursor=pointer]:
+              - cell [ref=e1030]
+              - cell "ZT2026/0034" [ref=e1031]
+              - cell "Robocze" [ref=e1032]:
+                - generic [ref=e1033]: Robocze
+              - cell "—" [ref=e1034]
+              - cell "IMP" [ref=e1035]
+              - cell "L1:?" [ref=e1036]:
+                - generic [ref=e1040]: L1:?
+              - cell "—" [ref=e1041]
+              - cell "—" [ref=e1042]
+              - cell [ref=e1043]:
+                - combobox [ref=e1044]:
+                  - generic: —
+                  - img
+              - cell [ref=e1045]
+              - cell [ref=e1046]
+              - cell "EuroLog Transport GmbH" [ref=e1047]
+              - cell "Hakowiec (70m³)" [ref=e1048]:
+                - text: Hakowiec
+                - generic [ref=e1049]: (70m³)
+              - cell "—" [ref=e1050]
+              - cell "—" [ref=e1051]
+            - 'row "ZT2026/0039 Robocze — IMP L1:NordMetal → U1:Odylion → U2:Odylion 04.03 07:00 04.03 13:00 1. Stal walcowana (16t, paleta) 2. Drut miedziany (8t, paleta) Razem: 24t ChemTrans International — 5200 EUR —" [ref=e1052] [cursor=pointer]':
+              - cell [ref=e1053]
+              - cell "ZT2026/0039" [ref=e1054]
+              - cell "Robocze" [ref=e1055]:
+                - generic [ref=e1056]: Robocze
+              - cell "—" [ref=e1057]
+              - cell "IMP" [ref=e1058]
+              - cell "L1:NordMetal → U1:Odylion → U2:Odylion" [ref=e1059]:
+                - generic [ref=e1061]:
+                  - generic [ref=e1062]:
+                    - generic [ref=e1063]: L1:NordMetal
+                    - generic [ref=e1064]: →
+                  - generic [ref=e1065]:
+                    - generic [ref=e1066]: U1:Odylion
+                    - generic [ref=e1067]: →
+                  - generic [ref=e1069]: U2:Odylion
+              - cell "04.03 07:00" [ref=e1070]
+              - cell "04.03 13:00" [ref=e1071]
+              - cell [ref=e1072]:
+                - combobox [ref=e1073]:
+                  - generic: —
+                  - img
+              - 'cell "1. Stal walcowana (16t, paleta) 2. Drut miedziany (8t, paleta) Razem: 24t" [ref=e1074]':
+                - generic [ref=e1075]:
+                  - generic [ref=e1076]:
+                    - text: 1. Stal walcowana
+                    - generic [ref=e1077]: (16t, paleta)
+                  - generic [ref=e1078]:
+                    - text: 2. Drut miedziany
+                    - generic [ref=e1079]: (8t, paleta)
+                  - generic [ref=e1080]: "Razem: 24t"
+              - cell [ref=e1081]
+              - cell "ChemTrans International" [ref=e1082]
+              - cell "—" [ref=e1083]
+              - cell "5200 EUR" [ref=e1084]
+              - cell "—" [ref=e1085]
+        - generic [ref=e1086]:
+          - generic [ref=e1090]: "Aktywne: 30"
+          - generic [ref=e1091]:
+            - generic [ref=e1092]: "System Status: OK"
+            - generic [ref=e1093]: "Ostatnia aktualizacja: 18:43:07"
+      - region "Notifications alt+T"
+  - generic [ref=e1096]:
+    - button "Menu" [ref=e1097]:
+      - img [ref=e1099]
+      - generic: Menu
+    - button "Inspect" [ref=e1103]:
+      - img [ref=e1105]
+      - generic: Inspect
+    - button "Audit" [ref=e1107]:
+      - generic [ref=e1108]:
+        - img [ref=e1109]
+        - img [ref=e1112]
+      - generic: Audit
+    - button "Settings" [ref=e1115]:
+      - img [ref=e1117]
+      - generic: Settings

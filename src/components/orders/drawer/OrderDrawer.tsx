@@ -5,8 +5,6 @@
  * Przy zamknięciu: sprawdza isDirty → dialog → unlock.
  */
 
-import { lazy, Suspense } from "react";
-
 import { AlertTriangle, History, RefreshCw, X } from "lucide-react";
 
 import {
@@ -20,7 +18,7 @@ import { formatDateTimeFromTimestamp } from "@/lib/format-utils";
 
 import { StatusBadge } from "../StatusBadge";
 
-const OrderView = lazy(() => import("../order-view/OrderView"));
+import OrderView from "../order-view/OrderView";
 
 import { ValidationErrorDialog } from "../ValidationErrorDialog";
 import { DrawerFooter } from "./DrawerFooter";
@@ -176,16 +174,14 @@ export function OrderDrawer({
           )}
 
           {!isLoading && detail && showOrderView && orderViewInitialData && (
-            <Suspense fallback={<DrawerSkeleton />}>
-              <OrderView
-                initialData={orderViewInitialData}
-                isReadOnly={isReadOnly}
-                onSave={handleOrderViewSave}
-                onCancel={handleOrderViewCancel}
-                onGeneratePdf={handleGeneratePdf}
-                onDirtyChange={(dirty) => { orderViewDirtyRef.current = dirty; }}
-              />
-            </Suspense>
+            <OrderView
+              initialData={orderViewInitialData}
+              isReadOnly={isReadOnly}
+              onSave={handleOrderViewSave}
+              onCancel={handleOrderViewCancel}
+              onGeneratePdf={handleGeneratePdf}
+              onDirtyChange={(dirty) => { orderViewDirtyRef.current = dirty; }}
+            />
           )}
 
           {!isLoading && detail && !showOrderView && (

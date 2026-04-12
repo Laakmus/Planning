@@ -1,0 +1,203 @@
+[     126ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=4dfc8688:20102
+[    8248ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=4dfc8688:20102
+[   29670ms] [ERROR] Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep) @ http://localhost:4321/node_modules/.vite/deps/react-day-picker.js?v=4822751b:0
+[   29924ms] [ERROR] %o
+
+%s
+
+%s
+ TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/order-view/OrderView.tsx The above error occurred in one of your React components. React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=4dfc8688:7000
+[   29924ms] [ERROR] [ErrorBoundary] Przechwycono błąd: TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/order-view/OrderView.tsx {componentStack: 
+    at Lazy (<anonymous>)
+    at Suspense (<anony… div (<anonymous>)
+    at OrdersApp (<anonymous>)} @ http://localhost:4321/src/components/ui/ErrorBoundary.tsx:12
+[  110083ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=4dfc8688:20102
+[  111294ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=4dfc8688:20102
+[  113886ms] [ERROR] Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep) @ http://localhost:4321/node_modules/.vite/deps/react-day-picker.js?v=4822751b:0
+[  114170ms] [ERROR] %o
+
+%s
+
+%s
+ TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/order-view/OrderView.tsx The above error occurred in one of your React components. React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=4dfc8688:7000
+[  114170ms] [ERROR] [ErrorBoundary] Przechwycono błąd: TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/order-view/OrderView.tsx {componentStack: 
+    at Lazy (<anonymous>)
+    at Suspense (<anony… div (<anonymous>)
+    at OrdersApp (<anonymous>)} @ http://localhost:4321/src/components/ui/ErrorBoundary.tsx:12
+[  161706ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:4321/@vite/client:1695
+[  161708ms] [ERROR] WebSocket connection to 'ws://localhost:4321/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:4321/@vite/client:1766
+[  163814ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=09f446cb:20102
+[  186944ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=09f446cb:20102
+[  188667ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=09f446cb:20102
+[  191320ms] [ERROR] Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep) @ http://localhost:4321/node_modules/.vite/deps/react-day-picker.js?v=a691f33f:0
+[  191598ms] [ERROR] %o
+
+%s
+
+%s
+ TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/order-view/OrderView.tsx The above error occurred in one of your React components. React will try to recreate this component tree from scratch using the error boundary you provided, ErrorBoundary. @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=09f446cb:7000
+[  191598ms] [ERROR] [ErrorBoundary] Przechwycono błąd: TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/order-view/OrderView.tsx {componentStack: 
+    at Lazy (<anonymous>)
+    at Suspense (<anony… div (<anonymous>)
+    at OrdersApp (<anonymous>)} @ http://localhost:4321/src/components/ui/ErrorBoundary.tsx:12
+[  286305ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  286512ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  286621ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  286758ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  286848ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  286948ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287048ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287151ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287252ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287355ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287460ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287551ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287637ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287756ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287864ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  287955ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288055ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288158ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288262ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288359ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288459ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288563ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288648ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288759ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288870ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  288962ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289062ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289164ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289263ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289365ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289474ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289563ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289666ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289767ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289868ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  289968ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290070ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290175ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290269ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290369ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290475ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290569ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290670ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290777ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290874ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  290975ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291075ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291175ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291279ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291390ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291488ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291578ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291684ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291784ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291885ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  291982ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292086ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292185ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292287ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292383ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292486ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292601ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292694ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292791ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292893ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  292993ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293100ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293197ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293363ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293467ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293561ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293676ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293772ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293873ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  293968ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294069ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294169ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294270ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294377ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294469ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294636ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294749ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294843ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  294938ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295119ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295227ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295324ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295424ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295538ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295634ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295729ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295840ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  295931ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296034ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296133ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296236ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296334ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296435ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296540ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296645ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296736ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296837ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  296939ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297040ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297140ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297240ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297337ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297440ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297556ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297649ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297747ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297849ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  297953ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298049ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298149ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298249ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298353ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298456ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298555ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298655ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298757ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298857ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  298958ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299057ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299157ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299264ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299359ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299461ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299561ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299647ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299762ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299869ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  299965ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300064ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300167ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300268ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300366ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300468ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300567ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300674ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300767ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300870ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  300971ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  301074ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  301173ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  301296ms] [ERROR] Failed to load resource: the server responded with a status of 500 (Internal Server Error) @ http://localhost:4321/orders:0
+[  301497ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=09f446cb:20102
+[  301542ms] [ERROR] Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep) @ http://localhost:4321/node_modules/.vite/deps/react-day-picker.js?v=a691f33f:0
+[  301542ms] [ERROR] [astro-island] Error hydrating /src/components/orders/OrdersApp.tsx TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/OrdersApp.tsx @ http://localhost:4321/orders:6998
+[  301611ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=09f446cb:20102
+[  301661ms] [ERROR] Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep) @ http://localhost:4321/node_modules/.vite/deps/react-day-picker.js?v=a691f33f:0
+[  301661ms] [ERROR] [astro-island] Error hydrating /src/components/orders/OrdersApp.tsx TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/OrdersApp.tsx @ http://localhost:4321/orders:6998
+[  306810ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=09f446cb:20102
+[  306846ms] [ERROR] Failed to load resource: the server responded with a status of 504 (Outdated Optimize Dep) @ http://localhost:4321/node_modules/.vite/deps/react-day-picker.js?v=a691f33f:0
+[  306846ms] [ERROR] [astro-island] Error hydrating /src/components/orders/OrdersApp.tsx TypeError: Failed to fetch dynamically imported module: http://localhost:4321/src/components/orders/OrdersApp.tsx @ http://localhost:4321/orders:6998
+[  319357ms] [LOG] [vite] server connection lost. Polling for restart... @ http://localhost:4321/@vite/client:1695
+[  319358ms] [ERROR] WebSocket connection to 'ws://localhost:4321/' failed: Error in connection establishment: net::ERR_CONNECTION_REFUSED @ http://localhost:4321/@vite/client:1766
+[  320786ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=3d130868:20102
+[  386936ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=3d130868:20102
+[  388625ms] [INFO] %cDownload the React DevTools for a better development experience: https://react.dev/link/react-devtools font-weight:bold @ http://localhost:4321/node_modules/.vite/deps/chunk-BRGWVMOY.js?v=3d130868:20102
+[  391391ms] [ERROR] Failed to load resource: net::ERR_INVALID_URL @ data:image/png;base64,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:0
