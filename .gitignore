@@ -29,3 +29,10 @@ pnpm-debug.log*
 # playwright
 playwright-report/
 test-results/
+.playwright-mcp/
+
+# MCP config (contains tokens)
+.mcp.json
+
+# temporary screenshots
+step*.png
