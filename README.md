@@ -2,6 +2,16 @@
 
 Wewnętrzna aplikacja webowa do planowania i wystawiania zleceń transportowych oraz generowania raportów magazynowych.
 
+## Screenshots
+
+| Logowanie | Lista zleceń |
+|:-:|:-:|
+| ![Login](docs/screenshots/01-login.png) | ![Orders list](docs/screenshots/02-orders-list.png) |
+
+| Szczegóły zlecenia (drawer) | Dark mode |
+|:-:|:-:|
+| ![Order drawer](docs/screenshots/03-order-drawer.png) | ![Dark mode](docs/screenshots/04-dark-mode.png) |
+
 ## Stack technologiczny
 
 - **Frontend:** Astro 5.x + React 19 + TypeScript + Tailwind CSS 4 + shadcn/ui (New York)
