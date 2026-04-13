@@ -95,6 +95,7 @@ Skopiuj `.env.example` do `.env` i uzupełnij zmienne środowiskowe (Supabase UR
 │   └── global-setup.ts      # Autentykacja API
 ├── tests/load/              # Testy obciążeniowe k6
 ├── supabase/migrations/     # Migracje SQL
+├── docs/screenshots/        # Screenshoty aplikacji (README)
 ├── .ai/                     # Dokumentacja projektu
 ├── .claude/                 # Konfiguracja agentów AI
 ├── .github/workflows/       # CI/CD (GitHub Actions)
