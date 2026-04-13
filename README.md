@@ -163,48 +163,6 @@ REST API dostępne pod `/api/v1/`:
 - **Claude Code (CLI)** — główne narzędzie do pisania kodu, refactoringu, debuggingu
 - **Multi-agent workflow** — 7 wyspecjalizowanych agentów AI (Frontend, Backend, Database, Types, Tester, Reviewer, Coordinator) uruchamianych równolegle do eksploracji kodu, planowania architektury i code review. Orkiestrator deleguje zadania wg domeny plików, agenci pracują w izolowanych worktree i raportują wyniki. Definicje: `.claude/agents/`, pamięć: `.claude/agent-memory/`
 
-## Optymalizacje wydajności
-
-### Gzip compression (middleware)
-
-**Problem**: Odpowiedzi API i HTML przesyłane bez kompresji — duży payload przy słownikach (firmy, lokalizacje, produkty).
-
-**Rozwiązanie**: Middleware w `src/middleware.ts` kompresuje odpowiedzi >1KB przy użyciu `CompressionStream` (gzip). Sprawdza `Accept-Encoding`, pomija typy binarne (PDF, octet-stream).
-
-**Efekt**: Redukcja rozmiaru transferu o ~70% dla odpowiedzi JSON i HTML.
-
-### Combined dictionaries endpoint (eliminacja waterfall)
-
-**Problem**: Frontend wykonywał 6 osobnych requestów po słowniki (firmy, lokalizacje, produkty, typy transportu, statusy, warianty pojazdów) — waterfall przy ładowaniu strony.
-
-**Rozwiązanie**: Endpoint `GET /api/v1/dictionaries` łączy 6 zapytań w jedno (`Promise.all()`), zwraca wszystko w jednej odpowiedzi z `Cache-Control: max-age=3600`.
-
-**Efekt**: 6 requestów → 1 request. Dane cachowane server-side na 1 godzinę.
-
-### sessionStorage cache (client-side)
-
-**Problem**: Przy każdej nawigacji React mountował się od nowa i ponownie fetchował słowniki z API.
-
-**Rozwiązanie**: `DictionaryContext` zapisuje słowniki w `sessionStorage` z 1-godzinnym TTL. Przy kolejnym renderze — odczyt z cache zamiast API. Cache czyszczony przy wylogowaniu.
-
-**Efekt**: Nawigacja między stronami bez ponownego ładowania słowników.
-
-### MSAL lazy-load (bundle size)
-
-**Problem**: `@azure/msal-browser` (~254KB) ładowany do bundla nawet gdy integracja z Microsoft AD jest wyłączona.
-
-**Rozwiązanie**: `MicrosoftAuthProvider` ładowany przez `React.lazy()` z dynamicznym importem — tylko gdy `PUBLIC_MICROSOFT_CLIENT_ID` jest skonfigurowany w `.env`.
-
-**Efekt**: 254KB mniej w bundlu gdy Microsoft auth nie jest używany.
-
-### React.memo + skeleton loaders (perceived performance)
-
-**Problem**: Re-rendery sekcji formularza drawera przy każdej zmianie stanu. Widoczny flash przy otwieraniu drawera (dane ładowane z API).
-
-**Rozwiązanie**: 8 sekcji drawera owiniętych w `React.memo()` (RouteSection, CargoSection, CarrierSection, FinanceSection, NotesSection, StatusSection, DrawerFooter, DrawerSkeleton). Skeleton loader z pulsującymi animacjami wyświetlany natychmiast, dane i blokada ładowane równolegle (`Promise.all`).
-
-**Efekt**: Minimalne re-rendery, natychmiastowy feedback wizualny przy otwieraniu drawera.
-
 ## Dokumentacja
 
 Szczegółowa dokumentacja projektu znajduje się w katalogu `.ai/`:
