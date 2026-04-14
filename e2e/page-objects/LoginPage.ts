@@ -4,7 +4,7 @@ import { expect } from "@playwright/test";
 export class LoginPage {
   readonly page: Page;
   readonly form: Locator;
-  readonly emailInput: Locator;
+  readonly usernameInput: Locator;
   readonly passwordInput: Locator;
   readonly submitButton: Locator;
   readonly errorMessage: Locator;
@@ -12,11 +12,10 @@ export class LoginPage {
   constructor(page: Page) {
     this.page = page;
     this.form = page.getByTestId("login-form");
-    // Label w LoginCard.tsx to "Login" (htmlFor="email")
-    this.emailInput = page.getByLabel("Login");
-    this.passwordInput = page.getByLabel("Hasło");
-    // Przycisk ma tekst "Zaloguj" (bez "się")
-    this.submitButton = page.getByRole("button", { name: /zaloguj/i });
+    // Label w LoginCard.tsx to "Login" (input id="username", type="text")
+    this.usernameInput = page.getByTestId("login-username");
+    this.passwordInput = page.getByTestId("login-password");
+    this.submitButton = page.getByTestId("login-submit");
     this.errorMessage = page.getByTestId("login-error");
   }
 
@@ -24,18 +23,22 @@ export class LoginPage {
     await this.page.goto("/");
   }
 
-  async login(email: string, password: string) {
+  /**
+   * Loguje użytkownika podając login (username) + hasło.
+   * Po AUTH-MIG A3: używamy username, nie email.
+   */
+  async login(username: string, password: string) {
     // Czekaj az React zhydruje formularz.
     // Astro renderuje HTML serwerowo (formularz widoczny od razu), ale React hydruje
     // asynchronicznie. fill() przed hydracja ustawia wartosc DOM, ale React resetuje
-    // ja do "" przy mount (kontrolowane inputy: value={email}).
-    // Rozwiazanie: fill + krótki wait + sprawdz czy wartosc przetrwala.
+    // ja do "" przy mount (kontrolowane inputy: value={username}).
+    // Rozwiazanie: fill + krotki wait + sprawdz czy wartosc przetrwala.
     // Jesli React zresetowal — powtórz (tym razem React juz zhydrowal).
     await expect(async () => {
-      await this.emailInput.fill(email);
+      await this.usernameInput.fill(username);
       // Daj React 200ms na potencjalny reset (hydracja nadpisuje wartosc DOM)
       await this.page.waitForTimeout(200);
-      await expect(this.emailInput).toHaveValue(email);
+      await expect(this.usernameInput).toHaveValue(username);
     }).toPass({ timeout: 15_000 });
 
     await expect(async () => {

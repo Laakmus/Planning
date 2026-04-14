@@ -6,7 +6,7 @@ test.describe("Autentykacja", () => {
     await loginPage.goto();
     await loginPage.isLoaded();
 
-    await loginPage.login(TEST_USER.email, TEST_USER.password);
+    await loginPage.login(TEST_USER.username, TEST_USER.password);
 
     await loginPage.page.waitForURL("**/orders", { timeout: 30_000 });
     expect(loginPage.page.url()).toContain("/orders");
@@ -16,7 +16,7 @@ test.describe("Autentykacja", () => {
     await loginPage.goto();
     await loginPage.isLoaded();
 
-    await loginPage.login(TEST_USER.email, "wrongpassword123");
+    await loginPage.login(TEST_USER.username, "wrongpassword123");
 
     await expect(loginPage.errorMessage).toBeVisible();
   });

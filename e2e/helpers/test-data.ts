@@ -1,7 +1,9 @@
 // Stale z seed.sql — dane testowe dla E2E
+// Po AUTH-MIG A3: logowanie przez username+hasło (email zachowany do integracji Outlook).
 export const TEST_USER = {
-  email: "admin@test.pl",
+  username: "admin",
   password: "test1234",
+  email: "admin@test.pl",
   id: "c94a20d0-16ca-4f9d-873a-05f31be633ff",
   fullName: "Jan Kowalski",
   role: "ADMIN" as const,
