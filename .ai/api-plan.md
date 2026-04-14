@@ -32,6 +32,32 @@
 
 ### 2.1 Uwierzytelnianie / sesja
 
+> **AUTH-MIG (2026-04):** Logowanie przeszło z email+hasło na **username+hasło** z invite flow. Szczegóły w `.ai/auth-migration-plan.md`.
+
+- **POST** `/api/v1/auth/login`
+  - **Opis**: Logowanie przez login (username) + hasło. Backend mapuje username → email przez RPC `resolve_username_to_email`, następnie wywołuje Supabase `signInWithPassword`.
+  - **Parametry zapytania**: brak
+  - **Body żądania**:
+    ```json
+    { "username": "string (3-32 znaki, a-z 0-9 . _ -)", "password": "string (min 8)" }
+    ```
+  - **Body odpowiedzi** (200):
+    ```json
+    {
+      "accessToken": "jwt",
+      "refreshToken": "jwt",
+      "user": { "id": "uuid", "username": "string", "email": "string", "fullName": "string|null", "role": "ADMIN|PLANNER|READ_ONLY", "isActive": true }
+    }
+    ```
+  - **Rate-limit**: 10 prób / 15 min / IP (in-memory sliding window).
+  - **Błędy**: `400 Bad Request` (walidacja Zod), `401 Unauthorized` ("Nieprawidłowy login lub hasło." — identyczny komunikat dla nieznanego username i złego hasła, anti-enumeration), `403 Forbidden` ("Konto nieaktywne"), `429 Too Many Requests` (z `Retry-After` header).
+
+- **POST** `/api/v1/auth/activate`
+  - **Opis**: Aktywacja konta przez jednorazowy invite token (TTL 7 dni). W DB przechowywany tylko SHA-256 hash tokenu.
+  - **Body żądania**: `{ "token": "hex 32-128 znaków" }`
+  - **Body odpowiedzi** (200): `{ "ok": true }`
+  - **Błędy**: `400 Bad Request` ("Nieprawidłowy lub wygasły link aktywacyjny" / "Link wygasł. Poproś administratora o nowy." / "Konto już aktywne. Zaloguj się.").
+
 - **GET** `/api/v1/auth/me`
   - **Opis**: Zwraca aktualnie zalogowanego użytkownika (profil + rola).
   - **Parametry zapytania**: brak
@@ -41,15 +67,54 @@
     {
       "id": "uuid",
       "email": "user@example.com",
+      "username": "string",
       "fullName": "string | null",
       "phone": "string | null",
       "role": "ADMIN | PLANNER | READ_ONLY",
-      "locationId": "uuid | null"
+      "locationId": "uuid | null",
+      "isActive": true
     }
     ```
-  - **Uwaga**: `locationId` to identyfikator oddziału magazynowego użytkownika (`user_profiles.location_id` FK → `locations.id`). Wymagany do korzystania z widoku magazynowego (`/warehouse`). Może być `null` jeśli użytkownik nie ma przypisanego oddziału.
+  - **Uwaga**: `locationId` to identyfikator oddziału magazynowego użytkownika. Pola `username` i `isActive` dodane w AUTH-MIG A3.
   - **Sukces**: `200 OK`
   - **Błędy**: `401 Unauthorized`
+
+---
+
+### 2.1a Panel admina — zarządzanie użytkownikami
+
+> **Wszystkie endpointy wymagają roli ADMIN** (guard `requireAdmin` — 401 brak sesji / 403 nie-ADMIN). Dostęp przez service_role client w backendzie (operacje `auth.admin.*`).
+
+- **GET** `/api/v1/admin/users`
+  - **Opis**: Paginowana lista użytkowników z filtrami.
+  - **Parametry zapytania**: `page`, `pageSize`, `search` (LIKE po username/email/fullName — sanitized `%_\`), `role` (ADMIN|PLANNER|READ_ONLY), `isActive` (boolean).
+  - **Odpowiedź** (200): `PaginatedResponse<AdminUserDto>` gdzie `AdminUserDto = { id, username, email, fullName, phone, role, isActive, invitedAt, activatedAt, createdAt, updatedAt }`.
+
+- **POST** `/api/v1/admin/users`
+  - **Opis**: Tworzy nowego użytkownika: `auth.admin.createUser` + insert `user_profiles` + generuje invite token. Kompensacja przy błędzie (rollback `auth.users`).
+  - **Body**: `{ username, password, email, fullName, phone?, role }` (walidacja `createUserSchema`).
+  - **Odpowiedź** (201): `{ user: AdminUserDto, inviteLink: { url, expiresAt } }`.
+  - **Błędy**: `409 Conflict` (duplikat username lub email).
+
+- **PATCH** `/api/v1/admin/users/:id`
+  - **Opis**: Edycja profilu. Zmiana `email` synchronizuje `auth.users`. Zmiana `isActive: true → false` wywołuje `auth.admin.signOut` (natychmiastowe wylogowanie).
+  - **Body**: `{ email?, fullName?, phone?, role?, isActive? }` (username niezmienialny).
+  - **Odpowiedź** (200): `{ user: AdminUserDto }`.
+  - **Błędy**: `404 Not Found`, `400 Bad Request`.
+
+- **DELETE** `/api/v1/admin/users/:id`
+  - **Opis**: Miękka deaktywacja (`is_active=false` + `signOut`). Hard delete niedostępne z UI (FK do `transport_orders`).
+  - **Odpowiedź**: `204 No Content`.
+  - **Błędy**: `400 Bad Request` ("Nie możesz deaktywować własnego konta" — jeśli `id === currentUserId`), `404 Not Found`.
+
+- **POST** `/api/v1/admin/users/:id/reset-password`
+  - **Opis**: Admin ustawia nowe hasło (`auth.admin.updateUserById`).
+  - **Body**: `{ newPassword: "string (min 8, litera+cyfra)" }`.
+  - **Odpowiedź**: `204 No Content`.
+
+- **POST** `/api/v1/admin/users/:id/invite`
+  - **Opis**: Regeneruje invite token (nowy hash + TTL 7 dni + `invited_at=now()`).
+  - **Odpowiedź** (200): `{ inviteLink: { url, expiresAt } }`.
 
 ---
 

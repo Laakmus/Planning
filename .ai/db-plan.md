@@ -401,30 +401,76 @@ PK:
 ---
 
 #### 1.12 `user_profiles` – profile użytkowników (nad Supabase Auth)
-### ta tabela będzie zarządzana przez Supabase Auth
 
-- **id**: `uuid`  
+Tabela rozszerzająca `auth.users` o dane aplikacyjne (rola, oddział) oraz mechanizm **username+hasło + invite flow** (AUTH-MIG A3, migracja `20260414120000_add_username_and_invite.sql`).
+
+**Rozszerzenie CITEXT:** `CREATE EXTENSION IF NOT EXISTS citext;` — wymagane dla case-insensitive username.
+
+- **id**: `uuid`
   - identyfikator użytkownika, zgodny z `auth.users.id`, `PRIMARY KEY`
-- **email**: `varchar(320)`  
+- **email**: `varchar(320)`
   - adres e‑mail, `NOT NULL`, `UNIQUE`
-- **full_name**: `varchar(200)`  
-  - imię i nazwisko, opcjonalne
-- **phone**: `varchar(100)`  
-  - numer telefonu, opcjonalne
-- **role**: `text`  
-  - rola w systemie (`ADMIN`, `PLANNER`, `READ_ONLY`), `NOT NULL`  
+  - używany wewnętrznie (integracja Outlook: `.eml` download, Microsoft Graph draft); **NIE** jest polem logowania po AUTH-MIG A3
+- **username**: `citext`
+  - login użytkownika, case-insensitive, `NOT NULL`, `UNIQUE` (indeks `user_profiles_username_key`)
+  - `CHECK (username::text ~ '^[a-z0-9._-]{3,32}$')` (constraint `user_profiles_username_format_chk`)
+  - używany w `POST /api/v1/auth/login` (mapping przez RPC `resolve_username_to_email`)
+- **full_name**: `varchar(200)` — imię i nazwisko, opcjonalne
+- **phone**: `varchar(100)` — numer telefonu, opcjonalne
+- **role**: `text`
+  - rola w systemie (`ADMIN`, `PLANNER`, `READ_ONLY`), `NOT NULL`
   - `CHECK (role IN ('ADMIN','PLANNER','READ_ONLY'))`
-- **created_at**: `timestamptz`  
-  - `DEFAULT now()`, `NOT NULL`
-- **updated_at**: `timestamptz`
-  - `DEFAULT now()`, `NOT NULL`
+- **is_active**: `boolean`
+  - `NOT NULL`, `DEFAULT false`
+  - nowi użytkownicy = `false` (wymagają aktywacji przez invite link); po `POST /auth/activate` → `true`
+  - deaktywacja przez admina: `false` + `auth.admin.signOut()` (natychmiastowe wylogowanie)
+  - nieaktywne konto: `POST /auth/login` zwraca 403 „Konto nieaktywne"
+- **invite_token_hash**: `text` NULL
+  - SHA-256 hex hash invite tokenu (plaintext token NIGDY w DB — tylko hash)
+  - `NULL` gdy konto aktywne lub brak aktualnego invite
+- **invite_expires_at**: `timestamptz` NULL
+  - moment wygaśnięcia tokenu (TTL 7 dni od `invited_at`)
+- **invited_at**: `timestamptz` NULL
+  - moment wystawienia ostatniego invite linka
+- **activated_at**: `timestamptz` NULL
+  - moment pierwszej aktywacji konta przez invite link
 - **location_id**: `uuid`
   - FK → `locations.id`, może być `NULL`
   - identyfikator oddziału magazynowego użytkownika; wymagany do widoku `/warehouse`
   - dodane migracją `20260303200000_warehouse_view_fields.sql`
+- **created_at**: `timestamptz` `DEFAULT now()`, `NOT NULL`
+- **updated_at**: `timestamptz` `DEFAULT now()`, `NOT NULL` (trigger `set_user_profiles_updated_at`)
 
 PK:
 - PK(`id`)
+
+Indeksy:
+- `user_profiles_username_key` — UNIQUE INDEX na `username` (CITEXT = case-insensitive)
+
+#### RPC `resolve_username_to_email(p_username CITEXT)` (AUTH-MIG A3)
+
+Funkcja pomocnicza dla endpointu `POST /api/v1/auth/login`. Mapuje login na email + flagę aktywności, żeby backend mógł wywołać `signInWithPassword({ email, password })`.
+
+```sql
+CREATE OR REPLACE FUNCTION public.resolve_username_to_email(p_username citext)
+RETURNS TABLE(email text, is_active boolean)
+LANGUAGE plpgsql
+SECURITY DEFINER
+SET search_path = public, pg_temp
+AS $$
+BEGIN
+  RETURN QUERY
+    SELECT up.email::text, up.is_active
+    FROM public.user_profiles up
+    WHERE up.username = p_username
+    LIMIT 1;
+END;
+$$;
+GRANT EXECUTE ON FUNCTION public.resolve_username_to_email(citext) TO anon, authenticated;
+```
+
+- `SECURITY DEFINER` — funkcja omija RLS (anon nie ma jeszcze sesji w momencie logowania)
+- 0 rows dla nieistniejącego username (nie rzuca błędu) — endpoint zwróci 401 z identycznym komunikatem jak przy złym haśle (anti-enumeration)
 
 ---
 
@@ -590,11 +636,17 @@ RLS:
 - **Rola ETL/ELT** (np. `etl_user`):  
   - służy do integracji i raportów; ma pełny `SELECT` na wszystkich tabelach, może mieć wyłączone RLS (`ALTER ROLE etl_user SET row_security = off;`), bez uprawnień `INSERT/UPDATE/DELETE`.
 
-#### 4.2 RLS – `user_profiles`
+#### 4.2 RLS – `user_profiles` (AUTH-MIG A3)
 
-- RLS można wyłączyć (profil zarządzany przez administratora) lub:  
-  - `SELECT`: wszyscy uwierzytelnieni użytkownicy mogą odczytać swój własny rekord i ewentualnie listę użytkowników (do doprecyzowania).  
-  - `INSERT/UPDATE`: tylko administratorzy (`role = 'ADMIN'`) mogą zmieniać role innych użytkowników.
+RLS **włączone** z granularnymi politykami (migracja `20260414120000_add_username_and_invite.sql`):
+
+- **`user_profiles_select_own`** (istniejąca, bez zmian): `SELECT USING (id = auth.uid())` — user widzi własny profil.
+- **`user_profiles_select_admin`**: `SELECT` gdy `EXISTS (SELECT 1 FROM user_profiles p WHERE p.id = auth.uid() AND p.role = 'ADMIN')` — ADMIN widzi wszystkie profile (panel `/admin/users`).
+- **`user_profiles_insert_admin`**: `INSERT WITH CHECK (EXISTS admin)` — tylko ADMIN tworzy konta (invite flow).
+- **`user_profiles_update_admin`**: `UPDATE USING (EXISTS admin) WITH CHECK (EXISTS admin)` — ADMIN modyfikuje dowolny profil (email/fullName/phone/role/isActive). User NIE ma UPDATE — edycja przez dedykowany endpoint backendu (nieprzewidziane w A3).
+- **`user_profiles_delete_admin`**: `DELETE USING (EXISTS admin)` — hard delete dostępny tylko dla ADMIN; preferujemy miękką deaktywację (`is_active=false`).
+
+Operacje `auth.admin.createUser/updateUserById/deleteUser/signOut` wymagają klienta `service_role` (omija RLS) — używany w `src/lib/services/user-admin.service.ts`.
 
 #### 4.3 RLS – tabele domenowe (`transport_orders`, `order_stops`, `order_items`, logi)
 

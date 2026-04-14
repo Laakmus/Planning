@@ -35,9 +35,11 @@ Aplikacja składa się z dwóch głównych stanów: niezalogowany (ekran logowan
 
 | Ścieżka | Typ | Opis |
 |---|---|---|
-| `/` | Strona Astro | Logowanie lub przekierowanie do listy |
+| `/` | Strona Astro | Logowanie (login+hasło) lub przekierowanie do listy |
+| `/activate` | Strona Astro + React island | Aktywacja konta przez invite link (`?token=...`). AUTH-MIG A3. |
 | `/orders` | Strona Astro + wyspy React | Widok główny z listą zleceń |
 | `/warehouse` | Strona Astro + wyspy React | Widok magazynowy — tygodniowy plan operacji |
+| `/admin/users` | Strona Astro + React island | Panel zarządzania użytkownikami (tylko ADMIN). AUTH-MIG A3. |
 | `/api/v1/*` | Endpointy API | Backend REST (istniejący) |
 
 Nawigacja między logowaniem a widokiem głównym realizowana jest przez standardowe przekierowania HTTP/Astro. Wewnątrz widoku głównego całość obsługiwana jest przez React (zakładki, filtry, drawer, panele) bez przeładowywania strony.
@@ -48,29 +50,47 @@ Nawigacja między logowaniem a widokiem głównym realizowana jest przez standar
 
 ### 2.1 Ekran logowania
 
-- **Ścieżka**: `/` (lub `/login`)
-- **Główny cel**: Uwierzytelnienie użytkownika wewnętrznego firmy za pomocą loginu i hasła.
+- **Ścieżka**: `/`
+- **Główny cel**: Uwierzytelnienie użytkownika za pomocą **loginu (username) + hasła**. Email nie jest polem logowania — używany jest wewnętrznie (integracja Outlook).
 - **Kluczowe informacje**: Formularz logowania, komunikat o błędzie.
-- **Powiązane API**: Supabase Auth (`signInWithPassword`), następnie `GET /api/v1/auth/me` dla pobrania profilu.
+- **Powiązane API**: `POST /api/v1/auth/login` (AUTH-MIG A3). Po sukcesie tokeny przekazywane do `supabase.auth.setSession()`.
 - **Historyjki użytkownika**: US-001
 
 #### Kluczowe komponenty widoku
 
 1. **LoginCard** — wyśrodkowana karta na neutralnym tle.
    - Nagłówek z tytułem aplikacji (np. „System Zleceń Transportowych").
-   - Pole „Login" (typ email lub text).
-   - Pole „Hasło" (typ password).
+   - Pole „Login" (`type="text"`, `autocomplete="username"`, placeholder „np. j.kowalski") — walidacja `loginUsernameSchema` (3–32 znaki, `a-z 0-9 . _ -`, lowercase).
+   - Pole „Hasło" (type password, min 8 znaków, litera+cyfra).
    - Przycisk „Zaloguj" z obsługą stanu ładowania (spinner / disabled).
-   - Jeden ogólny komunikat błędu pod formularzem — bez wskazywania, które pole jest niepoprawne (zgodnie z US-001).
+   - Jeden ogólny komunikat błędu pod formularzem — bez wskazywania, które pole jest niepoprawne (anti-enumeration, zgodnie z US-001).
+   - `data-testid`: `login-form`, `login-username`, `login-password`, `login-submit`, `login-error`.
 
 #### UX, dostępność i bezpieczeństwo
 
 - Etykiety powiązane z polami przez `htmlFor`/`id`.
 - Submit formularza przez `Enter`.
 - Przycisk disabled podczas ładowania, aby uniknąć wielokrotnego wysłania.
-- Token JWT przechowywany w HTTP-only cookie (zarządzany przez Supabase Auth / middleware Astro).
+- Token JWT przechowywany w localStorage przez Supabase SDK (po `setSession`) — middleware Astro czyta z Authorization header.
+- Rate-limit backend: 10 prób / 15 min / IP (429 Too Many Requests).
 - Po zalogowaniu przekierowanie na `/orders`.
-- Brak opcji „Zapomniałem hasła" w MVP.
+- Brak opcji „Zapomniałem hasła" w MVP — reset przez admina (`/admin/users`).
+
+---
+
+### 2.1a Ekran aktywacji konta
+
+- **Ścieżka**: `/activate?token=...`
+- **Główny cel**: Aktywacja nowo utworzonego konta przez jednorazowy invite token (TTL 7 dni).
+- **Flow**: Admin tworzy konto w `/admin/users` → system generuje token → admin kopiuje link → wysyła użytkownikowi poza aplikacją → użytkownik klika → strona `/activate` → klik „Aktywuj konto" → konto aktywne, użytkownik może się zalogować loginem+hasłem nadanymi przez admina.
+- **Powiązane API**: `POST /api/v1/auth/activate`.
+
+#### Kluczowe komponenty widoku
+
+1. **ActivateAccountCard** — wyśrodkowana karta.
+   - Stany: `idle` (przycisk „Aktywuj konto"), `activating` (spinner), `success` (komunikat + link „Przejdź do logowania"), `error` (komunikat + link „Wróć do logowania").
+   - Komunikaty błędów: „Brak tokenu aktywacyjnego", „Nieprawidłowy lub wygasły link", „Link wygasł. Poproś administratora o nowy.", „Konto już aktywne. Zaloguj się."
+   - `data-testid`: `activate-card`, `activate-submit`, `activate-status`, `activate-login-link`.
 
 ---
 
@@ -93,7 +113,8 @@ Zależnie od wybranego widoku (Trasa | Kolumny) tabela wyświetla odpowiedni zes
 
 1. **AppSidebar** — lewy sidebar nawigacyjny (shadcn/ui Sidebar). Zawiera:
    - **SidebarHeader**: Logo (ikona Truck na `bg-primary` rounded-lg) + tytuł „Zlecenia Transportowe"
-   - **SidebarContent**: Nawigacja widoków — 3 pozycje: Aktualne (ClipboardList), Zrealizowane (CheckCircle2), Anulowane (XCircle). Mapowanie na `ViewGroup`: `CURRENT` | `COMPLETED` | `CANCELLED`.
+   - **SidebarContent**: grupa „Zlecenia" — 3 pozycje: Aktualne (ClipboardList), Zrealizowane (CheckCircle2), Anulowane (XCircle). Mapowanie na `ViewGroup`: `CURRENT` | `COMPLETED` | `CANCELLED`.
+   - **SidebarContent — grupa „Administracja"** (widoczna tylko gdy `user.role === 'ADMIN'`): pozycja „Użytkownicy" (ikona Users) → `/admin/users`. `data-testid="sidebar-admin-users"`. AUTH-MIG A3.
    - **SidebarFooter**: SyncButton + Separator + ThemeToggle + UserInfo (imię, rola, wyloguj; bez avatara)
    - Collapsible (Cmd+B / Ctrl+B). Na mobile: Sheet overlay.
    - Przełączanie widoku wywołuje nowe zapytanie GET z parametrem `view`.
@@ -486,6 +507,39 @@ W headerze widoku magazynowego (po prawej stronie, `ml-auto`) dwa przyciski:
 #### Hook
 
 - `useWarehouseWeek` (`src/hooks/useWarehouseWeek.ts`): obliczanie tygodnia ISO, synchronizacja URL params, fetch danych z API, nawigacja (prevWeek/nextWeek/goToWeek)
+
+---
+
+### 2.7 Panel admina — zarządzanie użytkownikami
+
+- **Ścieżka**: `/admin/users`
+- **Dostęp**: tylko ADMIN. Client-side guard w `AdminUsersApp` (redirect `/orders` jeśli `role !== 'ADMIN'`) + server-side przez `requireAdmin` w endpointach API.
+- **Główny cel**: CRUD użytkowników + invite link + reset hasła + miękka deaktywacja.
+- **Powiązane API**: `GET/POST /api/v1/admin/users`, `PATCH/DELETE /api/v1/admin/users/:id`, `POST /api/v1/admin/users/:id/reset-password`, `POST /api/v1/admin/users/:id/invite` (AUTH-MIG A3).
+- **Historyjki użytkownika**: AUTH-MIG flow (admin tworzy konta dla członków zespołu).
+
+#### Kluczowe komponenty widoku
+
+1. **AdminUsersApp** (`src/components/admin/AdminUsersApp.tsx`) — root React island: AppProviders + SidebarProvider + AppSidebar (z aktywnym linkiem „Użytkownicy") + SidebarInset z UsersPanel. Client-side role guard.
+2. **UsersPanel** (`src/components/admin/UsersPanel.tsx`) — shadcn Table:
+   - Kolumny: Login, Imię i nazwisko, Email, Rola (badge), Status (badge Aktywny/Nieaktywny), Utworzony (DD.MM.YYYY), Akcje.
+   - Filtry: search (debounced 300ms, LIKE po username/email/fullName), Select roli (ADMIN/PLANNER/READ_ONLY + „wszystkie"), toggle isActive.
+   - Paginacja (>25 userów).
+   - Button „Dodaj użytkownika" → otwiera `CreateUserDialog`; po sukcesie pokazuje `InviteLinkDialog` z URL-em do skopiowania.
+   - Dropdown akcji per wiersz: Edytuj, Reset hasła, Nowy invite, Deaktywuj (disabled jeśli `currentUser.id === user.id` lub już nieaktywny).
+3. **CreateUserDialog** — formularz (username, password, email, fullName, phone, role) z walidacją `createUserSchema`, password show/hide.
+4. **EditUserDialog** — username readonly (niezmienialny), edycja email/fullName/phone/role + checkbox `isActive`.
+5. **ResetPasswordDialog** — newPassword + confirm (identyczne), walidacja `passwordSchema`.
+6. **InviteLinkDialog** — URL readonly + Copy (clipboard API + toast), informacja o TTL 7 dni, ostrzeżenie „Nie zapisujemy linku — skopiuj go teraz".
+7. **DeactivateUserDialog** — AlertDialog z ostrzeżeniem „Użytkownik zostanie natychmiast wylogowany".
+
+#### Hook
+
+- `useAdminUsers` (`src/hooks/useAdminUsers.ts`): full CRUD (list/create/update/deactivate/resetPassword/regenerateInvite), debounced search, sonner toasts.
+
+#### data-testid (dla E2E w Fazie C)
+
+Sidebar: `sidebar-admin-users`. App/Panel: `admin-users-app`, `admin-users-panel`. Filtry: `admin-users-search`, `admin-users-role-filter`, `admin-users-status-filter`. Wiersz: `admin-user-row` (+ `data-user-id`), `admin-user-actions`. Paginacja: `admin-users-prev`, `admin-users-next`. Dialogi: `admin-{create|edit|reset-password|invite-link|deactivate}-user-dialog` + pola formularzy i submity.
 
 ---
 
