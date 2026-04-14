@@ -35,6 +35,7 @@ import type { AuthMeDto } from "@/types";
 
 const mockSignInWithPassword = vi.fn();
 const mockSignOut = vi.fn();
+const mockSetSession = vi.fn();
 const mockGetSession = vi.fn();
 const mockGetUser = vi.fn();
 const mockOnAuthStateChange = vi.fn();
@@ -44,6 +45,7 @@ vi.mock("@supabase/supabase-js", () => ({
     auth: {
       signInWithPassword: mockSignInWithPassword,
       signOut: mockSignOut,
+      setSession: mockSetSession,
       getSession: mockGetSession,
       getUser: mockGetUser,
       onAuthStateChange: mockOnAuthStateChange,
@@ -212,13 +214,65 @@ describe("AuthProvider — initial mount", () => {
   });
 });
 
-// TODO (AUTH-MIG Faza C — tester): przepisać testy login() na nowy flow
-// (POST /api/v1/auth/login zamiast signInWithPassword + /auth/me).
-// Testy wyłączone bo testują stary email-based flow usunięty w Fazie A3.
-describe.skip("AuthProvider — login() [DEPRECATED — requires rewrite for username flow]", () => {
-  it("calls signInWithPassword with provided credentials", async () => {
-    makeSuccessfulLoginMock();
-    makeProfileFetchMock(MOCK_PROFILE);
+/**
+ * Fetch mock routujący per URL:
+ *  - POST /api/v1/auth/login → loginResponse
+ *  - GET /api/v1/auth/me      → profileResponse
+ */
+function makeAuthFetchMock(config: {
+  loginOk?: boolean;
+  loginStatus?: number;
+  loginBody?: unknown;
+  profileOk?: boolean;
+  profileBody?: AuthMeDto | null;
+}) {
+  const {
+    loginOk = true,
+    loginStatus = 200,
+    loginBody = {
+      accessToken: "mock-access-token",
+      refreshToken: "mock-refresh-token",
+      user: {
+        id: "user-uuid-1",
+        username: "jan",
+        email: "jan@example.com",
+        fullName: "Jan Kowalski",
+        role: "PLANNER",
+        isActive: true,
+      },
+    },
+    profileOk = true,
+    profileBody = null,
+  } = config;
+
+  const fetchMock = vi.fn((input: RequestInfo | URL) => {
+    const url = typeof input === "string" ? input : input.toString();
+    if (url.includes("/api/v1/auth/login")) {
+      return Promise.resolve({
+        ok: loginOk,
+        status: loginStatus,
+        json: vi.fn().mockResolvedValue(loginBody),
+      });
+    }
+    if (url.includes("/api/v1/auth/me")) {
+      return Promise.resolve({
+        ok: profileOk,
+        json: vi.fn().mockResolvedValue(profileBody),
+      });
+    }
+    return Promise.resolve({ ok: false, status: 404, json: vi.fn() });
+  });
+  vi.stubGlobal("fetch", fetchMock);
+  return fetchMock;
+}
+
+describe("AuthProvider — login() [AUTH-MIG A3: username flow]", () => {
+  beforeEach(() => {
+    mockSetSession.mockResolvedValue({ data: { session: null }, error: null });
+  });
+
+  it("wysyła POST /api/v1/auth/login z username + password", async () => {
+    const fetchMock = makeAuthFetchMock({ profileBody: MOCK_PROFILE });
 
     renderWithProvider();
     await waitFor(() => screen.getByTestId("loading").textContent === "ready");
@@ -227,15 +281,33 @@ describe.skip("AuthProvider — login() [DEPRECATED — requires rewrite for use
       await userEvent.click(screen.getByText("Login"));
     });
 
-    expect(mockSignInWithPassword).toHaveBeenCalledWith({
-      email: "jan@example.com",
-      password: "secret",
+    expect(fetchMock).toHaveBeenCalledWith(
+      "/api/v1/auth/login",
+      expect.objectContaining({
+        method: "POST",
+        body: JSON.stringify({ username: "jan@example.com", password: "secret" }),
+      }),
+    );
+  });
+
+  it("woła setSession z tokenami zwróconymi przez backend", async () => {
+    makeAuthFetchMock({ profileBody: MOCK_PROFILE });
+
+    renderWithProvider();
+    await waitFor(() => screen.getByTestId("loading").textContent === "ready");
+
+    await act(async () => {
+      await userEvent.click(screen.getByText("Login"));
+    });
+
+    expect(mockSetSession).toHaveBeenCalledWith({
+      access_token: "mock-access-token",
+      refresh_token: "mock-refresh-token",
     });
   });
 
-  it("fetches user profile with the returned token after successful signIn", async () => {
-    makeSuccessfulLoginMock("my-jwt");
-    const fetchMock = makeProfileFetchMock(MOCK_PROFILE);
+  it("pobiera profil z /api/v1/auth/me po udanym loginie", async () => {
+    const fetchMock = makeAuthFetchMock({ profileBody: MOCK_PROFILE });
 
     renderWithProvider();
     await waitFor(() => screen.getByTestId("loading").textContent === "ready");
@@ -248,15 +320,14 @@ describe.skip("AuthProvider — login() [DEPRECATED — requires rewrite for use
       "/api/v1/auth/me",
       expect.objectContaining({
         headers: expect.objectContaining({
-          Authorization: "Bearer my-jwt",
+          Authorization: "Bearer mock-access-token",
         }),
       }),
     );
   });
 
-  it("sets user state after successful login", async () => {
-    makeSuccessfulLoginMock();
-    makeProfileFetchMock(MOCK_PROFILE);
+  it("ustawia user state po udanym loginie", async () => {
+    makeAuthFetchMock({ profileBody: MOCK_PROFILE });
 
     renderWithProvider();
     await waitFor(() => screen.getByTestId("loading").textContent === "ready");
@@ -270,19 +341,21 @@ describe.skip("AuthProvider — login() [DEPRECATED — requires rewrite for use
     });
   });
 
-  it("throws when signInWithPassword returns an error", async () => {
-    makeFailedLoginMock("Invalid login credentials");
-    makeProfileFetchMock(null);
+  it("rzuca błąd z message backendu gdy /auth/login zwraca 401", async () => {
+    makeAuthFetchMock({
+      loginOk: false,
+      loginStatus: 401,
+      loginBody: { error: "Unauthorized", message: "Nieprawidłowy login lub hasło." },
+    });
 
     let caughtError: Error | null = null;
-
     function ErrorCapture() {
       const { login } = useAuth();
       return (
         <button
           onClick={async () => {
             try {
-              await login("bad@example.com", "wrong");
+              await login("bad", "wrong");
             } catch (e) {
               caughtError = e as Error;
             }
@@ -292,15 +365,12 @@ describe.skip("AuthProvider — login() [DEPRECATED — requires rewrite for use
         </button>
       );
     }
-
     render(
       <AuthProvider supabaseUrl="https://test.supabase.co" supabaseAnonKey="test-anon-key">
         <ErrorCapture />
       </AuthProvider>,
     );
-
-    await waitFor(() => {}); // let mount settle
-
+    await waitFor(() => {});
     await act(async () => {
       await userEvent.click(screen.getByText("TryLogin"));
     });
@@ -309,19 +379,21 @@ describe.skip("AuthProvider — login() [DEPRECATED — requires rewrite for use
     expect(caughtError!.message).toMatch(/Nieprawidłowy login lub hasło/);
   });
 
-  it("throws when profile fetch returns null (profile not found)", async () => {
-    makeSuccessfulLoginMock();
-    makeProfileFetchMock(null, false); // ok: false, returns null
+  it("rzuca błąd gdy konto nieaktywne (403)", async () => {
+    makeAuthFetchMock({
+      loginOk: false,
+      loginStatus: 403,
+      loginBody: { error: "Forbidden", message: "Konto nieaktywne. Skontaktuj się z administratorem." },
+    });
 
     let caughtError: Error | null = null;
-
     function ErrorCapture() {
       const { login } = useAuth();
       return (
         <button
           onClick={async () => {
             try {
-              await login("jan@example.com", "secret");
+              await login("jan", "secret");
             } catch (e) {
               caughtError = e as Error;
             }
@@ -331,15 +403,46 @@ describe.skip("AuthProvider — login() [DEPRECATED — requires rewrite for use
         </button>
       );
     }
-
     render(
       <AuthProvider supabaseUrl="https://test.supabase.co" supabaseAnonKey="test-anon-key">
         <ErrorCapture />
       </AuthProvider>,
     );
+    await waitFor(() => {});
+    await act(async () => {
+      await userEvent.click(screen.getByText("TryLogin"));
+    });
 
-    await waitFor(() => {}); // let mount settle
+    expect(caughtError).not.toBeNull();
+    expect(caughtError!.message).toMatch(/Konto nieaktywne/);
+  });
 
+  it("rzuca błąd gdy fetch profilu zwraca null", async () => {
+    makeAuthFetchMock({ profileOk: false, profileBody: null });
+
+    let caughtError: Error | null = null;
+    function ErrorCapture() {
+      const { login } = useAuth();
+      return (
+        <button
+          onClick={async () => {
+            try {
+              await login("jan", "secret");
+            } catch (e) {
+              caughtError = e as Error;
+            }
+          }}
+        >
+          TryLogin
+        </button>
+      );
+    }
+    render(
+      <AuthProvider supabaseUrl="https://test.supabase.co" supabaseAnonKey="test-anon-key">
+        <ErrorCapture />
+      </AuthProvider>,
+    );
+    await waitFor(() => {});
     await act(async () => {
       await userEvent.click(screen.getByText("TryLogin"));
     });

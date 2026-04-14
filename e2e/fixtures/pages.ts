@@ -1,4 +1,5 @@
 import { test as base } from "@playwright/test";
+import { AdminUsersPage } from "../page-objects/AdminUsersPage";
 import { LoginPage } from "../page-objects/LoginPage";
 import { OrdersPage } from "../page-objects/OrdersPage";
 import { OrderDrawerPage } from "../page-objects/OrderDrawerPage";
@@ -11,6 +12,7 @@ type Pages = {
   drawerPage: OrderDrawerPage;
   contextMenu: ContextMenuComponent;
   historyPanel: HistoryPanelPage;
+  adminUsersPage: AdminUsersPage;
 };
 
 export const test = base.extend<Pages>({
@@ -28,6 +30,9 @@ export const test = base.extend<Pages>({
   },
   historyPanel: async ({ page }, use) => {
     await use(new HistoryPanelPage(page));
+  },
+  adminUsersPage: async ({ page }, use) => {
+    await use(new AdminUsersPage(page));
   },
 });
 
