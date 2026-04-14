@@ -44,6 +44,8 @@ const MOCK_ADMIN_USER = {
   fullName: "Admin User",
   phone: null,
   role: "ADMIN" as const,
+  username: "testuser",
+  isActive: true,
   locationId: null,
 };
 
@@ -53,6 +55,8 @@ const MOCK_PLANNER_USER = {
   fullName: "Planner User",
   phone: null,
   role: "PLANNER" as const,
+  username: "testuser",
+  isActive: true,
   locationId: null,
 };
 
