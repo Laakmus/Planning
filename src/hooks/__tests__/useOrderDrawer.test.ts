@@ -29,6 +29,8 @@ const { mockApi, mockToast, mockUser } = vi.hoisted(() => {
     id: "user-uuid-drawer-test",
     email: "admin@test.pl",
     role: "ADMIN" as const,
+  username: "testuser",
+  isActive: true,
     fullName: "Test Admin",
   };
   return { mockApi, mockToast, mockUser };

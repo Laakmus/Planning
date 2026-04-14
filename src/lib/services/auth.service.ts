@@ -10,15 +10,20 @@ import type { AuthMeDto } from "../../types";
 
 /** Mapowanie wiersza user_profiles (snake_case) na AuthMeDto (camelCase). */
 function mapRowToAuthMeDto(
-  row: Pick<Database["public"]["Tables"]["user_profiles"]["Row"], "id" | "email" | "full_name" | "phone" | "role"> & { location_id?: string | null }
+  row: Pick<
+    Database["public"]["Tables"]["user_profiles"]["Row"],
+    "id" | "email" | "full_name" | "phone" | "role" | "username" | "is_active"
+  > & { location_id?: string | null }
 ): AuthMeDto {
   return {
     id: row.id,
     email: row.email,
+    username: row.username,
     fullName: row.full_name,
     phone: row.phone,
     role: row.role as AuthMeDto["role"],
     locationId: row.location_id ?? null,
+    isActive: row.is_active,
   };
 }
 
@@ -48,7 +53,7 @@ export async function getCurrentUser(
 
   const { data: profile, error: profileError } = await supabase
     .from("user_profiles")
-    .select("id, email, full_name, phone, role, location_id")
+    .select("id, email, username, full_name, phone, role, location_id, is_active")
     .eq("id", authUser.id)
     .maybeSingle();
 

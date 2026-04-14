@@ -15,6 +15,8 @@ vi.mock("@/lib/services/auth.service", () => ({
     email: "admin@test.pl",
     fullName: "Admin Test",
     role: "ADMIN",
+  username: "testuser",
+  isActive: true,
     locationId: null,
   }),
 }));

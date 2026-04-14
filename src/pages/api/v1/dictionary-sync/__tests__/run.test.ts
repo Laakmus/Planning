@@ -46,6 +46,8 @@ const MOCK_USER = {
   fullName: "Planner User",
   phone: null,
   role: "PLANNER" as const,
+  username: "testuser",
+  isActive: true,
   locationId: null,
 };
 

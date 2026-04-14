@@ -63,6 +63,9 @@ const VALID_PROFILE = {
   full_name: "Jan Kowalski",
   phone: "+48123456789",
   role: "PLANNER",
+  username: "testuser",
+  is_active: true,
+  location_id: null,
 };
 
 // ---------------------------------------------------------------------------
@@ -82,6 +85,8 @@ describe("getCurrentUser — happy path", () => {
       fullName: "Jan Kowalski",
       phone: "+48123456789",
       role: "PLANNER",
+  username: "testuser",
+  isActive: true,
       locationId: null,
     });
   });

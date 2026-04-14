@@ -12,11 +12,15 @@ export type UserRole = "ADMIN" | "PLANNER" | "READ_ONLY";
 export interface AuthMeDto {
   id: string;
   email: string;
+  /** Login użytkownika (case-insensitive, unique). Dodany w AUTH-MIG A3. */
+  username: string;
   fullName: string | null;
   phone: string | null;
   role: UserRole;
   /** Oddział magazynowy użytkownika (FK → locations). Null = brak przypisanego oddziału. */
   locationId: string | null;
+  /** Czy konto jest aktywne. Nieaktywne = nie może się zalogować. Dodane w AUTH-MIG A3. */
+  isActive: boolean;
 }
 
 /** Odpowiedź paginowana (lista zleceń, itp.). */

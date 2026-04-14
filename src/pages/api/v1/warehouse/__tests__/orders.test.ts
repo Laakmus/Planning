@@ -111,6 +111,8 @@ const MOCK_PROFILE: AuthMeDto = {
   fullName: "Jan Kowalski",
   phone: null,
   role: "PLANNER",
+  username: "testuser",
+  isActive: true,
   locationId: LOCATION_UUID,
 };
 

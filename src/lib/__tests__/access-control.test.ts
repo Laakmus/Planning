@@ -21,6 +21,8 @@ function makeUser(role: AuthMeDto["role"]): AuthMeDto {
     phone: null,
     role,
     locationId: null,
+    username: `${role.toLowerCase()}user`,
+    isActive: true,
   };
 }
 

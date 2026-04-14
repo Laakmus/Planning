@@ -81,6 +81,8 @@ const MOCK_PROFILE: AuthMeDto = {
   fullName: "Jan Kowalski",
   phone: null,
   role: "PLANNER",
+  username: "testuser",
+  isActive: true,
   locationId: null,
 };
 
@@ -229,6 +231,8 @@ describe("GET /api/v1/auth/me — response shape", () => {
       fullName: "Admin User",
       phone: "+48100200300",
       role: "ADMIN",
+  username: "testuser",
+  isActive: true,
       locationId: null,
     };
     mockGetAuthenticatedUser.mockResolvedValue(fullProfile);
