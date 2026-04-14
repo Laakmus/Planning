@@ -33,10 +33,22 @@ export const passwordSchema = z
 /** Dozwolone role użytkownika (lustro `UserRole` z common.ts). */
 const userRoleSchema = z.enum(["ADMIN", "PLANNER", "READ_ONLY"]);
 
+/**
+ * Schema hasła dla LOGOWANIA — tylko minimalna sanityzacja (non-empty, max length).
+ * NIE wymuszamy siły hasła przy loginie, bo legacy userzy mogą mieć słabsze hasła
+ * niż wymagane teraz przy create/reset (passwordSchema). Walidacja siły tu tylko
+ * blokuje legitnych userów; faktyczna weryfikacja dzieje się w Supabase
+ * `signInWithPassword`.
+ */
+const loginPasswordSchema = z
+  .string()
+  .min(1, "Hasło jest wymagane")
+  .max(128, "Hasło zbyt długie (max 128 znaków)");
+
 /** POST /api/v1/auth/login — logowanie przez username. */
 export const loginUsernameSchema = z.object({
   username: usernameSchema,
-  password: passwordSchema,
+  password: loginPasswordSchema,
 });
 
 /** POST /api/v1/admin/users — tworzenie usera przez admina. */

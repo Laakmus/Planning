@@ -120,15 +120,10 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       return errorResponse(401, "Unauthorized", "Nieprawidłowy login lub hasło.");
     }
 
-    if (!row.is_active) {
-      return errorResponse(
-        403,
-        "Forbidden",
-        "Konto nieaktywne. Skontaktuj się z administratorem."
-      );
-    }
-
     // 4. Logowanie przez GoTrue (klient anonimowy — signInWithPassword nie wymaga RLS).
+    //    Kolejność (anti-enumeration): NAJPIERW weryfikujemy hasło, DOPIERO POTEM is_active.
+    //    Dzięki temu atakujący bez znajomości hasła nie dowie się, czy username istnieje
+    //    (istniejący-zły-hasło i nieistniejący dostają ten sam 401).
     const anon = createAnonClient();
     const { data: signInData, error: signInError } = await anon.auth.signInWithPassword({
       email: row.email,
@@ -138,6 +133,16 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     if (signInError || !signInData.session || !signInData.user) {
       // Świadomie identyczny komunikat jak dla nieznanego username.
       return errorResponse(401, "Unauthorized", "Nieprawidłowy login lub hasło.");
+    }
+
+    // Hasło OK — dopiero teraz sprawdzamy czy konto jest aktywne.
+    // 403 ujawnia istnienie usera, ale wymaga poprawnego hasła (akceptowalny trade-off).
+    if (!row.is_active) {
+      return errorResponse(
+        403,
+        "Forbidden",
+        "Konto nieaktywne. Skontaktuj się z administratorem."
+      );
     }
 
     // 5. Pobierz profil do odpowiedzi (service_role, omija RLS).

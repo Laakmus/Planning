@@ -67,3 +67,48 @@ export function checkLoginRateLimit(
 export function __resetLoginRateLimit(): void {
   buckets.clear();
 }
+
+// ---------------------------------------------------------------------------
+// Rate limiter dla POST /api/v1/auth/activate
+// ---------------------------------------------------------------------------
+// Osobna Mapa, żeby brute-force na aktywacji nie blokował loginów i odwrotnie.
+// Limit: 20 / 15 min / IP — token 32B SHA-256 jest computationally bezpieczny,
+// ten limit to defense-in-depth (ochrona przed enumeration i DoS).
+
+const ACTIVATE_WINDOW_MS = 15 * 60 * 1000;
+const ACTIVATE_MAX_ATTEMPTS = 20;
+
+const activateBuckets = new Map<string, number[]>();
+
+export function checkActivateRateLimit(
+  ip: string
+): { allowed: boolean; retryAfterSec?: number } {
+  const now = Date.now();
+  const key = ip.trim() || "unknown";
+
+  if (!activateBuckets.has(key) && activateBuckets.size >= MAX_BUCKETS) {
+    const oldest = activateBuckets.keys().next().value;
+    if (oldest !== undefined) activateBuckets.delete(oldest);
+  }
+
+  const existing = activateBuckets.get(key) ?? [];
+  const cutoff = now - ACTIVATE_WINDOW_MS;
+  let idx = 0;
+  while (idx < existing.length && existing[idx] <= cutoff) idx++;
+  const pruned = idx === 0 ? existing : existing.slice(idx);
+
+  if (pruned.length >= ACTIVATE_MAX_ATTEMPTS) {
+    const oldestTs = pruned[0];
+    const retryAfterMs = Math.max(0, oldestTs + ACTIVATE_WINDOW_MS - now);
+    activateBuckets.set(key, pruned);
+    return { allowed: false, retryAfterSec: Math.ceil(retryAfterMs / 1000) };
+  }
+
+  pruned.push(now);
+  activateBuckets.set(key, pruned);
+  return { allowed: true };
+}
+
+export function __resetActivateRateLimit(): void {
+  activateBuckets.clear();
+}

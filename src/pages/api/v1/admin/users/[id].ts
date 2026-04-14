@@ -55,11 +55,7 @@ export const PATCH: APIRoute = async (context) => {
 
   try {
     const supabase = createAdminSupabaseClient();
-    // authResult z requireAdmin powinien zawierać userId — defensywne rzutowanie
-    const currentUserId = (authResult as { userId?: string; id?: string }).userId
-      ?? (authResult as { userId?: string; id?: string }).id
-      ?? "";
-    const result = await updateUser(supabase, id, parsed.data, currentUserId);
+    const result = await updateUser(supabase, id, parsed.data, authResult.userId);
     return jsonResponse(result, 200);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -100,10 +96,7 @@ export const DELETE: APIRoute = async (context) => {
 
   try {
     const supabase = createAdminSupabaseClient();
-    const currentUserId = (authResult as { userId?: string; id?: string }).userId
-      ?? (authResult as { userId?: string; id?: string }).id
-      ?? "";
-    await deactivateUser(supabase, id, currentUserId);
+    await deactivateUser(supabase, id, authResult.userId);
     // 204 No Content — brak body
     return new Response(null, { status: 204 });
   } catch (err) {

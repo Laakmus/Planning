@@ -20,8 +20,16 @@ import { ZodError } from "zod";
 import type { Database } from "@/db/database.types";
 import type { ActivateAccountResponse } from "@/types/auth.types";
 import { errorResponse, jsonResponse, logError, parseJsonBody } from "@/lib/api-helpers";
+import { checkActivateRateLimit } from "@/lib/auth/rate-limit";
 import { hashInviteToken } from "@/lib/services/invite-token.service";
 import { activateAccountSchema } from "@/lib/validators/auth.validator";
+
+/** Pobiera IP klienta z nagłówków (z fallbackiem). */
+function getClientIp(request: Request, clientAddress: string | undefined): string {
+  const fwd = request.headers.get("x-forwarded-for");
+  if (fwd) return fwd.split(",")[0]!.trim();
+  return clientAddress ?? "unknown";
+}
 
 /** Odczyt zmiennej środowiskowej z fallbackiem na `process.env`. */
 function getEnv(key: string): string {
@@ -37,7 +45,27 @@ function createAdminClient() {
   });
 }
 
-export const POST: APIRoute = async ({ request }) => {
+export const POST: APIRoute = async ({ request, clientAddress }) => {
+  // 0. Rate-limit per IP (defense-in-depth — token 32B SHA-256 jest bezpieczny,
+  //    ale limit chroni przed enumeration/DoS).
+  const ip = getClientIp(request, clientAddress);
+  const rl = checkActivateRateLimit(ip);
+  if (!rl.allowed) {
+    return new Response(
+      JSON.stringify({
+        error: "Too Many Requests",
+        message: "Zbyt wiele prób aktywacji. Spróbuj ponownie później.",
+      }),
+      {
+        status: 429,
+        headers: {
+          "Content-Type": "application/json",
+          "Retry-After": String(rl.retryAfterSec ?? 60),
+        },
+      }
+    );
+  }
+
   // 1. Walidacja body
   let input: { token: string };
   try {
@@ -103,7 +131,9 @@ export const POST: APIRoute = async ({ request }) => {
       );
     }
 
-    // 5. Aktywacja — czyścimy token, żeby nie dało się użyć go ponownie
+    // 5. Aktywacja — czyścimy token, żeby nie dało się użyć go ponownie.
+    //    TOCTOU guard: `.eq("is_active", false)` — jeśli inny concurrent request już
+    //    aktywował konto, nasz UPDATE trafi 0 rekordów (idempotentnie bezpieczne).
     const { error: updateError } = await admin
       .from("user_profiles")
       .update({
@@ -112,7 +142,8 @@ export const POST: APIRoute = async ({ request }) => {
         invite_token_hash: null,
         invite_expires_at: null,
       })
-      .eq("id", profile.id);
+      .eq("id", profile.id)
+      .eq("is_active", false);
 
     if (updateError) {
       logError("[POST /api/v1/auth/activate:update]", updateError);
