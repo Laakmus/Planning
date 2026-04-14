@@ -34,9 +34,15 @@ INSERT INTO auth.users (
 -- 1b. Profil użytkownika (powiązany z auth user)
 -- ============================================================
 
-INSERT INTO public.user_profiles (id, email, full_name, phone, role) VALUES
-  ('c94a20d0-16ca-4f9d-873a-05f31be633ff', 'admin@test.pl', 'Jan Kowalski', '+48 600 100 200', 'ADMIN')
-ON CONFLICT (id) DO UPDATE SET full_name = EXCLUDED.full_name, phone = EXCLUDED.phone, role = EXCLUDED.role;
+INSERT INTO public.user_profiles (id, email, full_name, phone, role, username, is_active, activated_at) VALUES
+  ('c94a20d0-16ca-4f9d-873a-05f31be633ff', 'admin@test.pl', 'Jan Kowalski', '+48 600 100 200', 'ADMIN', 'admin', true, now())
+ON CONFLICT (id) DO UPDATE SET
+  full_name = EXCLUDED.full_name,
+  phone = EXCLUDED.phone,
+  role = EXCLUDED.role,
+  username = EXCLUDED.username,
+  is_active = EXCLUDED.is_active,
+  activated_at = EXCLUDED.activated_at;
 
 -- ============================================================
 -- 2. Słowniki

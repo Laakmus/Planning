@@ -10,7 +10,7 @@
 - **Plan:** `.ai/auth-migration-plan.md` (zastąpił stary plan SSO @odylion.com)
 - **Fazy:**
   - [x] **A1** — Types + Zod schemas (`src/types/auth.types.ts`, `user-profile.types.ts`, `src/lib/validators/auth.validator.ts`)
-  - [ ] **A2** — DB migracja (`username`, `is_active`, invite, RPC `resolve_username_to_email`) + seed + regeneracja `database.types.ts`
+  - [x] **A2** — DB migracja (`username`, `is_active`, invite, RPC `resolve_username_to_email`, 4 RLS policies ADMIN) + seed (username='admin') + regeneracja `database.types.ts`
   - [ ] **A3a** — Backend: `/api/v1/auth/login`, `/auth/activate`, `/admin/users/*`, services (`user-admin`, `invite-token`)
   - [ ] **A3b** — Frontend: `LoginCard` (username), `/activate`, sidebar Administracja, `UsersPanel` + dialogi
   - [ ] **B1** — USER: rejestracja aplikacji w Entra (MS_CLIENT_ID/SECRET/TENANT)

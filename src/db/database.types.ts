@@ -206,16 +206,16 @@ export type Database = {
       }
       order_no_counters: {
         Row: {
-          year: number
           last_seq: number
+          year: number
         }
         Insert: {
-          year: number
           last_seq?: number
+          year: number
         }
         Update: {
-          year?: number
           last_seq?: number
+          year?: number
         }
         Relationships: []
       }
@@ -653,34 +653,52 @@ export type Database = {
       }
       user_profiles: {
         Row: {
+          activated_at: string | null
           created_at: string
           email: string
           full_name: string | null
           id: string
+          invite_expires_at: string | null
+          invite_token_hash: string | null
+          invited_at: string | null
+          is_active: boolean
           location_id: string | null
           phone: string | null
           role: string
           updated_at: string
+          username: string
         }
         Insert: {
+          activated_at?: string | null
           created_at?: string
           email: string
           full_name?: string | null
           id: string
+          invite_expires_at?: string | null
+          invite_token_hash?: string | null
+          invited_at?: string | null
+          is_active?: boolean
           location_id?: string | null
           phone?: string | null
           role: string
           updated_at?: string
+          username: string
         }
         Update: {
+          activated_at?: string | null
           created_at?: string
           email?: string
           full_name?: string | null
           id?: string
+          invite_expires_at?: string | null
+          invite_token_hash?: string | null
+          invited_at?: string | null
+          is_active?: boolean
           location_id?: string | null
           phone?: string | null
           role?: string
           updated_at?: string
+          username?: string
         }
         Relationships: [
           {
@@ -724,25 +742,25 @@ export type Database = {
       }
       warehouse_report_recipients: {
         Row: {
+          created_at: string
+          email: string
           id: string
           location_id: string
-          email: string
           name: string | null
-          created_at: string
         }
         Insert: {
+          created_at?: string
+          email: string
           id?: string
           location_id: string
-          email: string
           name?: string | null
-          created_at?: string
         }
         Update: {
+          created_at?: string
+          email?: string
           id?: string
           location_id?: string
-          email?: string
           name?: string | null
-          created_at?: string
         }
         Relationships: [
           {
@@ -760,22 +778,26 @@ export type Database = {
     }
     Functions: {
       current_user_is_admin_or_planner: { Args: never; Returns: boolean }
-      generate_next_order_no: { Args: never; Returns: string }
       filter_order_ids: {
         Args: {
-          p_product_id?: string | null
-          p_loading_location_id?: string | null
-          p_unloading_location_id?: string | null
           p_loading_company_id?: string | null
+          p_loading_location_id?: string | null
+          p_product_id?: string | null
           p_unloading_company_id?: string | null
+          p_unloading_location_id?: string | null
         }
         Returns: {
           order_id: string
         }[]
       }
-      require_write_role: {
-        Args: Record<PropertyKey, never>
-        Returns: undefined
+      generate_next_order_no: { Args: never; Returns: string }
+      require_write_role: { Args: never; Returns: undefined }
+      resolve_username_to_email: {
+        Args: { p_username: string }
+        Returns: {
+          email: string
+          is_active: boolean
+        }[]
       }
       try_lock_order: {
         Args: {
