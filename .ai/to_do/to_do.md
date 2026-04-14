@@ -1,16 +1,37 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-03-26 (sesja 58: naprawiono wszystkie L-bugi L-01..L-11, L-12/L-13 odroczone)
+> Ostatnia aktualizacja: 2026-04-14 (sesja 59: rozpoczęcie migracji auth na username+hasło + panel admina + Graph draft)
+
+---
+
+## W toku — branch `feature/username-login-and-graph-email`
+
+### AUTH-MIG. Migracja auth na username+hasło + panel admina + Microsoft Graph draft
+- **Plan:** `.ai/auth-migration-plan.md` (zastąpił stary plan SSO @odylion.com)
+- **Fazy:**
+  - [x] **A1** — Types + Zod schemas (`src/types/auth.types.ts`, `user-profile.types.ts`, `src/lib/validators/auth.validator.ts`)
+  - [ ] **A2** — DB migracja (`username`, `is_active`, invite, RPC `resolve_username_to_email`) + seed + regeneracja `database.types.ts`
+  - [ ] **A3a** — Backend: `/api/v1/auth/login`, `/auth/activate`, `/admin/users/*`, services (`user-admin`, `invite-token`)
+  - [ ] **A3b** — Frontend: `LoginCard` (username), `/activate`, sidebar Administracja, `UsersPanel` + dialogi
+  - [ ] **B1** — USER: rejestracja aplikacji w Entra (MS_CLIENT_ID/SECRET/TENANT)
+  - [ ] **B2** — DB tabela `ms_oauth_tokens` (pgcrypto)
+  - [ ] **B3** — Backend OAuth + Graph draft (`ms-graph.service`, `prepare-email-graph`)
+  - [ ] **B4** — Frontend `EmailConnectionCard` + rozszerzenie `send-email.ts` (fallback `.eml`)
+  - [ ] **C** — E2E + unit testy
+  - [ ] **D** — Reviewer audit (RLS, SECURITY DEFINER, rate-limit, hash tokenu, CSRF/PKCE, szyfrowanie MS tokenów)
+- **Decyzje:** TTL invite = 7 dni, deaktywacja = wylogowanie sesji, MS tokeny = pgcrypto
+- **Effort:** ~35–45 h agentów + ~3–4 h usera
 
 ---
 
 ## Do zrobienia — HIGH
 
-### H-04. Przeniesienie Microsoft Graph API na backend (Confidential Client)
+### H-04. Przeniesienie Microsoft Graph API na backend (Confidential Client) — **W TOKU w ramach AUTH-MIG Część B**
 - **Kategoria:** security
-- **Pliki:** `graph-mail.server.ts` (nowy), `prepare-email.ts`, `order-misc.service.ts`, `useOrderActions.ts`, `useOrderDrawer.ts`, `OrdersApp.tsx`, `MicrosoftAuthContext.tsx` (usunąć)
-- **Opis:** Token Mail.ReadWrite w przeglądarce = ryzyko XSS → pełny dostęp do skrzynki. Status zmienia się na "wysłane" ZANIM draft powstanie (race condition). Wymaga rejestracji app w Azure AD jako Confidential Client.
-- **Effort:** L (8-12h), **Zależność:** Azure AD app registration
+- **Pliki:** `ms-graph.service.ts` (nowy), `prepare-email-graph.ts` (nowy), `ms_oauth_tokens` table (pgcrypto), `useOrderActions.ts`, `useOrderDrawer.ts`, `MicrosoftAuthContext.tsx` (usunąć w B4)
+- **Opis:** Token Mail.ReadWrite w przeglądarce = ryzyko XSS → pełny dostęp do skrzynki. Nowy model: OAuth2 Authorization Code flow na backendu, tokeny szyfrowane pgcrypto w DB, Graph tworzy draft w skrzynce usera, user klika "Wyślij" w Outlook. `.eml` fallback.
+- **Status:** Realizowane w fazach B1–B4 planu AUTH-MIG (patrz sekcja "W toku" powyżej)
+- **Effort:** L (8-12h), **Zależność:** B1 = rejestracja aplikacji w Entra przez usera
 
 ### H-05. Integracja dictionary-sync z Comarch ERP XL
 - **Kategoria:** architecture
@@ -39,13 +60,13 @@
 - **Effort:** S
 - *Źródła: DB-03, DB-09, DB-10*
 
-### L-13. Drobne uzupełnienia testów (6 items)
+### L-13. Drobne uzupełnienia testów (5 items — pkt 5 nieaktualny)
 - **Kategoria:** test
-- **Pliki:** `src/hooks/__tests__/useOrderDrawer.test.ts`, `src/lib/services/__tests__/order.service.test.ts`, `src/contexts/MicrosoftAuthContext.tsx`, `src/lib/validators/warehouse-report.validator.ts`
-- **Opis:** (1) PUT body asercja `expect.any(Object)` → sprawdzić pola. (2) Brak testu dirty form → handleCloseRequest. (3) listOrders test nie weryfikuje mapowania pól. (4) Brak testu self-lock. (5) MicrosoftAuthContext bez testów (thin wrapper). (6) Warehouse report Zod bez dedykowanych testów.
+- **Pliki:** `src/hooks/__tests__/useOrderDrawer.test.ts`, `src/lib/services/__tests__/order.service.test.ts`, `src/lib/validators/warehouse-report.validator.ts`
+- **Opis:** (1) PUT body asercja `expect.any(Object)` → sprawdzić pola. (2) Brak testu dirty form → handleCloseRequest. (3) listOrders test nie weryfikuje mapowania pól. (4) Brak testu self-lock. ~~(5) MicrosoftAuthContext bez testów~~ — **NIEAKTUALNE:** `MicrosoftAuthContext.tsx` będzie usunięty w ramach H-04 (AUTH-MIG Część B4), zastąpiony backendowym OAuth flow. (6) Warehouse report Zod bez dedykowanych testów.
 - **Sugerowany fix:** Dodawać przy okazji zmian w danym obszarze.
 - **Effort:** S (łącznie)
-- *Źródła: TST-07, TST-09, TST-10, TST-11, TST-12, TST-13*
+- *Źródła: TST-07, TST-09, TST-10, TST-11, TST-13*
 
 ---
 
@@ -71,6 +92,7 @@
 
 ### D-26. L-12.2-8 — Security defense-in-depth — intranet
 - (2) Standard Supabase SSR. (3) Wymaga nowego pola email. (4) Stack trace w logach serwera = feature. (5-8) Niski priorytet na intranecie.
+- **Uwaga (2026-04-14):** Część punktów opartych o stary plan SSO `@odylion.com` (odrzucony — patrz `.ai/auth-migration-plan.md`). Po zakończeniu AUTH-MIG przegląd konieczny.
 
 ### D-27. L-13 — Test pokrycie komponentów — wystarczające
 - 1045 unit + 25 E2E. Dodawać testy przy bugach, nie proaktywnie.
@@ -141,6 +163,7 @@
 ### D-09. Rate limiting — fallback na IP dla niezweryfikowanych tokenów
 - Middleware dekoduje JWT bez weryfikacji podpisu (atob). Atakujący mógłby sfabrykować JWT z sub innego użytkownika.
 - **Konsensus debaty:** Odłożone — na intranecie IP-based wystarczy, ryzyko minimalne.
+- **Uwaga (2026-04-14):** W AUTH-MIG Faza A3a zostanie dodany rate-limit na `/api/v1/auth/login` (brute-force username+hasło) — obszar pokrewny, ale inny cel.
 
 ### D-10. Health endpoint — usunięcie error.message z odpowiedzi — NAPRAWIONE (sesja 50)
 - ~~GET /api/v1/health ujawnia `error.message` z PostgreSQL w odpowiedzi 503.~~
