@@ -111,6 +111,50 @@ export type Database = {
           },
         ]
       }
+      ms_oauth_tokens: {
+        Row: {
+          access_token_encrypted: string
+          created_at: string
+          expires_at: string
+          ms_email: string
+          ms_user_id: string
+          refresh_token_encrypted: string
+          scope: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          access_token_encrypted: string
+          created_at?: string
+          expires_at: string
+          ms_email: string
+          ms_user_id: string
+          refresh_token_encrypted: string
+          scope: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          access_token_encrypted?: string
+          created_at?: string
+          expires_at?: string
+          ms_email?: string
+          ms_user_id?: string
+          refresh_token_encrypted?: string
+          scope?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ms_oauth_tokens_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       order_change_log: {
         Row: {
           changed_at: string
@@ -778,6 +822,14 @@ export type Database = {
     }
     Functions: {
       current_user_is_admin_or_planner: { Args: never; Returns: boolean }
+      decrypt_ms_token: {
+        Args: { p_encrypted: string; p_key: string }
+        Returns: string
+      }
+      encrypt_ms_token: {
+        Args: { p_key: string; p_plain: string }
+        Returns: string
+      }
       filter_order_ids: {
         Args: {
           p_loading_company_id?: string | null
@@ -791,6 +843,7 @@ export type Database = {
         }[]
       }
       generate_next_order_no: { Args: never; Returns: string }
+      is_admin: { Args: { p_uid: string }; Returns: boolean }
       require_write_role: { Args: never; Returns: undefined }
       resolve_username_to_email: {
         Args: { p_username: string }
