@@ -1,0 +1,17 @@
+---
+/**
+ * Strona aktywacji konta (/activate?token=...).
+ *
+ * Renderuje ActivateAccountCard jako React island z client:load.
+ * Token przekazywany jest jako prop z query string (Astro.url.searchParams).
+ * Jeśli token jest nieprawidłowy lub brakuje — komponent pokaże błąd.
+ */
+import Layout from "../layouts/Layout.astro";
+import ActivateAccountCard from "../components/auth/ActivateAccountCard";
+
+const token = Astro.url.searchParams.get("token") ?? "";
+---
+
+<Layout title="Aktywacja konta — System Zleceń Transportowych">
+  <ActivateAccountCard client:load token={token} />
+</Layout>

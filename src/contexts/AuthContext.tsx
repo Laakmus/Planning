@@ -21,8 +21,8 @@ import {
 import { createClient, type SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/db/database.types";
-import type { AuthMeDto } from "@/types";
-import { createApiClient, type ApiClient } from "@/lib/api-client";
+import type { AuthMeDto, UsernameLoginResponse } from "@/types";
+import { ApiError, createApiClient, type ApiClient } from "@/lib/api-client";
 
 // ---------------------------------------------------------------------------
 // Typy kontekstu
@@ -35,8 +35,8 @@ interface AuthContextValue {
   isLoading: boolean;
   /** Instancja klienta API z wbudowanym tokenem. */
   api: ApiClient;
-  /** Logowanie email + hasło. Rzuca Error z komunikatem generycznym. */
-  login: (email: string, password: string) => Promise<void>;
+  /** Logowanie username + hasło. Rzuca Error z komunikatem z backendu. */
+  login: (username: string, password: string) => Promise<void>;
   /** Wylogowanie — czyści sesję i przekierowuje na /. */
   logout: () => Promise<void>;
   /** Ponowne pobranie profilu (np. po zmianie danych). */
@@ -129,24 +129,49 @@ export function AuthProvider({
     return profile;
   }, [supabase, fetchUserProfile]);
 
-  // login — logowanie email + hasło
+  // login — logowanie username + hasło (endpoint POST /api/v1/auth/login)
   const login = useCallback(
-    async (email: string, password: string): Promise<void> => {
+    async (username: string, password: string): Promise<void> => {
       setIsLoading(true);
       try {
-        const { data, error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
+        // Wywołanie backendowego endpointu — walidacja username + resolve email + GoTrue
+        // Używamy bezpośrednio fetch (api client wymaga tokena, którego tu jeszcze nie mamy)
+        const response = await fetch("/api/v1/auth/login", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Accept: "application/json",
+          },
+          body: JSON.stringify({ username, password }),
         });
 
-        if (error || !data.session) {
-          throw new Error("Nieprawidłowy login lub hasło.");
+        if (!response.ok) {
+          // Parsuj błąd z backendu — konwencja { error, message }
+          let message = "Nieprawidłowy login lub hasło.";
+          try {
+            const errBody = (await response.json()) as { message?: string };
+            if (errBody?.message) message = errBody.message;
+          } catch {
+            // Ignorujemy — użyjemy domyślnego komunikatu
+          }
+          throw new Error(message);
         }
 
-        const token = data.session.access_token;
-        tokenRef.current = token;
+        const payload = (await response.json()) as UsernameLoginResponse;
 
-        const profile = await fetchUserProfile(token);
+        // Zapisz sesję w Supabase SDK (localStorage) — middleware i ApiClient nadal działają na JWT
+        const { error: sessionError } = await supabase.auth.setSession({
+          access_token: payload.accessToken,
+          refresh_token: payload.refreshToken,
+        });
+        if (sessionError) {
+          throw new Error("Nie udało się zapisać sesji. Spróbuj ponownie.");
+        }
+
+        tokenRef.current = payload.accessToken;
+
+        // Pobierz pełny profil (AuthMeDto) z /api/v1/auth/me
+        const profile = await fetchUserProfile(payload.accessToken);
         if (!profile) {
           throw new Error("Nie udało się pobrać profilu użytkownika.");
         }
@@ -154,7 +179,9 @@ export function AuthProvider({
         setUser(profile);
         // Przekierowanie na /orders obsługuje komponent wywołujący login()
       } catch (err) {
-        // Rzucamy generyczny komunikat (bez ujawniania czy user istnieje)
+        if (err instanceof ApiError) {
+          throw new Error(err.message);
+        }
         throw err instanceof Error
           ? err
           : new Error("Błąd logowania. Spróbuj ponownie.");

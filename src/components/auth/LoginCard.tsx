@@ -1,10 +1,11 @@
 /**
- * LoginCard — formularz logowania (email + hasło).
+ * LoginCard — formularz logowania (username + hasło).
  *
  * Wyświetlany na stronie / jako React island (client:load).
  * Po pomyślnym logowaniu przekierowuje na /orders.
  *
- * Komunikaty błędów są generyczne (nie zdradzamy czy konto istnieje).
+ * Logowanie odbywa się przez POST /api/v1/auth/login (username → email → GoTrue),
+ * a nie bezpośrednio przez supabase.auth.signInWithPassword.
  */
 
 import { useState, type FormEvent } from "react";
@@ -15,6 +16,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { loginUsernameSchema } from "@/lib/validators/auth.validator";
 
 // ---------------------------------------------------------------------------
 // Formularz wewnętrzny (wymaga AuthProvider wyżej w drzewie)
@@ -23,7 +25,7 @@ import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 function LoginForm() {
   const { login } = useAuth();
 
-  const [email, setEmail] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,15 +34,21 @@ function LoginForm() {
     e.preventDefault();
     setError(null);
 
-    // Walidacja podstawowa
-    if (!email.trim() || !password.trim()) {
-      setError("Podaj login i hasło.");
+    // Walidacja client-side (username + hasło) zgodna z backendem
+    const parsed = loginUsernameSchema.safeParse({
+      username: username.trim(),
+      password,
+    });
+    if (!parsed.success) {
+      // Pokazujemy generyczny komunikat — nie zdradzamy szczegółów walidacji
+      const firstIssue = parsed.error.issues[0];
+      setError(firstIssue?.message ?? "Podaj login i hasło.");
       return;
     }
 
     setIsLoading(true);
     try {
-      await login(email.trim(), password);
+      await login(parsed.data.username, parsed.data.password);
       // Po pomyślnym logowaniu — przekieruj
       window.location.href = "/orders";
     } catch (err) {
@@ -68,16 +76,17 @@ function LoginForm() {
 
         <form onSubmit={handleSubmit} className="space-y-4" data-testid="login-form">
           <div className="space-y-2">
-            <Label htmlFor="email">Login</Label>
+            <Label htmlFor="username">Login</Label>
             <Input
-              id="email"
-              type="email"
-              placeholder="email@firma.pl"
-              autoComplete="email"
+              id="username"
+              type="text"
+              placeholder="np. j.kowalski"
+              autoComplete="username"
               autoFocus
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
               disabled={isLoading}
+              data-testid="login-username"
             />
           </div>
 
@@ -91,6 +100,7 @@ function LoginForm() {
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               disabled={isLoading}
+              data-testid="login-password"
             />
           </div>
 
@@ -100,7 +110,12 @@ function LoginForm() {
             </p>
           )}
 
-          <Button type="submit" className="w-full" disabled={isLoading}>
+          <Button
+            type="submit"
+            className="w-full"
+            disabled={isLoading}
+            data-testid="login-submit"
+          >
             {isLoading ? (
               <>
                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />

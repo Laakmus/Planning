@@ -1,0 +1,15 @@
+---
+/**
+ * Panel administracyjny — zarządzanie użytkownikami (/admin/users).
+ *
+ * Strona renderuje wyspę React AdminUsersApp (client:load). Guard ADMIN jest
+ * zaimplementowany po stronie serwera (middleware + endpointy /api/v1/admin/*)
+ * oraz po stronie klienta w AdminUsersApp (redirect na `/` gdy user.role != ADMIN).
+ */
+import Layout from "../../layouts/Layout.astro";
+import AdminUsersApp from "../../components/admin/AdminUsersApp";
+---
+
+<Layout title="Użytkownicy — Panel administracyjny">
+  <AdminUsersApp client:load />
+</Layout>
