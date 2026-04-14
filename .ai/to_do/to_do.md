@@ -14,10 +14,10 @@
   - [ ] **A3a** — Backend: `/api/v1/auth/login`, `/auth/activate`, `/admin/users/*`, services (`user-admin`, `invite-token`)
   - [ ] **A3b** — Frontend: `LoginCard` (username), `/activate`, sidebar Administracja, `UsersPanel` + dialogi
   - [ ] **B1** — USER: rejestracja aplikacji w Entra (MS_CLIENT_ID/SECRET/TENANT)
-  - [ ] **B2** — DB tabela `ms_oauth_tokens` (pgcrypto)
+  - [x] **B2** — DB tabela `ms_oauth_tokens` (pgcrypto) + helpers `encrypt_ms_token`/`decrypt_ms_token`
   - [ ] **B3** — Backend OAuth + Graph draft (`ms-graph.service`, `prepare-email-graph`)
   - [ ] **B4** — Frontend `EmailConnectionCard` + rozszerzenie `send-email.ts` (fallback `.eml`)
-  - [ ] **C** — E2E + unit testy
+  - [x] **C** — E2E + unit testy (31 nowych unit + 10 nowych E2E; `AuthContext.test.tsx` przepisany, 0 skipped)
   - [ ] **D** — Reviewer audit (RLS, SECURITY DEFINER, rate-limit, hash tokenu, CSRF/PKCE, szyfrowanie MS tokenów)
 - **Decyzje:** TTL invite = 7 dni, deaktywacja = wylogowanie sesji, MS tokeny = pgcrypto
 - **Effort:** ~35–45 h agentów + ~3–4 h usera
