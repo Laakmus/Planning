@@ -494,6 +494,40 @@ RLS:
 
 ---
 
+#### 1.14 `ms_oauth_tokens` – tokeny Microsoft Graph per użytkownik (AUTH-MIG B2)
+
+Przechowuje zaszyfrowane tokeny OAuth2 (access + refresh) dla integracji z Microsoft Graph API.
+Każdy user ma max 1 rekord (PK = user_id). Tokeny szyfrowane pgcrypto `pgp_sym_encrypt` z kluczem `APP_ENCRYPTION_KEY` z env.
+
+Migracja: `20260414140000_add_ms_oauth_tokens.sql`
+
+- **user_id**: `uuid` PK, FK → `user_profiles.id` (`ON DELETE CASCADE`)
+- **access_token_encrypted**: `bytea`, `NOT NULL` — pgcrypto pgp_sym_encrypt
+- **refresh_token_encrypted**: `bytea`, `NOT NULL` — pgcrypto pgp_sym_encrypt
+- **expires_at**: `timestamptz`, `NOT NULL` — wygaśnięcie access_token
+- **scope**: `text`, `NOT NULL` — zakres uprawnień (np. `Mail.Send Mail.ReadWrite offline_access User.Read`)
+- **ms_user_id**: `text`, `NOT NULL` — identyfikator usera w Microsoft (OID)
+- **ms_email**: `citext`, `NOT NULL` — adres email konta Microsoft (case-insensitive)
+- **created_at**: `timestamptz`, `DEFAULT now()`, `NOT NULL`
+- **updated_at**: `timestamptz`, `DEFAULT now()`, `NOT NULL` (trigger `set_ms_oauth_tokens_updated_at`)
+
+Indeksy:
+- PK na `user_id`
+- `idx_ms_oauth_tokens_ms_user_id` — INDEX na `ms_user_id`
+
+RLS (prywatność tokenów — admin NIE widzi cudzych):
+- `ms_oauth_tokens_select_own` — SELECT `USING (user_id = auth.uid())`
+- `ms_oauth_tokens_insert_own` — INSERT `WITH CHECK (user_id = auth.uid())`
+- `ms_oauth_tokens_update_own` — UPDATE `USING/WITH CHECK (user_id = auth.uid())`
+- `ms_oauth_tokens_delete_own` — DELETE `USING (user_id = auth.uid())`
+
+Funkcje pomocnicze (SECURITY DEFINER, `search_path = public, extensions, pg_temp`):
+- `encrypt_ms_token(p_plain TEXT, p_key TEXT) → BYTEA` — waliduje non-empty plain i min 16-char key
+- `decrypt_ms_token(p_encrypted BYTEA, p_key TEXT) → TEXT` — NULL-safe (NULL input → NULL output)
+- GRANT EXECUTE tylko `authenticated` (REVOKE PUBLIC)
+
+---
+
 ### 2. Relacje między tabelami
 
 1. **`transport_orders` → `order_stops`**  
@@ -550,7 +584,12 @@ RLS:
     - `user_profiles.location_id` FK → `locations.id` (`ON DELETE RESTRICT`)
     - używane przez widok magazynowy do filtrowania operacji wg oddziału użytkownika
 
-14. **`transport_orders` / logi → `user_profiles` / `auth.users`**
+14. **`ms_oauth_tokens` → `user_profiles`**
+    - relacja 1:1 (max 1 rekord tokenów MS per user)
+    - `ms_oauth_tokens.user_id` PK+FK → `user_profiles.id` (`ON DELETE CASCADE`)
+    - AUTH-MIG B2
+
+15. **`transport_orders` / logi → `user_profiles` / `auth.users`**
     - `transport_orders.created_by_user_id` / `updated_by_user_id` / `sent_by_user_id`,
       `order_status_history.changed_by_user_id`,
       `order_change_log.changed_by_user_id`

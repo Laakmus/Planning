@@ -118,6 +118,42 @@
 
 ---
 
+### 2.1b Integracja Microsoft Graph — OAuth + email draft (AUTH-MIG B3/B4)
+
+> **Status:** B2 (DB) gotowe. Endpointy do implementacji w Fazie B3 (wymaga `MS_CLIENT_ID`/`MS_CLIENT_SECRET` z Entra).
+
+- **GET** `/api/v1/ms-oauth/start`
+  - **Opis**: Redirect do Microsoft OAuth2 authorize (Authorization Code + PKCE). Generuje `state` (CSRF) i `code_verifier`, zapisuje w session/cookie.
+  - **Redirect URI**: `https://{domain}/api/v1/ms-oauth/callback`
+  - **Scopes**: `Mail.Send Mail.ReadWrite offline_access User.Read`
+  - **Sukces**: HTTP 302 do `https://login.microsoftonline.com/common/oauth2/v2.0/authorize`
+
+- **GET** `/api/v1/ms-oauth/callback`
+  - **Opis**: Exchange `code` na `access_token` + `refresh_token`. Zapisuje zaszyfrowane tokeny w `ms_oauth_tokens` (pgcrypto). Redirect do `/settings/email` lub `/orders`.
+  - **Walidacja**: sprawdza `state` (CSRF), weryfikuje `code_verifier` (PKCE).
+  - **Sukces**: 302 → `/orders` (lub `/settings/email`)
+  - **Błędy**: 400 (invalid state/code)
+
+- **GET** `/api/v1/ms-oauth/status`
+  - **Opis**: Sprawdza czy bieżący user ma aktywne połączenie Microsoft.
+  - **Odpowiedź**: `MsConnectionStatusDto { connected, msEmail, connectedAt }`
+  - **Sukces**: 200 OK
+  - **Wymaga**: authenticated
+
+- **POST** `/api/v1/ms-oauth/disconnect`
+  - **Opis**: Revoke + usuwa tokeny z DB.
+  - **Odpowiedź**: 204 No Content
+  - **Wymaga**: authenticated
+
+- **POST** `/api/v1/orders/:id/prepare-email-graph`
+  - **Opis**: Tworzy draft w skrzynce Outlook usera przez Graph API (`/me/messages` + attachment). Zwraca `webLink` do draftu.
+  - **Wymaga**: authenticated + ms_oauth_tokens aktywne
+  - **Fallback**: jeśli user nie ma połączenia MS → 400 z message sugerującym `.eml` download (istniejący flow)
+  - **Odpowiedź** (200): `{ webLink: string, messageId: string }`
+  - **Błędy**: 400 (brak MS connection), 401, 500
+
+---
+
 ### 2.2 Zlecenia – lista, filtrowanie, sortowanie
 
 - **GET** `/api/v1/orders`

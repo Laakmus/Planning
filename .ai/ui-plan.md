@@ -543,6 +543,20 @@ Sidebar: `sidebar-admin-users`. App/Panel: `admin-users-app`, `admin-users-panel
 
 ---
 
+### 2.8 Ustawienia — połączenie email Microsoft (AUTH-MIG B4, planowane)
+
+> **Status:** B2 (DB ms_oauth_tokens) gotowe. UI do implementacji w Fazie B4 (wymaga B1 Entra setup + B3 backend OAuth).
+
+- **Ścieżka**: brak dedykowanej strony `/settings/email` w MVP — zamiast tego stan połączenia MS widoczny w panelu wysyłki email (przycisk „Wyślij" w OrderDrawer i ReportActions).
+- **Punkt wejścia**: przycisk w sidebarze (sekcja „Ustawienia" → „Połączenie email") lub inline w dialogu wysyłki.
+- **Flow**: user klika „Połącz z Microsoft" → redirect do MS OAuth consent (user consent, nie admin consent) → callback → tokeny zapisane w DB → status „Połączono jako jan@firma.com".
+- **Komponenty** (planowane):
+  - `EmailConnectionCard.tsx` — „Połącz z Microsoft" / „Rozłącz" + status (ms_email, connectedAt)
+  - Rozszerzenie `send-email.ts` — switch: jeśli MS connected → POST `/orders/:id/prepare-email-graph` → `window.location = webLink` (otwiera draft w Outlook); jeśli nie → fallback `.eml` download (istniejący flow)
+  - Toast „Otwieram draft w Outlook..."
+
+---
+
 ## 3. Mapa podróży użytkownika
 
 ### 3.1 Główny przepływ: Logowanie → Planowanie → Wysyłka zlecenia
