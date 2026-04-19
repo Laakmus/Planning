@@ -18,7 +18,7 @@
   - [ ] **B3** — Backend OAuth + Graph draft (`ms-graph.service`, `prepare-email-graph`)
   - [ ] **B4** — Frontend `EmailConnectionCard` + rozszerzenie `send-email.ts` (fallback `.eml`)
   - [x] **C** — E2E + unit testy (31 nowych unit + 10 nowych E2E; `AuthContext.test.tsx` przepisany, 0 skipped)
-  - [ ] **D** — Reviewer audit (RLS, SECURITY DEFINER, rate-limit, hash tokenu, CSRF/PKCE, szyfrowanie MS tokenów)
+  - [x] **D** — Reviewer audit: 0 CRITICAL, 0 HIGH, 1 MEDIUM (kosmetyczny), 2 LOW. Brak blockerów merge.
 - **Decyzje:** TTL invite = 7 dni, deaktywacja = wylogowanie sesji, MS tokeny = pgcrypto
 - **Effort:** ~35–45 h agentów + ~3–4 h usera
 
