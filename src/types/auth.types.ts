@@ -1,8 +1,8 @@
 /**
- * Typy DTO dla autoryzacji: logowanie przez username, aktywacja konta,
- * status połączenia Microsoft.
+ * Typy DTO dla autoryzacji: logowanie przez username, aktywacja konta.
  *
  * Uwaga: `AuthMeDto` i `UserRole` pozostają w `./common.ts` (są używane szerzej).
+ * Status połączenia z Microsoft jest w `./ms-oauth.types.ts` (`MsOAuthStatusDto`).
  */
 
 import type { UserRole } from "./common";
@@ -44,17 +44,4 @@ export interface ActivateAccountRequest {
 /** Odpowiedź po pomyślnej aktywacji konta. */
 export interface ActivateAccountResponse {
   ok: true;
-}
-
-/**
- * Status połączenia konta Microsoft dla zalogowanego użytkownika.
- * Zwracany z GET /api/v1/auth/me/ms-connection.
- *
- * - `connected: false` → użytkownik nie połączył jeszcze konta MS (msEmail/connectedAt null)
- * - `connected: true` → konto połączone; `msEmail` = adres konta MS, `connectedAt` = ISO8601
- */
-export interface MsConnectionStatusDto {
-  connected: boolean;
-  msEmail: string | null;
-  connectedAt: string | null;
 }

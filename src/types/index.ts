@@ -9,3 +9,4 @@ export * from "./order";
 export * from "./warehouse";
 export * from "./auth.types";
 export * from "./user-profile.types";
+export * from "./ms-oauth.types";
