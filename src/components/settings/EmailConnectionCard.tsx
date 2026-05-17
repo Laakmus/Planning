@@ -66,18 +66,21 @@ const OPEN_MODE_OPTIONS: {
   value: EmailOpenMode;
   label: string;
   description: string;
+  warning?: string;
 }[] = [
   {
     value: "web",
-    label: "Outlook Web (przeglądarka)",
+    label: "Outlook Web (przeglądarka) — zalecane",
     description:
-      "Otwiera draft bezpośrednio w Outlook Web w nowej karcie — wymaga połączonego konta Microsoft.",
+      "Otwiera draft bezpośrednio w Outlook Web w nowej karcie. Działa od razu, bez konfiguracji przeglądarki.",
   },
   {
     value: "desktop",
     label: "Outlook Desktop (.eml)",
     description:
-      "Pobiera plik .eml — otwórz go w lokalnej aplikacji Outlook na komputerze.",
+      "Pobiera plik .eml na dysk — kliknij dwukrotnie, aby otworzyć w Outlook Desktop.",
+    warning:
+      'Wymaga jednorazowej konfiguracji przeglądarki. W Chrome po pierwszym pobraniu pliku kliknij strzałkę obok pliku na pasku pobierań i wybierz "Zawsze otwieraj pliki tego typu". Następne pobrania będą otwierać się automatycznie w Outlook.',
   },
   {
     value: "ask",
@@ -364,6 +367,15 @@ export function EmailConnectionCard() {
                     <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
                       {option.description}
                     </span>
+                    {option.warning && isSelected && (
+                      <div
+                        data-testid={`email-open-mode-warning-${option.value}`}
+                        className="mt-2 flex gap-2 rounded-md border border-amber-300 bg-amber-50 px-2.5 py-2 text-xs text-amber-900 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200"
+                      >
+                        <Info className="mt-0.5 h-3.5 w-3.5 flex-shrink-0" />
+                        <span>{option.warning}</span>
+                      </div>
+                    )}
                   </div>
                 </label>
               );

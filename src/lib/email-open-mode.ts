@@ -8,24 +8,15 @@
  *
  * Persistencja: `localStorage` pod kluczem `planning:email-open-mode`.
  *
- * Gdy brak zapisanej preferencji — heurystyka oparta na typie konta MS:
- *   - osobiste konta MS (@outlook.com, @hotmail.com, @live.com, @msn.com)
- *     → domyślnie "web" (rzadko mają Outlook desktop),
- *   - konta firmowe (Microsoft 365) → "desktop" (zazwyczaj mają Outlook desktop),
- *   - brak msEmail → "web".
+ * Default: ZAWSZE "web" (Outlook Web). Powód: działa od razu dla każdego nowego
+ * usera bez żadnej konfiguracji per przeglądarka. Wybór "desktop" wymaga
+ * jednorazowego ustawienia w Chrome ("Always open files of this type" dla .eml)
+ * — to świadomy wybór usera w /settings/email.
  */
 
 import type { EmailOpenMode } from "@/types";
 
 const STORAGE_KEY = "planning:email-open-mode";
-
-/** Zbiór znanych domen osobistych Microsoft (lowercase, bez "@"). */
-const PERSONAL_MS_DOMAINS = [
-  "outlook.com",
-  "hotmail.com",
-  "live.com",
-  "msn.com",
-] as const;
 
 /** Walidacja czy wartość jest poprawnym EmailOpenMode. */
 function isValidMode(value: unknown): value is EmailOpenMode {
@@ -61,22 +52,18 @@ export function setEmailOpenMode(mode: EmailOpenMode): void {
 }
 
 /**
- * Heurystyka domyślnego trybu — na podstawie typu konta Microsoft podpiętego
- * przez OAuth. Wynik używany tylko gdy w localStorage brak preferencji.
+ * Domyślny tryb otwierania draftu — ZAWSZE "web" (Outlook Web).
  *
- * - osobiste konto MS (`@outlook.com` itp.) → "web"
- * - konto firmowe (Microsoft 365 / inna domena) → "desktop"
- * - brak msEmail (niepołączony lub nieznany) → "web"
+ * Powód: Outlook Web działa od razu dla każdego nowego usera, bez konfiguracji
+ * przeglądarki. Outlook Desktop (.eml) wymaga w Chrome jednorazowo ustawienia
+ * "Always open files of this type" — to świadomy wybór usera w /settings/email,
+ * nie default narzucany aplikacji.
+ *
+ * Parametr `msEmail` zachowany dla kompatybilności API (przyszłe heurystyki
+ * mogłyby go używać), ale obecnie ignorowany.
  */
-export function getDefaultEmailOpenMode(msEmail: string | null): EmailOpenMode {
-  if (!msEmail) return "web";
-  const lower = msEmail.toLowerCase();
-  for (const domain of PERSONAL_MS_DOMAINS) {
-    if (lower.endsWith(`@${domain}`)) {
-      return "web";
-    }
-  }
-  return "desktop";
+export function getDefaultEmailOpenMode(_msEmail: string | null): EmailOpenMode {
+  return "web";
 }
 
 /**

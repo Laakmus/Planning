@@ -51,7 +51,10 @@ describe("getEmailOpenMode / setEmailOpenMode — persystencja localStorage", ()
   });
 });
 
-describe("getDefaultEmailOpenMode — heurystyka po typie konta MS", () => {
+describe("getDefaultEmailOpenMode — zawsze 'web' (bezpieczny default)", () => {
+  // Po decyzji UX: default ZAWSZE "web", niezależnie od typu konta MS.
+  // Powód: Outlook Web działa od razu dla każdego, Outlook Desktop wymaga
+  // konfiguracji przeglądarki ("Always open .eml") — to świadomy wybór usera.
   it("returns 'web' for personal Microsoft accounts (@outlook.com)", () => {
     expect(getDefaultEmailOpenMode("user@outlook.com")).toBe("web");
   });
@@ -68,13 +71,13 @@ describe("getDefaultEmailOpenMode — heurystyka po typie konta MS", () => {
     expect(getDefaultEmailOpenMode("user@msn.com")).toBe("web");
   });
 
-  it("returns 'desktop' for corporate domains (e.g. @odylion.com)", () => {
-    expect(getDefaultEmailOpenMode("user@odylion.com")).toBe("desktop");
+  it("returns 'web' for corporate domains (e.g. @odylion.com)", () => {
+    expect(getDefaultEmailOpenMode("user@odylion.com")).toBe("web");
   });
 
-  it("returns 'desktop' for other corporate domains", () => {
-    expect(getDefaultEmailOpenMode("admin@example.com")).toBe("desktop");
-    expect(getDefaultEmailOpenMode("foo@bar.io")).toBe("desktop");
+  it("returns 'web' for any corporate domain", () => {
+    expect(getDefaultEmailOpenMode("admin@example.com")).toBe("web");
+    expect(getDefaultEmailOpenMode("foo@bar.io")).toBe("web");
   });
 
   it("returns 'web' when msEmail is null (no connection)", () => {
@@ -87,19 +90,18 @@ describe("getDefaultEmailOpenMode — heurystyka po typie konta MS", () => {
   });
 });
 
-describe("resolveEmailOpenMode — localStorage > heurystyka", () => {
-  it("returns stored value when present (overrides heuristics)", () => {
+describe("resolveEmailOpenMode — localStorage > default", () => {
+  it("returns stored value when present (overrides default)", () => {
     setEmailOpenMode("desktop");
-    // Mimo, że heurystyka dla @outlook.com to "web" — preferencja usera wygrywa
     expect(resolveEmailOpenMode("user@outlook.com")).toBe("desktop");
   });
 
-  it("returns heuristic value when nothing stored — personal account", () => {
+  it("returns 'web' default when nothing stored — personal account", () => {
     expect(resolveEmailOpenMode("user@hotmail.com")).toBe("web");
   });
 
-  it("returns heuristic value when nothing stored — corporate account", () => {
-    expect(resolveEmailOpenMode("user@company.pl")).toBe("desktop");
+  it("returns 'web' default when nothing stored — corporate account", () => {
+    expect(resolveEmailOpenMode("user@company.pl")).toBe("web");
   });
 
   it("returns 'web' when nothing stored and no msEmail", () => {

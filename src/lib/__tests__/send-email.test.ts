@@ -569,31 +569,33 @@ describe("sendEmailForOrder — EmailOpenMode preferences", () => {
     confirmSpy.mockRestore();
   });
 
-  it("no preference + corporate msEmail: heuristic = desktop (.eml flow)", async () => {
-    // Arrange — brak preferencji, konto firmowe → heurystyka "desktop"
-    setupDomMocks();
-    // localStorage czysty (po beforeEach) — wymusza heurystykę
+  it("no preference + corporate msEmail: default = web (Graph flow)", async () => {
+    // Arrange — brak preferencji, konto firmowe → default ZAWSZE "web" (po decyzji UX)
+    const dom = setupDomMocks();
     const api = buildApiClient({
       getStatus: async () => ({
         connected: true,
-        msEmail: "user@odylion.com", // domena firmowa → desktop
+        msEmail: "user@odylion.com",
         expiresAt: "2027-01-01T00:00:00Z",
         connectedAt: "2026-04-01T00:00:00Z",
       }),
+      postGraph: async () => ({
+        draftId: "D-CORP",
+        webLink: "https://outlook.office.com/corp",
+      }),
     });
-    const onSuccess = vi.fn();
 
     // Act
     await sendEmailForOrder({
-      orderId: "o-heur-d",
+      orderId: "o-default-corp",
       api,
-      onSuccess,
+      onSuccess: vi.fn(),
       onValidationError: vi.fn(),
     });
 
-    // Assert — Graph POMINIĘTY mimo connected=true (heurystyka chciała desktop)
-    expect(api.post).not.toHaveBeenCalled();
-    expect(api.postRaw).toHaveBeenCalled();
+    // Assert — Graph wywołane (web mode default), webLink otwarty w nowej karcie
+    expect(api.post).toHaveBeenCalled();
+    expect(dom.opened.location.href).toBe("https://outlook.office.com/corp");
   });
 
   it("no preference + personal msEmail: heuristic = web (Graph flow)", async () => {

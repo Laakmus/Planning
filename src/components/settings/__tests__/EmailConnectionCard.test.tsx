@@ -436,8 +436,8 @@ describe("EmailConnectionCard — sposób otwierania draftu (EmailOpenMode)", ()
     expect(screen.getByTestId("email-open-mode-default-info")).toBeInTheDocument();
   });
 
-  it("uses heuristic 'desktop' for corporate account when no preference saved", async () => {
-    // Arrange — konto firmowe, brak preferencji
+  it("uses default 'web' for corporate account when no preference saved", async () => {
+    // Arrange — konto firmowe, brak preferencji. Default ZAWSZE "web" (po decyzji UX).
     mockApiGet.mockResolvedValue({
       connected: true,
       msEmail: "user@odylion.com",
@@ -450,15 +450,15 @@ describe("EmailConnectionCard — sposób otwierania draftu (EmailOpenMode)", ()
 
     // Assert
     await waitFor(() => {
-      const desktopInput = screen.getByTestId(
-        "email-open-mode-input-desktop",
+      const webInput = screen.getByTestId(
+        "email-open-mode-input-web",
       ) as HTMLInputElement;
-      expect(desktopInput.checked).toBe(true);
+      expect(webInput.checked).toBe(true);
     });
   });
 
-  it("respects stored preference (overrides heuristics)", async () => {
-    // Arrange — zapisana preferencja "ask", konto firmowe (heurystyka chciałaby desktop)
+  it("respects stored preference (overrides default)", async () => {
+    // Arrange — zapisana preferencja "ask", konto firmowe (default to "web")
     localStorage.setItem("planning:email-open-mode", "ask");
     mockApiGet.mockResolvedValue({
       connected: true,
