@@ -14,6 +14,7 @@ vi.mock("@/lib/api-helpers", () => ({
   getAuthenticatedUser: vi.fn(),
   errorResponse: vi.fn(),
   logError: vi.fn(),
+  COMMON_HEADERS: { "Cache-Control": "no-store" },
 }));
 
 vi.mock("@/lib/oauth-state", () => ({
@@ -104,16 +105,16 @@ describe("GET /api/v1/ms-oauth/start", () => {
     expect(mockCreateOAuthState).not.toHaveBeenCalled();
   });
 
-  it("returns 302 redirect to Microsoft authorize URL", async () => {
+  it("returns 200 JSON with authorizeUrl", async () => {
     // Act
     const response = await GET(makeContext());
 
     // Assert
-    expect(response.status).toBe(302);
-    expect(response.headers.get("Location")).toBe(
-      "https://login.microsoftonline.com/test/authorize?x=1"
-    );
-    expect(response.headers.get("Cache-Control")).toBe("no-store");
+    expect(response.status).toBe(200);
+    const body = await response.json();
+    expect(body).toEqual({
+      authorizeUrl: "https://login.microsoftonline.com/test/authorize?x=1",
+    });
   });
 
   it("calls createOAuthState with authenticated user id", async () => {
@@ -162,6 +163,6 @@ describe("GET /api/v1/ms-oauth/start", () => {
     const response = await GET(makeContext());
 
     // Assert
-    expect(response.status).toBe(302);
+    expect(response.status).toBe(200);
   });
 });

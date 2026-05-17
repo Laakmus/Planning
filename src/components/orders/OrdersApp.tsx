@@ -37,6 +37,20 @@ function OrdersAppInner() {
     return "CURRENT";
   });
 
+  // Po sczytaniu `?view=` z URL przy pierwszym mountcie — wyczyść query param,
+  // żeby URL pozostał czysty (`/orders`) i kolejne nawigacje nie utrwalały filtra.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const params = new URLSearchParams(window.location.search);
+    if (params.has("view")) {
+      params.delete("view");
+      const cleanUrl =
+        window.location.pathname +
+        (params.toString() ? `?${params.toString()}` : "");
+      window.history.replaceState({}, "", cleanUrl);
+    }
+  }, []);
+
   // Śledzi czy użytkownik był kiedykolwiek zalogowany — zapobiega odmontowaniu drzewa przy chwilowym null
   const wasEverLoggedIn = useRef(false);
   if (user) {

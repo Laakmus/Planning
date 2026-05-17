@@ -14,6 +14,22 @@
  */
 
 // ---------------------------------------------------------------------------
+// Preferencja użytkownika — sposób otwierania draftu (client-side)
+// ---------------------------------------------------------------------------
+
+/**
+ * Sposób otwierania draftu emaila — preferencja użytkownika przechowywana
+ * w localStorage (`planning:email-open-mode`).
+ *
+ * - `"web"`     — Otwórz draft w Outlook Web (przeglądarka), używając `webLink`
+ *                 zwracanego przez `POST /prepare-email-graph`.
+ * - `"desktop"` — Pobierz plik `.eml` (POST /prepare-email → blob) — user otwiera
+ *                 w lokalnym Outlooku.
+ * - `"ask"`     — Przy każdej wysyłce pytaj usera (dialog z dwoma przyciskami).
+ */
+export type EmailOpenMode = "web" | "desktop" | "ask";
+
+// ---------------------------------------------------------------------------
 // DTOs API
 // ---------------------------------------------------------------------------
 

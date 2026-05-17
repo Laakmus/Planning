@@ -11,8 +11,8 @@
  *   - Rozłączenie: AlertDialog → `POST /api/v1/ms-oauth/disconnect` (204).
  */
 
-import { useCallback, useEffect, useState } from "react";
-import { CheckCircle2, Loader2, Mail, MailX } from "lucide-react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { CheckCircle2, Info, Loader2, Mail, MailX } from "lucide-react";
 import { toast } from "sonner";
 
 import {
@@ -27,8 +27,13 @@ import {
 } from "@/components/ui/alert-dialog";
 import { Button } from "@/components/ui/button";
 import { useAuth } from "@/contexts/AuthContext";
+import {
+  getEmailOpenMode,
+  resolveEmailOpenMode,
+  setEmailOpenMode,
+} from "@/lib/email-open-mode";
 import { invalidateMsOAuthStatusCache } from "@/lib/send-email";
-import type { MsOAuthStatusDto } from "@/types";
+import type { EmailOpenMode, MsOAuthStatusDto } from "@/types";
 
 // ---------------------------------------------------------------------------
 // Mapowanie kodów błędów z query param na komunikaty po polsku
@@ -56,6 +61,32 @@ function describeMsError(code: string): string {
 // Komponent
 // ---------------------------------------------------------------------------
 
+/** Opcje radio dla sekcji "Sposób otwierania draftu". */
+const OPEN_MODE_OPTIONS: {
+  value: EmailOpenMode;
+  label: string;
+  description: string;
+}[] = [
+  {
+    value: "web",
+    label: "Outlook Web (przeglądarka)",
+    description:
+      "Otwiera draft bezpośrednio w Outlook Web w nowej karcie — wymaga połączonego konta Microsoft.",
+  },
+  {
+    value: "desktop",
+    label: "Outlook Desktop (.eml)",
+    description:
+      "Pobiera plik .eml — otwórz go w lokalnej aplikacji Outlook na komputerze.",
+  },
+  {
+    value: "ask",
+    label: "Pytaj za każdym razem",
+    description:
+      "Przy każdym wysłaniu maila pyta jak otworzyć draft (Web vs Desktop).",
+  },
+];
+
 export function EmailConnectionCard() {
   const { api } = useAuth();
 
@@ -63,6 +94,13 @@ export function EmailConnectionCard() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDisconnecting, setIsDisconnecting] = useState(false);
   const [showDisconnectDialog, setShowDisconnectDialog] = useState(false);
+  // Preferencja sposobu otwierania draftu — z localStorage lub heurystyka.
+  // Inicjalizujemy z null (brak msEmail) → po fetchu statusu zaktualizujemy.
+  const [openMode, setOpenModeState] = useState<EmailOpenMode>(() =>
+    resolveEmailOpenMode(null),
+  );
+  /** Flaga: czy preferencja była zapisana w localStorage (vs domyślna z heurystyki) */
+  const [hasStoredPref, setHasStoredPref] = useState<boolean>(() => getEmailOpenMode() !== null);
 
   // -------------------------------------------------------------------------
   // Fetch statusu
@@ -114,14 +152,47 @@ export function EmailConnectionCard() {
   }, [loadStatus]);
 
   // -------------------------------------------------------------------------
+  // Po pobraniu statusu — jeśli user NIE zapisał preferencji, zaktualizuj
+  // openMode wg heurystyki bazującej na typie konta MS (msEmail).
+  // Gdy preferencja JEST w localStorage — szanujemy ją bez zmian.
+  // -------------------------------------------------------------------------
+  useEffect(() => {
+    if (hasStoredPref) return;
+    if (!status) return;
+    const heuristicMode = resolveEmailOpenMode(status.msEmail);
+    setOpenModeState(heuristicMode);
+  }, [status, hasStoredPref]);
+
+  // -------------------------------------------------------------------------
+  // Handler zmiany trybu — zapis do localStorage + lokalny state
+  // -------------------------------------------------------------------------
+  const handleOpenModeChange = useCallback((mode: EmailOpenMode) => {
+    setOpenModeState(mode);
+    setEmailOpenMode(mode);
+    setHasStoredPref(true);
+  }, []);
+
+  // -------------------------------------------------------------------------
   // Akcje
   // -------------------------------------------------------------------------
 
-  /** Połącz z Microsoft — redirect na backend endpoint, który buduje URL autoryzacyjny. */
-  const handleConnect = useCallback(() => {
-    // Pełny redirect (NIE fetch — backend zwraca 302 do Microsoft)
-    window.location.href = "/api/v1/ms-oauth/start";
-  }, []);
+  /** Połącz z Microsoft — pobierz authorize URL z backendu, potem nawiguj. */
+  const handleConnect = useCallback(async () => {
+    // Fetch z Bearer header (autoryzacja w API) → JSON { authorizeUrl } → navigation.
+    // NIE używamy window.location.href = "/api/v1/ms-oauth/start" bo navigation
+    // nie przesyłałaby tokena z localStorage → 401.
+    try {
+      const data = await api.get<{ authorizeUrl: string }>("/api/v1/ms-oauth/start");
+      if (data?.authorizeUrl) {
+        window.location.href = data.authorizeUrl;
+      } else {
+        toast.error("Błąd inicjowania połączenia z Microsoft.");
+      }
+    } catch (err) {
+      console.error("[EmailConnectionCard] handleConnect", err);
+      toast.error("Nie udało się rozpocząć połączenia z Microsoft.");
+    }
+  }, [api]);
 
   /** Rozłącz — wywoływane po potwierdzeniu w AlertDialog. */
   const handleDisconnectConfirm = useCallback(async () => {
@@ -145,6 +216,12 @@ export function EmailConnectionCard() {
 
   const isConnected = status?.connected === true;
   const msEmail = status?.msEmail ?? null;
+
+  // Aktualnie wybrana etykieta (do info "Domyślnie ustawiono X")
+  const currentModeLabel = useMemo(
+    () => OPEN_MODE_OPTIONS.find((o) => o.value === openMode)?.label ?? "",
+    [openMode],
+  );
 
   return (
     <>
@@ -237,6 +314,74 @@ export function EmailConnectionCard() {
                 <Mail className="h-4 w-4" />
                 Połącz z Microsoft
               </Button>
+            </div>
+          )}
+        </div>
+
+        {/* Sekcja: Sposób otwierania draftu (preferencja w localStorage)
+            Wyświetlana zawsze — niezależnie od stanu połączenia, bo tryb "desktop"
+            (pobieranie .eml) działa nawet bez konta Microsoft. */}
+        <div
+          data-testid="email-open-mode-section"
+          className="border-t border-slate-200 px-6 py-5 dark:border-slate-800"
+        >
+          <h3 className="text-sm font-semibold text-slate-900 dark:text-slate-100">
+            Sposób otwierania draftu
+          </h3>
+          <p className="mt-1 text-xs text-slate-500 dark:text-slate-400">
+            Wybierz, gdzie chcesz edytować wygenerowany draft maila. Preferencja
+            jest zapamiętywana w tej przeglądarce.
+          </p>
+
+          <fieldset className="mt-4 space-y-2" data-testid="email-open-mode-radios">
+            <legend className="sr-only">Sposób otwierania draftu emaila</legend>
+            {OPEN_MODE_OPTIONS.map((option) => {
+              const isSelected = openMode === option.value;
+              return (
+                <label
+                  key={option.value}
+                  data-testid={`email-open-mode-option-${option.value}`}
+                  className={
+                    "flex cursor-pointer items-start gap-3 rounded-md border px-3 py-2.5 text-sm transition-colors " +
+                    (isSelected
+                      ? "border-primary bg-primary/5 dark:border-primary dark:bg-primary/10"
+                      : "border-slate-200 hover:bg-slate-50 dark:border-slate-800 dark:hover:bg-slate-800/50")
+                  }
+                >
+                  <input
+                    type="radio"
+                    name="email-open-mode"
+                    value={option.value}
+                    checked={isSelected}
+                    onChange={() => handleOpenModeChange(option.value)}
+                    className="mt-0.5 h-4 w-4 cursor-pointer accent-primary"
+                    data-testid={`email-open-mode-input-${option.value}`}
+                  />
+                  <div className="flex-1">
+                    <span className="block font-medium text-slate-900 dark:text-slate-100">
+                      {option.label}
+                    </span>
+                    <span className="mt-0.5 block text-xs text-slate-500 dark:text-slate-400">
+                      {option.description}
+                    </span>
+                  </div>
+                </label>
+              );
+            })}
+          </fieldset>
+
+          {/* Info — domyślne ustawienie wg typu konta */}
+          {!hasStoredPref && (
+            <div
+              data-testid="email-open-mode-default-info"
+              className="mt-3 flex items-start gap-2 rounded-md bg-slate-50 px-3 py-2 text-xs text-slate-500 dark:bg-slate-800/50 dark:text-slate-400"
+            >
+              <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+              <p>
+                Domyślnie ustawiono <strong>{currentModeLabel}</strong> na
+                podstawie typu Twojego konta Microsoft. Możesz zmienić w dowolnym
+                momencie.
+              </p>
             </div>
           )}
         </div>

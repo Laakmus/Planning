@@ -85,6 +85,8 @@ beforeEach(() => {
 
   // Czyść search params między testami (relatywny URL, omija SecurityError)
   window.history.replaceState({}, "", "/settings/email");
+  // Czyść preferencję EmailOpenMode między testami (komponent czyta localStorage)
+  localStorage.clear();
 });
 
 // ---------------------------------------------------------------------------
@@ -171,8 +173,8 @@ describe("EmailConnectionCard — initial render", () => {
 });
 
 describe("EmailConnectionCard — connect button", () => {
-  it("clicking 'Połącz z Microsoft' redirects to /api/v1/ms-oauth/start", async () => {
-    // Arrange — zapisz oryginalny location, podmień href setter
+  it("clicking 'Połącz z Microsoft' fetches authorizeUrl and navigates", async () => {
+    // Arrange — mock api.get zwraca authorizeUrl, podmień href setter
     const user = userEvent.setup();
     const hrefSetter = vi.fn();
     const originalLocation = window.location;
@@ -189,10 +191,27 @@ describe("EmailConnectionCard — connect button", () => {
           return true;
         },
         get(target, prop) {
-          // Delegacja do oryginalnego location żeby search/pathname działały
           return Reflect.get(target, prop);
         },
       }),
+    });
+
+    // Mock: pierwszy api.get to status (disconnected), drugi to /start (authorizeUrl)
+    mockApiGet.mockImplementation((path: string) => {
+      if (path === "/api/v1/ms-oauth/status") {
+        return Promise.resolve({
+          connected: false,
+          msEmail: null,
+          expiresAt: null,
+          connectedAt: null,
+        });
+      }
+      if (path === "/api/v1/ms-oauth/start") {
+        return Promise.resolve({
+          authorizeUrl: "https://login.microsoftonline.com/test/authorize?x=1",
+        });
+      }
+      return Promise.resolve({});
     });
 
     try {
@@ -204,10 +223,14 @@ describe("EmailConnectionCard — connect button", () => {
       // Act
       await user.click(screen.getByTestId("email-connection-connect"));
 
-      // Assert
-      expect(hrefSetter).toHaveBeenCalledWith("/api/v1/ms-oauth/start");
+      // Assert — backend zostało wywołane + browser nawigowany na URL z response
+      await waitFor(() => {
+        expect(mockApiGet).toHaveBeenCalledWith("/api/v1/ms-oauth/start");
+        expect(hrefSetter).toHaveBeenCalledWith(
+          "https://login.microsoftonline.com/test/authorize?x=1"
+        );
+      });
     } finally {
-      // Cleanup — przywracamy oryginalny location
       Object.defineProperty(window, "location", {
         configurable: true,
         writable: true,
@@ -365,5 +388,133 @@ describe("EmailConnectionCard — query params from OAuth callback", () => {
         expect.stringContaining("some_unknown_code")
       );
     });
+  });
+});
+
+// ---------------------------------------------------------------------------
+// EmailOpenMode — radio buttons + persystencja w localStorage
+// ---------------------------------------------------------------------------
+
+describe("EmailConnectionCard — sposób otwierania draftu (EmailOpenMode)", () => {
+  it("renders three radio options (web/desktop/ask)", async () => {
+    // Act
+    render(<EmailConnectionCard />);
+
+    // Assert — sekcja widoczna od razu (po fetchu, dopóki nie loading)
+    await waitFor(() => {
+      expect(screen.getByTestId("email-open-mode-section")).toBeInTheDocument();
+    });
+    expect(screen.getByTestId("email-open-mode-input-web")).toBeInTheDocument();
+    expect(screen.getByTestId("email-open-mode-input-desktop")).toBeInTheDocument();
+    expect(screen.getByTestId("email-open-mode-input-ask")).toBeInTheDocument();
+  });
+
+  it("uses heuristic 'web' for personal MS account when no preference saved", async () => {
+    // Arrange — konto osobiste @outlook.com, brak preferencji w localStorage
+    mockApiGet.mockResolvedValue({
+      connected: true,
+      msEmail: "user@outlook.com",
+      expiresAt: "2027-01-01T00:00:00Z",
+      connectedAt: "2026-04-01T00:00:00Z",
+    });
+
+    // Act
+    render(<EmailConnectionCard />);
+
+    // Assert — radio "web" jest checked (heurystyka)
+    await waitFor(() => {
+      const webInput = screen.getByTestId(
+        "email-open-mode-input-web",
+      ) as HTMLInputElement;
+      expect(webInput.checked).toBe(true);
+    });
+    const desktopInput = screen.getByTestId(
+      "email-open-mode-input-desktop",
+    ) as HTMLInputElement;
+    expect(desktopInput.checked).toBe(false);
+    // Komunikat o domyślnym ustawieniu widoczny
+    expect(screen.getByTestId("email-open-mode-default-info")).toBeInTheDocument();
+  });
+
+  it("uses heuristic 'desktop' for corporate account when no preference saved", async () => {
+    // Arrange — konto firmowe, brak preferencji
+    mockApiGet.mockResolvedValue({
+      connected: true,
+      msEmail: "user@odylion.com",
+      expiresAt: "2027-01-01T00:00:00Z",
+      connectedAt: "2026-04-01T00:00:00Z",
+    });
+
+    // Act
+    render(<EmailConnectionCard />);
+
+    // Assert
+    await waitFor(() => {
+      const desktopInput = screen.getByTestId(
+        "email-open-mode-input-desktop",
+      ) as HTMLInputElement;
+      expect(desktopInput.checked).toBe(true);
+    });
+  });
+
+  it("respects stored preference (overrides heuristics)", async () => {
+    // Arrange — zapisana preferencja "ask", konto firmowe (heurystyka chciałaby desktop)
+    localStorage.setItem("planning:email-open-mode", "ask");
+    mockApiGet.mockResolvedValue({
+      connected: true,
+      msEmail: "user@odylion.com",
+      expiresAt: "2027-01-01T00:00:00Z",
+      connectedAt: "2026-04-01T00:00:00Z",
+    });
+
+    // Act
+    render(<EmailConnectionCard />);
+
+    // Assert — ask jest checked, info "Domyślnie ustawiono" NIE pojawia się
+    await waitFor(() => {
+      const askInput = screen.getByTestId(
+        "email-open-mode-input-ask",
+      ) as HTMLInputElement;
+      expect(askInput.checked).toBe(true);
+    });
+    expect(
+      screen.queryByTestId("email-open-mode-default-info"),
+    ).not.toBeInTheDocument();
+  });
+
+  it("clicking a radio saves the choice to localStorage", async () => {
+    // Arrange
+    const user = userEvent.setup();
+    render(<EmailConnectionCard />);
+    await waitFor(() => {
+      expect(screen.getByTestId("email-open-mode-input-desktop")).toBeInTheDocument();
+    });
+
+    // Act — klik na "desktop"
+    await user.click(screen.getByTestId("email-open-mode-input-desktop"));
+
+    // Assert — localStorage zaktualizowany + radio checked
+    expect(localStorage.getItem("planning:email-open-mode")).toBe("desktop");
+    const desktopInput = screen.getByTestId(
+      "email-open-mode-input-desktop",
+    ) as HTMLInputElement;
+    expect(desktopInput.checked).toBe(true);
+  });
+
+  it("default info disappears after user makes explicit choice", async () => {
+    // Arrange — brak preferencji → info widoczne
+    const user = userEvent.setup();
+    render(<EmailConnectionCard />);
+    await waitFor(() => {
+      expect(screen.getByTestId("email-open-mode-default-info")).toBeInTheDocument();
+    });
+
+    // Act — user klika dowolny radio (świadomy wybór)
+    await user.click(screen.getByTestId("email-open-mode-input-ask"));
+
+    // Assert — info znika
+    expect(
+      screen.queryByTestId("email-open-mode-default-info"),
+    ).not.toBeInTheDocument();
   });
 });

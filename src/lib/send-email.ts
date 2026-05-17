@@ -16,7 +16,12 @@ import { toast } from "sonner";
 
 import { ApiError } from "@/lib/api-client";
 import type { ApiClient } from "@/lib/api-client";
-import type { MsOAuthStatusDto, PrepareEmailGraphResponseDto } from "@/types";
+import { resolveEmailOpenMode } from "@/lib/email-open-mode";
+import type {
+  EmailOpenMode,
+  MsOAuthStatusDto,
+  PrepareEmailGraphResponseDto,
+} from "@/types";
 
 // ---------------------------------------------------------------------------
 // Cache statusu połączenia (sessionStorage, TTL 60s)
@@ -101,9 +106,15 @@ interface SendEmailOptions {
 }
 
 /**
- * Wysyła email z PDF:
- *   1) Graph API draft (backend tworzy draft w Outlook usera) — jeśli MS połączony,
- *   2) Fallback .eml (blob download) — gdy brak połączenia / błąd 412 / inny błąd Graph.
+ * Wysyła email z PDF — respektuje preferencję `EmailOpenMode` z localStorage:
+ *
+ *   • "web"     → Outlook Web (Graph draft + open webLink). Gdy MS niepołączony
+ *                 lub Graph zwróci błąd → fallback na .eml.
+ *   • "desktop" → pomija Graph, od razu .eml fallback (Outlook desktop).
+ *   • "ask"     → pyta usera (window.confirm) — wybór per wywołanie.
+ *
+ * Brak zapisanej preferencji → heurystyka po typie konta MS
+ * (`@outlook.com`/`@hotmail.com` → "web", reszta → "desktop").
  */
 export async function sendEmailForOrder({
   orderId,
@@ -112,10 +123,26 @@ export async function sendEmailForOrder({
   onSuccess,
   onValidationError,
 }: SendEmailOptions): Promise<void> {
-  // Sprawdź status połączenia z Microsoft (cache 60s)
+  // Pobierz status połączenia (cache 60s) — potrzebny do heurystyki + decyzji o flow
   const status = await getMsOAuthStatus(api);
-  const useGraphFlow = status?.connected === true;
+  const msEmail = status?.msEmail ?? null;
 
+  // Określ tryb otwierania (preferencja usera lub heurystyka)
+  let mode: EmailOpenMode = resolveEmailOpenMode(msEmail);
+
+  // Tryb "ask" — pytaj per wysyłka, ostatecznie web/desktop
+  if (mode === "ask") {
+    mode = askUserForOpenMode();
+  }
+
+  // Tryb "desktop" — pomiń Graph, od razu .eml
+  if (mode === "desktop") {
+    await runEmlFallback({ orderId, api, emlFileName, onSuccess, onValidationError });
+    return;
+  }
+
+  // Tryb "web" — spróbuj Graph (jeśli połączone), w razie błędu fallback na .eml
+  const useGraphFlow = status?.connected === true;
   if (useGraphFlow) {
     const ok = await tryGraphFlow({ orderId, api, onSuccess, onValidationError });
     if (ok) return;
@@ -123,6 +150,34 @@ export async function sendEmailForOrder({
   }
 
   await runEmlFallback({ orderId, api, emlFileName, onSuccess, onValidationError });
+}
+
+// ---------------------------------------------------------------------------
+// "Ask" mode — minimalny prompt usera (window.confirm)
+// ---------------------------------------------------------------------------
+
+/**
+ * Pyta usera w trybie "ask" jak otworzyć draft.
+ *
+ * Decyzja świadoma: zamiast budować osobny komponent dialogu (wymagałby zmiany
+ * sygnatury hooków, by przepiąć callback / portal), używamy synchronicznego
+ * `window.confirm`. To wystarczające dla MVP — user wybiera szybko, bez UI overhead.
+ *
+ * Zwracane wartości:
+ *   - "web"     → confirm = true (OK)
+ *   - "desktop" → confirm = false (Anuluj)
+ *
+ * Bezpieczne na SSR (jeśli `window` brak — domyślnie "web").
+ */
+function askUserForOpenMode(): "web" | "desktop" {
+  if (typeof window === "undefined") return "web";
+  const message =
+    "Jak chcesz otworzyć draft maila?\n\n" +
+    "OK = Outlook Web (w przeglądarce)\n" +
+    "Anuluj = Outlook Desktop (pobierz plik .eml)";
+  // eslint-disable-next-line no-alert
+  const wantsWeb = window.confirm(message);
+  return wantsWeb ? "web" : "desktop";
 }
 
 // ---------------------------------------------------------------------------

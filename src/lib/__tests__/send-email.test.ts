@@ -35,6 +35,7 @@ import {
   invalidateMsOAuthStatusCache,
   sendEmailForOrder,
 } from "../send-email";
+import { setEmailOpenMode } from "../email-open-mode";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -104,6 +105,8 @@ beforeEach(() => {
   // Wyczyść cache statusu i wszystkie spy/mocki DOM
   invalidateMsOAuthStatusCache();
   sessionStorage.clear();
+  // localStorage trzyma preferencję EmailOpenMode — czyść, by default = heurystyka
+  localStorage.clear();
 });
 
 // ---------------------------------------------------------------------------
@@ -150,7 +153,8 @@ describe("sendEmailForOrder — connected=false", () => {
 
 describe("sendEmailForOrder — connected=true (Graph happy path)", () => {
   it("opens webLink in new tab when Graph flow succeeds", async () => {
-    // Arrange
+    // Arrange — explicit preferencja "web" (niezależna od heurystyki dla u@c.com)
+    setEmailOpenMode("web");
     const dom = setupDomMocks();
     const api = buildApiClient({
       getStatus: async () => ({
@@ -195,7 +199,8 @@ describe("sendEmailForOrder — connected=true (Graph happy path)", () => {
 
 describe("sendEmailForOrder — Graph returns 412", () => {
   it("falls back to .eml when Graph returns 412 MS_NOT_CONNECTED", async () => {
-    // Arrange
+    // Arrange — explicit "web" by zmusić wywołanie Graph (heurystyka u@c.com = desktop)
+    setEmailOpenMode("web");
     setupDomMocks();
     const apiError = new ApiError({
       statusCode: 412,
@@ -240,7 +245,8 @@ describe("sendEmailForOrder — Graph returns 412", () => {
 
 describe("sendEmailForOrder — Graph returns 500", () => {
   it("falls back to .eml + shows toast.message when Graph fails (500)", async () => {
-    // Arrange
+    // Arrange — explicit "web" by zmusić wywołanie Graph
+    setEmailOpenMode("web");
     setupDomMocks();
     const apiError = new ApiError({
       statusCode: 500,
@@ -281,7 +287,8 @@ describe("sendEmailForOrder — Graph returns 500", () => {
 
 describe("sendEmailForOrder — 422 validation error", () => {
   it("calls onValidationError and does NOT fallback to .eml (Graph path)", async () => {
-    // Arrange
+    // Arrange — explicit "web" by przejść przez Graph (heurystyka u@c.com = desktop)
+    setEmailOpenMode("web");
     setupDomMocks();
     const apiError = new ApiError({
       statusCode: 422,
@@ -419,5 +426,202 @@ describe("status cache", () => {
       (c: unknown[]) => c[0] === "/api/v1/ms-oauth/status"
     );
     expect(statusCalls).toHaveLength(2);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// EmailOpenMode — preferencja sposobu otwierania draftu (localStorage)
+// ---------------------------------------------------------------------------
+
+describe("sendEmailForOrder — EmailOpenMode preferences", () => {
+  it("mode=desktop: skips Graph flow even when connected, uses .eml", async () => {
+    // Arrange — user wybrał "desktop" w ustawieniach, MS połączony
+    setupDomMocks();
+    setEmailOpenMode("desktop");
+    const api = buildApiClient({
+      getStatus: async () => ({
+        connected: true,
+        msEmail: "u@contoso.com",
+        expiresAt: "2027-01-01T00:00:00Z",
+        connectedAt: "2026-04-01T00:00:00Z",
+      }),
+    });
+    const onSuccess = vi.fn();
+
+    // Act
+    await sendEmailForOrder({
+      orderId: "o-desk",
+      api,
+      onSuccess,
+      onValidationError: vi.fn(),
+    });
+
+    // Assert — Graph POMINIĘTY mimo connected=true
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.postRaw).toHaveBeenCalledWith(
+      "/api/v1/orders/o-desk/prepare-email",
+      {}
+    );
+    expect(onSuccess).toHaveBeenCalledOnce();
+  });
+
+  it("mode=web (explicit): uses Graph flow when connected", async () => {
+    // Arrange — user wybrał "web"
+    const dom = setupDomMocks();
+    setEmailOpenMode("web");
+    const api = buildApiClient({
+      getStatus: async () => ({
+        connected: true,
+        msEmail: "u@contoso.com",
+        expiresAt: "2027-01-01T00:00:00Z",
+        connectedAt: "2026-04-01T00:00:00Z",
+      }),
+      postGraph: async () => ({
+        draftId: "D-WEB",
+        webLink: "https://outlook.office.com/web-link",
+      }),
+    });
+    const onSuccess = vi.fn();
+
+    // Act
+    await sendEmailForOrder({
+      orderId: "o-web",
+      api,
+      onSuccess,
+      onValidationError: vi.fn(),
+    });
+
+    // Assert — Graph zostało wywołane, postRaw NIE
+    expect(api.post).toHaveBeenCalledWith(
+      "/api/v1/orders/o-web/prepare-email-graph",
+      {}
+    );
+    expect(api.postRaw).not.toHaveBeenCalled();
+    expect(dom.opened.location.href).toBe("https://outlook.office.com/web-link");
+  });
+
+  it("mode=ask + user picks OK (web): uses Graph flow", async () => {
+    // Arrange — user wybrał "ask", w dialogu klika OK
+    const dom = setupDomMocks();
+    setEmailOpenMode("ask");
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(true);
+    const api = buildApiClient({
+      getStatus: async () => ({
+        connected: true,
+        msEmail: "u@contoso.com",
+        expiresAt: "2027-01-01T00:00:00Z",
+        connectedAt: "2026-04-01T00:00:00Z",
+      }),
+      postGraph: async () => ({
+        draftId: "D-ASK-WEB",
+        webLink: "https://outlook.office.com/ask-web",
+      }),
+    });
+
+    // Act
+    await sendEmailForOrder({
+      orderId: "o-ask-w",
+      api,
+      onSuccess: vi.fn(),
+      onValidationError: vi.fn(),
+    });
+
+    // Assert
+    expect(confirmSpy).toHaveBeenCalledOnce();
+    expect(api.post).toHaveBeenCalledOnce(); // Graph flow
+    expect(dom.opened.location.href).toBe("https://outlook.office.com/ask-web");
+
+    confirmSpy.mockRestore();
+  });
+
+  it("mode=ask + user picks Cancel (desktop): uses .eml flow", async () => {
+    // Arrange — user wybrał "ask", w dialogu klika Anuluj
+    setupDomMocks();
+    setEmailOpenMode("ask");
+    const confirmSpy = vi.spyOn(window, "confirm").mockReturnValue(false);
+    const api = buildApiClient({
+      getStatus: async () => ({
+        connected: true,
+        msEmail: "u@contoso.com",
+        expiresAt: "2027-01-01T00:00:00Z",
+        connectedAt: "2026-04-01T00:00:00Z",
+      }),
+    });
+    const onSuccess = vi.fn();
+
+    // Act
+    await sendEmailForOrder({
+      orderId: "o-ask-d",
+      api,
+      onSuccess,
+      onValidationError: vi.fn(),
+    });
+
+    // Assert — Graph POMINIĘTY, .eml wywołane
+    expect(confirmSpy).toHaveBeenCalledOnce();
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.postRaw).toHaveBeenCalledWith(
+      "/api/v1/orders/o-ask-d/prepare-email",
+      {}
+    );
+    expect(onSuccess).toHaveBeenCalledOnce();
+
+    confirmSpy.mockRestore();
+  });
+
+  it("no preference + corporate msEmail: heuristic = desktop (.eml flow)", async () => {
+    // Arrange — brak preferencji, konto firmowe → heurystyka "desktop"
+    setupDomMocks();
+    // localStorage czysty (po beforeEach) — wymusza heurystykę
+    const api = buildApiClient({
+      getStatus: async () => ({
+        connected: true,
+        msEmail: "user@odylion.com", // domena firmowa → desktop
+        expiresAt: "2027-01-01T00:00:00Z",
+        connectedAt: "2026-04-01T00:00:00Z",
+      }),
+    });
+    const onSuccess = vi.fn();
+
+    // Act
+    await sendEmailForOrder({
+      orderId: "o-heur-d",
+      api,
+      onSuccess,
+      onValidationError: vi.fn(),
+    });
+
+    // Assert — Graph POMINIĘTY mimo connected=true (heurystyka chciała desktop)
+    expect(api.post).not.toHaveBeenCalled();
+    expect(api.postRaw).toHaveBeenCalled();
+  });
+
+  it("no preference + personal msEmail: heuristic = web (Graph flow)", async () => {
+    // Arrange — brak preferencji, @outlook.com → heurystyka "web"
+    const dom = setupDomMocks();
+    const api = buildApiClient({
+      getStatus: async () => ({
+        connected: true,
+        msEmail: "user@outlook.com",
+        expiresAt: "2027-01-01T00:00:00Z",
+        connectedAt: "2026-04-01T00:00:00Z",
+      }),
+      postGraph: async () => ({
+        draftId: "D-PERS",
+        webLink: "https://outlook.office.com/pers",
+      }),
+    });
+
+    // Act
+    await sendEmailForOrder({
+      orderId: "o-heur-w",
+      api,
+      onSuccess: vi.fn(),
+      onValidationError: vi.fn(),
+    });
+
+    // Assert — Graph wywołane (web mode)
+    expect(api.post).toHaveBeenCalled();
+    expect(dom.opened.location.href).toBe("https://outlook.office.com/pers");
   });
 });

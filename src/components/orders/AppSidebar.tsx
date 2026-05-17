@@ -57,23 +57,43 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
         </div>
       </SidebarHeader>
 
-      {/* Nawigacja: 3 widoki zleceń */}
+      {/* Nawigacja: 3 widoki zleceń.
+          Gdy `activeView !== null` (jesteśmy w OrdersApp) — kliknięcie wywołuje `onViewChange`.
+          Gdy `activeView === null` (jesteśmy poza /orders, np. /warehouse lub
+          /settings/email) — renderujemy items jako `<a href="/orders?view=...">`,
+          bo zwykły onClick byłby no-opem (OrdersApp odczyta query param przy mountcie). */}
       <SidebarContent>
         <SidebarGroup>
           <SidebarGroupLabel>Widoki</SidebarGroupLabel>
           <SidebarGroupContent>
             <SidebarMenu>
-              {NAV_ITEMS.map((item) => (
-                <SidebarMenuItem key={item.value}>
-                  <SidebarMenuButton
-                    isActive={activeView === item.value}
-                    onClick={() => onViewChange(item.value)}
-                  >
-                    <item.icon className="w-4 h-4" />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </SidebarMenuItem>
-              ))}
+              {NAV_ITEMS.map((item) => {
+                // Wewnątrz OrdersApp — switch lokalnego state przez onViewChange
+                if (activeView !== null) {
+                  return (
+                    <SidebarMenuItem key={item.value}>
+                      <SidebarMenuButton
+                        isActive={activeView === item.value}
+                        onClick={() => onViewChange(item.value)}
+                      >
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.label}</span>
+                      </SidebarMenuButton>
+                    </SidebarMenuItem>
+                  );
+                }
+                // Poza OrdersApp — link nawigacyjny do /orders?view=<value>
+                return (
+                  <SidebarMenuItem key={item.value}>
+                    <SidebarMenuButton asChild>
+                      <a href={`/orders?view=${item.value}`}>
+                        <item.icon className="w-4 h-4" />
+                        <span>{item.label}</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                );
+              })}
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
