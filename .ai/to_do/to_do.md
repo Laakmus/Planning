@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-04-14 (sesja 59: rozpoczęcie migracji auth na username+hasło + panel admina + Graph draft)
+> Ostatnia aktualizacja: 2026-05-17 (sesja 60: AUTH-MIG B3+B4 zakończone — Microsoft Graph OAuth backend + frontend EmailConnectionCard)
 
 ---
 
@@ -13,10 +13,10 @@
   - [x] **A2** — DB migracja (`username`, `is_active`, invite, RPC `resolve_username_to_email`, 4 RLS policies ADMIN) + seed (username='admin') + regeneracja `database.types.ts`
   - [ ] **A3a** — Backend: `/api/v1/auth/login`, `/auth/activate`, `/admin/users/*`, services (`user-admin`, `invite-token`)
   - [ ] **A3b** — Frontend: `LoginCard` (username), `/activate`, sidebar Administracja, `UsersPanel` + dialogi
-  - [ ] **B1** — USER: rejestracja aplikacji w Entra (MS_CLIENT_ID/SECRET/TENANT)
+  - [x] **B1** — USER: rejestracja aplikacji w Entra (gearbestbasegmail.onmicrosoft.com, multi-tenant + personal accounts, redirect `:4323/api/v1/ms-oauth/callback`)
   - [x] **B2** — DB tabela `ms_oauth_tokens` (pgcrypto) + helpers `encrypt_ms_token`/`decrypt_ms_token`
-  - [ ] **B3** — Backend OAuth + Graph draft (`ms-graph.service`, `prepare-email-graph`)
-  - [ ] **B4** — Frontend `EmailConnectionCard` + rozszerzenie `send-email.ts` (fallback `.eml`)
+  - [x] **B3** — Backend OAuth + Graph draft (`ms-graph.service`, 5 endpointów + `prepare-email-graph`) — commit `e965200`
+  - [x] **B4** — Frontend `EmailConnectionCard` + rozszerzenie `send-email.ts` (fallback `.eml`) + usunięcie MSAL legacy — commit `c960067`
   - [x] **C** — E2E + unit testy (31 nowych unit + 10 nowych E2E; `AuthContext.test.tsx` przepisany, 0 skipped)
   - [x] **D** — Reviewer audit: 0 CRITICAL, 0 HIGH, 1 MEDIUM (kosmetyczny), 2 LOW. Brak blockerów merge.
 - **Decyzje:** TTL invite = 7 dni, deaktywacja = wylogowanie sesji, MS tokeny = pgcrypto
@@ -42,6 +42,18 @@
 ---
 
 ## Do zrobienia — MEDIUM
+
+### M-14. AUTH-MIG B3/B4 follow-up — docs sync + drobne refaktoringi (z reviewer audit 2026-05-17)
+- **Kategoria:** docs + maintainability
+- **Pliki:** `.ai/api-plan.md` §2.1b, `.ai/ui-plan.md` §2.8, `src/lib/services/ms-graph.service.ts`
+- **Opis:**
+  1. api-plan.md §2.1b — DTO `MsConnectionStatusDto { connected, msEmail, connectedAt }` → `MsOAuthStatusDto { connected, msEmail, expiresAt, connectedAt }` (doszło `expiresAt`)
+  2. api-plan.md §2.1b — pole odpowiedzi `prepare-email-graph` `messageId` → `draftId`
+  3. api-plan.md §2.1b — udokumentować status `412 Precondition Failed` z `MS_NOT_CONNECTED` (frontend fallback na .eml)
+  4. ui-plan.md §2.8 — strona `/settings/email` jest oznaczona jako planowana; po B4 jest zaimplementowana (EmailSettingsApp + EmailConnectionCard) → zmienić status na DONE
+  5. `ms-graph.service.ts:367` — `as unknown as string` na bytea kolumnach (cosmetics, można rozdzielić typ)
+  6. `oauth-state.ts` — w `auth-migration-plan.md` dodać notatkę "Known limitation: single-instance (in-memory Map). Multi-instance wymaga Redis/DB"
+- **Effort:** S (1-2h)
 
 ### M-13. CI/CD deployment pipeline
 - **Kategoria:** architecture
