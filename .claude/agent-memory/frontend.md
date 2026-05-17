@@ -1,5 +1,56 @@
 # Frontend Agent — Pamięć
 
+## Sesja B4 (2026-05-17) — AUTH-MIG Phase B4: EmailConnectionCard + Graph backend flow
+
+### Wykonane
+- NEW `src/components/settings/EmailConnectionCard.tsx` — karta zarządzania połączeniem z M365 (status, connect, disconnect). Status z `GET /api/v1/ms-oauth/status`. Connect → `window.location.href = "/api/v1/ms-oauth/start"` (redirect 302 backend). Disconnect → AlertDialog → `POST /api/v1/ms-oauth/disconnect` (204). Obsługa query params `?ms_connected=1` (toast success) i `?ms_error=<code>` (toast error z `describeMsError()`).
+- NEW `src/components/settings/EmailSettingsApp.tsx` — wyspa React /settings/email. AppProviders + SidebarProvider + AppSidebar (activeView=null) + SidebarInset z headerem "Ustawienia / Email".
+- NEW `src/pages/settings/email.astro` — Astro page z Layout + `<EmailSettingsApp client:load />`.
+- MOD `src/components/orders/AppSidebar.tsx` — dodano sekcję "Ustawienia" z item "Email" (`data-testid="sidebar-settings-email"`, link `/settings/email`, active gdy `pathname.startsWith("/settings/email")`).
+- MOD `src/lib/send-email.ts` — całkowity rewrite: nowy flow Graph przez backend (cache statusu 60s w sessionStorage, `POST /prepare-email-graph` → `webLink` open new tab, fallback .eml przy 412/błędzie). Export `invalidateMsOAuthStatusCache()` do reset cache po connect/disconnect.
+- NEW `src/types/ms-oauth.types.ts` (skopiowany z commit 513a9b2 który nie był w worktree) — `MsOAuthStatusDto`, `PrepareEmailGraphResponseDto`, `MsOAuthTokenRecord`, `MsTokenResponse`, `MsGraphMeResponse`.
+- MOD `src/types/index.ts` — `export * from "./ms-oauth.types"`.
+
+### Usunięte legacy MSAL
+- DEL `src/contexts/MicrosoftAuthContext.tsx`
+- DEL `src/lib/microsoft-auth.ts` (singleton MSAL + scopes Mail.ReadWrite)
+- DEL `src/lib/microsoft-auth-config.ts` (isMsalConfigured)
+- DEL `src/lib/graph-mail.ts` (createGraphDraft — Graph API call z frontendu)
+- MOD `src/components/providers/AppProviders.tsx` — usunięto `LazyMicrosoftAuthProvider` (z Suspense + isMsalConfigured); zostaje stack: Theme→ErrorBoundary→Auth→Dictionary→Tooltip
+- MOD `src/components/orders/OrdersApp.tsx` — usunięto komentarz o MicrosoftAuthProvider
+- MOD `src/components/orders/OrdersPage.tsx` — usunięto import `useMicrosoftAuth` + użycie `microsoft`
+- MOD `src/hooks/useOrderActions.ts` — usunięto `MicrosoftAuth` interface i prop `microsoft` z opcji + przekazywanie
+- MOD `src/hooks/useOrderDrawer.ts` — usunięto import `useMicrosoftAuth` + użycie `microsoft`
+- MOD `package.json` — usunięto dep `@azure/msal-browser`
+- MOD `.env.example` + `.env.production.example` — usunięto `PUBLIC_MICROSOFT_CLIENT_ID`/`PUBLIC_MICROSOFT_TENANT_ID`, dodano placeholdery dla server-side `MICROSOFT_CLIENT_ID`/`MICROSOFT_TENANT_ID`/`MICROSOFT_CLIENT_SECRET`/`APP_ENCRYPTION_KEY` z komentarzem o redirect URI
+
+### Nie zmodyfikowane (poza zakresem frontend)
+- `src/lib/validators/order.validator.ts` — pole `outputFormat` w `prepareEmailSchema` ZOSTAJE: usunięcie wymaga skoordynowanej zmiany w `src/lib/services/order-misc.service.ts` (linia 369: `if (_params.outputFormat === "pdf-base64")`). To domena types/backend agenta. Mój nowy flow wysyła pusty body `{}`, więc default `"eml"` zadziała.
+- `src/pages/api/v1/orders/[orderId]/prepare-email.ts` — endpoint nadal zwraca .eml dla fallbacku (backend nie modyfikowany — to domena agent Backend / B3).
+- `src/components/warehouse/ReportActions.tsx` — używa `outputFormat: "eml"` w `prepare-email` warehouse → nie dotyczy AUTH-MIG.
+
+### Weryfikacja
+- `npx tsc --noEmit` → 0 errors
+- `npx astro build` → ✓ (EmailSettingsApp.BTy9EZGX.js 7.70 kB / gzip 2.73 kB; brak chunków `msal` w `dist/client/_astro/`)
+- `npx vitest run` (lib + hooks + components + contexts) → 311 tests passed (17 plików)
+- `useOrderActions.test.ts` (23 testy) — przeszedł BEZ zmian: stary test handleSendEmail polega tylko na `postRaw`, a w nowym flow `api.get("/ms-oauth/status")` zwraca undefined → fallback .eml → `postRaw` wciąż wywoływane
+
+### data-testid dla E2E (faza C)
+- Sidebar: `sidebar-settings-email`
+- App: `email-settings-app`
+- Karta: `email-connection-card`, `email-connection-loading`, `email-connection-connected`, `email-connection-disconnected`, `email-connection-email`
+- Przyciski: `email-connection-connect`, `email-connection-disconnect`
+- Dialog rozłączenia: `email-connection-disconnect-dialog`, `email-connection-disconnect-confirm`
+
+### Learningi
+- **`window.location.href` zamiast `fetch`** dla OAuth start endpoint: backend zwraca 302 do Microsoft, fetch nie wykona top-level redirect. Pełna nawigacja zachowuje też cookies w prawidłowej kolejności.
+- **Popup blocker workaround**: `window.open("about:blank", "_blank")` MUSI być wywołane synchronicznie z gestu usera (przed async call). Dopiero potem `outlookTab.location.href = webLink`.
+- **sessionStorage cache TTL** dla `/ms-oauth/status`: 60s. Klucz `ms-oauth-status-cache`. Reset przez `invalidateMsOAuthStatusCache()` po connect/disconnect (i przy 412 fallback). Eksport publiczny dla EmailConnectionCard.
+- **412 Precondition Failed** w `prepare-email-graph` → silent fallback na .eml (bez toastu). 500/network → toast info "Microsoft Graph niedostępny" + fallback .eml.
+- **AppSidebar `activeView: ViewGroup | null`** — null jest wspierany od sesji A3b-2. Dla /settings/email przekazuję null + no-op onViewChange.
+- **AlertDialogAction `e.preventDefault()`** dla pokazania spinnera przed manualnym `setShowDialog(false)` po sukcesie (wzorzec z A3b-2).
+- **Worktree base commit issue**: worktree został utworzony z commita 5fd519a, ale typy `ms-oauth.types.ts` są w nowszym commicie 513a9b2. Skopiowałem zawartość pliku przez `git cat-file -p 513a9b2:src/types/ms-oauth.types.ts > src/types/ms-oauth.types.ts` — orkiestrator przy mergu otrzyma identyczną treść (no-op konflikt) lub przerodzi się w czysty merge.
+
 ## Sesja A3b-2 (2026-04-14) — Panel admina użytkowników
 
 ### Wykonane

@@ -9,7 +9,6 @@ import { toast } from "sonner";
 import { ApiError } from "@/lib/api-client";
 import { useAuth } from "@/contexts/AuthContext";
 import { useDictionaries } from "@/contexts/DictionaryContext";
-import { useMicrosoftAuth } from "@/contexts/MicrosoftAuthContext";
 import { sendEmailForOrder } from "@/lib/send-email";
 import { STATUS_NAMES } from "@/lib/view-models";
 import { mapDetailToFormData } from "@/lib/form-mappers";
@@ -184,7 +183,6 @@ export function useOrderDrawer({
   onShowHistory,
 }: UseOrderDrawerOptions): UseOrderDrawerReturn {
   const { user, api } = useAuth();
-  const microsoft = useMicrosoftAuth();
 
   const [detail, setDetail] = useState<OrderDetailResponseDto | null>(null);
   const [isLoading, setIsLoading] = useState(false);
@@ -618,7 +616,6 @@ export function useOrderDrawer({
       await sendEmailForOrder({
         orderId,
         api,
-        microsoft,
         emlFileName: emlName,
         onSuccess: () => onOrderUpdated(),
         onValidationError: (fields) => setEmailValidationErrors(fields),
@@ -626,7 +623,7 @@ export function useOrderDrawer({
     } finally {
       setIsSendingEmail(false);
     }
-  }, [orderId, detail, api, onOrderUpdated, microsoft, isSendingEmail]);
+  }, [orderId, detail, api, onOrderUpdated, isSendingEmail]);
 
   // ---------------------------------------------------------------------------
   // Wartości obliczane

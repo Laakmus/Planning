@@ -1,0 +1,16 @@
+---
+/**
+ * Strona ustawień e-mail — zarządzanie połączeniem z Microsoft 365 (Outlook).
+ *
+ * AUTH-MIG B4 (2026-05-17):
+ *   Renderuje wyspę React `<EmailSettingsApp client:load />` w ramach
+ *   standardowego Layoutu. Dostęp wymaga zalogowanego usera — komponent
+ *   redirectuje na `/` jeśli brak sesji (middleware także zabezpiecza route).
+ */
+import Layout from "../../layouts/Layout.astro";
+import EmailSettingsApp from "../../components/settings/EmailSettingsApp";
+---
+
+<Layout title="Ustawienia — Email — System Zleceń Transportowych">
+  <EmailSettingsApp client:load />
+</Layout>

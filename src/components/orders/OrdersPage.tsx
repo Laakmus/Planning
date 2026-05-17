@@ -20,7 +20,6 @@ import {
 } from "@/components/ui/alert-dialog";
 import { ErrorBoundary } from "@/components/ui/ErrorBoundary";
 import { useAuth } from "@/contexts/AuthContext";
-import { useMicrosoftAuth } from "@/contexts/MicrosoftAuthContext";
 import { useOrders } from "@/hooks/useOrders";
 import { useOrderActions } from "@/hooks/useOrderActions";
 import { DEFAULT_FILTERS, hasActiveFilters } from "@/lib/view-models";
@@ -44,7 +43,6 @@ interface OrdersPageProps {
 
 export function OrdersPage({ activeView }: OrdersPageProps) {
   const { user, api } = useAuth();
-  const microsoft = useMicrosoftAuth();
 
   // Stan filtrów i paginacji
   const [filters, setFilters] = useState<OrderListFilters>({
@@ -100,7 +98,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
     handleDuplicateConfirm,
     emailValidationErrors,
     clearEmailValidationErrors,
-  } = useOrderActions({ api, user, refetch, silentRefetch, updateOrderLocally, tableScrollRef, microsoft });
+  } = useOrderActions({ api, user, refetch, silentRefetch, updateOrderLocally, tableScrollRef });
 
   // Stan pola powodu reklamacji w dialogu zmiany statusu
   const [complaintReasonInput, setComplaintReasonInput] = useState("");

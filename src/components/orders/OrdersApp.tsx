@@ -7,13 +7,12 @@
  * Struktura komponentów:
  *   OrdersApp
  *   └── AppProviders (ThemeProvider → ErrorBoundary → AuthProvider → DictionaryProvider → TooltipProvider)
- *       └── MicrosoftAuthProvider
- *           └── SidebarProvider
- *               ├── AppSidebar (nawigacja, sync, użytkownik)
- *               └── SidebarInset
- *                   ├── header (SidebarTrigger + tytuł widoku)
- *                   ├── OrdersPage (filtry, tabela, stopka)
- *                   └── Toaster
+ *       └── SidebarProvider
+ *           ├── AppSidebar (nawigacja, sync, użytkownik)
+ *           └── SidebarInset
+ *               ├── header (SidebarTrigger + tytuł widoku)
+ *               ├── OrdersPage (filtry, tabela, stopka)
+ *               └── Toaster
  */
 
 import { useEffect, useRef, useState } from "react";

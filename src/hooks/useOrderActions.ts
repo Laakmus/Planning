@@ -18,11 +18,6 @@ import type {
   OrderListItemDto,
 } from "@/types";
 
-interface MicrosoftAuth {
-  isConfigured: boolean;
-  getToken: () => Promise<string>;
-}
-
 interface UseOrderActionsOptions {
   api: ApiClient;
   user: AuthMeDto | null;
@@ -30,7 +25,6 @@ interface UseOrderActionsOptions {
   silentRefetch: () => void | Promise<void>;
   updateOrderLocally: (orderId: string, patch: Partial<OrderListItemDto>) => void;
   tableScrollRef: React.RefObject<HTMLDivElement | null>;
-  microsoft?: MicrosoftAuth;
 }
 
 /** Pending zmiana statusu — czeka na potwierdzenie użytkownika */
@@ -92,7 +86,6 @@ export function useOrderActions({
   silentRefetch,
   updateOrderLocally,
   tableScrollRef,
-  microsoft,
 }: UseOrderActionsOptions): UseOrderActionsReturn {
   // Stan tworzenia nowego zlecenia (blokada przycisku + spinner)
   const [isCreatingOrder, setIsCreatingOrder] = useState(false);
@@ -160,12 +153,11 @@ export function useOrderActions({
       await sendEmailForOrder({
         orderId,
         api,
-        microsoft,
         onSuccess: () => silentRefetch(),
         onValidationError: (fields) => setEmailValidationErrors(fields),
       });
     },
-    [api, silentRefetch, microsoft]
+    [api, silentRefetch]
   );
 
   // Zmiana statusu — request otwiera dialog, confirm wysyła POST
