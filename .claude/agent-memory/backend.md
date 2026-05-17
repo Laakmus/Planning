@@ -1,5 +1,55 @@
 # Backend Agent — Pamięć
 
+## Sesja 51 (2026-05-17) — AUTH-MIG B3: Microsoft Graph OAuth backend (WYKONANE)
+
+### Wykonane pliki (8)
+- **NEW** `src/lib/oauth-state.ts` (~125 linii) — in-memory store dla state + PKCE codeVerifier, TTL 5 min, cleanup setInterval(unref). Funkcje: `createOAuthState`, `consumeOAuthState`, helpery testowe `__resetOAuthStateStore` / `__getOAuthStateStoreSize`. PKCE S256 (sha256 → base64url).
+- **NEW** `src/lib/services/ms-graph.service.ts` (~430 linii) — główny service Microsoft Graph:
+  - `buildAuthorizationUrl(state, codeChallenge, userId)` — URL do `/oauth2/v2.0/authorize` (scope: `Mail.ReadWrite Mail.Send offline_access User.Read`, prompt=select_account)
+  - `exchangeCodeForTokens(code, codeVerifier)` / `refreshAccessToken(refreshToken)` — `/token` POST (form-urlencoded, client_secret + PKCE proof)
+  - `getMsUser(accessToken)` — GET https://graph.microsoft.com/v1.0/me
+  - `saveTokens` / `getTokenRecord` / `deleteTokens` — pgcrypto RPC `encrypt_ms_token` / `decrypt_ms_token` (APP_ENCRYPTION_KEY z env)
+  - `getValidAccessToken` — auto-refresh gdy `expires_at < now + 60s`, rzuca `MS_NOT_CONNECTED` / `MS_REFRESH_FAILED`
+  - `createDraftEmail(token, params)` — POST /me/messages + POST /me/messages/{id}/attachments (fileAttachment, base64); best-effort cleanup draftu gdy attachment fail
+- **NEW** `src/lib/services/email-content.service.ts` (~140 linii) — wyekstrahowana logika `buildOrderEmailContent` (subject + bodyHtml + PDF base64 + filename) reużywana w prepare-email-graph. `buildEmailSubject` zduplikowany świadomie (uniknięcie cyclic dependency z order-misc.service)
+- **NEW** `src/pages/api/v1/ms-oauth/start.ts` (~50 linii) — auth → createOAuthState → 302 do Microsoft authorize URL
+- **NEW** `src/pages/api/v1/ms-oauth/callback.ts` (~125 linii) — Zod walidacja query (success/error union) → consumeOAuthState → exchange → getMsUser → saveTokens (service_role client) → 302 do `${PUBLIC_BASE_URL}/settings/email?ms_connected=1` lub `?ms_error=1&ms_error_description=...`
+- **NEW** `src/pages/api/v1/ms-oauth/status.ts` (~80 linii) — service_role SELECT z `ms_oauth_tokens` (tylko metadane: ms_email, expires_at, created_at), zwraca `MsOAuthStatusDto`
+- **NEW** `src/pages/api/v1/ms-oauth/disconnect.ts` (~55 linii) — requireWriteAccess + deleteTokens (service_role) → 204
+- **NEW** `src/pages/api/v1/orders/[orderId]/prepare-email-graph.ts` (~145 linii) — requireWriteAccess + UUID + getValidAccessToken (412 MS_NOT_CONNECTED) + prepareEmailForOrder({outputFormat: "pdf-base64"}) + buildOrderEmailContent + createDraftEmail → JSON `{ draftId, webLink }`
+
+### Wzorce / decyzje
+- **In-memory state store** zamiast DB/cookie (krótki TTL, jednorazowy odczyt, single-node SSR Astro — vide komentarz w pliku)
+- **PKCE S256** — codeVerifier 64B base64url, codeChallenge = base64url(sha256(verifier))
+- **State** — `crypto.randomBytes(32).toString("hex")` (64 znaków)
+- **Service_role client** w callback/status/disconnect — bo callback nie ma JWT usera (Microsoft nie przesyła go), a w pozostałych spójność z istniejącym wzorcem (`login.ts`, `cleanup.service.ts`)
+- **412 Precondition Failed** dla MS_NOT_CONNECTED — frontend rozpoznaje kod i fallbackuje na .eml (`POST /prepare-email`)
+- **Reuse `prepareEmailForOrder`** z `outputFormat: "pdf-base64"` — wszystkie walidacje/status transition/log historii już są obsłużone tam (DRY); tu tylko dodajemy Graph draft create
+- **prompt=select_account** w authorize URL — wymusza picker konta MS nawet gdy user już jest zalogowany w przeglądarce na inne konto
+- **Generic error messages** — pełne body błędu Microsoftu loguję przez `logError`, ale do klienta zwracam generyczne komunikaty PL (nie ujawniam debug info)
+- **Best-effort draft cleanup** — gdy attachment-create zawiedzie, DELETE /me/messages/{id} w `.catch(() => {})` aby nie zostawiać osieroconych draftów w skrzynce usera
+- **emailContent.to = ""** — `companies` w DB nie ma kolumny email. User uzupełnia adres w Outlook po otwarciu webLink. `toRecipients` dodawane tylko gdy regex sprawdzi że to email.
+
+### Wyniki walidacji
+- `npx tsc --noEmit` w worktree i głównym repo: **exit=0** (zero błędów)
+- `npm run build` (Astro + Vite + node adapter): **exit=0**, server + client built successfully
+
+### Worktree note (znów)
+- Worktree pochodził z commitu `5fd519a` (sprzed prac AUTH-MIG) — musiałem ręcznie skopiować artefakty z głównego repo: `database.types.ts`, typy A1/B3 (`auth.types`, `ms-oauth.types`, `user-profile.types`), validatory (`auth.validator`, `ms-oauth.validator`), `lib/auth/*`, `services/invite-token.service`, `services/user-admin.service`, endpointy `auth/login`, `auth/activate`, `admin/users/**`, oraz `.env.example`. Następnie skopiowałem moje nowe pliki z worktree do głównego repo dla orkiestratora (8 plików).
+- **Rekomendacja**: orkiestrator powinien w przyszłości commitować artefakty fazy N (typy, walidatory, migracje) przed uruchomieniem agentów w worktree dla fazy N+1.
+
+### TODO / dependencies dla Frontend
+- GET `/api/v1/ms-oauth/start` — frontend ustawia `window.location.href = "/api/v1/ms-oauth/start"` (top-level navigation), Microsoft redirectuje do callbacka
+- GET `/api/v1/ms-oauth/status` — używać w `/settings/email` do wyświetlenia stanu połączenia (badge "Połączono jako {msEmail}")
+- POST `/api/v1/ms-oauth/disconnect` — przycisk "Rozłącz konto MS"
+- POST `/api/v1/orders/:id/prepare-email-graph` — nowy endpoint dla flow Graph (zamiast obecnego MSAL na frontendzie). Frontend: gdy `status === 412` z `details.code === "MS_NOT_CONNECTED"` → fallback do `/prepare-email` (.eml)
+- Po sukcesie callback → redirect do `/settings/email?ms_connected=1` (URL param `ms_connected=1`); frontend pokazuje toast + odświeża status
+- Po błędzie callback → `/settings/email?ms_error=1&ms_error_description=...`
+
+### Drobne ostrzeżenia (poza scope)
+- `.env.example` w worktree ma `MS_TENANT=common` (literówka, powinno być `MS_TENANT_ID`). Faktyczny `.env` ma `MS_TENANT_ID`. Sprawdziłem — backend używa `MS_TENANT_ID` zgodnie z zadaniem i faktycznym env. Drobny fix dla orkiestratora: `.env.example` MS_TENANT → MS_TENANT_ID.
+- Brak revoke session w Microsoft przy disconnect (tylko DELETE z DB). Opcjonalna przyszła feature: POST /me/revokeSignInSessions.
+
 ## Sesja 50 (2026-04-14) — A3a-2: admin users CRUD (WYKONANE)
 
 ### Wykonane pliki
