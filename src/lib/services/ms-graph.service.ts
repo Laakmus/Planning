@@ -217,7 +217,12 @@ async function postTokenEndpoint(
 
   // Defensywna walidacja: wszystkie wymagane pola muszą być obecne
   if (!json.access_token || !json.refresh_token || typeof json.expires_in !== "number") {
-    logError(`[ms-graph][${context}] niepełna odpowiedź`, new Error(JSON.stringify(json).slice(0, 500)));
+    // UWAGA: NIE loguj `json` ani `JSON.stringify(json)` — zawiera access_token w plaintext.
+    // Logujemy tylko nazwy pól + typy (diagnostyka bez wrażliwych danych).
+    const fieldShape = Object.entries(json as unknown as Record<string, unknown>)
+      .map(([k, v]) => `${k}:${typeof v}`)
+      .join(",");
+    logError(`[ms-graph][${context}] niepełna odpowiedź — pola: ${fieldShape}`, new Error("incomplete token response"));
     throw new Error("Microsoft zwrócił niekompletny zestaw tokenów.");
   }
 
