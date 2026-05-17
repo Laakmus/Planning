@@ -266,7 +266,7 @@ interface EmlFallbackOptions {
   onValidationError: (missingFields: string[]) => void;
 }
 
-/** Pobiera .eml jako blob i triggeruje download. */
+/** Pobiera .eml jako blob i próbuje otworzyć w default mail clientu (lub fallback download). */
 async function runEmlFallback({
   orderId,
   api,
@@ -278,14 +278,28 @@ async function runEmlFallback({
     const response = await api.postRaw(`/api/v1/orders/${orderId}/prepare-email`, {});
     const blob = await response.blob();
     const url = URL.createObjectURL(blob);
+
+    // UWAGA: NIE używamy `a.download` — ten atrybut wymusza POBRANIE pliku,
+    // niezależnie od ustawienia "Always open files of this type" w Chrome.
+    // Bez `download` + `target="_blank"` browser próbuje otworzyć plik w default
+    // mail clientu (Outlook). Jeśli user nie skonfigurował handlera — Chrome pobierze.
+    // Po pierwszym pobraniu user może w pasku pobierań kliknąć "Always open files
+    // of this type" — od tego momentu pliki .eml otwierają się automatycznie w Outlook.
     const a = document.createElement("a");
     a.href = url;
-    a.download = emlFileName ?? `zlecenie-${orderId}.eml`;
+    a.target = "_blank";
+    a.rel = "noopener";
+    if (emlFileName) {
+      // Suggestion dla browser jaki nadać nazwę przy ewentualnym pobraniu — bez
+      // wymuszania downloadu (to robił atrybut `download`, NIE rel/target)
+      a.setAttribute("data-suggested-filename", emlFileName);
+    }
     document.body.appendChild(a);
     a.click();
     a.remove();
-    URL.revokeObjectURL(url);
-    toast.success("Plik .eml pobrany — otwórz go w programie pocztowym.");
+    // Cleanup blob URL po krótkim opóźnieniu (browser musi zdążyć go pobrać)
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
+    toast.success("Plik .eml otwierany w domyślnym programie pocztowym.");
     onSuccess();
   } catch (err) {
     // 422 — brakujące pola walidacji

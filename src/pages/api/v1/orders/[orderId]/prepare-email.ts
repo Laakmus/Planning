@@ -101,7 +101,11 @@ export const POST: APIRoute = async ({ params, locals, request }) => {
       headers: {
         ...COMMON_HEADERS,
         "Content-Type": "message/rfc822",
-        "Content-Disposition": `attachment; filename="${fileName}"`,
+        // "inline" (nie "attachment") pozwala Chrome użyć ustawienia "Always open
+        // files of this type" — wtedy plik .eml otwiera się od razu w Outlook
+        // zamiast być pobranym. Z "attachment" Chrome zawsze pobiera, niezależnie
+        // od preferencji usera (force-download).
+        "Content-Disposition": `inline; filename="${fileName}"`,
       },
     });
   } catch (err) {
