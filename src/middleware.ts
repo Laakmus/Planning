@@ -10,6 +10,7 @@ import type { Database } from "./db/database.types";
 import { getCorsOrigin } from "./lib/api-helpers";
 import { initSentry } from "./lib/sentry";
 import { startCleanupScheduler } from "./lib/services/cleanup.service";
+import { maybeUpdateLastSeen } from "./lib/user-presence";
 
 // Pomocnicza funkcja do odczytu zmiennych środowiskowych
 // Astro import.meta.env nie zawsze czyta z process.env na wszystkich platformach
@@ -194,6 +195,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Rate limiting — identyfikacja po user ID z JWT lub fallback na IP
   const jwtSub = authHeader ? extractSubFromJwt(authHeader) : null;
   const clientId = jwtSub ? `user:${jwtSub}` : `ip:${context.clientAddress ?? "unknown"}`;
+
+  // Aktualizuj last_seen_at (throttled co 60s, fire-and-forget — nie blokuje requestu).
+  // Używamy jwtSub z JWT (nie zweryfikowane podpisem, ale UUID format sprawdzony).
+  // Worst case: fake JWT zaktualizuje timestamp cudzego usera — niski impact.
+  if (jwtSub) {
+    maybeUpdateLastSeen(jwtSub);
+  }
   const rateKey = `${clientId}:${method === "GET" ? "read" : "write"}`;
   const limit = getRateLimit(method);
   const rate = checkRateLimit(rateKey, limit);

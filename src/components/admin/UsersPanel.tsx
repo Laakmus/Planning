@@ -56,6 +56,23 @@ function formatDate(iso: string): string {
   }
 }
 
+/** Czytelny czas względny ("5 min temu", "2 godz. temu") — dla tooltipa online status. */
+function formatRelativeTime(iso: string): string {
+  try {
+    const diffMs = Date.now() - new Date(iso).getTime();
+    if (diffMs < 0) return "przed chwilą";
+    const minutes = Math.floor(diffMs / 60_000);
+    if (minutes < 1) return "przed chwilą";
+    if (minutes < 60) return `${minutes} min temu`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 24) return `${hours} godz. temu`;
+    const days = Math.floor(hours / 24);
+    return `${days} dni temu`;
+  } catch {
+    return iso;
+  }
+}
+
 /** Mapa kolorów badge dla ról. */
 const ROLE_BADGE_CLASS: Record<UserRole, string> = {
   ADMIN: "bg-red-100 text-red-700 border-red-200 dark:bg-red-900/30 dark:text-red-200 dark:border-red-900/50",
@@ -144,6 +161,20 @@ export function UsersPanel() {
     [regenerateInvite],
   );
 
+  // Bezpośrednia aktywacja konta przez admina — bez wymogu kliknięcia invite link
+  // przez usera. Używamy istniejącego endpointu PATCH /admin/users/:id z isActive=true.
+  const handleActivate = useCallback(
+    async (u: AdminUserDto) => {
+      try {
+        await updateUser(u.id, { isActive: true });
+        // Toast sukcesu — hook updateUser już go pokazuje
+      } catch {
+        // Toast błędu w hooku
+      }
+    },
+    [updateUser],
+  );
+
   // --- Render ----------------------------------------------------------------
 
   return (
@@ -228,6 +259,7 @@ export function UsersPanel() {
         <Table>
           <TableHeader>
             <TableRow>
+              <TableHead className="w-12">Online</TableHead>
               <TableHead>Login</TableHead>
               <TableHead>Imię i nazwisko</TableHead>
               <TableHead>Email</TableHead>
@@ -240,7 +272,7 @@ export function UsersPanel() {
           <TableBody>
             {isLoading ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center">
+                <TableCell colSpan={8} className="h-32 text-center">
                   <div className="flex items-center justify-center gap-2 text-slate-500">
                     <Loader2 className="w-4 h-4 animate-spin" />
                     Ładowanie...
@@ -249,15 +281,33 @@ export function UsersPanel() {
               </TableRow>
             ) : users.length === 0 ? (
               <TableRow>
-                <TableCell colSpan={7} className="h-32 text-center text-sm text-slate-500">
+                <TableCell colSpan={8} className="h-32 text-center text-sm text-slate-500">
                   Brak użytkowników pasujących do filtrów.
                 </TableCell>
               </TableRow>
             ) : (
               users.map((u) => {
                 const isSelf = currentUser?.id === u.id;
+                const isOnline =
+                  u.lastSeenAt != null &&
+                  Date.now() - new Date(u.lastSeenAt).getTime() < 5 * 60_000;
+                const presenceTitle = u.lastSeenAt
+                  ? `Ostatnia aktywność: ${formatRelativeTime(u.lastSeenAt)}`
+                  : "Nigdy się nie logował";
                 return (
                   <TableRow key={u.id} data-testid="admin-user-row" data-user-id={u.id}>
+                    <TableCell className="text-center" title={presenceTitle}>
+                      <span
+                        className={
+                          "inline-block w-2.5 h-2.5 rounded-full " +
+                          (isOnline
+                            ? "bg-emerald-500 ring-2 ring-emerald-200 dark:ring-emerald-900/50"
+                            : "bg-slate-300 dark:bg-slate-600")
+                        }
+                        aria-label={isOnline ? "Online" : "Offline"}
+                        data-online={isOnline ? "true" : "false"}
+                      />
+                    </TableCell>
                     <TableCell className="font-mono text-xs">{u.username}</TableCell>
                     <TableCell>{u.fullName ?? "—"}</TableCell>
                     <TableCell className="text-slate-600 dark:text-slate-300">{u.email}</TableCell>
@@ -306,13 +356,23 @@ export function UsersPanel() {
                             Nowy link aktywacyjny
                           </DropdownMenuItem>
                           <DropdownMenuSeparator />
-                          <DropdownMenuItem
-                            onClick={() => openDeactivate(u)}
-                            disabled={isSelf || !u.isActive}
-                            className="text-red-600 focus:text-red-700 dark:text-red-400"
-                          >
-                            Deaktywuj
-                          </DropdownMenuItem>
+                          {u.isActive ? (
+                            <DropdownMenuItem
+                              onClick={() => openDeactivate(u)}
+                              disabled={isSelf}
+                              className="text-red-600 focus:text-red-700 dark:text-red-400"
+                            >
+                              Deaktywuj
+                            </DropdownMenuItem>
+                          ) : (
+                            <DropdownMenuItem
+                              onClick={() => void handleActivate(u)}
+                              disabled={isSelf}
+                              className="text-emerald-700 focus:text-emerald-800 dark:text-emerald-400"
+                            >
+                              Aktywuj
+                            </DropdownMenuItem>
+                          )}
                         </DropdownMenuContent>
                       </DropdownMenu>
                     </TableCell>

@@ -81,6 +81,7 @@ export function mapRowToAdminUserDto(row: UserProfileRow): AdminUserDto {
     isActive: row.is_active,
     invitedAt: row.invited_at,
     activatedAt: row.activated_at,
+    lastSeenAt: row.last_seen_at,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };

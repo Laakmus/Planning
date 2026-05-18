@@ -71,6 +71,8 @@ export interface AdminUserDto {
   isActive: boolean;
   invitedAt: string | null;
   activatedAt: string | null;
+  /** ISO 8601 — ostatnia aktywność (uwierzytelniony request). NULL = nigdy. */
+  lastSeenAt: string | null;
   createdAt: string;
   updatedAt: string;
 }

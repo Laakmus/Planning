@@ -194,11 +194,18 @@ export function AuthProvider({
 
   // logout — wylogowanie
   const logout = useCallback(async (): Promise<void> => {
+    // Najpierw zawiadom backend — zeruje last_seen_at (natychmiast offline w panelu admina).
+    // Musi być PRZED signOut, bo signOut unieważnia JWT.
+    try {
+      await api.post("/api/v1/auth/logout", {});
+    } catch {
+      // Ignoruj — non-critical, frontend i tak wyloguje
+    }
     await supabase.auth.signOut();
     setUser(null);
     tokenRef.current = null;
     window.location.href = "/";
-  }, [supabase]);
+  }, [supabase, api]);
 
   // Efekt: nasłuchuj zmian sesji Supabase (auto-refresh tokenów)
   useEffect(() => {

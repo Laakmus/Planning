@@ -706,6 +706,7 @@ export type Database = {
           invite_token_hash: string | null
           invited_at: string | null
           is_active: boolean
+          last_seen_at: string | null
           location_id: string | null
           phone: string | null
           role: string
@@ -722,6 +723,7 @@ export type Database = {
           invite_token_hash?: string | null
           invited_at?: string | null
           is_active?: boolean
+          last_seen_at?: string | null
           location_id?: string | null
           phone?: string | null
           role: string
@@ -738,6 +740,7 @@ export type Database = {
           invite_token_hash?: string | null
           invited_at?: string | null
           is_active?: boolean
+          last_seen_at?: string | null
           location_id?: string | null
           phone?: string | null
           role?: string
