@@ -61,5 +61,13 @@ export async function getCurrentUser(
     return null;
   }
 
+  // BLOKADA dezaktywowanych użytkowników:
+  // is_active=false → user nie ma już dostępu, nawet jeśli JWT jest ważny.
+  // Bez tego sprawdzenia user pozostawałby zalogowany do wygaśnięcia access_token (~1h)
+  // mimo że admin go deaktywował (admin.signOut tylko revokuje refresh tokeny).
+  if (profile.is_active === false) {
+    return null;
+  }
+
   return mapRowToAuthMeDto(profile);
 }
