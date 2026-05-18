@@ -1,0 +1,24 @@
+app = "planning-odylion-test"
+primary_region = "fra"
+
+[build]
+  [build.args]
+    PUBLIC_SUPABASE_URL = "https://oxzneikfgtbcqfbicpbo.supabase.co"
+    PUBLIC_SUPABASE_ANON_KEY = "sb_publishable_E4-6Lh11kxnWmQO-erbpqQ_s2OREFDE"
+
+[http_service]
+  internal_port = 4321
+  force_https = true
+  auto_stop_machines = "stop"
+  auto_start_machines = true
+  min_machines_running = 0
+
+  [http_service.concurrency]
+    type = "requests"
+    soft_limit = 100
+    hard_limit = 250
+
+[[vm]]
+  size = "shared-cpu-1x"
+  memory = "512mb"
+  cpus = 1
