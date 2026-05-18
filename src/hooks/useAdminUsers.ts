@@ -42,10 +42,13 @@ interface UpdateUserResponse {
 }
 
 /** Domyślne filtry przy montowaniu hooka. */
+// Default: pokazuj tylko aktywnych (nieaktywni ukryci dopóki admin nie zmieni filtra na "Wszystkie" / "Nieaktywni").
+// Powód: po deaktywacji user znika z domyślnego widoku — UX "usunięte" bez fizycznego DELETE.
 const DEFAULT_FILTERS: UserListQuery = {
   page: 1,
   pageSize: 25,
   search: "",
+  isActive: true,
 };
 
 export interface UseAdminUsersResult {

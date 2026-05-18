@@ -9,7 +9,9 @@
  * Oparty na primitywach shadcn/ui Sidebar.
  */
 
-import { CheckCircle2, ClipboardList, Mail, Truck, Warehouse, XCircle } from "lucide-react";
+import { CheckCircle2, ClipboardList, Mail, Truck, Users, Warehouse, XCircle } from "lucide-react";
+
+import { useAuth } from "@/contexts/AuthContext";
 
 import {
   Sidebar,
@@ -43,6 +45,9 @@ const NAV_ITEMS: { value: ViewGroup; label: string; icon: typeof ClipboardList }
 ];
 
 export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
+  const { user } = useAuth();
+  const isAdmin = user?.role === "ADMIN";
+
   return (
     <Sidebar>
       {/* Nagłówek: logo + nazwa */}
@@ -115,6 +120,34 @@ export function AppSidebar({ activeView, onViewChange }: AppSidebarProps) {
             </SidebarMenu>
           </SidebarGroupContent>
         </SidebarGroup>
+        {/* Sekcja Administracja — tylko dla ADMIN (AUTH-MIG A3b) */}
+        {isAdmin && (
+          <>
+            <Separator className="mx-4 w-auto" />
+            <SidebarGroup>
+              <SidebarGroupLabel>Administracja</SidebarGroupLabel>
+              <SidebarGroupContent>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                    <SidebarMenuButton
+                      asChild
+                      isActive={
+                        typeof window !== "undefined" &&
+                        window.location.pathname.startsWith("/admin/users")
+                      }
+                      data-testid="sidebar-admin-users"
+                    >
+                      <a href="/admin/users">
+                        <Users className="w-4 h-4" />
+                        <span>Użytkownicy</span>
+                      </a>
+                    </SidebarMenuButton>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+              </SidebarGroupContent>
+            </SidebarGroup>
+          </>
+        )}
         <Separator className="mx-4 w-auto" />
         {/* Sekcja Ustawienia — Email (AUTH-MIG B4) */}
         <SidebarGroup>
