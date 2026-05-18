@@ -184,10 +184,8 @@ describe("sendEmailForOrder — connected=true (Graph happy path)", () => {
       {}
     );
     expect(api.postRaw).not.toHaveBeenCalled(); // brak fallbacku
-    // Karta otwarta i ustawiona na webLink
-    expect(dom.opened.location.href).toBe(
-      "https://outlook.office.com/deeplink/compose/draft-77"
-    );
+    // UX 2026-05-18: NIE otwieramy nowej karty automatycznie — draft jest w cloud
+    expect(dom.opened.location.href).toBe(""); // karta nie zmieniona
     expect(onSuccess).toHaveBeenCalledOnce();
     expect(toastSuccess).toHaveBeenCalled();
   });
@@ -497,7 +495,8 @@ describe("sendEmailForOrder — EmailOpenMode preferences", () => {
       {}
     );
     expect(api.postRaw).not.toHaveBeenCalled();
-    expect(dom.opened.location.href).toBe("https://outlook.office.com/web-link");
+    // UX 2026-05-18: karta nie jest otwierana automatycznie po Graph success
+    expect(dom.opened.location.href).toBe("");
   });
 
   it("mode=ask + user picks OK (web): uses Graph flow", async () => {
@@ -529,7 +528,8 @@ describe("sendEmailForOrder — EmailOpenMode preferences", () => {
     // Assert
     expect(confirmSpy).toHaveBeenCalledOnce();
     expect(api.post).toHaveBeenCalledOnce(); // Graph flow
-    expect(dom.opened.location.href).toBe("https://outlook.office.com/ask-web");
+    // UX 2026-05-18: karta nie jest otwierana automatycznie po Graph success
+    expect(dom.opened.location.href).toBe("");
 
     confirmSpy.mockRestore();
   });
@@ -593,9 +593,9 @@ describe("sendEmailForOrder — EmailOpenMode preferences", () => {
       onValidationError: vi.fn(),
     });
 
-    // Assert — Graph wywołane (web mode default), webLink otwarty w nowej karcie
+    // Assert — Graph wywołane (web mode default); karta NIE otwierana (UX 2026-05-18)
     expect(api.post).toHaveBeenCalled();
-    expect(dom.opened.location.href).toBe("https://outlook.office.com/corp");
+    expect(dom.opened.location.href).toBe("");
   });
 
   it("no preference + personal msEmail: heuristic = web (Graph flow)", async () => {
@@ -622,8 +622,8 @@ describe("sendEmailForOrder — EmailOpenMode preferences", () => {
       onValidationError: vi.fn(),
     });
 
-    // Assert — Graph wywołane (web mode)
+    // Assert — Graph wywołane (web mode); karta NIE otwierana (UX 2026-05-18)
     expect(api.post).toHaveBeenCalled();
-    expect(dom.opened.location.href).toBe("https://outlook.office.com/pers");
+    expect(dom.opened.location.href).toBe("");
   });
 });

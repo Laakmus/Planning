@@ -195,8 +195,9 @@ interface GraphFlowOptions {
  * Próbuje utworzyć draft przez Microsoft Graph (backend).
  * Zwraca `true` w razie sukcesu, `false` gdy należy uruchomić fallback na .eml.
  *
- * UWAGA: blokowanie popupów — otwieramy `window.open` PRZED async call,
- * inaczej Chrome/Safari zablokują nową kartę (brak gestu usera w stacku).
+ * UX (decyzja z 2026-05-18): po sukcesie NIE otwieramy nowej karty Outlook Web.
+ * Pokazujemy toast z opcjonalnym przyciskiem "Otwórz Outlook" — user sam decyduje
+ * czy klika. Draft i tak siedzi w jego "Wersjach roboczych" w Outlook (cloud).
  */
 async function tryGraphFlow({
   orderId,
@@ -204,31 +205,23 @@ async function tryGraphFlow({
   onSuccess,
   onValidationError,
 }: GraphFlowOptions): Promise<boolean> {
-  // Otwieramy pustą kartę synchronicznie, by ominąć popup blocker
-  const outlookTab = window.open("about:blank", "_blank");
-
   try {
-    const result = await api.post<PrepareEmailGraphResponseDto>(
+    await api.post<PrepareEmailGraphResponseDto>(
       `/api/v1/orders/${orderId}/prepare-email-graph`,
       {},
     );
 
-    if (outlookTab && !outlookTab.closed) {
-      outlookTab.location.href = result.webLink;
-    } else {
-      // Karta zablokowana przez popup blocker — otwieramy inaczej
-      window.open(result.webLink, "_blank");
-    }
-
-    toast.success("Draft email utworzony w Outlook — otwarto w nowej karcie.");
+    toast.success("Draft dodany do Wersji roboczych Outlook", {
+      action: {
+        label: "Otwórz Outlook",
+        onClick: () => {
+          window.open("https://outlook.office.com/mail/drafts", "_blank", "noopener");
+        },
+      },
+    });
     onSuccess();
     return true;
   } catch (err) {
-    // Zamknij pustą kartę przy błędzie
-    if (outlookTab && !outlookTab.closed) {
-      outlookTab.close();
-    }
-
     // 422 — brakujące pola walidacji (wspólne dla obu flow)
     if (
       err instanceof ApiError &&
