@@ -171,7 +171,7 @@ export class OrdersPage {
     if (complaintReason) body.complaintReason = complaintReason;
 
     return this.page.request.post(
-      `http://localhost:4321/api/v1/orders/${orderId}/status`,
+      `http://localhost:4323/api/v1/orders/${orderId}/status`,
       {
         data: body,
         headers: { Authorization: `Bearer ${token}` },

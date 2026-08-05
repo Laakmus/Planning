@@ -38,7 +38,7 @@ setup("reset database and authenticate", async ({ request }) => {
     cookies: [],
     origins: [
       {
-        origin: "http://localhost:4321",
+        origin: "http://localhost:4323",
         localStorage: [
           {
             name: STORAGE_KEY,
