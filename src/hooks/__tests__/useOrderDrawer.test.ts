@@ -355,6 +355,35 @@ describe("useOrderDrawer", () => {
       expect(onCloseFn).not.toHaveBeenCalled();
     });
 
+    it("PUT sukces → odświeża detale zlecenia (PRD: aktualny status po zapisie)", async () => {
+      const detail = makeMockDetail();
+      mockApi.get.mockResolvedValue(detail);
+      mockApi.post.mockResolvedValue({});
+
+      const { result } = renderHook(() =>
+        useOrderDrawer({
+          orderId: ORDER_ID,
+          isOpen: true,
+          onClose: onCloseFn as unknown as () => void,
+          onOrderUpdated: onOrderUpdatedFn as unknown as () => void,
+        })
+      );
+      await waitFor(() => expect(result.current.isLoading).toBe(false));
+
+      const refreshed = { ...detail, order: { ...detail.order, statusCode: "korekta", updatedAt: "2026-09-25T10:00:00Z" } };
+      mockApi.get.mockClear();
+      mockApi.get.mockResolvedValue(refreshed);
+      mockApi.put.mockResolvedValue({});
+
+      await act(async () => {
+        await result.current.handleSave(makeMockFormData(), null, null);
+      });
+
+      expect(mockApi.get).toHaveBeenCalledWith(`/api/v1/orders/${ORDER_ID}`);
+      expect(result.current.detail?.order.statusCode).toBe("korekta");
+      expect(mockToast.error).not.toHaveBeenCalled();
+    });
+
     it("PUT + pendingStatus → dodatkowy POST /status", async () => {
       const detail = makeMockDetail();
       mockApi.get.mockResolvedValue(detail);

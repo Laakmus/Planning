@@ -74,7 +74,8 @@ test.describe("UX Guards", () => {
         "Dodatkowe uwagi do zlecenia…"
       );
       await expect(notesTextarea).toBeVisible({ timeout: 5_000 });
-      await notesTextarea.fill(`Ctrl+S test ${Date.now()}`);
+      const note = `Ctrl+S test ${Date.now()}`;
+      await notesTextarea.fill(note);
 
       // Rejestruj listener na PUT PRZED naciśnięciem Ctrl+S
       const responsePromise = ordersPage.page.waitForResponse(
@@ -91,8 +92,10 @@ test.describe("UX Guards", () => {
       const putResponse = await responsePromise;
       expect(putResponse.ok()).toBeTruthy();
 
-      // Drawer zamyka się po udanym zapisie
-      await drawerPage.drawer.waitFor({ state: "hidden", timeout: 10_000 });
+      // PRD: po zapisie drawer zostaje otwarty z odświeżonymi danymi (formularz nie jest „dirty”)
+      await expect(drawerPage.drawer).toBeVisible();
+      await expect(drawerPage.saveButton).toBeDisabled({ timeout: 10_000 });
+      await expect(notesTextarea).toHaveValue(note);
     });
   });
 
