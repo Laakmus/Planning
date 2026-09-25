@@ -10,6 +10,7 @@ import type { Database } from "@/db/database.types";
 import type { ChangeStatusResponseDto, DeleteOrderResponseDto, RestoreOrderResponseDto } from "@/types";
 import type { ChangeStatusParams } from "@/lib/validators/order.validator";
 import { isManualTransitionAllowed, ORDER_STATUS, TERMINAL_STATUSES } from "@/lib/order-status";
+import { applyOrderChanges } from "@/lib/services/order-write.service";
 
 
 /**
@@ -40,42 +41,17 @@ export async function cancelOrder(
     throw new Error("FORBIDDEN_TRANSITION");
   }
 
-  // Atomic UPDATE with status guard — prevents TOCTOU where status changes
-  // between the SELECT above and this UPDATE.
-  const { data: cancelResult, error: updateError } = await supabase
-    .from("transport_orders")
-    .update({ status_code: ORDER_STATUS.CANCELLED, updated_by_user_id: userId })
-    .eq("id", orderId)
-    .eq("status_code", order.status_code)
-    .select("id")
-    .maybeSingle();
-
-  if (updateError) throw updateError;
-  if (!cancelResult) {
-    // Status changed between SELECT and UPDATE — concurrent modification
-    throw new Error("FORBIDDEN_TRANSITION");
-  }
-
-  const { error: historyError } = await supabase
-    .from("order_status_history")
-    .insert({
-      order_id: orderId,
-      old_status_code: order.status_code,
-      new_status_code: ORDER_STATUS.CANCELLED,
-      changed_by_user_id: userId,
-    });
-
-  if (historyError) throw historyError;
-
-  // Wpis do logu zmian pola status_code (spójność z changeStatus)
-  const { error: logError } = await supabase.from("order_change_log").insert({
-    order_id: orderId,
-    field_name: "status_code",
-    old_value: order.status_code,
-    new_value: ORDER_STATUS.CANCELLED,
-    changed_by_user_id: userId,
+  // Status + historia + log w jednej transakcji; guard statusu w RPC (TOCTOU).
+  // Anulowanie celowo nie wymaga blokady edycji (ignoreLock).
+  await applyOrderChanges(supabase, {
+    orderId,
+    expectedStatus: order.status_code,
+    orderPatch: { status_code: ORDER_STATUS.CANCELLED },
+    statusHistory: { old_status_code: order.status_code, new_status_code: ORDER_STATUS.CANCELLED },
+    changeLog: [{ field_name: "status_code", old_value: order.status_code, new_value: ORDER_STATUS.CANCELLED }],
+    ignoreLock: true,
+    conflictError: "FORBIDDEN_TRANSITION",
   });
-  if (logError) throw logError;
 
   return { id: orderId, statusCode: ORDER_STATUS.CANCELLED };
 }
@@ -110,9 +86,8 @@ export async function changeStatus(
     throw new Error("FORBIDDEN_TRANSITION");
   }
 
-  const updatePayload: { status_code: string; complaint_reason?: string | null; updated_by_user_id: string } = {
+  const updatePayload: { status_code: string; complaint_reason?: string | null } = {
     status_code: params.newStatusCode,
-    updated_by_user_id: userId,
   };
   if (params.newStatusCode === ORDER_STATUS.COMPLAINT && params.complaintReason != null) {
     updatePayload.complaint_reason = params.complaintReason.trim();
@@ -121,40 +96,16 @@ export async function changeStatus(
     updatePayload.complaint_reason = null;
   }
 
-  // Atomic UPDATE with current status guard — prevents TOCTOU where status
-  // changes between the SELECT above and this UPDATE.
-  const { data: statusResult, error: updateError } = await supabase
-    .from("transport_orders")
-    .update(updatePayload)
-    .eq("id", orderId)
-    .eq("status_code", order.status_code)
-    .select("id")
-    .maybeSingle();
-
-  if (updateError) throw updateError;
-  if (!statusResult) {
-    // Status changed between SELECT and UPDATE — concurrent modification
-    throw new Error("FORBIDDEN_TRANSITION");
-  }
-
-  const { error: historyError } = await supabase.from("order_status_history").insert({
-    order_id: orderId,
-    old_status_code: order.status_code,
-    new_status_code: params.newStatusCode,
-    changed_by_user_id: userId,
+  // Status + historia + log w jednej transakcji; guard statusu w RPC (TOCTOU).
+  await applyOrderChanges(supabase, {
+    orderId,
+    expectedStatus: order.status_code,
+    orderPatch: updatePayload,
+    statusHistory: { old_status_code: order.status_code, new_status_code: params.newStatusCode },
+    changeLog: [{ field_name: "status_code", old_value: order.status_code, new_value: params.newStatusCode }],
+    ignoreLock: true,
+    conflictError: "FORBIDDEN_TRANSITION",
   });
-
-  if (historyError) throw historyError;
-
-  const { error: logError } = await supabase.from("order_change_log").insert({
-    order_id: orderId,
-    field_name: "status_code",
-    old_value: order.status_code,
-    new_value: params.newStatusCode,
-    changed_by_user_id: userId,
-  });
-
-  if (logError) throw logError;
 
   return {
     id: orderId,
@@ -210,38 +161,16 @@ export async function restoreOrder(
     }
   }
 
-  // Atomic UPDATE with current status guard — prevents TOCTOU
-  const { data: restoreResult, error: updateError } = await supabase
-    .from("transport_orders")
-    .update({ status_code: ORDER_STATUS.CORRECTION, updated_by_user_id: userId })
-    .eq("id", orderId)
-    .eq("status_code", order.status_code)
-    .select("id")
-    .maybeSingle();
-
-  if (updateError) throw updateError;
-  if (!restoreResult) {
-    throw new Error("FORBIDDEN_RESTORE");
-  }
-
-  const { error: historyError } = await supabase.from("order_status_history").insert({
-    order_id: orderId,
-    old_status_code: order.status_code,
-    new_status_code: ORDER_STATUS.CORRECTION,
-    changed_by_user_id: userId,
+  // Status + historia + log w jednej transakcji; guard statusu w RPC (TOCTOU)
+  await applyOrderChanges(supabase, {
+    orderId,
+    expectedStatus: order.status_code,
+    orderPatch: { status_code: ORDER_STATUS.CORRECTION },
+    statusHistory: { old_status_code: order.status_code, new_status_code: ORDER_STATUS.CORRECTION },
+    changeLog: [{ field_name: "status_code", old_value: order.status_code, new_value: ORDER_STATUS.CORRECTION }],
+    ignoreLock: true,
+    conflictError: "FORBIDDEN_RESTORE",
   });
-
-  if (historyError) throw historyError;
-
-  // Wpis do logu zmian pola status_code (spójność z changeStatus)
-  const { error: logError } = await supabase.from("order_change_log").insert({
-    order_id: orderId,
-    field_name: "status_code",
-    old_value: order.status_code,
-    new_value: ORDER_STATUS.CORRECTION,
-    changed_by_user_id: userId,
-  });
-  if (logError) throw logError;
 
   return { id: orderId, statusCode: ORDER_STATUS.CORRECTION };
 }

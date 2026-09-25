@@ -21,6 +21,7 @@ import {
   validateForeignKeys,
 } from "./order-snapshot.service";
 import { ORDER_STATUS, SENT_STATUSES, TERMINAL_STATUSES } from "@/lib/order-status";
+import { applyOrderChanges, type ChangeLogEntry } from "@/lib/services/order-write.service";
 
 /** Statusy, z których nie wolno edytować zlecenia (PUT). */
 const READONLY_STATUSES = TERMINAL_STATUSES;
@@ -272,61 +273,25 @@ export async function updateOrder(
     updated_by_user_id: userId,
   };
 
-  // Atomic UPDATE with lock ownership verification in WHERE clause.
-  // Prevents TOCTOU: even if lock was stolen between the SELECT above and this UPDATE,
-  // the UPDATE will match 0 rows and we detect the conflict.
-  // Note: PostgREST v14 bug — .or() + .select() on UPDATE generates invalid SQL,
-  // so we use { count: "exact" } without .select() to detect row count instead.
-  type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
-  const { count: updatedCount, error: updateError } = await supabase
-    .from("transport_orders")
-    .update(updatePayload as OrderUpdate, { count: "exact" })
-    .eq("id", orderId)
-    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`)
-    // Guard statusu: bez niego równoległe anulowanie (cancelOrder) zostałoby
-    // nadpisane statusem wyliczonym ze starego status_code (zlecenie "wraca" z anulowanych).
-    .eq("status_code", order.status_code);
+  // ---------------------------------------------------------------------------
+  // Plan zapisu — wszystkie zmiany liczone tutaj, zapis jednym RPC (jedna transakcja)
+  // ---------------------------------------------------------------------------
 
-  if (updateError) throw updateError;
-  if (updatedCount === 0) {
-    // 0 rows matched — blokada przejęta lub status zmieniony między SELECT a UPDATE
-    throw new Error("LOCKED");
-  }
+  // updated_by_user_id ustawia RPC (auth.uid()) — nie przekazujemy go z backendu
+  const { updated_by_user_id: _updatedBy, ...orderPatch } = updatePayload;
 
   // Build snapshot lookup for stops by sequenceNo (stopsWithSnapshots contains only active stops)
   const stopSnapshotMap = new Map(
     stopsWithSnapshots.map((s) => [s.sequenceNo, s])
   );
 
-  // Phase 1: Delete _deleted stops
-  for (const s of params.stops) {
-    if (s._deleted && s.id) {
-      const { error: delErr } = await supabase.from("order_stops").delete().eq("id", s.id).eq("order_id", orderId);
-      if (delErr) throw delErr;
-    }
-  }
-
-  // Phase 2: Temporarily offset existing stops' sequence_no to avoid UNIQUE constraint violations
-  const existingStops = params.stops.filter((s) => !s._deleted && s.id);
-  if (existingStops.length > 0) {
-    for (let i = 0; i < existingStops.length; i++) {
-      const { error: tmpErr } = await supabase
-        .from("order_stops")
-        .update({ sequence_no: 10000 + i })
-        .eq("id", existingStops[i].id!)
-        .eq("order_id", orderId);
-      if (tmpErr) throw tmpErr;
-    }
-  }
-
-  // Phase 3: Update existing stops to final values + insert new stops
-  for (const s of params.stops) {
-    if (s._deleted) continue;
-
-    const snap = stopSnapshotMap.get(s.sequenceNo);
-    if (s.id == null) {
-      const { error: insErr } = await supabase.from("order_stops").insert({
-        order_id: orderId,
+  const stopDeleteIds = params.stops.filter((s) => s._deleted && s.id).map((s) => s.id!);
+  const stopRows = params.stops
+    .filter((s) => !s._deleted)
+    .map((s) => {
+      const snap = stopSnapshotMap.get(s.sequenceNo);
+      return {
+        id: s.id ?? null,
         kind: s.kind,
         sequence_no: s.sequenceNo,
         date_local: s.dateLocal ?? null,
@@ -336,50 +301,19 @@ export async function updateOrder(
         company_name_snapshot: snap?.companyNameSnapshot ?? null,
         address_snapshot: snap?.addressSnapshot ?? null,
         notes: s.notes ?? null,
-      });
-      if (insErr) throw insErr;
-    } else {
-      const { error: updErr } = await supabase
-        .from("order_stops")
-        .update({
-          kind: s.kind,
-          sequence_no: s.sequenceNo,
-          date_local: s.dateLocal ?? null,
-          time_local: s.timeLocal ?? null,
-          location_id: s.locationId ?? null,
-          location_name_snapshot: snap?.locationNameSnapshot ?? null,
-          company_name_snapshot: snap?.companyNameSnapshot ?? null,
-          address_snapshot: snap?.addressSnapshot ?? null,
-          notes: s.notes ?? null,
-        })
-        .eq("id", s.id)
-        .eq("order_id", orderId);
-      if (updErr) throw updErr;
-    }
-  }
+      };
+    });
+
+  const changeLogRows: ChangeLogEntry[] = [];
 
   // Audit trail: logowanie dodawania/usuwania przystanków
-  const stopChangeLogRows: Array<{
-    order_id: string;
-    field_name: string;
-    old_value: string | null;
-    new_value: string | null;
-    changed_by_user_id: string;
-  }> = [];
-
   for (const s of params.stops) {
     if (s._deleted && s.id) {
       // Usunięty przystanek
       const oldStop = oldStopsMap.get(s.id);
       const kindPrefix = oldStop?.kind === "LOADING" ? "L" : "U";
       const label = `${kindPrefix}${oldStop?.sequence_no ?? "?"}: ${oldStop?.company_name_snapshot ?? "?"}`;
-      stopChangeLogRows.push({
-        order_id: orderId,
-        field_name: "stop_removed",
-        old_value: label,
-        new_value: null,
-        changed_by_user_id: userId,
-      });
+      changeLogRows.push({ field_name: "stop_removed", old_value: label, new_value: null });
     } else if (s.id == null && !s._deleted) {
       // Nowy przystanek
       const snap = stopSnapshotMap.get(s.sequenceNo);
@@ -388,22 +322,11 @@ export async function updateOrder(
         .filter((as) => as.kind === s.kind)
         .findIndex((as) => as.sequenceNo === s.sequenceNo) + 1;
       const label = `${kindPrefix}${seqInKind}: ${snap?.companyNameSnapshot ?? "?"}`;
-      stopChangeLogRows.push({
-        order_id: orderId,
-        field_name: "stop_added",
-        old_value: null,
-        new_value: label,
-        changed_by_user_id: userId,
-      });
+      changeLogRows.push({ field_name: "stop_added", old_value: null, new_value: label });
     }
   }
 
-  if (stopChangeLogRows.length > 0) {
-    const { error: stopLogErr } = await supabase.from("order_change_log").insert(stopChangeLogRows);
-    if (stopLogErr) throw stopLogErr;
-  }
-
-  // Mapa snapshotów po item.id (istniejące) + oddzielna lista nowych (bez id)
+  // Snapshoty towarów: istniejące po item.id, nowe (bez id) po kolejności
   const itemSnapshotById = new Map<string, typeof itemsWithSnapshots[number]>();
   const newItemSnaps: typeof itemsWithSnapshots = [];
   for (const snap of itemsWithSnapshots) {
@@ -413,175 +336,74 @@ export async function updateOrder(
       newItemSnaps.push(snap);
     }
   }
+
+  const itemDeleteIds: string[] = [];
+  const itemRows: Array<Record<string, unknown>> = [];
   let newSnapIdx = 0;
-
-  for (const i of params.items) {
-    // Pomijaj usunięte pozycje bez id (nigdy nie zapisane w bazie)
-    if (i._deleted && !i.id) continue;
-
-    if (i._deleted && i.id) {
-      const { error: delErr } = await supabase.from("order_items").delete().eq("id", i.id).eq("order_id", orderId);
-      if (delErr) throw delErr;
-    } else if (i.id == null) {
-      // Nowa pozycja (INSERT) — snapshot z listy nowych po kolejności
-      const snap = newItemSnaps[newSnapIdx++];
-      const { error: insErr } = await supabase.from("order_items").insert({
-        order_id: orderId,
-        product_id: i.productId ?? null,
-        product_name_snapshot: snap?.productNameSnapshot ?? i.productNameSnapshot ?? null,
-        default_loading_method_snapshot: snap?.defaultLoadingMethodSnapshot ?? null,
-        loading_method_code: i.loadingMethodCode ?? null,
-        quantity_tons: i.quantityTons ?? null,
-        notes: i.notes ?? null,
-      });
-      if (insErr) throw insErr;
-    } else if (!i._deleted) {
-      // Istniejąca pozycja (UPDATE) — snapshot matchowany po item.id
-      const snap = i.id ? itemSnapshotById.get(i.id) : undefined;
-      const { error: updErr } = await supabase
-        .from("order_items")
-        .update({
-          product_id: i.productId ?? null,
-          product_name_snapshot: snap?.productNameSnapshot ?? i.productNameSnapshot ?? null,
-          default_loading_method_snapshot: snap?.defaultLoadingMethodSnapshot ?? null,
-          loading_method_code: i.loadingMethodCode ?? null,
-          quantity_tons: i.quantityTons ?? null,
-          notes: i.notes ?? null,
-        })
-        .eq("id", i.id)
-        .eq("order_id", orderId);
-      if (updErr) throw updErr;
-    }
-  }
-
-  // Audit trail: logowanie zmian pozycji towarowych (items)
-  const itemChangeLogRows: Array<{
-    order_id: string;
-    field_name: string;
-    old_value: string | null;
-    new_value: string | null;
-    changed_by_user_id: string;
-  }> = [];
-
-  // Mapa snapshoty wg item.id (istniejące) lub specjalnego klucza (nowe)
-  // activeItems i itemsWithSnapshots mają tę samą kolejność — budujemy mapę po id
-  const snapshotByItemId = new Map<string, typeof itemsWithSnapshots[number]>();
-  let newItemSnapIdx = 0;
-  for (const snap of itemsWithSnapshots) {
-    if (snap.id) {
-      snapshotByItemId.set(snap.id, snap);
-    }
-  }
-  // Snapshoty nowych itemów (bez id) — oddzielna tablica do indeksowania
-  const newItemSnapshots = itemsWithSnapshots.filter(snap => !snap.id);
-
   // Numeracja aktywnych items w UI (1-based) — do czytelnych nazw pól w audit trail
   let displayItemNum = 0;
+
   for (const item of params.items) {
+    // Pomijaj usunięte pozycje bez id (nigdy nie zapisane w bazie)
     if (item._deleted && !item.id) continue;
 
     if (item._deleted && item.id) {
-      // Usunięta pozycja — matchowanie po id
+      itemDeleteIds.push(item.id);
       const oldItem = oldItemsMap.get(item.id);
-      itemChangeLogRows.push({
-        order_id: orderId,
+      changeLogRows.push({
         field_name: "item_removed",
         old_value: oldItem?.product_name_snapshot ?? null,
         new_value: null,
-        changed_by_user_id: userId,
       });
-    } else if (item.id == null) {
-      // Nowa pozycja — snapshot z kolejności nowych itemów
-      displayItemNum++;
-      const snap = newItemSnapshots[newItemSnapIdx] ?? null;
-      newItemSnapIdx++;
-      itemChangeLogRows.push({
-        order_id: orderId,
-        field_name: "item_added",
-        old_value: null,
-        new_value: snap?.productNameSnapshot ?? item.productNameSnapshot ?? null,
-        changed_by_user_id: userId,
-      });
-    } else {
-      // Istniejąca pozycja — matchowanie snapshot po item.id
-      displayItemNum++;
-      const oldItem = oldItemsMap.get(item.id);
-      if (oldItem) {
-        const snap = snapshotByItemId.get(item.id);
-        const productName = snap?.productNameSnapshot ?? item.productNameSnapshot ?? null;
+      continue;
+    }
 
-        // product_name
-        if ((oldItem.product_name_snapshot ?? null) !== (productName)) {
-          itemChangeLogRows.push({
-            order_id: orderId,
-            field_name: `item[${displayItemNum}].product_name`,
-            old_value: oldItem.product_name_snapshot ?? null,
-            new_value: productName,
-            changed_by_user_id: userId,
-          });
-        }
-        // loading_method_code
-        const oldMethod = oldItem.loading_method_code ?? null;
-        const newMethod = item.loadingMethodCode ?? null;
-        if (oldMethod !== newMethod) {
-          itemChangeLogRows.push({
-            order_id: orderId,
-            field_name: `item[${displayItemNum}].loading_method_code`,
-            old_value: oldMethod,
-            new_value: newMethod,
-            changed_by_user_id: userId,
-          });
-        }
-        // quantity_tons
-        const oldQty = oldItem.quantity_tons != null ? String(oldItem.quantity_tons) : null;
-        const newQty = item.quantityTons != null ? String(item.quantityTons) : null;
-        if (oldQty !== newQty) {
-          itemChangeLogRows.push({
-            order_id: orderId,
-            field_name: `item[${displayItemNum}].quantity_tons`,
-            old_value: oldQty,
-            new_value: newQty,
-            changed_by_user_id: userId,
-          });
-        }
-        // notes
-        const oldNotes = oldItem.notes ?? null;
-        const newNotes = item.notes ?? null;
-        if (oldNotes !== newNotes) {
-          itemChangeLogRows.push({
-            order_id: orderId,
-            field_name: `item[${displayItemNum}].notes`,
-            old_value: oldNotes,
-            new_value: newNotes,
-            changed_by_user_id: userId,
-          });
-        }
+    displayItemNum++;
+    const snap = item.id == null ? newItemSnaps[newSnapIdx++] : itemSnapshotById.get(item.id);
+    const productName = snap?.productNameSnapshot ?? item.productNameSnapshot ?? null;
+
+    itemRows.push({
+      id: item.id ?? null,
+      product_id: item.productId ?? null,
+      product_name_snapshot: productName,
+      default_loading_method_snapshot: snap?.defaultLoadingMethodSnapshot ?? null,
+      loading_method_code: item.loadingMethodCode ?? null,
+      quantity_tons: item.quantityTons ?? null,
+      notes: item.notes ?? null,
+    });
+
+    if (item.id == null) {
+      changeLogRows.push({ field_name: "item_added", old_value: null, new_value: productName });
+      continue;
+    }
+
+    // Istniejąca pozycja — porównanie pól ze stanem sprzed edycji
+    const oldItem = oldItemsMap.get(item.id);
+    if (!oldItem) continue;
+    const itemDiffs: Array<[string, string | null, string | null]> = [
+      ["product_name", oldItem.product_name_snapshot ?? null, productName],
+      ["loading_method_code", oldItem.loading_method_code ?? null, item.loadingMethodCode ?? null],
+      [
+        "quantity_tons",
+        oldItem.quantity_tons != null ? String(oldItem.quantity_tons) : null,
+        item.quantityTons != null ? String(item.quantityTons) : null,
+      ],
+      ["notes", oldItem.notes ?? null, item.notes ?? null],
+    ];
+    for (const [field, oldVal, newVal] of itemDiffs) {
+      if (oldVal !== newVal) {
+        changeLogRows.push({
+          field_name: `item[${displayItemNum}].${field}`,
+          old_value: oldVal,
+          new_value: newVal,
+        });
       }
     }
   }
 
-  if (itemChangeLogRows.length > 0) {
-    const { error: itemLogErr } = await supabase.from("order_change_log").insert(itemChangeLogRows);
-    if (itemLogErr) throw itemLogErr;
-  }
-
-  if (newStatusCode !== order.status_code) {
-    const { error: historyErr } = await supabase.from("order_status_history").insert({
-      order_id: orderId,
-      old_status_code: order.status_code,
-      new_status_code: newStatusCode,
-      changed_by_user_id: userId,
-    });
-    if (historyErr) throw historyErr;
-
-    const { error: logErr } = await supabase.from("order_change_log").insert({
-      order_id: orderId,
-      field_name: "status_code",
-      old_value: order.status_code,
-      new_value: newStatusCode,
-      changed_by_user_id: userId,
-    });
-    if (logErr) throw logErr;
+  const statusChanged = newStatusCode !== order.status_code;
+  if (statusChanged) {
+    changeLogRows.push({ field_name: "status_code", old_value: order.status_code, new_value: newStatusCode });
   }
 
   // M-02: Logowanie zmian pól biznesowych (PRD §3.1.8)
@@ -608,14 +430,6 @@ export async function updateOrder(
     { key: "totalLoadVolumeM3", dbField: "total_load_volume_m3" },
     { key: "specialRequirements", dbField: "special_requirements" },
   ];
-
-  const changeLogRows: Array<{
-    order_id: string;
-    field_name: string;
-    old_value: string | null;
-    new_value: string | null;
-    changed_by_user_id: string;
-  }> = [];
 
   // Audit trail: resolwer nazw dla pól FK (zamiast UUID)
   const FK_FIELDS = new Set(["carrier_company_id", "shipper_location_id", "receiver_location_id"]);
@@ -660,43 +474,37 @@ export async function updateOrder(
           if (dbField === "carrier_company_id") {
             resolvedNew = carrierSnapshots.carrier_name_snapshot ?? newStr;
           } else if (dbField === "shipper_location_id") {
-            resolvedNew = shipperSnapshots.nameSnapshot
-              ? `${shipperSnapshots.nameSnapshot}`
-              : newStr;
+            resolvedNew = shipperSnapshots.nameSnapshot ?? newStr;
           } else if (dbField === "receiver_location_id") {
-            resolvedNew = receiverSnapshots.nameSnapshot
-              ? `${receiverSnapshots.nameSnapshot}`
-              : newStr;
+            resolvedNew = receiverSnapshots.nameSnapshot ?? newStr;
           }
         }
-        changeLogRows.push({
-          order_id: orderId,
-          field_name: dbField,
-          old_value: resolvedOld,
-          new_value: resolvedNew,
-          changed_by_user_id: userId,
-        });
+        changeLogRows.push({ field_name: dbField, old_value: resolvedOld, new_value: resolvedNew });
       }
     }
   }
 
-  if (changeLogRows.length > 0) {
-    const { error: bizLogErr } = await supabase.from("order_change_log").insert(changeLogRows);
-    if (bizLogErr) throw bizLogErr;
-  }
-
-  // M-02: Pobierz rzeczywisty updated_at z DB (nie Date.now()) — spójność z optimistic concurrency
-  const { data: refreshed } = await supabase
-    .from("transport_orders")
-    .select("updated_at")
-    .eq("id", orderId)
-    .single();
+  // Zapis atomowy: zlecenie + stopy + towary + historia statusu + audit log.
+  // Guard blokady i statusu w RPC (WHERE) — brak TOCTOU; błąd w dowolnym kroku wycofuje całość.
+  const { updatedAt } = await applyOrderChanges(supabase, {
+    orderId,
+    expectedStatus: order.status_code,
+    orderPatch,
+    stopDeleteIds,
+    stops: stopRows,
+    itemDeleteIds,
+    items: itemRows,
+    changeLog: changeLogRows,
+    statusHistory: statusChanged
+      ? { old_status_code: order.status_code, new_status_code: newStatusCode }
+      : null,
+  });
 
   return {
     id: orderId,
     orderNo: order.order_no,
     statusCode: newStatusCode,
-    updatedAt: refreshed?.updated_at ?? new Date().toISOString(),
+    updatedAt,
   };
 }
 
@@ -779,150 +587,119 @@ export async function patchStop(
   if (params.notes !== undefined) stopUpdatePayload.notes = params.notes;
 
   // Update location snapshots when locationId changes
+  let newLocationCountry: string | null = null;
   if (params.locationId !== undefined && params.locationId) {
     const snap = await buildSnapshotsForLocation(supabase, params.locationId);
     stopUpdatePayload.location_name_snapshot = snap.locationNameSnapshot;
     stopUpdatePayload.company_name_snapshot = snap.companyNameSnapshot;
     stopUpdatePayload.address_snapshot = snap.addressSnapshot;
+    newLocationCountry = snap.country;
   } else if (params.locationId === null) {
     stopUpdatePayload.location_name_snapshot = null;
     stopUpdatePayload.company_name_snapshot = null;
     stopUpdatePayload.address_snapshot = null;
   }
 
-  if (Object.keys(stopUpdatePayload).length > 0) {
-    type StopUpdate = Database["public"]["Tables"]["order_stops"]["Update"];
-    const { error: updErr } = await supabase
-      .from("order_stops")
-      .update(stopUpdatePayload as StopUpdate)
-      .eq("id", stopId)
-      .eq("order_id", orderId);
-    if (updErr) throw updErr;
-
-    // P-01: Logowanie zmian poszczególnych pól stopu do order_change_log
-    const fieldMap: Array<{ param: keyof PatchStopParams; dbField: string; oldVal: unknown }> = [
-      { param: "dateLocal", dbField: "date_local", oldVal: stop.date_local },
-      { param: "timeLocal", dbField: "time_local", oldVal: stop.time_local },
-      { param: "notes", dbField: "notes", oldVal: stop.notes },
-    ];
-    const changeLogRows: Array<{
-      order_id: string;
-      field_name: string;
-      old_value: string | null;
-      new_value: string | null;
-      changed_by_user_id: string;
-    }> = [];
-    for (const { param, dbField, oldVal } of fieldMap) {
-      if (params[param] !== undefined) {
-        const oldStr = oldVal != null ? String(oldVal) : null;
-        const newStr = params[param] != null ? String(params[param]) : null;
-        if (oldStr !== newStr) {
-          changeLogRows.push({
-            order_id: orderId,
-            field_name: `stop.${dbField}`,
-            old_value: oldStr,
-            new_value: newStr,
-            changed_by_user_id: userId,
-          });
-        }
-      }
-    }
-
-    // Specjalna obsługa location_id — zapisz nazwę zamiast UUID
-    if (params.locationId !== undefined) {
-      const oldLocId = stop.location_id;
-      const newLocId = params.locationId;
-      const oldStr = oldLocId ?? null;
-      const newStr = newLocId ?? null;
+  // P-01: Logowanie zmian poszczególnych pól stopu do order_change_log
+  const changeLogRows: ChangeLogEntry[] = [];
+  const fieldMap: Array<{ param: keyof PatchStopParams; dbField: string; oldVal: unknown }> = [
+    { param: "dateLocal", dbField: "date_local", oldVal: stop.date_local },
+    { param: "timeLocal", dbField: "time_local", oldVal: stop.time_local },
+    { param: "notes", dbField: "notes", oldVal: stop.notes },
+  ];
+  for (const { param, dbField, oldVal } of fieldMap) {
+    if (params[param] !== undefined) {
+      const oldStr = oldVal != null ? String(oldVal) : null;
+      const newStr = params[param] != null ? String(params[param]) : null;
       if (oldStr !== newStr) {
-        let resolvedOld: string | null = null;
-        let resolvedNew: string | null = null;
-        if (oldLocId) {
-          const { data: oldLoc } = await supabase
-            .from("locations")
-            .select("name, companies(name)")
-            .eq("id", oldLocId)
-            .maybeSingle();
-          const oldCompany = (oldLoc?.companies as { name: string } | null)?.name;
-          resolvedOld = oldCompany ? `${oldCompany} — ${oldLoc?.name}` : oldLoc?.name ?? oldLocId;
-        }
-        if (newLocId) {
-          // Snapshot już pobrany wyżej w stopUpdatePayload
-          const newName = stopUpdatePayload.location_name_snapshot as string | null;
-          const newCompany = stopUpdatePayload.company_name_snapshot as string | null;
-          resolvedNew = newCompany ? `${newCompany} — ${newName}` : newName ?? newLocId;
-        }
-        changeLogRows.push({
-          order_id: orderId,
-          field_name: `stop.location_id`,
-          old_value: resolvedOld,
-          new_value: resolvedNew,
-          changed_by_user_id: userId,
-        });
+        changeLogRows.push({ field_name: `stop.${dbField}`, old_value: oldStr, new_value: newStr });
       }
-    }
-
-    if (changeLogRows.length > 0) {
-      const { error: logErr } = await supabase.from("order_change_log").insert(changeLogRows);
-      if (logErr) throw logErr;
     }
   }
 
-  const { data: allStops } = await supabase
+  // Specjalna obsługa location_id — zapisz nazwę zamiast UUID
+  if (params.locationId !== undefined) {
+    const oldLocId = stop.location_id;
+    const newLocId = params.locationId;
+    if ((oldLocId ?? null) !== (newLocId ?? null)) {
+      let resolvedOld: string | null = null;
+      let resolvedNew: string | null = null;
+      if (oldLocId) {
+        const { data: oldLoc } = await supabase
+          .from("locations")
+          .select("name, companies(name)")
+          .eq("id", oldLocId)
+          .maybeSingle();
+        const oldCompany = (oldLoc?.companies as { name: string } | null)?.name;
+        resolvedOld = oldCompany ? `${oldCompany} — ${oldLoc?.name}` : oldLoc?.name ?? oldLocId;
+      }
+      if (newLocId) {
+        // Snapshot już pobrany wyżej w stopUpdatePayload
+        const newName = stopUpdatePayload.location_name_snapshot as string | null;
+        const newCompany = stopUpdatePayload.company_name_snapshot as string | null;
+        resolvedNew = newCompany ? `${newCompany} — ${newName}` : newName ?? newLocId;
+      }
+      changeLogRows.push({ field_name: "stop.location_id", old_value: resolvedOld, new_value: resolvedNew });
+    }
+  }
+
+  // Denormalizacja liczona ze stanu PO zmianie — patch nakładamy w pamięci na aktualne stopy
+  // (zapis dopiero w RPC, więc nie możemy przeczytać stanu po UPDATE jak wcześniej)
+  const { data: allStops, error: allStopsErr } = await supabase
     .from("order_stops")
-    .select("kind, date_local, time_local, location_name_snapshot, location_id, locations(country)")
+    .select("id, kind, date_local, time_local, location_name_snapshot, location_id, locations(country)")
     .eq("order_id", orderId)
     .order("sequence_no", { ascending: true });
+  if (allStopsErr) throw allStopsErr;
 
-  const stopsForDenorm = (allStops ?? []).map((s) => ({
-    kind: s.kind,
-    dateLocal: s.date_local,
-    timeLocal: s.time_local,
-    locationNameSnapshot: s.location_name_snapshot,
-    country: (s.locations as { country: string | null } | null)?.country ?? null,
-  }));
+  const stopsForDenorm = (allStops ?? []).map((s) => {
+    const base = {
+      kind: s.kind,
+      dateLocal: s.date_local,
+      timeLocal: s.time_local,
+      locationNameSnapshot: s.location_name_snapshot,
+      country: (s.locations as { country: string | null } | null)?.country ?? null,
+    };
+    if (s.id !== stopId) return base;
+    return {
+      kind: params.kind ?? base.kind,
+      dateLocal: params.dateLocal !== undefined ? params.dateLocal : base.dateLocal,
+      timeLocal: params.timeLocal !== undefined ? params.timeLocal : base.timeLocal,
+      locationNameSnapshot:
+        params.locationId !== undefined
+          ? (stopUpdatePayload.location_name_snapshot as string | null)
+          : base.locationNameSnapshot,
+      country: params.locationId !== undefined ? newLocationCountry : base.country,
+    };
+  });
   const denorm = computeDenormalizedFields(stopsForDenorm, []);
 
-  // P-04: Atomic denormalization UPDATE z guardem na READONLY_STATUSES + lock ownership
-  type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
-  const { error: denormErr, count: denormCount } = await supabase
-    .from("transport_orders")
-    .update(
-      {
-        first_loading_date: denorm.first_loading_date,
-        first_loading_time: denorm.first_loading_time,
-        first_unloading_date: denorm.first_unloading_date,
-        first_unloading_time: denorm.first_unloading_time,
-        last_loading_date: denorm.last_loading_date,
-        last_loading_time: denorm.last_loading_time,
-        last_unloading_date: denorm.last_unloading_date,
-        last_unloading_time: denorm.last_unloading_time,
-        first_loading_country: denorm.first_loading_country,
-        first_unloading_country: denorm.first_unloading_country,
-        summary_route: denorm.summary_route,
-        ...(shouldAutoKorekta ? { status_code: ORDER_STATUS.CORRECTION } : {}),
-      } as OrderUpdate,
-      { count: "exact" }
-    )
-    .eq("id", orderId)
-    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`)
-    .not("status_code", "in", `(${[...TERMINAL_STATUSES].join(",")})`);
-  if (denormErr) throw denormErr;
-  // Jeśli UPDATE nie trafił żadnego wiersza — zlecenie zostało zrealizowane/anulowane równolegle
-  if (!denormCount || denormCount === 0) {
-    throw new Error("FORBIDDEN_EDIT");
-  }
-
-  // P-02: Wpis do order_status_history przy auto-korekcie
-  if (shouldAutoKorekta) {
-    const { error: histErr } = await supabase.from("order_status_history").insert({
-      order_id: orderId,
-      old_status_code: order.status_code,
-      new_status_code: ORDER_STATUS.CORRECTION,
-      changed_by_user_id: userId,
-    });
-    if (histErr) throw histErr;
-  }
+  // P-04: Zapis atomowy (stop + denormalizacja zlecenia + auto-korekta + audit log).
+  // Guard blokady i statusu w RPC — równoległa zmiana statusu / blokada → CONFLICT (LOCKED).
+  await applyOrderChanges(supabase, {
+    orderId,
+    expectedStatus: order.status_code,
+    orderPatch: {
+      first_loading_date: denorm.first_loading_date,
+      first_loading_time: denorm.first_loading_time,
+      first_unloading_date: denorm.first_unloading_date,
+      first_unloading_time: denorm.first_unloading_time,
+      last_loading_date: denorm.last_loading_date,
+      last_loading_time: denorm.last_loading_time,
+      last_unloading_date: denorm.last_unloading_date,
+      last_unloading_time: denorm.last_unloading_time,
+      first_loading_country: denorm.first_loading_country,
+      first_unloading_country: denorm.first_unloading_country,
+      summary_route: denorm.summary_route,
+      ...(shouldAutoKorekta ? { status_code: ORDER_STATUS.CORRECTION } : {}),
+    },
+    stops: Object.keys(stopUpdatePayload).length > 0 ? [{ id: stopId, ...stopUpdatePayload }] : [],
+    changeLog: changeLogRows,
+    // P-02: Wpis do order_status_history przy auto-korekcie
+    statusHistory: shouldAutoKorekta
+      ? { old_status_code: order.status_code, new_status_code: ORDER_STATUS.CORRECTION }
+      : null,
+  });
 
   const merged = {
     kind: params.kind ?? stop.kind,

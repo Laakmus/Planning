@@ -75,8 +75,6 @@ interface TableMock {
  */
 interface InsertTrackers {
   changeLogInsertMock?: ReturnType<typeof vi.fn>;
-  /** Przechwytuje argumenty .eq() na UPDATE transport_orders. */
-  orderUpdateEqMock?: ReturnType<typeof vi.fn>;
 }
 
 function buildOrderServiceMock(
@@ -158,13 +156,6 @@ function buildOrderServiceMock(
       for (const um of updMethods) {
         updChain[um] = vi.fn().mockReturnValue(updChain);
       }
-      if (table === "transport_orders" && trackers?.orderUpdateEqMock) {
-        const eqTracker = trackers.orderUpdateEqMock as unknown as (col: string, val: unknown) => void;
-        updChain.eq = vi.fn().mockImplementation((col: string, val: unknown) => {
-          eqTracker(col, val);
-          return updChain;
-        });
-      }
       updChain.select = vi.fn().mockReturnValue(updChain);
       updChain.single = vi.fn().mockResolvedValue(updateRes);
       updChain.maybeSingle = vi.fn().mockResolvedValue(updateRes);
@@ -188,8 +179,15 @@ function buildOrderServiceMock(
 
   const fromFn = vi.fn().mockImplementation((table: string) => makeChain(table));
 
-  const rpcFn = vi.fn().mockImplementation((fnName: string) => {
-    const result = rpcResults?.[fnName] ?? { data: null, error: null };
+  const rpcFn = vi.fn().mockImplementation((fnName: string, args?: Record<string, unknown>) => {
+    if (fnName === "apply_order_changes" && changeLogInsertMock && args?.p_change_log) {
+      (changeLogInsertMock as (d: unknown) => void)(args.p_change_log);
+    }
+    const defaultResult =
+      fnName === "apply_order_changes"
+        ? { data: { status: "OK", updated_at: "2026-03-07T12:00:00Z" }, error: null }
+        : { data: null, error: null };
+    const result = rpcResults?.[fnName] ?? defaultResult;
     return Promise.resolve(result);
   });
 
@@ -299,7 +297,6 @@ describe("duplicateOrder", () => {
             { data: makeOrderRow(), error: null },
             // getOrderDetail: internal (doesn't actually re-select transport_orders)
           ],
-          insert: { data: { id: "new-order-id", created_at: "2026-02-18T10:00:00Z" }, error: null },
         },
         order_stops: {
           select: { data: [makeStopRow()], error: null },
@@ -316,6 +313,7 @@ describe("duplicateOrder", () => {
       },
       {
         generate_next_order_no: { data: "ZT2026/0002", error: null },
+        create_order_with_children: { data: { id: "new-order-id", created_at: "2026-02-18T10:00:00Z" }, error: null },
       }
     );
   }
@@ -343,7 +341,6 @@ describe("duplicateOrder", () => {
           selectSequence: [
             { data: makeOrderRow({ notification_details: "Awizacja: Jan, tel. 600100200" }), error: null },
           ],
-          insert: { data: { id: "new-order-id", created_at: "2026-02-18T10:00:00Z" }, error: null },
         },
         order_stops: {
           select: { data: [makeStopRow()], error: null },
@@ -357,7 +354,10 @@ describe("duplicateOrder", () => {
         locations: { select: { data: [{ id: VALID_LOCATION_ID }], error: null } },
         products: { select: { data: [{ id: VALID_PRODUCT_ID }], error: null } },
       },
-      { generate_next_order_no: { data: "ZT2026/0002", error: null } }
+      {
+        generate_next_order_no: { data: "ZT2026/0002", error: null },
+        create_order_with_children: { data: { id: "new-order-id", created_at: "2026-02-18T10:00:00Z" }, error: null },
+      }
     );
 
     await duplicateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, {
@@ -366,17 +366,16 @@ describe("duplicateOrder", () => {
       resetStatusToDraft: true,
     });
 
-    // Znajdź wywołanie from("transport_orders") po którym nastąpił insert
-    const fromFn = supabase.from as ReturnType<typeof vi.fn>;
-    const transportOrdersCalls = fromFn.mock.calls
-      .map((args, i) => ({ args, result: fromFn.mock.results[i].value }))
-      .filter((c) => c.args[0] === "transport_orders");
-    // Ostatnie wywołanie from("transport_orders") to insert (po select w getOrderDetail)
-    const insertChain = transportOrdersCalls[transportOrdersCalls.length - 1].result;
-    const insertFn = insertChain.insert as ReturnType<typeof vi.fn>;
-    expect(insertFn).toHaveBeenCalled();
-    const insertPayload = insertFn.mock.calls[0][0];
-    expect(insertPayload.notification_details).toBeNull();
+    const call = (supabase.rpc as unknown as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: unknown[]) => c[0] === "create_order_with_children"
+    );
+    expect(call).toBeDefined();
+    const args = call![1] as Record<string, unknown>;
+    expect((args.p_order as Record<string, unknown>).notification_details).toBeNull();
+    // Stopy, towary i historia statusu w tej samej transakcji
+    expect(args.p_stops).toHaveLength(1);
+    expect(args.p_items).toHaveLength(1);
+    expect(args.p_status_history).toEqual({ old_status_code: "robocze", new_status_code: "robocze" });
   });
 
   it("resetStatusToDraft: false → zachowuje oryginalny status", async () => {
@@ -389,6 +388,12 @@ describe("duplicateOrder", () => {
     });
 
     expect(result!.statusCode).toBe("robocze"); // oryginał jest robocze
+    // includeStops/includeItems = false → puste tablice w RPC
+    const call = (supabase.rpc as unknown as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: unknown[]) => c[0] === "create_order_with_children"
+    );
+    expect((call![1] as Record<string, unknown>).p_stops).toEqual([]);
+    expect((call![1] as Record<string, unknown>).p_items).toEqual([]);
   });
 
   it("zlecenie nie istnieje → null", async () => {
@@ -411,7 +416,7 @@ describe("duplicateOrder", () => {
 // ---------------------------------------------------------------------------
 
 describe("createOrder", () => {
-  function buildCreateMock(overrides?: Record<string, TableMock>) {
+  function buildCreateMock(overrides?: Record<string, TableMock>, rpcOverrides?: Record<string, Res>) {
     return buildOrderServiceMock(
       {
         // FK validation — transport_types, companies, locations, products
@@ -429,15 +434,12 @@ describe("createOrder", () => {
             error: null,
           },
         },
-        transport_orders: {
-          insert: { data: { id: "new-id", created_at: "2026-02-20T10:00:00Z" }, error: null },
-        },
-        order_stops: { insert: { data: null, error: null } },
-        order_items: { insert: { data: null, error: null } },
         ...overrides,
       },
       {
         generate_next_order_no: { data: "ZT2026/0010", error: null },
+        create_order_with_children: { data: { id: "new-id", created_at: "2026-02-20T10:00:00Z" }, error: null },
+        ...rpcOverrides,
       }
     );
   }
@@ -475,6 +477,50 @@ describe("createOrder", () => {
 
       const result = await createOrder(supabase, VALID_USER_ID, params);
       expect(result).not.toBeNull();
+    });
+  });
+
+  describe("zapis atomowy (RPC create_order_with_children)", () => {
+    function createArgs(supabase: SupabaseClient<Database>): Record<string, unknown> {
+      const calls = (supabase.rpc as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(
+        (c: unknown[]) => c[0] === "create_order_with_children"
+      );
+      expect(calls).toHaveLength(1);
+      return calls[0][1] as Record<string, unknown>;
+    }
+
+    it("zlecenie, stopy, towary i log „order_created” w jednym wywołaniu", async () => {
+      const supabase = buildCreateMock();
+      const params = makeCreateOrderParams();
+
+      await createOrder(supabase, VALID_USER_ID, params);
+
+      const args = createArgs(supabase);
+      const order = args.p_order as Record<string, unknown>;
+      expect(order.order_no).toBe("ZT2026/0010");
+      expect(order.status_code).toBe("robocze");
+      // created_by_user_id ustawia RPC (auth.uid())
+      expect(order).not.toHaveProperty("created_by_user_id");
+      expect(args.p_stops).toHaveLength(params.stops.length);
+      expect(args.p_items).toHaveLength(params.items.length);
+      expect(args.p_change_log).toEqual([{ field_name: "order_created", old_value: null, new_value: "ZT2026/0010" }]);
+      // Brak bezpośrednich INSERT-ów przez from()
+      const fromTables = (supabase.from as unknown as ReturnType<typeof vi.fn>).mock.calls.map((c: unknown[]) => c[0]);
+      expect(fromTables).not.toContain("order_stops");
+      expect(fromTables).not.toContain("order_change_log");
+    });
+
+    it("błąd RPC → wyjątek, bez kompensującego DELETE", async () => {
+      const supabase = buildCreateMock(undefined, {
+        create_order_with_children: { data: null, error: new Error("check constraint") },
+      });
+
+      await expect(createOrder(supabase, VALID_USER_ID, makeCreateOrderParams())).rejects.toThrow("check constraint");
+      const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
+      const deletes = fromMock.mock.results.filter(
+        (r) => (r.value as Record<string, ReturnType<typeof vi.fn>>).delete.mock.calls.length > 0
+      );
+      expect(deletes).toHaveLength(0);
     });
   });
 
@@ -588,11 +634,23 @@ describe("createOrder", () => {
 // updateOrder
 // ---------------------------------------------------------------------------
 
+/** Argumenty ostatniego wywołania RPC apply_order_changes. */
+function applyArgs(supabase: SupabaseClient<Database>): Record<string, unknown> {
+  const calls = (supabase.rpc as unknown as ReturnType<typeof vi.fn>).mock.calls.filter(
+    (c: unknown[]) => c[0] === "apply_order_changes"
+  );
+  expect(calls.length).toBe(1);
+  return calls[calls.length - 1][1] as Record<string, unknown>;
+}
+
+type LogRow = { field_name: string; old_value: string | null; new_value: string | null };
+
 describe("updateOrder", () => {
   function buildUpdateMock(
     orderData?: Record<string, unknown>,
     tableOverrides?: Record<string, TableMock>,
-    trackers?: InsertTrackers
+    trackers?: InsertTrackers,
+    rpcResults?: Record<string, Res>
   ) {
     return buildOrderServiceMock({
       transport_orders: {
@@ -617,7 +675,7 @@ describe("updateOrder", () => {
       order_status_history: { insert: { data: null, error: null } },
       order_change_log: { insert: { data: null, error: null } },
       ...tableOverrides,
-    }, undefined, trackers);
+    }, rpcResults, trackers);
   }
 
   describe("happy path", () => {
@@ -738,34 +796,7 @@ describe("updateOrder", () => {
       ).rejects.toThrow("STOPS_ORDER");
     });
 
-    it("TOCTOU (count=0) → throws LOCKED", async () => {
-      const supabase = buildOrderServiceMock({
-        transport_orders: {
-          select: {
-            data: {
-              id: VALID_ORDER_ID,
-              order_no: "ZT2026/0001",
-              status_code: "robocze",
-              locked_by_user_id: null,
-            },
-            error: null,
-          },
-          update: { data: null, error: null, count: 0 },
-        },
-        transport_types: { select: { data: { code: "PL" }, error: null } },
-        companies: { select: { data: { id: VALID_COMPANY_ID }, error: null } },
-        locations: { select: { data: [], error: null } },
-        products: { select: { data: [], error: null } },
-      });
-      const params = makeUpdateOrderParams();
-
-      await expect(
-        updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params)
-      ).rejects.toThrow("LOCKED");
-    });
-
-    it("UPDATE zawiera guard status_code (równoległe anulowanie nie jest nadpisywane)", async () => {
-      const orderUpdateEqMock = vi.fn();
+    it("RPC zwraca CONFLICT (blokada/status zmienione równolegle) → throws LOCKED", async () => {
       const supabase = buildOrderServiceMock(
         {
           transport_orders: {
@@ -773,26 +804,53 @@ describe("updateOrder", () => {
               data: {
                 id: VALID_ORDER_ID,
                 order_no: "ZT2026/0001",
-                status_code: "wysłane",
+                status_code: "robocze",
                 locked_by_user_id: null,
               },
               error: null,
             },
-            update: { data: null, error: null, count: 0 },
           },
           transport_types: { select: { data: { code: "PL" }, error: null } },
           companies: { select: { data: { id: VALID_COMPANY_ID }, error: null } },
           locations: { select: { data: [], error: null } },
           products: { select: { data: [], error: null } },
         },
-        undefined,
-        { orderUpdateEqMock }
+        { apply_order_changes: { data: { status: "CONFLICT" }, error: null } }
       );
+      const params = makeUpdateOrderParams();
+
+      await expect(
+        updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params)
+      ).rejects.toThrow("LOCKED");
+    });
+
+    it("błąd RPC (np. constraint) → wyjątek propagowany, brak częściowego zapisu przez from()", async () => {
+      const supabase = buildUpdateMock(undefined, undefined, undefined, {
+        apply_order_changes: { data: null, error: new Error("check constraint") },
+      });
 
       await expect(
         updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, makeUpdateOrderParams())
-      ).rejects.toThrow("LOCKED");
-      expect(orderUpdateEqMock).toHaveBeenCalledWith("status_code", "wysłane");
+      ).rejects.toThrow("check constraint");
+
+      // Żadnych zapisów poza RPC — tylko odczyty
+      const fromMock = supabase.from as unknown as ReturnType<typeof vi.fn>;
+      const writeTables = fromMock.mock.results
+        .map((r) => r.value as Record<string, ReturnType<typeof vi.fn>>)
+        .filter((chain) => chain.insert.mock.calls.length + chain.update.mock.calls.length + chain.delete.mock.calls.length > 0);
+      expect(writeTables).toHaveLength(0);
+    });
+
+    it("RPC dostaje oczekiwany status (równoległe anulowanie nie jest nadpisywane)", async () => {
+      const supabase = buildUpdateMock({ status_code: "wysłane" });
+
+      await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, makeUpdateOrderParams());
+
+      const args = applyArgs(supabase);
+      expect(args.p_order_id).toBe(VALID_ORDER_ID);
+      expect(args.p_expected_status).toBe("wysłane");
+      // updated_by_user_id ustawia RPC (auth.uid()), nie backend
+      expect(args.p_order).not.toHaveProperty("updated_by_user_id");
     });
   });
 
@@ -890,8 +948,11 @@ describe("updateOrder", () => {
       expect(statusEntry).toBeDefined();
       expect(statusEntry!.old_value).toBe("wysłane");
       expect(statusEntry!.new_value).toBe("korekta");
-      expect(statusEntry!.order_id).toBe(VALID_ORDER_ID);
-      expect(statusEntry!.changed_by_user_id).toBe(VALID_USER_ID);
+      // Historia statusu w tej samej transakcji (order_id / changed_by ustawia RPC)
+      expect(applyArgs(supabase).p_status_history).toEqual({
+        old_status_code: "wysłane",
+        new_status_code: "korekta",
+      });
     });
 
     it("brak zmian w polach biznesowych → NIE loguje business fields do change_log", async () => {
@@ -1045,9 +1106,8 @@ describe("updateOrder", () => {
       expect(result).not.toBeNull();
 
       // Weryfikujemy, że from("order_change_log") było wywoływane
-      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
-      const changeLogCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_change_log");
-      expect(changeLogCalls.length).toBeGreaterThan(0);
+      const log = applyArgs(supabase).p_change_log as LogRow[];
+      expect(log).toContainEqual({ field_name: "item[1].product_name", old_value: "Stal nierdzewna", new_value: "Miedź" });
     });
 
     it("zmiana quantity_tons → log item[1].quantity_tons", async () => {
@@ -1077,9 +1137,8 @@ describe("updateOrder", () => {
       expect(result).not.toBeNull();
 
       // Weryfikujemy, że from("order_change_log") było wywoływane (insert z quantity_tons change)
-      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
-      const changeLogCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_change_log");
-      expect(changeLogCalls.length).toBeGreaterThan(0);
+      const log = applyArgs(supabase).p_change_log as LogRow[];
+      expect(log).toContainEqual({ field_name: "item[1].quantity_tons", old_value: "10", new_value: "25" });
     });
 
     it("dodanie nowego itemu → log item_added", async () => {
@@ -1101,9 +1160,9 @@ describe("updateOrder", () => {
       expect(result).not.toBeNull();
 
       // Wywołanie from("order_change_log") oznacza zapis item_added
-      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
-      const changeLogCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_change_log");
-      expect(changeLogCalls.length).toBeGreaterThan(0);
+      const args = applyArgs(supabase);
+      expect(args.p_change_log as LogRow[]).toContainEqual({ field_name: "item_added", old_value: null, new_value: "Nowy produkt" });
+      expect(args.p_items).toEqual([expect.objectContaining({ id: null, product_name_snapshot: "Nowy produkt", quantity_tons: 5 })]);
     });
 
     it("usunięcie itemu → log item_removed", async () => {
@@ -1133,9 +1192,10 @@ describe("updateOrder", () => {
       expect(result).not.toBeNull();
 
       // Weryfikujemy, że from("order_items").delete() + from("order_change_log").insert() były wywołane
-      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
-      const changeLogCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_change_log");
-      expect(changeLogCalls.length).toBeGreaterThan(0);
+      const args = applyArgs(supabase);
+      expect(args.p_change_log as LogRow[]).toContainEqual({ field_name: "item_removed", old_value: "Stal nierdzewna", new_value: null });
+      expect(args.p_item_delete_ids).toEqual([ITEM_ID]);
+      expect(args.p_items).toEqual([]);
     });
   });
 
@@ -1144,7 +1204,7 @@ describe("updateOrder", () => {
   // -------------------------------------------------------------------------
 
   describe("stops CRUD — mix _deleted + nowych + istniejących", () => {
-    it("delete _deleted stop → from('order_stops').delete() wywoływane", async () => {
+    it("stop _deleted → p_stop_delete_ids, pozostałe w p_stops", async () => {
       const STOP_TO_DELETE = "c2000000-0000-0000-0000-000000000002";
       const supabase = buildUpdateMock();
       const params = makeUpdateOrderParams({
@@ -1161,14 +1221,14 @@ describe("updateOrder", () => {
       const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
       expect(result).not.toBeNull();
 
-      // Weryfikujemy, że from("order_stops") było wywoływane (delete + update + insert)
-      const fromCalls = (supabase.from as ReturnType<typeof vi.fn>).mock.calls;
-      const stopCalls = fromCalls.filter((call: unknown[]) => call[0] === "order_stops");
-      // Powinno być wiele wywołań: delete, temporary offset, final update, insert
-      expect(stopCalls.length).toBeGreaterThanOrEqual(3);
+      const args = applyArgs(supabase);
+      expect(args.p_stop_delete_ids).toEqual([STOP_TO_DELETE]);
+      const stops = args.p_stops as Array<Record<string, unknown>>;
+      expect(stops).toHaveLength(2);
+      expect(stops.map((r) => r.id)).toEqual([VALID_STOP_ID, null]);
     });
 
-    it("insert nowy stop → from('order_stops') z insert wywoływane", async () => {
+    it("nowy stop → wiersz bez id w p_stops", async () => {
       const supabase = buildUpdateMock();
       const params = makeUpdateOrderParams({
         stops: [
@@ -1179,10 +1239,12 @@ describe("updateOrder", () => {
 
       const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
       expect(result).not.toBeNull();
-      expect(result!.id).toBe(VALID_ORDER_ID);
+
+      const stops = applyArgs(supabase).p_stops as Array<Record<string, unknown>>;
+      expect(stops).toContainEqual(expect.objectContaining({ id: null, kind: "UNLOADING", sequence_no: 2, date_local: "2026-02-22" }));
     });
 
-    it("update istniejący stop → from('order_stops') z update wywoływane", async () => {
+    it("istniejący stop → wiersz z id i nowymi wartościami w p_stops", async () => {
       const supabase = buildUpdateMock();
       const params = makeUpdateOrderParams({
         stops: [
@@ -1195,9 +1257,10 @@ describe("updateOrder", () => {
       const result = await updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params);
       expect(result).not.toBeNull();
 
-      // Weryfikujemy poprawne zakończenie — brak wyjątków, wynik jest zwrócony
-      expect(result!.id).toBe(VALID_ORDER_ID);
-      expect(result!.orderNo).toBe("ZT2026/0001");
+      const stops = applyArgs(supabase).p_stops as Array<Record<string, unknown>>;
+      expect(stops).toContainEqual(
+        expect.objectContaining({ id: VALID_STOP_ID, date_local: "2026-03-01", time_local: "09:00", notes: "Zmieniona data" })
+      );
     });
 
     it("mix: 1 deleted + 1 existing + 1 new → nie rzuca wyjątku", async () => {
@@ -1224,7 +1287,7 @@ describe("updateOrder", () => {
 // ---------------------------------------------------------------------------
 
 describe("prepareEmailForOrder", () => {
-  function buildEmailMock(orderOverrides?: Record<string, unknown>) {
+  function buildEmailMock(orderOverrides?: Record<string, unknown>, rpcResults?: Record<string, Res>) {
     const order = makeOrderRow({
       carrier_company_id: VALID_COMPANY_ID,
       carrier_name_snapshot: "TransPol",
@@ -1256,8 +1319,33 @@ describe("prepareEmailForOrder", () => {
         },
       },
       order_status_history: { insert: { data: null, error: null } },
-    });
+    }, rpcResults);
   }
+
+  it("status wysłane + sent_at + historia + log w jednym RPC (bez wymogu blokady)", async () => {
+    const supabase = buildEmailMock({ status_code: "robocze" });
+
+    await prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, { outputFormat: "eml" as const });
+
+    const call = (supabase.rpc as unknown as ReturnType<typeof vi.fn>).mock.calls.find(
+      (c: unknown[]) => c[0] === "apply_order_changes"
+    );
+    const args = call![1] as Record<string, unknown>;
+    expect(args.p_expected_status).toBe("robocze");
+    expect(args.p_order).toMatchObject({ status_code: "wysłane", sent_by_user_id: VALID_USER_ID });
+    expect(args.p_status_history).toEqual({ old_status_code: "robocze", new_status_code: "wysłane" });
+    expect(args.p_ignore_lock).toBe(true);
+  });
+
+  it('równoległa zmiana statusu (RPC CONFLICT) → throws "STATUS_CHANGED"', async () => {
+    const supabase = buildEmailMock({ status_code: "robocze" }, {
+      apply_order_changes: { data: { status: "CONFLICT" }, error: null },
+    });
+
+    await expect(
+      prepareEmailForOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, { outputFormat: "eml" as const })
+    ).rejects.toThrow("STATUS_CHANGED");
+  });
 
   it('"robocze" → success z emlContent i orderNo', async () => {
     const supabase = buildEmailMock({ status_code: "robocze" });
@@ -1326,13 +1414,14 @@ describe("prepareEmailForOrder", () => {
 // ---------------------------------------------------------------------------
 
 describe("patchStop", () => {
-  function buildPatchMock(orderOverrides?: Record<string, unknown>) {
+  function buildPatchMock(orderOverrides?: Record<string, unknown>, rpcResults?: Record<string, Res>) {
     return buildOrderServiceMock({
       transport_orders: {
         select: {
           data: {
             id: VALID_ORDER_ID,
             locked_by_user_id: null,
+            status_code: "robocze",
             ...orderOverrides,
           },
           error: null,
@@ -1362,7 +1451,7 @@ describe("patchStop", () => {
           error: null,
         },
       },
-    });
+    }, rpcResults);
   }
 
   it("patch dateLocal → OK", async () => {
@@ -1385,6 +1474,42 @@ describe("patchStop", () => {
       dateLocal: "2026-03-01",
     });
     expect(result).toBeNull();
+  });
+
+  it("zapis jednym RPC: stop (tylko zmienione pola) + denormalizacja ze stanu PO zmianie", async () => {
+    const supabase = buildPatchMock();
+
+    await patchStop(supabase, VALID_USER_ID, VALID_ORDER_ID, VALID_STOP_ID, { dateLocal: "2026-03-01" });
+
+    const args = applyArgs(supabase);
+    expect(args.p_expected_status).toBe("robocze");
+    expect(args.p_stops).toEqual([{ id: VALID_STOP_ID, date_local: "2026-03-01" }]);
+    // Denormalizacja liczona z nałożonej zmiany (nie ze starej daty 2026-02-20)
+    expect((args.p_order as Record<string, unknown>).first_loading_date).toBe("2026-03-01");
+    expect(args.p_change_log).toEqual([
+      { field_name: "stop.date_local", old_value: "2026-02-20", new_value: "2026-03-01" },
+    ]);
+    expect(args.p_status_history).toBeNull();
+  });
+
+  it("auto-korekta: wysłane → korekta w tej samej transakcji", async () => {
+    const supabase = buildPatchMock({ status_code: "wysłane" });
+
+    await patchStop(supabase, VALID_USER_ID, VALID_ORDER_ID, VALID_STOP_ID, { notes: "Nowa notatka" });
+
+    const args = applyArgs(supabase);
+    expect((args.p_order as Record<string, unknown>).status_code).toBe("korekta");
+    expect(args.p_status_history).toEqual({ old_status_code: "wysłane", new_status_code: "korekta" });
+  });
+
+  it("RPC CONFLICT (równoległa zmiana statusu/blokady) → throws LOCKED", async () => {
+    const supabase = buildPatchMock(undefined, {
+      apply_order_changes: { data: { status: "CONFLICT" }, error: null },
+    });
+
+    await expect(
+      patchStop(supabase, VALID_USER_ID, VALID_ORDER_ID, VALID_STOP_ID, { dateLocal: "2026-03-01" })
+    ).rejects.toThrow("LOCKED");
   });
 
   it('zablokowane → throws "LOCKED"', async () => {

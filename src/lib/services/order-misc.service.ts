@@ -20,6 +20,7 @@ import {
 import { resolvePdfData } from "./pdf/pdf-data-resolver";
 import { generateOrderPdf } from "./pdf/pdf-generator.service";
 import { EMAIL_SENDABLE_STATUSES, STATUS_AFTER_EMAIL } from "@/lib/order-status";
+import { applyOrderChanges, createOrderWithChildren } from "@/lib/services/order-write.service";
 
 export type PrepareEmailResult =
   | { success: true; format: "eml"; emlContent: string; orderNo: string }
@@ -68,7 +69,6 @@ export async function duplicateOrder(
     currency_code: detail.order.currencyCode,
     vehicle_type_text: detail.order.vehicleTypeText ?? null,
     vehicle_capacity_volume_m3: detail.order.vehicleCapacityVolumeM3 ?? null,
-    created_by_user_id: userId,
     carrier_company_id: detail.order.carrierCompanyId ?? null,
     carrier_name_snapshot: detail.order.carrierNameSnapshot ?? null,
     carrier_address_snapshot: detail.order.carrierAddressSnapshot ?? null,
@@ -92,10 +92,6 @@ export async function duplicateOrder(
     sender_contact_name: detail.order.senderContactName ?? null,
     sender_contact_phone: detail.order.senderContactPhone ?? null,
     sender_contact_email: detail.order.senderContactEmail ?? null,
-    sent_at: null,
-    sent_by_user_id: null,
-    locked_at: null,
-    locked_by_user_id: null,
     // Denormalizowane pola dat = null → kopia trafia na dół listy (ASC, nulls last).
     // Daty pozostają w skopiowanych stopach. Pola przeliczą się przy pierwszym PUT.
     first_loading_date: null,
@@ -120,63 +116,38 @@ export async function duplicateOrder(
     ),
   };
 
-  type OrderInsert = Database["public"]["Tables"]["transport_orders"]["Insert"];
-  const { data: newOrder, error: orderError } = await supabase
-    .from("transport_orders")
-    .insert(insertPayload as OrderInsert)
-    .select("id, created_at")
-    .single();
-
-  if (orderError || !newOrder) throw orderError ?? new Error("Duplicate order insert failed");
+  // Zlecenie + stopy + towary + historia statusów — jedna transakcja (RPC).
+  // Historia: old_status_code = newStatus (brak poprzedniego stanu), gdyż kolumna NOT NULL z FK.
+  const newOrder = await createOrderWithChildren(supabase, {
+    order: insertPayload,
+    stops:
+      params.includeStops
+        ? detail.stops.map((s, i) => ({
+            kind: s.kind,
+            sequence_no: s.sequenceNo ?? i + 1,
+            date_local: s.dateLocal ?? null,
+            time_local: s.timeLocal ?? null,
+            location_id: s.locationId ?? null,
+            location_name_snapshot: s.locationNameSnapshot ?? null,
+            company_name_snapshot: s.companyNameSnapshot ?? null,
+            address_snapshot: s.addressSnapshot ?? null,
+            notes: s.notes ?? null,
+          }))
+        : [],
+    items:
+      params.includeItems
+        ? detail.items.map((i) => ({
+            product_id: i.productId ?? null,
+            product_name_snapshot: i.productNameSnapshot ?? null,
+            default_loading_method_snapshot: i.defaultLoadingMethodSnapshot ?? null,
+            loading_method_code: i.loadingMethodCode ?? null,
+            quantity_tons: i.quantityTons ?? null,
+            notes: i.notes ?? null,
+          }))
+        : [],
+    statusHistory: { old_status_code: newStatus, new_status_code: newStatus },
+  });
   const newOrderId = newOrder.id;
-
-  // INSERT stops + items z kompensującym cleanup (M-01)
-  try {
-    if (params.includeStops && detail.stops.length > 0) {
-      const stopsInsert = detail.stops.map((s, i) => ({
-        order_id: newOrderId,
-        kind: s.kind,
-        sequence_no: s.sequenceNo ?? i + 1,
-        date_local: s.dateLocal ?? null,
-        time_local: s.timeLocal ?? null,
-        location_id: s.locationId ?? null,
-        location_name_snapshot: s.locationNameSnapshot ?? null,
-        company_name_snapshot: s.companyNameSnapshot ?? null,
-        address_snapshot: s.addressSnapshot ?? null,
-        notes: s.notes ?? null,
-      }));
-      const { error: stopsErr } = await supabase.from("order_stops").insert(stopsInsert);
-      if (stopsErr) throw stopsErr;
-    }
-
-    if (params.includeItems && detail.items.length > 0) {
-      const itemsInsert = detail.items.map((i) => ({
-        order_id: newOrderId,
-        product_id: i.productId ?? null,
-        product_name_snapshot: i.productNameSnapshot ?? null,
-        default_loading_method_snapshot: i.defaultLoadingMethodSnapshot ?? null,
-        loading_method_code: i.loadingMethodCode ?? null,
-        quantity_tons: i.quantityTons ?? null,
-        notes: i.notes ?? null,
-      }));
-      const { error: itemsErr } = await supabase.from("order_items").insert(itemsInsert);
-      if (itemsErr) throw itemsErr;
-    }
-
-    // Wpis do historii statusów — nowe zlecenie z duplikacji.
-    // old_status_code = newStatus (brak poprzedniego stanu), gdyż kolumna NOT NULL z FK.
-    const { error: historyErr } = await supabase.from("order_status_history").insert({
-      order_id: newOrderId,
-      old_status_code: newStatus,
-      new_status_code: newStatus,
-      changed_by_user_id: userId,
-    });
-    if (historyErr) throw historyErr;
-  } catch (err) {
-    // Kompensujący cleanup — usuń osierocony duplikat zlecenia
-    await supabase.from("transport_orders").delete().eq("id", newOrderId);
-    throw err;
-  }
 
   // Nazwa statusu — z oryginału lub z bazy gdy reset do robocze (api-plan §2.9)
   let statusName: string;
@@ -196,7 +167,7 @@ export async function duplicateOrder(
     orderNo,
     statusCode: newStatus,
     statusName,
-    createdAt: newOrder.created_at,
+    createdAt: newOrder.createdAt,
   };
 }
 
@@ -314,40 +285,22 @@ export async function prepareEmailForOrder(
     }
   }
 
-  // Zabezpieczenie TOCTOU: UPDATE z warunkiem na status_code.
-  // Jeśli między odczytem a zapisem inny proces zmienił status, count === 0.
-  type OrderUpdate = Database["public"]["Tables"]["transport_orders"]["Update"];
-  const { error: updateError, count } = await supabase
-    .from("transport_orders")
-    .update(updatePayload as OrderUpdate, { count: "exact" })
-    .eq("id", orderId)
-    .eq("status_code", order.statusCode);
-
-  if (updateError) throw updateError;
-
-  if (count === 0) {
-    throw new Error("STATUS_CHANGED");
-  }
-
-  if (newStatusCode !== order.statusCode) {
-    const { error: historyErr } = await supabase.from("order_status_history").insert({
-      order_id: orderId,
-      old_status_code: order.statusCode,
-      new_status_code: newStatusCode,
-      changed_by_user_id: userId,
-    });
-    if (historyErr) throw historyErr;
-
-    // Wpis do logu zmian pola status_code (spójność z changeStatus)
-    const { error: logErr } = await supabase.from("order_change_log").insert({
-      order_id: orderId,
-      field_name: "status_code",
-      old_value: order.statusCode,
-      new_value: newStatusCode,
-      changed_by_user_id: userId,
-    });
-    if (logErr) throw logErr;
-  }
+  // Status + sent_at + historia + log w jednej transakcji.
+  // Guard statusu w RPC (TOCTOU): zmiana statusu w międzyczasie → STATUS_CHANGED.
+  const statusChanged = newStatusCode !== order.statusCode;
+  await applyOrderChanges(supabase, {
+    orderId,
+    expectedStatus: order.statusCode,
+    orderPatch: updatePayload,
+    statusHistory: statusChanged
+      ? { old_status_code: order.statusCode, new_status_code: newStatusCode }
+      : null,
+    changeLog: statusChanged
+      ? [{ field_name: "status_code", old_value: order.statusCode, new_value: newStatusCode }]
+      : [],
+    ignoreLock: true,
+    conflictError: "STATUS_CHANGED",
+  });
 
   // Generowanie PDF
   const pdfInput = await resolvePdfData(supabase, detail);
@@ -423,9 +376,11 @@ export async function updateEntryFixed(
     .from("transport_orders")
     .select("is_entry_fixed")
     .eq("id", orderId)
-    .single();
+    .maybeSingle();
 
-  if (fetchErr || !oldRow) return null;
+  // Błąd bazy ≠ brak zlecenia — nie maskujemy go jako 404
+  if (fetchErr) throw fetchErr;
+  if (!oldRow) return null;
 
   const oldValue = (oldRow as { is_entry_fixed?: boolean | null }).is_entry_fixed ?? null;
 

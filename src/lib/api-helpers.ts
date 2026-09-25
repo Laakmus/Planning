@@ -214,6 +214,13 @@ export function logError(context: string, error: unknown, requestId?: string): v
   if (error instanceof Error) {
     entry.message = error.message;
     entry.stack = error.stack;
+  } else if (error && typeof error === "object") {
+    // PostgrestError z supabase-js to zwykły obiekt (nie Error) — bez tego log miał "[object Object]"
+    const e = error as { message?: unknown; code?: unknown; details?: unknown; hint?: unknown };
+    entry.message = typeof e.message === "string" ? e.message : JSON.stringify(error);
+    if (e.code !== undefined) entry.code = e.code;
+    if (e.details !== undefined) entry.details = e.details;
+    if (e.hint !== undefined) entry.hint = e.hint;
   } else {
     entry.message = String(error);
   }
