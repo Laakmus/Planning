@@ -416,6 +416,14 @@ export function useOrderDrawer({
 
           toast.success("Zlecenie zapisane.");
           setIsDirty(false);
+          // PRD §3.1 (Zapisz): drawer zostaje otwarty, dane zlecenia odświeżone — np. status
+          // „korekta” po auto-korekcie i Sekcja 6 muszą być aktualne. Formularz resetuje się
+          // po zmianie order.updatedAt. Błąd odświeżenia nie jest błędem zapisu.
+          try {
+            setDetail(await api.get<OrderDetailResponseDto>(`/api/v1/orders/${orderId}`));
+          } catch {
+            // dane w drawerze zostaną odświeżone przy następnym otwarciu
+          }
           onOrderUpdated();
         }
       } catch (err) {

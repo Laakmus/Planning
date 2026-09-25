@@ -972,4 +972,20 @@ FROM last_unloading lu
 WHERE lu.order_id = t.id
   AND t.receiver_location_id IS NULL;
 
+-- ---------------------------------------------------------------------------
+-- Synchronizacja licznika numerów zleceń (order_no_counters)
+-- Migracja 20260325000000 ustawia licznik z istniejących zleceń, ale przy
+-- `supabase db reset` seed wstawia zlecenia PO migracjach — bez tego licznik
+-- zostaje na 0 i tworzenie/duplikacja zlecenia kończy się duplikatem order_no.
+-- ---------------------------------------------------------------------------
+INSERT INTO public.order_no_counters (year, last_seq)
+SELECT
+  substring(order_no FROM 'ZT(\d{4})/')::int AS year,
+  max(substring(order_no FROM '/(\d+)$')::int) AS last_seq
+FROM public.transport_orders
+WHERE order_no ~ '^ZT\d{4}/\d+$'
+GROUP BY 1
+ON CONFLICT (year) DO UPDATE
+  SET last_seq = greatest(order_no_counters.last_seq, excluded.last_seq);
+
 COMMIT;
