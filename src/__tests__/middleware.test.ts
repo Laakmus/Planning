@@ -72,6 +72,10 @@ async function loadMiddleware() {
   vi.doMock("@/lib/api-helpers", () => ({
     getCorsOrigin: () => "http://localhost:4321",
   }));
+  // Mock presence — przy ustawionym SUPABASE_SERVICE_ROLE_KEY (CI) robiłby UPDATE na mocku klienta
+  vi.doMock("../lib/user-presence", () => ({
+    maybeUpdateLastSeen: vi.fn(),
+  }));
 
   const mod = await import("../middleware");
   // defineMiddleware (stub) zwraca surową funkcję — onRequest to async (ctx, next).
