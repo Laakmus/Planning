@@ -5,7 +5,7 @@
  * createOrder, updateOrder, prepareEmailForOrder, patchStop, listOrders.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/db/database.types";
 import {
@@ -952,9 +952,6 @@ describe("updateOrder", () => {
       paramsItems: Array<Record<string, unknown>>,
       orderData?: Record<string, unknown>
     ) {
-      const ITEM_ID_1 = "e1000000-0000-0000-0000-000000000001";
-      // Śledzimy wywołania insert do order_change_log
-      const insertCalls: Array<unknown> = [];
 
       const supabase = buildOrderServiceMock({
         transport_orders: {

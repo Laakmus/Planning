@@ -14,9 +14,9 @@ import {
   parseJsonBody,
   requireWriteAccess,
   logError,
-} from "../../../../../lib/api-helpers";
-import { updateCarrierCellColor } from "../../../../../lib/services/order.service";
-import { carrierCellColorSchema } from "../../../../../lib/validators/order.validator";
+} from "@/lib/api-helpers";
+import { updateCarrierCellColor } from "@/lib/services/order.service";
+import { carrierCellColorSchema } from "@/lib/validators/order.validator";
 
 export const PATCH: APIRoute = async ({ params, locals, request }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

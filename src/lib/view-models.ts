@@ -13,20 +13,14 @@ import type {
   OrderStatusDto,
   VehicleVariantDto,
 } from "@/types";
+import type { OrderStatusCode } from "@/lib/order-status";
 
 // ---------------------------------------------------------------------------
 // Enumeracje / unia literałów
 // ---------------------------------------------------------------------------
 
-/** Kod statusu zlecenia (odpowiada order_statuses.code w bazie). */
-export type OrderStatusCode =
-  | "robocze"
-  | "wysłane"
-  | "korekta"
-  | "korekta wysłane"
-  | "zrealizowane"
-  | "reklamacja"
-  | "anulowane";
+// Kod statusu zlecenia — definicja w @/lib/order-status (wspólna z backendem)
+export type { OrderStatusCode } from "@/lib/order-status";
 
 /** Grupa widoku / zakładka. */
 export type ViewGroup = "CURRENT" | "COMPLETED" | "CANCELLED";
@@ -210,22 +204,8 @@ export interface ContextMenuState {
 // Stałe: dozwolone ręczne przejścia statusów
 // ---------------------------------------------------------------------------
 
-/**
- * Matryca dozwolonych ręcznych przejść statusów (PRD 3.1.7, api-plan 2.7).
- *
- * Statusy "wysłane" i "korekta wysłane" ustawiane są automatycznie przez prepare-email
- * i NIE są dostępne jako cel ręcznej zmiany.
- */
-export const ALLOWED_MANUAL_STATUS_TRANSITIONS: Record<OrderStatusCode, OrderStatusCode[]> = {
-  robocze: ["zrealizowane", "anulowane"],
-  wysłane: ["zrealizowane", "reklamacja", "anulowane"],
-  korekta: ["zrealizowane", "reklamacja", "anulowane"],
-  "korekta wysłane": ["zrealizowane", "reklamacja", "anulowane"],
-  reklamacja: ["zrealizowane", "anulowane"],
-  // Zrealizowane i anulowane — brak ręcznych zmian, tylko "Przywróć do aktualnych"
-  zrealizowane: [],
-  anulowane: [],
-};
+// Matryca przejść — definicja w @/lib/order-status (wspólna z backendem)
+export { ALLOWED_MANUAL_STATUS_TRANSITIONS } from "@/lib/order-status";
 
 // ---------------------------------------------------------------------------
 // Domyślne wartości

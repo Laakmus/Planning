@@ -12,12 +12,13 @@ import {
   getAuthenticatedUser,
   requireWriteAccess,
   logError,
-} from "../../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   getWarehouseWeekOrders,
-} from "../../../../../lib/services/warehouse.service";
-import { generateWarehouseReportPdf } from "../../../../../lib/services/pdf/warehouse-pdf-generator.service";
-import { warehouseReportPdfSchema } from "../../../../../lib/validators/warehouse-report.validator";
+} from "@/lib/services/warehouse.service";
+import { generateWarehouseReportPdf } from "@/lib/services/pdf/warehouse-pdf-generator.service";
+import { warehouseReportPdfSchema } from "@/lib/validators/warehouse-report.validator";
+import { findInternalLocation } from "@/lib/services/location.service";
 
 export const POST: APIRoute = async ({ locals, request }) => {
   if (!locals.supabase) {
@@ -56,12 +57,7 @@ export const POST: APIRoute = async ({ locals, request }) => {
 
   try {
     // Sprawdź czy lokalizacja istnieje i należy do firmy wewnętrznej (INTERNAL)
-    const { data: location } = await (locals.supabase
-      .from("locations")
-      .select("id, name, companies!inner(type)")
-      .eq("id", locationId)
-      .eq("companies.type", "INTERNAL")
-      .maybeSingle() as any);
+    const location = await findInternalLocation(locals.supabase, locationId);
 
     if (!location) {
       return errorResponse(

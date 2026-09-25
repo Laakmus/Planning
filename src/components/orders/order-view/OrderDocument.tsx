@@ -3,7 +3,7 @@
 import React, { useCallback, useEffect, useRef, useState, useMemo } from "react";
 import { useDictionaries } from "@/contexts/DictionaryContext";
 import { formatDateFromTimestamp } from "@/lib/format-utils";
-import type { OrderViewData, OrderViewItem, PackagingType } from "./types";
+import type { OrderViewData, OrderViewItem } from "./types";
 import {
   CELL,
   LABEL_98,
@@ -12,7 +12,6 @@ import {
   COMPANY_NAME,
   CONDITIONS_HEADER,
   LOGO_BASE64,
-  DOCUMENTS_OPTIONS,
   PAYMENT_METHODS,
   PACKAGING_TYPES,
   CURRENCIES,
@@ -21,7 +20,6 @@ import {
   createEmptyItem,
 } from "./constants";
 import { EditableText, EditableNumber, EditableTextarea } from "./inline-editors";
-import { DatePickerPopover, TimePickerPopover } from "./date-time-pickers";
 import {
   ProductAutocomplete,
   CarrierAutocomplete,
@@ -667,7 +665,7 @@ export default function OrderDocument({
                           : ""
                       }`}
                       onClick={() => {
-                        if (!disabled) update({ currencyCode: cur as any });
+                        if (!disabled) update({ currencyCode: cur });
                       }}
                     >
                       {isSelected && (

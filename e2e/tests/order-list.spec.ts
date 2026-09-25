@@ -1,5 +1,4 @@
 import { test, expect } from "../fixtures/pages";
-import { EXPECTED_CURRENT_COUNT } from "../helpers/test-data";
 
 test.describe("Lista zlecen", () => {
   test("displays orders from seed data", async ({ ordersPage }) => {

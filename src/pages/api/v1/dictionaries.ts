@@ -11,7 +11,7 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   logError,
-} from "../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   getCompanies,
   getLocations,
@@ -19,7 +19,7 @@ import {
   getProducts,
   getTransportTypes,
   getVehicleVariants,
-} from "../../../lib/services/dictionary.service";
+} from "@/lib/services/dictionary.service";
 
 export const GET: APIRoute = async ({ locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

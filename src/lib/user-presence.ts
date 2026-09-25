@@ -9,10 +9,8 @@
  *  - Cleanup interval — usuwamy wpisy >10 min temu z mapy, by nie rosła w nieskończoność
  */
 
-import { createClient } from "@supabase/supabase-js";
-
-import type { Database } from "@/db/database.types";
 import { logError } from "@/lib/api-helpers";
+import { tryCreateAdminSupabaseClient } from "@/lib/supabase-admin";
 
 /** Throttle window — minimalny odstęp między UPDATE per user (ms). */
 const THROTTLE_MS = 60_000;
@@ -53,14 +51,8 @@ export function maybeUpdateLastSeen(userId: string): void {
   // Zaznacz że robimy update (od razu) — chroni przed równoczesnymi requestami
   lastUpdateAt.set(userId, now);
 
-  const url = (import.meta.env.SUPABASE_URL ?? process.env.SUPABASE_URL) as string | undefined;
-  const serviceKey = (import.meta.env.SUPABASE_SERVICE_ROLE_KEY ??
-    process.env.SUPABASE_SERVICE_ROLE_KEY) as string | undefined;
-  if (!url || !serviceKey) return; // nie skonfigurowane (np. testy)
-
-  const supabase = createClient<Database>(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  const supabase = tryCreateAdminSupabaseClient();
+  if (!supabase) return; // nie skonfigurowane (np. testy)
 
   void supabase
     .from("user_profiles")

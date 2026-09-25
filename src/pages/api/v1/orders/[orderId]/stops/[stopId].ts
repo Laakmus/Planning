@@ -14,12 +14,11 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   isValidUUID,
-  parseJsonBody,
   requireWriteAccess,
   logError,
-} from "../../../../../../lib/api-helpers";
-import { patchStop } from "../../../../../../lib/services/order.service";
-import { patchStopSchema } from "../../../../../../lib/validators/order.validator";
+} from "@/lib/api-helpers";
+import { patchStop } from "@/lib/services/order.service";
+import { patchStopSchema } from "@/lib/validators/order.validator";
 
 export const PATCH: APIRoute = async ({ params, locals, request }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

@@ -6,22 +6,11 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { ChangeStatusResponseDto, DeleteOrderResponseDto, RestoreOrderResponseDto } from "../../types";
-import type { ChangeStatusParams } from "../validators/order.validator";
+import type { Database } from "@/db/database.types";
+import type { ChangeStatusResponseDto, DeleteOrderResponseDto, RestoreOrderResponseDto } from "@/types";
+import type { ChangeStatusParams } from "@/lib/validators/order.validator";
+import { isManualTransitionAllowed, ORDER_STATUS, TERMINAL_STATUSES } from "@/lib/order-status";
 
-/** Status „zrealizowane" — z niego nie można anulować (kod z order_statuses.code). */
-const STATUS_ZREALIZOWANE = "zrealizowane";
-
-/** Status „anulowane" ustawiany przy DELETE (kod z order_statuses.code). */
-const STATUS_ANULOWANE = "anulowane";
-
-/** Dozwolone przejścia: newStatusCode → zestaw dozwolonych statusów bieżących. */
-const ALLOWED_TRANSITIONS: Record<string, Set<string>> = {
-  zrealizowane: new Set(["robocze", "wysłane", "korekta", "korekta wysłane", "reklamacja"]),
-  reklamacja: new Set(["wysłane", "korekta", "korekta wysłane"]),
-  anulowane: new Set(["robocze", "wysłane", "korekta", "korekta wysłane", "reklamacja"]),
-};
 
 /**
  * Anuluje zlecenie (ustawienie statusu na anulowane).
@@ -47,7 +36,7 @@ export async function cancelOrder(
   if (fetchError) throw fetchError;
   if (!order) return null;
 
-  if (order.status_code === STATUS_ZREALIZOWANE || order.status_code === STATUS_ANULOWANE) {
+  if (TERMINAL_STATUSES.has(order.status_code)) {
     throw new Error("FORBIDDEN_TRANSITION");
   }
 
@@ -55,7 +44,7 @@ export async function cancelOrder(
   // between the SELECT above and this UPDATE.
   const { data: cancelResult, error: updateError } = await supabase
     .from("transport_orders")
-    .update({ status_code: STATUS_ANULOWANE, updated_by_user_id: userId })
+    .update({ status_code: ORDER_STATUS.CANCELLED, updated_by_user_id: userId })
     .eq("id", orderId)
     .eq("status_code", order.status_code)
     .select("id")
@@ -72,7 +61,7 @@ export async function cancelOrder(
     .insert({
       order_id: orderId,
       old_status_code: order.status_code,
-      new_status_code: STATUS_ANULOWANE,
+      new_status_code: ORDER_STATUS.CANCELLED,
       changed_by_user_id: userId,
     });
 
@@ -83,12 +72,12 @@ export async function cancelOrder(
     order_id: orderId,
     field_name: "status_code",
     old_value: order.status_code,
-    new_value: STATUS_ANULOWANE,
+    new_value: ORDER_STATUS.CANCELLED,
     changed_by_user_id: userId,
   });
   if (logError) throw logError;
 
-  return { id: orderId, statusCode: STATUS_ANULOWANE };
+  return { id: orderId, statusCode: ORDER_STATUS.CANCELLED };
 }
 
 /**
@@ -116,8 +105,8 @@ export async function changeStatus(
   if (fetchError) throw fetchError;
   if (!order) return null;
 
-  const allowed = ALLOWED_TRANSITIONS[params.newStatusCode];
-  if (!allowed || !allowed.has(order.status_code)) {
+  // Matryca przejść wspólna z UI (@/lib/order-status)
+  if (!isManualTransitionAllowed(order.status_code, params.newStatusCode)) {
     throw new Error("FORBIDDEN_TRANSITION");
   }
 
@@ -125,9 +114,9 @@ export async function changeStatus(
     status_code: params.newStatusCode,
     updated_by_user_id: userId,
   };
-  if (params.newStatusCode === "reklamacja" && params.complaintReason != null) {
+  if (params.newStatusCode === ORDER_STATUS.COMPLAINT && params.complaintReason != null) {
     updatePayload.complaint_reason = params.complaintReason.trim();
-  } else if (params.newStatusCode !== "reklamacja") {
+  } else if (params.newStatusCode !== ORDER_STATUS.COMPLAINT) {
     // M-01: Czyść complaint_reason przy wyjściu ze statusu reklamacja — pole nie jest już aktualne
     updatePayload.complaint_reason = null;
   }
@@ -174,9 +163,6 @@ export async function changeStatus(
   };
 }
 
-/** Status „korekta" — docelowy przy przywracaniu. */
-const STATUS_KOREKTA = "korekta";
-
 /** Czas w ms, po którym anulowane nie może być przywrócone (24h). */
 const RESTORE_ANULOWANE_MAX_MS = 24 * 60 * 60 * 1000;
 
@@ -202,17 +188,16 @@ export async function restoreOrder(
   if (fetchError) throw fetchError;
   if (!order) return null;
 
-  const allowed = new Set(["zrealizowane", "anulowane"]);
-  if (!allowed.has(order.status_code)) {
+  if (!TERMINAL_STATUSES.has(order.status_code)) {
     throw new Error("FORBIDDEN_RESTORE");
   }
 
-  if (order.status_code === "anulowane") {
+  if (order.status_code === ORDER_STATUS.CANCELLED) {
     const { data: lastCancel } = await supabase
       .from("order_status_history")
       .select("changed_at")
       .eq("order_id", orderId)
-      .eq("new_status_code", "anulowane")
+      .eq("new_status_code", ORDER_STATUS.CANCELLED)
       .order("changed_at", { ascending: false })
       .limit(1)
       .maybeSingle();
@@ -228,7 +213,7 @@ export async function restoreOrder(
   // Atomic UPDATE with current status guard — prevents TOCTOU
   const { data: restoreResult, error: updateError } = await supabase
     .from("transport_orders")
-    .update({ status_code: STATUS_KOREKTA, updated_by_user_id: userId })
+    .update({ status_code: ORDER_STATUS.CORRECTION, updated_by_user_id: userId })
     .eq("id", orderId)
     .eq("status_code", order.status_code)
     .select("id")
@@ -242,7 +227,7 @@ export async function restoreOrder(
   const { error: historyError } = await supabase.from("order_status_history").insert({
     order_id: orderId,
     old_status_code: order.status_code,
-    new_status_code: STATUS_KOREKTA,
+    new_status_code: ORDER_STATUS.CORRECTION,
     changed_by_user_id: userId,
   });
 
@@ -253,10 +238,10 @@ export async function restoreOrder(
     order_id: orderId,
     field_name: "status_code",
     old_value: order.status_code,
-    new_value: STATUS_KOREKTA,
+    new_value: ORDER_STATUS.CORRECTION,
     changed_by_user_id: userId,
   });
   if (logError) throw logError;
 
-  return { id: orderId, statusCode: STATUS_KOREKTA };
+  return { id: orderId, statusCode: ORDER_STATUS.CORRECTION };
 }

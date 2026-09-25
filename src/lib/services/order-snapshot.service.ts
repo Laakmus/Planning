@@ -5,9 +5,10 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
+import type { Database } from "@/db/database.types";
+import { ORDER_STATUS } from "@/lib/order-status";
 
-export const STATUS_ROBOCZE = "robocze";
+export const STATUS_ROBOCZE = ORDER_STATUS.DRAFT;
 
 export const MAX_LOADING_STOPS = 8;
 export const MAX_UNLOADING_STOPS = 3;

@@ -4,7 +4,14 @@
  */
 
 import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
-import { weekNumberToDateRange } from "../week-utils";
+import {
+  addDaysUTC,
+  formatUTCDate,
+  getCurrentISOWeek,
+  getISOWeekMonday,
+  getISOWeekOfDate,
+  weekNumberToDateRange,
+} from "../week-utils";
 
 describe("weekNumberToDateRange", () => {
   beforeEach(() => {
@@ -111,5 +118,26 @@ describe("weekNumberToDateRange", () => {
     it("sam separator → null", () => {
       expect(weekNumberToDateRange("-")).toBeNull();
     });
+  });
+});
+
+describe("helpery tygodni ISO", () => {
+  it("getISOWeekMonday zwraca poniedziałek tygodnia 1 (także w grudniu poprzedniego roku)", () => {
+    expect(formatUTCDate(getISOWeekMonday(2026, 1))).toBe("2025-12-29");
+    expect(formatUTCDate(getISOWeekMonday(2026, 40))).toBe("2026-09-28");
+  });
+
+  it("getISOWeekOfDate — granica lat", () => {
+    expect(getISOWeekOfDate(new Date(Date.UTC(2024, 11, 30)))).toEqual({ week: 1, year: 2025 });
+    expect(getISOWeekOfDate(new Date(Date.UTC(2021, 0, 3)))).toEqual({ week: 53, year: 2020 });
+  });
+
+  it("getCurrentISOWeek liczy „dziś” w Europe/Warsaw (pon 00:30 CEST = nd 22:30 UTC)", () => {
+    expect(getCurrentISOWeek(new Date("2026-09-27T22:30:00Z"))).toEqual({ week: 40, year: 2026 });
+    expect(getCurrentISOWeek(new Date("2026-09-27T21:30:00Z"))).toEqual({ week: 39, year: 2026 });
+  });
+
+  it("addDaysUTC nie zależy od zmiany czasu (DST)", () => {
+    expect(formatUTCDate(addDaysUTC(new Date(Date.UTC(2026, 9, 24)), 2))).toBe("2026-10-26");
   });
 });

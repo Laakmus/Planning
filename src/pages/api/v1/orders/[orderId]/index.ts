@@ -18,10 +18,10 @@ import {
   parseJsonBody,
   requireWriteAccess,
   logError,
-} from "../../../../../lib/api-helpers";
-import { getOrderDetail, updateOrder } from "../../../../../lib/services/order.service";
-import { cancelOrder } from "../../../../../lib/services/order-status.service";
-import { updateOrderSchema } from "../../../../../lib/validators/order.validator";
+} from "@/lib/api-helpers";
+import { getOrderDetail, updateOrder } from "@/lib/services/order.service";
+import { cancelOrder } from "@/lib/services/order-status.service";
+import { updateOrderSchema } from "@/lib/validators/order.validator";
 
 export const GET: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

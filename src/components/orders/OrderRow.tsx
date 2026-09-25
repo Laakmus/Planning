@@ -18,6 +18,7 @@ import { LockIndicator } from "./LockIndicator";
 import { OrderRowContextMenu } from "./OrderRowContextMenu";
 import { RouteSummaryCell } from "./RouteSummaryCell";
 import { StatusBadge } from "./StatusBadge";
+import { ORDER_STATUS, SENT_STATUSES } from "@/lib/order-status";
 
 /** Tło wiersza wg statusCode — tylko wysłane i korekta wysłane mają kolor (zielony). */
 const ROW_BG: Record<string, string> = {
@@ -66,7 +67,7 @@ export function OrderRow({
   const totalTons = order.items.reduce((sum, it) => sum + (it.quantityTons ?? 0), 0);
 
   // Carrier cell color: ukryty gdy wysłane/korekta wysłane (zielone tło wiersza przejmuje)
-  const isGreenRow = order.statusCode === "wysłane" || order.statusCode === "korekta wysłane";
+  const isGreenRow = SENT_STATUSES.has(order.statusCode);
   const carrierCellStyle: CSSProperties | undefined =
     !isGreenRow && order.carrierCellColor
       ? {
@@ -106,7 +107,7 @@ export function OrderRow({
       <td className="py-1 px-4 min-w-[100px]">
         <StatusBadge statusCode={order.statusCode} statusName={order.statusName} />
         {/* Odliczanie do wygaśnięcia — tylko dla anulowanych zleceń */}
-        {order.statusCode === "anulowane" && (
+        {order.statusCode === ORDER_STATUS.CANCELLED && (
           <div className="mt-0.5">
             <ExpiryCountdown updatedAt={order.updatedAt} />
           </div>

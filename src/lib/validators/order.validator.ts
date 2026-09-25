@@ -5,17 +5,10 @@
 import { z } from "zod";
 
 import { isoDateSchema, isoTimeSchema } from "./common.validator";
+import { ORDER_STATUS, ORDER_STATUS_CODES } from "@/lib/order-status";
 
 /** Dozwolone kody statusu zlecenia (order_statuses.code). */
-const orderStatusCodeEnum = z.enum([
-  "robocze",
-  "wysłane",
-  "korekta",
-  "korekta wysłane",
-  "zrealizowane",
-  "reklamacja",
-  "anulowane",
-]);
+const orderStatusCodeEnum = z.enum(ORDER_STATUS_CODES);
 
 export const orderListQuerySchema = z.object({
   view: z.enum(["CURRENT", "COMPLETED", "CANCELLED"]).default("CURRENT"),
@@ -59,12 +52,12 @@ export type OrderListQueryParams = z.infer<typeof orderListQuerySchema>;
 /** Body POST /api/v1/orders/{orderId}/status — ręczna zmiana statusu. */
 export const changeStatusSchema = z
   .object({
-    newStatusCode: z.enum(["zrealizowane", "reklamacja", "anulowane"]),
+    newStatusCode: z.enum([ORDER_STATUS.COMPLETED, ORDER_STATUS.COMPLAINT, ORDER_STATUS.CANCELLED]),
     complaintReason: z.string().max(500).nullable().optional(),
   })
   .refine(
     (data) =>
-      data.newStatusCode !== "reklamacja" ||
+      data.newStatusCode !== ORDER_STATUS.COMPLAINT ||
       (data.complaintReason != null && String(data.complaintReason).trim().length > 0),
     { message: "complaintReason jest wymagane dla statusu reklamacja", path: ["complaintReason"] }
   );

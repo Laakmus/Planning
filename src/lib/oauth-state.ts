@@ -16,7 +16,7 @@ import { createHash, randomBytes } from "node:crypto";
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../db/database.types";
+import type { Database } from "@/db/database.types";
 
 /** Maksymalny czas życia rekordu state (5 min). */
 export const STATE_TTL_MS = 5 * 60 * 1000;

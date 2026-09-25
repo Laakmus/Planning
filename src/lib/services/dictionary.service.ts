@@ -5,7 +5,7 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
+import type { Database } from "@/db/database.types";
 import type {
   CompanyDto,
   LocationDto,
@@ -14,7 +14,7 @@ import type {
   ProductDto,
   TransportTypeDto,
   VehicleVariantDto,
-} from "../../types";
+} from "@/types";
 
 type CompaniesRow = Database["public"]["Tables"]["companies"]["Row"];
 type LocationsRow = Database["public"]["Tables"]["locations"]["Row"];

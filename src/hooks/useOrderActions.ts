@@ -17,6 +17,7 @@ import type {
   EntryFixedResponseDto,
   OrderListItemDto,
 } from "@/types";
+import { ORDER_STATUS } from "@/lib/order-status";
 
 interface UseOrderActionsOptions {
   api: ApiClient;
@@ -82,7 +83,6 @@ export interface UseOrderActionsReturn {
 export function useOrderActions({
   api,
   user,
-  refetch,
   silentRefetch,
   updateOrderLocally,
   tableScrollRef,
@@ -146,7 +146,8 @@ export function useOrderActions({
       isCreatingRef.current = false;
       setIsCreatingOrder(false);
     }
-  }, [api, silentRefetch, tableScrollRef]);
+    // user w zależnościach — inaczej zlecenie tworzone tuż po zalogowaniu dostawało puste dane kontaktowe
+  }, [api, user, silentRefetch, tableScrollRef]);
 
   const handleSendEmail = useCallback(
     async (orderId: string) => {
@@ -176,7 +177,7 @@ export function useOrderActions({
       try {
         await api.post(`/api/v1/orders/${orderId}/status`, {
           newStatusCode: newStatus,
-          ...(newStatus === "reklamacja" && complaintReason ? { complaintReason } : {}),
+          ...(newStatus === ORDER_STATUS.COMPLAINT && complaintReason ? { complaintReason } : {}),
         });
         toast.success("Status zmieniony.");
         silentRefetch();

@@ -12,8 +12,8 @@ import {
   isValidUUID,
   requireWriteAccess,
   logError,
-} from "../../../../../lib/api-helpers";
-import { lockOrder } from "../../../../../lib/services/order-lock.service";
+} from "@/lib/api-helpers";
+import { lockOrder } from "@/lib/services/order-lock.service";
 
 export const POST: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

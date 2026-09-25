@@ -19,19 +19,23 @@ vi.mock("@/lib/api-helpers", () => ({
 }));
 
 vi.mock("@/lib/services/cleanup.service", () => ({
-  createServiceRoleClient: vi.fn(),
   cleanupCancelledOrders: vi.fn(),
+}));
+
+vi.mock("@/lib/supabase-admin", () => ({
+  createAdminSupabaseClient: vi.fn(),
 }));
 
 import { POST } from "../cleanup";
 import * as apiHelpers from "@/lib/api-helpers";
 import * as cleanupService from "@/lib/services/cleanup.service";
+import * as supabaseAdmin from "@/lib/supabase-admin";
 
 const mockGetAuth = vi.mocked(apiHelpers.getAuthenticatedUser);
 const mockJsonResponse = vi.mocked(apiHelpers.jsonResponse);
 const mockErrorResponse = vi.mocked(apiHelpers.errorResponse);
 const mockRequireAdmin = vi.mocked(apiHelpers.requireAdmin);
-const mockCreateServiceRoleClient = vi.mocked(cleanupService.createServiceRoleClient);
+const mockCreateAdminClient = vi.mocked(supabaseAdmin.createAdminSupabaseClient);
 const mockCleanupCancelledOrders = vi.mocked(cleanupService.cleanupCancelledOrders);
 
 // ---------------------------------------------------------------------------
@@ -113,7 +117,7 @@ beforeEach(() => {
   // Domyślne zachowanie — zalogowany admin
   mockGetAuth.mockResolvedValue(MOCK_ADMIN_USER);
   mockRequireAdmin.mockReturnValue(null as never);
-  mockCreateServiceRoleClient.mockReturnValue({} as never);
+  mockCreateAdminClient.mockReturnValue({} as never);
 });
 
 // ---------------------------------------------------------------------------
@@ -148,7 +152,7 @@ describe("POST /api/v1/admin/cleanup", () => {
 
     const response = await POST(makeContext());
 
-    expect(mockCreateServiceRoleClient).toHaveBeenCalled();
+    expect(mockCreateAdminClient).toHaveBeenCalled();
     expect(mockCleanupCancelledOrders).toHaveBeenCalledWith(expect.anything());
     expect(mockJsonResponse).toHaveBeenCalledWith({
       deletedCount: 2,

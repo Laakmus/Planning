@@ -43,7 +43,7 @@ test.describe("Drawer zlecenia", () => {
     await expect(notesField).toHaveValue(testNote);
   });
 
-  test("creates new order via button", async ({ ordersPage, drawerPage }) => {
+  test("creates new order via button", async ({ ordersPage }) => {
     await ordersPage.goto();
 
     // Rejestruj listener PRZED kliknieciem "Nowe zlecenie"

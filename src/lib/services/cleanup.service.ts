@@ -9,9 +9,11 @@
  * order_status_history, order_change_log.
  */
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../../db/database.types";
-import { logger } from "../logger";
+import type { SupabaseClient } from "@supabase/supabase-js";
+import type { Database } from "@/db/database.types";
+import { logger } from "@/lib/logger";
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
+import { ORDER_STATUS } from "@/lib/order-status";
 
 // ---------------------------------------------------------------------------
 // Stałe
@@ -22,29 +24,6 @@ const RETENTION_MS = 24 * 60 * 60 * 1000;
 
 /** Interwał schedulera w milisekundach (1h). */
 const SCHEDULER_INTERVAL_MS = 60 * 60 * 1000;
-
-// ---------------------------------------------------------------------------
-// Service-role client (pomija RLS — cleanup działa bez sesji użytkownika)
-// ---------------------------------------------------------------------------
-
-/**
- * Tworzy klienta Supabase z kluczem service_role.
- * Wymaga zmiennych środowiskowych SUPABASE_URL i SUPABASE_SERVICE_ROLE_KEY.
- */
-export function createServiceRoleClient(): SupabaseClient<Database> {
-  const url = import.meta.env.SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceRoleKey) {
-    throw new Error(
-      "Brak SUPABASE_URL lub SUPABASE_SERVICE_ROLE_KEY — nie można utworzyć klienta service_role."
-    );
-  }
-
-  return createClient<Database>(url, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Logika czyszczenia
@@ -82,7 +61,7 @@ export async function cleanupCancelledOrders(
   const { data: candidates, error: fetchError } = await supabase
     .from("order_status_history")
     .select("order_id, changed_at")
-    .eq("new_status_code", "anulowane")
+    .eq("new_status_code", ORDER_STATUS.CANCELLED)
     .lt("changed_at", cutoffDate)
     .order("changed_at", { ascending: false });
 
@@ -105,7 +84,7 @@ export async function cleanupCancelledOrders(
     .from("transport_orders")
     .select("id")
     .in("id", candidateOrderIds)
-    .eq("status_code", "anulowane");
+    .eq("status_code", ORDER_STATUS.CANCELLED);
 
   if (confirmError) {
     throw new Error(`Błąd weryfikacji statusu zleceń: ${confirmError.message}`);
@@ -206,7 +185,7 @@ export function stopCleanupScheduler(): void {
  */
 async function runScheduledCleanup(): Promise<void> {
   try {
-    const supabase = createServiceRoleClient();
+    const supabase = createAdminSupabaseClient();
     await cleanupCancelledOrders(supabase);
   } catch (err) {
     logger.error(

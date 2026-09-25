@@ -80,7 +80,16 @@ function parseAddress(raw: string): {
 }
 
 // --- Import firm ---
-async function importCompanies() {
+/** Zaimportowana firma — wejście do tworzenia lokalizacji. */
+interface ImportedCompany {
+  nip: string;
+  id: string;
+  name: string;
+  country: string;
+  address: string;
+}
+
+async function importCompanies(): Promise<{ count: number; ids: ImportedCompany[] }> {
   const filePath = resolve(import.meta.dirname ?? __dirname, "../test/baza_firm.xls");
   console.log(`\n📂 Czytam firmy z: ${filePath}`);
 
@@ -121,13 +130,13 @@ async function importCompanies() {
       const parsed = parseAddress(addr);
       console.log(`   ${name} | NIP: ${nip} | ${country} | ${parsed.street}, ${parsed.postalCode} ${parsed.city}`);
     }
-    return { count: unique.length, ids: [] as string[] };
+    return { count: unique.length, ids: [] };
   }
 
   // Import do bazy
   let imported = 0;
   let errors = 0;
-  const companyIds: { nip: string; id: string; name: string; country: string; address: string }[] = [];
+  const companyIds: ImportedCompany[] = [];
 
   for (const row of unique) {
     const name = (row["Nazwa kontrahenta"] || "").trim();
@@ -155,9 +164,7 @@ async function importCompanies() {
 }
 
 // --- Import lokalizacji (1 per firma) ---
-async function importLocations(
-  companies: { nip: string; id: string; name: string; country: string; address: string }[]
-) {
+async function importLocations(companies: ImportedCompany[]) {
   console.log(`\n📍 Tworzę lokalizacje dla ${companies.length} firm...`);
 
   if (DRY_RUN) {
@@ -265,7 +272,7 @@ async function main() {
   console.log(`Supabase: ${SUPABASE_URL}`);
 
   const companiesResult = await importCompanies();
-  await importLocations(companiesResult.ids as any);
+  await importLocations(companiesResult.ids);
   await importProducts();
 
   console.log("\n=== Gotowe! ===");

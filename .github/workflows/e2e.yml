@@ -54,7 +54,11 @@ jobs:
       - name: Lint
         run: npm run lint
 
-      - name: Type check (build)
+      # astro build nie sprawdza typów — osobny krok tsc
+      - name: Type check
+        run: npm run typecheck
+
+      - name: Build
         run: npm run build
 
       - name: Unit tests

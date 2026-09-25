@@ -10,7 +10,6 @@ import {
   startCleanupScheduler,
   stopCleanupScheduler,
 } from "../cleanup.service";
-import { VALID_ORDER_ID } from "@/test/helpers/fixtures";
 
 // Mock loggera pino — zastępuje console.log/error w cleanup.service
 vi.mock("@/lib/logger", () => ({
@@ -30,7 +29,6 @@ import { logger } from "@/lib/logger";
 
 const ORDER_ID_1 = "b0000000-0000-0000-0000-000000000010";
 const ORDER_ID_2 = "b0000000-0000-0000-0000-000000000020";
-const ORDER_ID_3 = "b0000000-0000-0000-0000-000000000030";
 
 // ---------------------------------------------------------------------------
 // Mock builder — buduje mocka Supabase z konfigurowalnymi odpowiedziami
@@ -227,7 +225,7 @@ describe("cleanupCancelledOrders", () => {
 
   it("custom retentionMs jest przekazywany do cutoff date", async () => {
     // Z retentionMs = 0 — każde anulowane zlecenie kwalifikuje się
-    const { mock, chains } = buildCleanupMock({
+    const { mock } = buildCleanupMock({
       historyResult: {
         data: [
           { order_id: ORDER_ID_1, changed_at: new Date().toISOString() },

@@ -16,16 +16,17 @@ import {
 import { useOrderDrawer } from "@/hooks/useOrderDrawer";
 import { formatDateTimeFromTimestamp } from "@/lib/format-utils";
 
-import { StatusBadge } from "../StatusBadge";
+import { StatusBadge } from "@/components/orders/StatusBadge";
 
-import OrderView from "../order-view/OrderView";
+import OrderView from "@/components/orders/order-view/OrderView";
 
-import { ValidationErrorDialog } from "../ValidationErrorDialog";
+import { ValidationErrorDialog } from "@/components/orders/ValidationErrorDialog";
 import { DrawerFooter } from "./DrawerFooter";
 import { DrawerSkeleton } from "./DrawerSkeleton";
 import { OrderForm } from "./OrderForm";
 import { PreviewUnsavedDialog } from "./PreviewUnsavedDialog";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
+import { EMAIL_SENDABLE_STATUSES } from "@/lib/order-status";
 
 interface OrderDrawerProps {
   orderId: string | null;
@@ -213,7 +214,7 @@ export function OrderDrawer({
                 onSendEmail={
                   !isReadOnly &&
                   detail &&
-                  (detail.order.statusCode === "robocze" || detail.order.statusCode === "korekta" || detail.order.statusCode === "wysłane" || detail.order.statusCode === "korekta wysłane")
+                  EMAIL_SENDABLE_STATUSES.has(detail.order.statusCode)
                     ? handleSendEmailFromDrawer
                     : undefined
                 }

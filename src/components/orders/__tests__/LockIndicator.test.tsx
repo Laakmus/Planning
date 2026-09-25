@@ -7,7 +7,7 @@
  * - Zawiera tekst "Edytowane przez" (tooltip content renderowany w DOM)
  */
 
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { describe, it, expect } from "vitest";
 
 import { LockIndicator } from "../LockIndicator";

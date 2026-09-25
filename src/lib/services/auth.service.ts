@@ -5,8 +5,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { AuthMeDto } from "../../types";
+import type { Database } from "@/db/database.types";
+import type { AuthMeDto } from "@/types";
 
 /** Mapowanie wiersza user_profiles (snake_case) na AuthMeDto (camelCase). */
 function mapRowToAuthMeDto(

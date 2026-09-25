@@ -4,7 +4,7 @@
 import { jsPDF } from "jspdf";
 import { registerFonts } from "./pdf-fonts";
 import * as L from "./warehouse-pdf-layout";
-import type { WarehouseWeekResponseDto, WarehouseOrderEntryDto } from "../../../types";
+import type { WarehouseWeekResponseDto, WarehouseOrderEntryDto } from "@/types";
 
 export interface GenerateWarehouseReportInput {
   data: WarehouseWeekResponseDto;

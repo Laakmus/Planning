@@ -6,8 +6,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { ChangeLogItemDto, StatusHistoryItemDto } from "../../types";
+import type { Database } from "@/db/database.types";
+import type { ChangeLogItemDto, StatusHistoryItemDto } from "@/types";
 
 /** Wiersz order_status_history z joinem user_profiles (full_name). */
 type StatusHistoryRow = Database["public"]["Tables"]["order_status_history"]["Row"] & {

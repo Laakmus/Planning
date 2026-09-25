@@ -72,6 +72,9 @@ function makeContext(): AnyAPIContext {
 }
 
 beforeEach(() => {
+  // createAdminSupabaseClient wymaga konfiguracji (createClient jest zamockowany)
+  vi.stubEnv("SUPABASE_URL", "http://supabase.test");
+  vi.stubEnv("SUPABASE_SERVICE_ROLE_KEY", "service-role-test");
   vi.clearAllMocks();
 
   mockErrorResponse.mockImplementation(

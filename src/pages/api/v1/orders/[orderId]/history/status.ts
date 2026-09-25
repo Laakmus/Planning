@@ -11,8 +11,8 @@ import {
   jsonResponse,
   isValidUUID,
   logError,
-} from "../../../../../../lib/api-helpers";
-import { getStatusHistory } from "../../../../../../lib/services/order-history.service";
+} from "@/lib/api-helpers";
+import { getStatusHistory } from "@/lib/services/order-history.service";
 
 export const GET: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

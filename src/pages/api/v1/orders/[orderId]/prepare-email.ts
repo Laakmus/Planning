@@ -17,9 +17,9 @@ import {
   isValidUUID,
   requireWriteAccess,
   logError,
-} from "../../../../../lib/api-helpers";
-import { prepareEmailForOrder } from "../../../../../lib/services/order.service";
-import { prepareEmailSchema } from "../../../../../lib/validators/order.validator";
+} from "@/lib/api-helpers";
+import { prepareEmailForOrder } from "@/lib/services/order.service";
+import { prepareEmailSchema } from "@/lib/validators/order.validator";
 
 export const POST: APIRoute = async ({ params, locals, request }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

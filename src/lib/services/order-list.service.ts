@@ -5,14 +5,14 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
+import type { Database } from "@/db/database.types";
 import type {
   OrderListItemDto,
   OrderListItemInnerDto,
   OrderListResponseDto,
   OrderListStopDto,
-} from "../../types";
-import type { OrderListQueryParams } from "../validators/order.validator";
+} from "@/types";
+import type { OrderListQueryParams } from "@/lib/validators/order.validator";
 
 /** Wiersz transport_orders z joinami (order_statuses, transport_types, user_profiles). */
 type TransportOrderRow = Database["public"]["Tables"]["transport_orders"]["Row"] & {

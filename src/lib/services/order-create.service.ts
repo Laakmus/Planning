@@ -5,9 +5,9 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { CreateOrderResponseDto } from "../../types";
-import type { CreateOrderParams } from "../validators/order.validator";
+import type { Database } from "@/db/database.types";
+import type { CreateOrderResponseDto } from "@/types";
+import type { CreateOrderParams } from "@/lib/validators/order.validator";
 
 import {
   autoSetDocumentsAndCurrency,

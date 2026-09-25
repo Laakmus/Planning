@@ -16,9 +16,9 @@ import {
   parseQueryParams,
   requireWriteAccess,
   logError,
-} from "../../../../lib/api-helpers";
-import { createOrder, listOrders } from "../../../../lib/services/order.service";
-import { createOrderSchema, orderListQuerySchema } from "../../../../lib/validators/order.validator";
+} from "@/lib/api-helpers";
+import { createOrder, listOrders } from "@/lib/services/order.service";
+import { createOrderSchema, orderListQuerySchema } from "@/lib/validators/order.validator";
 
 /** Dla parametrów query: jeśli wartość to tablica, dla pojedynczych pól bierzemy pierwszą. */
 function normalizeQuery(

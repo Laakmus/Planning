@@ -36,6 +36,7 @@ import { FilterBar } from "./FilterBar";
 import { HistoryPanel } from "./history/HistoryPanel";
 import { OrderTable } from "./OrderTable";
 import StatusFooter from "./StatusFooter";
+import { ORDER_STATUS } from "@/lib/order-status";
 
 interface OrdersPageProps {
   activeView: ViewGroup;
@@ -311,7 +312,7 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
                 Czy na pewno chcesz zmienić status zlecenia{" "}
                 <span className="font-semibold">{pendingStatusChange?.orderNo}</span>{" "}
                 na <span className="font-semibold">{pendingStatusChange ? STATUS_NAMES[pendingStatusChange.newStatus] : ""}</span>?
-                {pendingStatusChange?.newStatus === "reklamacja" && (
+                {pendingStatusChange?.newStatus === ORDER_STATUS.COMPLAINT && (
                   <label className="block mt-3">
                     <span className="text-sm font-medium text-slate-700 dark:text-slate-300">
                       Powód reklamacji
@@ -332,10 +333,10 @@ export function OrdersPage({ activeView }: OrdersPageProps) {
           <AlertDialogFooter>
             <AlertDialogCancel onClick={() => setComplaintReasonInput("")}>Anuluj</AlertDialogCancel>
             <AlertDialogAction
-              disabled={pendingStatusChange?.newStatus === "reklamacja" && !complaintReasonInput.trim()}
+              disabled={pendingStatusChange?.newStatus === ORDER_STATUS.COMPLAINT && !complaintReasonInput.trim()}
               onClick={() => {
                 handleChangeStatusConfirm(
-                  pendingStatusChange?.newStatus === "reklamacja" ? complaintReasonInput : undefined
+                  pendingStatusChange?.newStatus === ORDER_STATUS.COMPLAINT ? complaintReasonInput : undefined
                 );
                 setComplaintReasonInput("");
               }}

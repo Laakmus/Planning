@@ -13,8 +13,8 @@ import {
   isValidUUID,
   requireWriteAccess,
   logError,
-} from "../../../../../lib/api-helpers";
-import { restoreOrder } from "../../../../../lib/services/order-status.service";
+} from "@/lib/api-helpers";
+import { restoreOrder } from "@/lib/services/order-status.service";
 
 export const POST: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

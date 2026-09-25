@@ -16,11 +16,11 @@ import {
   jsonResponse,
   logError,
   requireAdmin,
-} from "../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   cleanupCancelledOrders,
-  createServiceRoleClient,
-} from "../../../../lib/services/cleanup.service";
+} from "@/lib/services/cleanup.service";
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const POST: APIRoute = async ({ locals }) => {
   // Autoryzacja — wymagana rola ADMIN
@@ -32,7 +32,7 @@ export const POST: APIRoute = async ({ locals }) => {
 
   try {
     // Używamy service_role client — cleanup wymaga pominięcia RLS
-    const serviceClient = createServiceRoleClient();
+    const serviceClient = createAdminSupabaseClient();
     const result = await cleanupCancelledOrders(serviceClient);
 
     return jsonResponse({
