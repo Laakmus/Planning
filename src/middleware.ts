@@ -71,6 +71,36 @@ function checkRateLimit(key: string, limit: number): { allowed: boolean; remaini
 }
 
 // ---------------------------------------------------------------------------
+// Limit rozmiaru body
+// ---------------------------------------------------------------------------
+
+const MAX_BODY_BYTES = 1_048_576; // 1MB
+
+/**
+ * Sprawdza rozmiar body bez Content-Length, czytając klon strumienia.
+ * Przerywa odczyt po przekroczeniu limitu — nie buforuje całego żądania.
+ */
+async function isBodyTooLarge(request: Request): Promise<boolean> {
+  if (!request.body) return false;
+  const reader = request.clone().body?.getReader();
+  if (!reader) return false;
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return false;
+      total += value.byteLength;
+      if (total > MAX_BODY_BYTES) {
+        await reader.cancel();
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Idempotency-Key cache (in-memory, 24h TTL)
 // ---------------------------------------------------------------------------
 
@@ -160,9 +190,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   );
 
-  // Body size limit — ochrona przed memory exhaustion (1MB)
+  // Body size limit — ochrona przed memory exhaustion (1MB).
+  // Bez Content-Length (Transfer-Encoding: chunked) liczymy bajty strumienia.
   const contentLength = context.request.headers.get("content-length");
-  if (contentLength && parseInt(contentLength, 10) > 1_048_576) {
+  const tooLarge = contentLength
+    ? parseInt(contentLength, 10) > MAX_BODY_BYTES
+    : await isBodyTooLarge(context.request);
+  if (tooLarge) {
     return new Response(
       JSON.stringify({
         error: "Payload Too Large",

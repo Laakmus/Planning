@@ -586,3 +586,66 @@ describe("middleware — integration", () => {
     expect(body.orderId).toBe(42);
   });
 });
+
+// ---------------------------------------------------------------------------
+// Limit rozmiaru body (1MB)
+// ---------------------------------------------------------------------------
+
+describe("middleware — body size limit", () => {
+  let onRequest: Awaited<ReturnType<typeof loadMiddleware>>;
+  const url = "http://localhost:4321/api/v1/orders";
+
+  beforeEach(async () => {
+    onRequest = await loadMiddleware();
+  });
+
+  /** Request ze strumieniowym body (bez Content-Length — jak chunked). */
+  function streamRequest(totalBytes: number): Request {
+    const chunk = new Uint8Array(64 * 1024);
+    let sent = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (sent >= totalBytes) {
+          controller.close();
+          return;
+        }
+        const size = Math.min(chunk.byteLength, totalBytes - sent);
+        controller.enqueue(chunk.subarray(0, size));
+        sent += size;
+      },
+    });
+    return new Request(url, { method: "POST", body, duplex: "half" } as RequestInit);
+  }
+
+  it("returns 413 when Content-Length exceeds 1MB", async () => {
+    const next = makeNext();
+    const headers = new Headers({ "content-length": String(2 * 1024 * 1024) });
+    const res = await onRequest(makeContext({ method: "POST", headers }), next);
+    expect(res.status).toBe(413);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("returns 413 for streamed body over 1MB without Content-Length", async () => {
+    const next = makeNext();
+    const res = await onRequest(
+      makeContext({ method: "POST", request: streamRequest(1_048_576 + 1) }),
+      next
+    );
+    expect(res.status).toBe(413);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("passes streamed body under 1MB and keeps it readable for the handler", async () => {
+    const request = streamRequest(1000);
+    const next = vi.fn(async () => {
+      const buf = await request.arrayBuffer();
+      return new Response(JSON.stringify({ size: buf.byteLength }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    const res = await onRequest(makeContext({ method: "POST", request }), next);
+    expect(res.status).toBe(200);
+    expect((await res.json()).size).toBe(1000);
+  });
+});

@@ -89,7 +89,14 @@ export const GET: APIRoute = async ({ request }) => {
 
   // Wariant sukcesu: weryfikujemy state + wymieniamy code na tokeny
   const { code, state } = parsed.data;
-  const stateRecord = consumeOAuthState(state);
+  const admin = createAdminClient();
+  let stateRecord: Awaited<ReturnType<typeof consumeOAuthState>>;
+  try {
+    stateRecord = await consumeOAuthState(admin, state);
+  } catch (err) {
+    logError("[GET /api/v1/ms-oauth/callback] consumeOAuthState", err);
+    stateRecord = null;
+  }
   if (!stateRecord) {
     return errorResponse(
       400,
@@ -107,7 +114,6 @@ export const GET: APIRoute = async ({ request }) => {
     const msUser = await getMsUser(tokenResponse.access_token);
 
     // 3. Zapis do DB (service_role omija RLS)
-    const admin = createAdminClient();
     await saveTokens(admin, stateRecord.userId, tokenResponse, msUser);
 
     // 4. Redirect na settings/email z flagą sukcesu

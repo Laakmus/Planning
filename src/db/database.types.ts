@@ -111,6 +111,35 @@ export type Database = {
           },
         ]
       }
+      ms_oauth_states: {
+        Row: {
+          code_verifier: string
+          created_at: string
+          state: string
+          user_id: string
+        }
+        Insert: {
+          code_verifier: string
+          created_at?: string
+          state: string
+          user_id: string
+        }
+        Update: {
+          code_verifier?: string
+          created_at?: string
+          state?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ms_oauth_states_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "user_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       ms_oauth_tokens: {
         Row: {
           access_token_encrypted: string

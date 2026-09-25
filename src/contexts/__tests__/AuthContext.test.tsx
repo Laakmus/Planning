@@ -275,7 +275,7 @@ describe("AuthProvider — login() [AUTH-MIG A3: username flow]", () => {
     const fetchMock = makeAuthFetchMock({ profileBody: MOCK_PROFILE });
 
     renderWithProvider();
-    await waitFor(() => screen.getByTestId("loading").textContent === "ready");
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("ready"));
 
     await act(async () => {
       await userEvent.click(screen.getByText("Login"));
@@ -294,7 +294,7 @@ describe("AuthProvider — login() [AUTH-MIG A3: username flow]", () => {
     makeAuthFetchMock({ profileBody: MOCK_PROFILE });
 
     renderWithProvider();
-    await waitFor(() => screen.getByTestId("loading").textContent === "ready");
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("ready"));
 
     await act(async () => {
       await userEvent.click(screen.getByText("Login"));
@@ -310,7 +310,7 @@ describe("AuthProvider — login() [AUTH-MIG A3: username flow]", () => {
     const fetchMock = makeAuthFetchMock({ profileBody: MOCK_PROFILE });
 
     renderWithProvider();
-    await waitFor(() => screen.getByTestId("loading").textContent === "ready");
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("ready"));
 
     await act(async () => {
       await userEvent.click(screen.getByText("Login"));
@@ -330,7 +330,7 @@ describe("AuthProvider — login() [AUTH-MIG A3: username flow]", () => {
     makeAuthFetchMock({ profileBody: MOCK_PROFILE });
 
     renderWithProvider();
-    await waitFor(() => screen.getByTestId("loading").textContent === "ready");
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("ready"));
 
     await act(async () => {
       await userEvent.click(screen.getByText("Login"));
@@ -458,13 +458,13 @@ describe("AuthProvider — logout()", () => {
     mockSignOut.mockResolvedValue({});
 
     renderWithProvider();
-    await waitFor(() => screen.getByTestId("loading").textContent === "ready");
+    await waitFor(() => expect(screen.getByTestId("loading").textContent).toBe("ready"));
 
     await act(async () => {
       await userEvent.click(screen.getByText("Logout"));
     });
 
-    expect(mockSignOut).toHaveBeenCalledTimes(1);
+    await waitFor(() => expect(mockSignOut).toHaveBeenCalledTimes(1));
   });
 
   it("clears user state after logout", async () => {
@@ -474,7 +474,7 @@ describe("AuthProvider — logout()", () => {
     mockSignOut.mockResolvedValue({});
 
     renderWithProvider();
-    await waitFor(() => screen.getByTestId("user").textContent === "jan@example.com");
+    await waitFor(() => expect(screen.getByTestId("user").textContent).toBe("jan@example.com"));
 
     await act(async () => {
       await userEvent.click(screen.getByText("Logout"));
