@@ -27,8 +27,11 @@ test.describe.serial("Panel admina — użytkownicy", () => {
 
   test("przejście przez sidebar otwiera /admin/users", async ({
     adminUsersPage,
+    ordersPage,
   }) => {
     await adminUsersPage.page.goto("/orders");
+    // Sidebar jest domyślnie zwinięty (defaultOpen={false}) — link niewidoczny do rozwinięcia
+    await ordersPage.ensureSidebarOpen();
     await adminUsersPage.sidebarLink.click();
     await adminUsersPage.page.waitForURL("**/admin/users");
     await expect(adminUsersPage.panel).toBeVisible();

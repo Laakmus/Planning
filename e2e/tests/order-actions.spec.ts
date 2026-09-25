@@ -30,6 +30,11 @@ test.describe.serial("Akcje na zleceniach", () => {
     );
 
     await contextMenu.clickItem("Skopiuj zlecenie");
+    // Aplikacja pyta o potwierdzenie duplikacji (AlertDialog)
+    await ordersPage.page
+      .locator('[role="alertdialog"]')
+      .getByRole("button", { name: "Tak, skopiuj" })
+      .click();
 
     // Poczekaj na POST + GET (odswiezenie listy)
     await postPromise;
