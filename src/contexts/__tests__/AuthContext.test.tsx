@@ -22,7 +22,6 @@ import {
   vi,
   beforeEach,
   afterEach,
-  type Mock,
 } from "vitest";
 import { render, screen, act, waitFor } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
@@ -67,20 +66,6 @@ const MOCK_PROFILE: AuthMeDto = {
   isActive: true,
   locationId: null,
 };
-
-function makeSuccessfulLoginMock(token = "mock-access-token") {
-  mockSignInWithPassword.mockResolvedValue({
-    data: { session: { access_token: token }, user: { id: "user-uuid-1" } },
-    error: null,
-  });
-}
-
-function makeFailedLoginMock(errorMessage = "Invalid login credentials") {
-  mockSignInWithPassword.mockResolvedValue({
-    data: { session: null, user: null },
-    error: { message: errorMessage },
-  });
-}
 
 function makeProfileFetchMock(profile: AuthMeDto | null, ok = true) {
   const fetchMock = vi.fn().mockResolvedValue({

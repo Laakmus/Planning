@@ -2,7 +2,7 @@
  * Testy pdf-data-resolver.ts — rozwiązywanie danych potrzebnych do generowania PDF.
  */
 
-import { describe, it, expect, vi, beforeEach } from "vitest";
+import { describe, it, expect, vi } from "vitest";
 import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/db/database.types";

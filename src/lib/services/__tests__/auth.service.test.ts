@@ -19,13 +19,6 @@ import { getCurrentUser } from "../auth.service";
 // Helpers
 // ---------------------------------------------------------------------------
 
-type MockedSupabase = {
-  auth: {
-    getUser: ReturnType<typeof vi.fn>;
-  };
-  from: ReturnType<typeof vi.fn>;
-};
-
 /**
  * Builds a minimal Supabase mock.
  *

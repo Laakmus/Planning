@@ -8,7 +8,7 @@ import { jsonResponse, errorResponse, logError } from "@/lib/api-helpers";
 
 export const GET: APIRoute = async ({ locals }) => {
   try {
-    const { data, error } = await locals.supabase
+    const { error } = await locals.supabase
       .from("order_statuses")
       .select("code")
       .limit(1);

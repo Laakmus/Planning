@@ -4,7 +4,7 @@
  * grupuje wg dni (pon-pt), przesuwając weekendowe stopy do piątku.
  */
 
-import type { SupabaseClient } from "@supabase/supabase-js";
+import type { PostgrestError, SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "@/db/database.types";
 import type {
@@ -28,6 +28,44 @@ const DAY_NAMES_PL = [
   "Czwartek",
   "Piątek",
 ];
+
+/** Wiersz order_stops z zagnieżdżonym zleceniem i towarami (select w getWarehouseWeekOrders). */
+interface WarehouseStopRow {
+  id: string;
+  kind: string;
+  sequence_no: number;
+  date_local: string | null;
+  time_local: string | null;
+  location_id: string | null;
+  order_id: string;
+  transport_orders: {
+    id: string;
+    order_no: string;
+    status_code: string;
+    carrier_name_snapshot: string | null;
+    vehicle_type_text: string | null;
+    notification_details: string | null;
+    order_items: {
+      product_name_snapshot: string | null;
+      loading_method_code: string | null;
+      quantity_tons: number | null;
+    }[] | null;
+  } | null;
+}
+
+type ValidStopRow = WarehouseStopRow & {
+  transport_orders: NonNullable<WarehouseStopRow["transport_orders"]>;
+};
+
+interface StopQueryResult {
+  data: WarehouseStopRow[] | null;
+  error: PostgrestError | null;
+}
+
+/** Odrzuca wiersze bez zagnieżdżonego zlecenia (edge case PostgREST przy inner join). */
+function isValidStopRow(row: WarehouseStopRow): row is ValidStopRow {
+  return row.transport_orders != null && !Array.isArray(row.transport_orders);
+}
 
 /**
  * Pobiera tygodniowy widok magazynowy dla danej lokalizacji.
@@ -92,8 +130,8 @@ export async function getWarehouseWeekOrders(
   `;
 
   // Zapytanie 1: stopy z datą w zakresie poniedziałek-niedziela
-  // Cast `as any` konieczny: Supabase PostgREST inner join zwraca typ nullable,
-  // ale .in() filter gwarantuje non-null. Identyczny workaround w pdf.ts i send-email.ts.
+  // Cast na StopQueryResult: typy PostgREST dla filtra na zagnieżdżonej tabeli
+  // (.in("transport_orders.status_code")) nie są wyprowadzane poprawnie.
   const { data: datedStops, error: datedErr } = await (supabase
     .from("order_stops")
     .select(stopSelect)
@@ -101,7 +139,7 @@ export async function getWarehouseWeekOrders(
     .gte("date_local", weekStart)
     .lte("date_local", dbWeekEnd)
     .in("transport_orders.status_code", WAREHOUSE_VISIBLE_STATUSES)
-    .order("time_local", { ascending: true, nullsFirst: false }) as any);
+    .order("time_local", { ascending: true, nullsFirst: false }) as unknown as PromiseLike<StopQueryResult>);
 
   if (datedErr) throw datedErr;
 
@@ -112,25 +150,21 @@ export async function getWarehouseWeekOrders(
     .eq("location_id", locationId)
     .is("date_local", null)
     .in("transport_orders.status_code", WAREHOUSE_VISIBLE_STATUSES)
-    .order("time_local", { ascending: true, nullsFirst: false }) as any);
+    .order("time_local", { ascending: true, nullsFirst: false }) as unknown as PromiseLike<StopQueryResult>);
 
   if (noDateErr) throw noDateErr;
 
   // Filtruj stopy z inner join — Supabase zwraca wiersz, ale transport_orders może być null
   // gdy status nie pasuje (inner join filtruje, ale w PostgREST mogą być edge cases)
-  const validDatedStops = (datedStops ?? []).filter(
-    (s: any) => s.transport_orders && !Array.isArray(s.transport_orders)
-  );
-  const validNoDateStops = (noDateStops ?? []).filter(
-    (s: any) => s.transport_orders && !Array.isArray(s.transport_orders)
-  );
+  const validDatedStops = (datedStops ?? []).filter(isValidStopRow);
+  const validNoDateStops = (noDateStops ?? []).filter(isValidStopRow);
 
   // Mapowanie stopu na WarehouseOrderEntryDto
-  function mapStopToEntry(stop: any, isWeekend: boolean, originalDate: string | null): WarehouseOrderEntryDto {
+  function mapStopToEntry(stop: ValidStopRow, isWeekend: boolean, originalDate: string | null): WarehouseOrderEntryDto {
     const order = stop.transport_orders;
     const items: WarehouseItemDto[] = (order.order_items ?? [])
-      .filter((i: any) => i.product_name_snapshot)
-      .map((i: any) => ({
+      .filter((i) => i.product_name_snapshot)
+      .map((i) => ({
         productName: i.product_name_snapshot ?? "",
         loadingMethod: i.loading_method_code ?? null,
         weightTons: i.quantity_tons ?? null,
@@ -194,7 +228,7 @@ export async function getWarehouseWeekOrders(
 
   // Mapuj noDateEntries
   const noDateEntries: WarehouseOrderEntryDto[] = validNoDateStops.map(
-    (stop: any) => mapStopToEntry(stop, false, null)
+    (stop) => mapStopToEntry(stop, false, null)
   );
 
   // Oblicz podsumowanie

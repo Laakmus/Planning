@@ -35,7 +35,7 @@ export function useWarehouseWeek(locationId?: string) {
     setIsLoading(true);
     setError(null);
 
-    const params: Record<string, any> = { week, year };
+    const params: Record<string, string | number> = { week, year };
     if (locationId) params.locationId = locationId;
 
     api.get<WarehouseWeekResponseDto>("/api/v1/warehouse/orders", params)

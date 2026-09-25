@@ -106,6 +106,22 @@ function SortableStopWrapper({
   );
 }
 
+/**
+ * After reordering active stops, renumber sequenceNo for all active stops
+ * and produce the updated full stops array (preserving deleted stops).
+ * Order is preserved as-is (no automatic re-sorting by kind).
+ * Constraint: first stop must be LOADING, last stop must be UNLOADING.
+ */
+function renumberAndBuild(newActiveStops: OrderFormStop[], allStops: OrderFormStop[]): OrderFormStop[] {
+  const renumbered = newActiveStops.map((s, i) => ({
+    ...s,
+    sequenceNo: i + 1,
+  }));
+
+  const deletedStops = allStops.filter((s) => s._deleted);
+  return [...renumbered, ...deletedStops];
+}
+
 export const RouteSection = memo(function RouteSection({
   formData,
   transportTypes,
@@ -145,22 +161,6 @@ export const RouteSection = memo(function RouteSection({
     [activeStops, activeIndexToOriginal]
   );
 
-  /**
-   * After reordering active stops, renumber sequenceNo for all active stops
-   * and produce the updated full stops array (preserving deleted stops).
-   * Order is preserved as-is (no automatic re-sorting by kind).
-   * Constraint: first stop must be LOADING, last stop must be UNLOADING.
-   */
-  function renumberAndBuild(newActiveStops: OrderFormStop[]): OrderFormStop[] {
-    const renumbered = newActiveStops.map((s, i) => ({
-      ...s,
-      sequenceNo: i + 1,
-    }));
-
-    const deletedStops = formData.stops.filter((s) => s._deleted);
-    return [...renumbered, ...deletedStops];
-  }
-
   // Drag end handler with position constraints:
   // - position 0 (first): only LOADING stops allowed
   // - last position: only UNLOADING stops allowed
@@ -182,7 +182,7 @@ export const RouteSection = memo(function RouteSection({
       // Enforce: last position must be UNLOADING
       if (reordered.length > 0 && reordered[reordered.length - 1].kind !== "UNLOADING") return;
 
-      onChange({ stops: renumberAndBuild(reordered) });
+      onChange({ stops: renumberAndBuild(reordered, formData.stops) });
     },
     [sortableIds, activeStops, formData.stops, onChange]
   );

@@ -4,7 +4,7 @@
  * obsługę błędów oraz mechanizm stale-prevention.
  */
 
-import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from "vitest";
+import { describe, it, expect, vi, beforeEach, afterEach } from "vitest";
 import { renderHook, waitFor, act } from "@testing-library/react";
 
 // ---------------------------------------------------------------------------

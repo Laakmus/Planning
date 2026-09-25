@@ -11,7 +11,6 @@ import type {
   OrderFormData,
   OrderFormItem,
   OrderFormStop,
-  CurrencyCode,
 } from "@/lib/view-models";
 import {
   formDataToViewData,
@@ -21,7 +20,7 @@ import {
   resolveCarrierAddress,
   buildPlaceFallback,
 } from "../types";
-import type { OrderViewData, OrderViewItem, OrderViewStop } from "../types";
+import type { OrderViewData } from "../types";
 
 // ---------------------------------------------------------------------------
 // Stale testowe

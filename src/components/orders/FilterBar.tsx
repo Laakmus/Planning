@@ -11,7 +11,7 @@ import { useEffect, useRef, useState } from "react";
 
 import { useDictionaries } from "@/contexts/DictionaryContext";
 import { hasActiveFilters } from "@/lib/view-models";
-import type { OrderListFilters, ListViewMode, OrderStatusCode, TransportTypeCode } from "@/lib/view-models";
+import type { OrderListFilters, ListViewMode, OrderStatusCode } from "@/lib/view-models";
 import { weekNumberToDateRange } from "@/lib/week-utils";
 
 import { AutocompleteFilter } from "./AutocompleteFilter";

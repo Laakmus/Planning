@@ -83,7 +83,6 @@ export interface UseOrderActionsReturn {
 export function useOrderActions({
   api,
   user,
-  refetch,
   silentRefetch,
   updateOrderLocally,
   tableScrollRef,
@@ -147,7 +146,8 @@ export function useOrderActions({
       isCreatingRef.current = false;
       setIsCreatingOrder(false);
     }
-  }, [api, silentRefetch, tableScrollRef]);
+    // user w zależnościach — inaczej zlecenie tworzone tuż po zalogowaniu dostawało puste dane kontaktowe
+  }, [api, user, silentRefetch, tableScrollRef]);
 
   const handleSendEmail = useCallback(
     async (orderId: string) => {

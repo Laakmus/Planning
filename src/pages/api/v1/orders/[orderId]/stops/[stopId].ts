@@ -14,7 +14,6 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   isValidUUID,
-  parseJsonBody,
   requireWriteAccess,
   logError,
 } from "@/lib/api-helpers";

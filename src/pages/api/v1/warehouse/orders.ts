@@ -27,6 +27,7 @@ import {
   getWarehouseWeekOrders,
 } from "@/lib/services/warehouse.service";
 import { warehouseQuerySchema } from "@/lib/validators/order.validator";
+import { findInternalLocation } from "@/lib/services/location.service";
 
 export const GET: APIRoute = async ({ locals, request }) => {
   if (!locals.supabase) {
@@ -109,12 +110,13 @@ export const GET: APIRoute = async ({ locals, request }) => {
 
   if (validatedLocationId) {
     // Sprawdź czy lokalizacja istnieje i należy do firmy wewnętrznej (INTERNAL)
-    const { data: loc } = await (locals.supabase
-      .from("locations")
-      .select("id, companies!inner(type)")
-      .eq("id", validatedLocationId)
-      .eq("companies.type", "INTERNAL")
-      .maybeSingle() as any);
+    let loc: Awaited<ReturnType<typeof findInternalLocation>>;
+    try {
+      loc = await findInternalLocation(locals.supabase, validatedLocationId);
+    } catch (err) {
+      logError("[GET /api/v1/warehouse/orders] findInternalLocation", err);
+      return errorResponse(500, "Internal Server Error", "Nie udało się zweryfikować lokalizacji.");
+    }
 
     if (!loc) {
       return errorResponse(

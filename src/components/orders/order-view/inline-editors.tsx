@@ -17,8 +17,7 @@ export function EditableText({
   onChange: (value: string) => void;
   className?: string;
   disabled?: boolean;
-  [key: string]: any;
-}) {
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
   if (disabled) return <span className={className}>{value}</span>;
   return (
     <input
@@ -48,8 +47,7 @@ export function EditableNumber({
   className?: string;
   disabled?: boolean;
   suffix?: string;
-  [key: string]: any;
-}) {
+} & Omit<React.InputHTMLAttributes<HTMLInputElement>, "value" | "onChange">) {
   if (disabled) {
     return (
       <span className={className}>
@@ -92,8 +90,7 @@ export function EditableTextarea({
   onChange: (value: string) => void;
   className?: string;
   disabled?: boolean;
-  [key: string]: any;
-}) {
+} & Omit<React.TextareaHTMLAttributes<HTMLTextAreaElement>, "value" | "onChange">) {
   if (disabled) {
     return (
       <span className={className} style={{ whiteSpace: "pre-wrap" }}>

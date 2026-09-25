@@ -175,7 +175,6 @@ function askUserForOpenMode(): "web" | "desktop" {
     "Jak chcesz otworzyć draft maila?\n\n" +
     "OK = Outlook Web (w przeglądarce)\n" +
     "Anuluj = Outlook Desktop (pobierz plik .eml)";
-  // eslint-disable-next-line no-alert
   const wantsWeb = window.confirm(message);
   return wantsWeb ? "web" : "desktop";
 }

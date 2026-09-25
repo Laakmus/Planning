@@ -44,7 +44,7 @@ test.describe("Drawer zlecenia", () => {
     await drawerPage.drawer.waitFor({ state: "hidden", timeout: 10_000 });
   });
 
-  test("creates new order via button", async ({ ordersPage, drawerPage }) => {
+  test("creates new order via button", async ({ ordersPage }) => {
     await ordersPage.goto();
 
     // Rejestruj listener PRZED kliknieciem "Nowe zlecenie"

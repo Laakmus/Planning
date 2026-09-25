@@ -81,7 +81,6 @@ export function OrderForm({
   // Flaga isDirty — ustawiana przy każdym patch(), resetowana przy zmianie zlecenia
   const formDataDirtyRef = useRef(false);
   const originalComplaintReasonRef = useRef<string | null>(order.complaintReason);
-  const [isDirty, setIsDirty] = useState(false);
 
   // Przebuduj formularz gdy order/stops/items się zmienią (np. po przeładowaniu detali)
   useEffect(() => {
@@ -91,7 +90,6 @@ export function OrderForm({
     setPendingStatusCode(null);
     setComplaintReason(order.complaintReason);
     formDataDirtyRef.current = false;
-    setIsDirty(false);
     onDirtyChange(false); // synchronizuj stan dirty z rodzicem przy resecie formularza
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [order.id, order.updatedAt]); // reset przy zmianie zlecenia LUB po aktualizacji danych
@@ -124,7 +122,6 @@ export function OrderForm({
     formDataDirtyRef.current = true;
     const dirty = computeDirty(true, pendingStatusCode, complaintReason);
     setFormData((prev) => ({ ...prev, ...update }));
-    setIsDirty(dirty);
     onDirtyChange(dirty);
   }
 
@@ -292,13 +289,11 @@ export function OrderForm({
                     onStatusChange={(code) => {
                       setPendingStatusCode(code);
                       const dirty = computeDirty(formDataDirtyRef.current, code, complaintReason);
-                      setIsDirty(dirty);
                       onDirtyChange(dirty);
                     }}
                     onComplaintReasonChange={(reason) => {
                       setComplaintReason(reason);
                       const dirty = computeDirty(formDataDirtyRef.current, pendingStatusCode, reason);
-                      setIsDirty(dirty);
                       onDirtyChange(dirty);
                     }}
                   />
