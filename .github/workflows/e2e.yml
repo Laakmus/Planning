@@ -37,10 +37,14 @@ jobs:
 
       - name: Get Supabase env vars
         run: |
-          ANON_KEY=$(supabase status -o env | grep ANON_KEY | cut -d= -f2 | tr -d '"')
-          API_URL=$(supabase status -o env | grep API_URL | cut -d= -f2 | tr -d '"')
+          ANON_KEY=$(supabase status -o env | grep '^ANON_KEY=' | cut -d= -f2 | tr -d '"')
+          SERVICE_ROLE_KEY=$(supabase status -o env | grep '^SERVICE_ROLE_KEY=' | cut -d= -f2 | tr -d '"')
+          API_URL=$(supabase status -o env | grep '^API_URL=' | cut -d= -f2 | tr -d '"')
           echo "SUPABASE_URL=$API_URL" >> $GITHUB_ENV
           echo "SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
+          # Login (resolve_username_to_email), aktywacja i panel admina wymagają klucza service_role
+          echo "::add-mask::$SERVICE_ROLE_KEY"
+          echo "SUPABASE_SERVICE_ROLE_KEY=$SERVICE_ROLE_KEY" >> $GITHUB_ENV
           echo "PUBLIC_SUPABASE_URL=$API_URL" >> $GITHUB_ENV
           echo "PUBLIC_SUPABASE_ANON_KEY=$ANON_KEY" >> $GITHUB_ENV
 

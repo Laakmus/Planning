@@ -72,6 +72,10 @@ async function loadMiddleware() {
   vi.doMock("@/lib/api-helpers", () => ({
     getCorsOrigin: () => "http://localhost:4321",
   }));
+  // Mock presence — przy ustawionym SUPABASE_SERVICE_ROLE_KEY (CI) robiłby UPDATE na mocku klienta
+  vi.doMock("../lib/user-presence", () => ({
+    maybeUpdateLastSeen: vi.fn(),
+  }));
 
   const mod = await import("../middleware");
   // defineMiddleware (stub) zwraca surową funkcję — onRequest to async (ctx, next).
@@ -186,6 +190,16 @@ describe("middleware — rate limiting", () => {
     expect(retryAfter).toBeLessThanOrEqual(60);
   });
 
+  it("includes CORS header on 429", async () => {
+    const next = makeNext();
+    for (let i = 0; i < 100; i++) {
+      await onRequest(makeContext({ method: "POST" }), next);
+    }
+    const res = await onRequest(makeContext({ method: "POST" }), next);
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Access-Control-Allow-Origin")).toBe("http://localhost:4321");
+  });
+
   it("includes X-RateLimit-Remaining header on successful response", async () => {
     const next = makeNext();
     const res = await onRequest(makeContext(), next);
@@ -224,6 +238,28 @@ describe("middleware — idempotency-key", () => {
     expect(res2.headers.get("X-Idempotency-Replayed")).toBe("true");
     const body = await res2.json();
     expect(body.id).toBe(1);
+  });
+
+  it("does not replay cached response for the same key on a different path", async () => {
+    let n = 0;
+    const next = makeNext(() =>
+      new Response(JSON.stringify({ call: ++n }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      })
+    );
+    const mkHeaders = () => new Headers({ "Idempotency-Key": "key-path" });
+    await onRequest(
+      makeContext({ method: "POST", headers: mkHeaders(), url: new URL("http://localhost:4321/api/v1/a") }),
+      next
+    );
+    const res = await onRequest(
+      makeContext({ method: "POST", headers: mkHeaders(), url: new URL("http://localhost:4321/api/v1/b") }),
+      next
+    );
+    expect(next).toHaveBeenCalledTimes(2);
+    expect(res.headers.get("X-Idempotency-Replayed")).toBeNull();
+    expect((await res.json()).call).toBe(2);
   });
 
   it("does not replay after TTL expires", async () => {
@@ -338,6 +374,22 @@ describe("middleware — JWT parsing", () => {
     const res = await onRequest(makeContext({ clientAddress: "10.0.0.99", headers }), next);
     // 3 żądania z tego samego usera → remaining = 997
     expect(res.headers.get("X-RateLimit-Remaining")).toBe("997");
+  });
+
+  it("decodes base64url payload (with - and _ chars, no padding)", async () => {
+    const next = makeNext();
+    const toB64Url = (v: string) =>
+      btoa(v).replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/, "");
+    const payload = toB64Url(
+      JSON.stringify({ sub: "a0000000-0000-0000-0000-0000000abc24", name: "~~~???>>>" })
+    );
+    expect(payload).toMatch(/[-_]/);
+    const jwt = `${toB64Url('{"alg":"HS256"}')}.${payload}.sig`;
+    const headers = new Headers({ Authorization: `Bearer ${jwt}` });
+    await onRequest(makeContext({ clientAddress: "10.1.0.1", headers }), next);
+    const res = await onRequest(makeContext({ clientAddress: "10.1.0.2", headers }), next);
+    // Ten sam user (sub z JWT), różne IP → wspólny bucket
+    expect(res.headers.get("X-RateLimit-Remaining")).toBe("998");
   });
 
   it("returns null for malformed token (not 3 parts) — falls back to IP", async () => {
@@ -536,5 +588,68 @@ describe("middleware — integration", () => {
     expect(next).toHaveBeenCalledTimes(1);
     const body = await res2.json();
     expect(body.orderId).toBe(42);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Limit rozmiaru body (1MB)
+// ---------------------------------------------------------------------------
+
+describe("middleware — body size limit", () => {
+  let onRequest: Awaited<ReturnType<typeof loadMiddleware>>;
+  const url = "http://localhost:4321/api/v1/orders";
+
+  beforeEach(async () => {
+    onRequest = await loadMiddleware();
+  });
+
+  /** Request ze strumieniowym body (bez Content-Length — jak chunked). */
+  function streamRequest(totalBytes: number): Request {
+    const chunk = new Uint8Array(64 * 1024);
+    let sent = 0;
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        if (sent >= totalBytes) {
+          controller.close();
+          return;
+        }
+        const size = Math.min(chunk.byteLength, totalBytes - sent);
+        controller.enqueue(chunk.subarray(0, size));
+        sent += size;
+      },
+    });
+    return new Request(url, { method: "POST", body, duplex: "half" } as RequestInit);
+  }
+
+  it("returns 413 when Content-Length exceeds 1MB", async () => {
+    const next = makeNext();
+    const headers = new Headers({ "content-length": String(2 * 1024 * 1024) });
+    const res = await onRequest(makeContext({ method: "POST", headers }), next);
+    expect(res.status).toBe(413);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("returns 413 for streamed body over 1MB without Content-Length", async () => {
+    const next = makeNext();
+    const res = await onRequest(
+      makeContext({ method: "POST", request: streamRequest(1_048_576 + 1) }),
+      next
+    );
+    expect(res.status).toBe(413);
+    expect(next).not.toHaveBeenCalled();
+  });
+
+  it("passes streamed body under 1MB and keeps it readable for the handler", async () => {
+    const request = streamRequest(1000);
+    const next = vi.fn(async () => {
+      const buf = await request.arrayBuffer();
+      return new Response(JSON.stringify({ size: buf.byteLength }), {
+        status: 200,
+        headers: { "Content-Type": "application/json" },
+      });
+    });
+    const res = await onRequest(makeContext({ method: "POST", request }), next);
+    expect(res.status).toBe(200);
+    expect((await res.json()).size).toBe(1000);
   });
 });

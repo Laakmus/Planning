@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-05-17 (sesja 60: AUTH-MIG B3+B4 zakończone — Microsoft Graph OAuth backend + frontend EmailConnectionCard)
+> Ostatnia aktualizacja: 2026-09-25 (audyt bugów: 8 poprawek + testy, patrz „Audyt 2026-09-25”)
 
 ---
 
@@ -23,6 +23,19 @@
 - **Effort:** ~35–45 h agentów + ~3–4 h usera
 
 ---
+
+## Audyt 2026-09-25 — bugi
+
+- [x] RPC `resolve_username_to_email` — tylko service_role (migracja `20260925000000_restrict_resolve_username.sql`)
+- [x] Rate limit login/activate — IP z `Fly-Client-IP` zamiast `x-forwarded-for` (`getClientIp` w `lib/auth/rate-limit.ts`)
+- [x] `updateOrder` — guard `status_code` w UPDATE (równoległe anulowanie nie jest nadpisywane)
+- [x] Middleware — dekodowanie JWT base64url, Idempotency-Key per ścieżka, CORS na 429, nagłówki/kompresja na ścieżce idempotentnej
+- [x] `getCurrentISOWeek` — data w Europe/Warsaw
+- [x] ESLint — ignorowanie `.claude/`, globalne k6, pusty catch w `Layout.astro`
+- [ ] **HIGH** `updateOrder` / `createOrder` / `duplicateOrder` nie są transakcyjne — przenieść do RPC plpgsql
+- [ ] **HIGH** Stan in-memory (OAuth state, rate limit, idempotency, scheduler cleanup) vs `fly.toml` `min_machines_running = 0`
+- [ ] **LOW** Limit 1MB w middleware sprawdza tylko `content-length` (chunked omija)
+- [ ] **LOW** ESLint nie lintuje plików `.ts/.tsx` (brak typescript-eslint)
 
 ## Do zrobienia — HIGH
 

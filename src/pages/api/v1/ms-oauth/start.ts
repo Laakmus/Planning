@@ -25,16 +25,19 @@ import {
 } from "../../../../lib/api-helpers";
 import { createOAuthState } from "../../../../lib/oauth-state";
 import { buildAuthorizationUrl } from "../../../../lib/services/ms-graph.service";
+import { createAdminSupabaseClient } from "../../../../lib/services/user-admin.service";
 
 export const GET: APIRoute = async ({ locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);
   if (authResult instanceof Response) return authResult;
 
   try {
-    const { state, codeVerifier, codeChallenge } = createOAuthState(authResult.id);
-    // codeVerifier jest przechowywany w mapie state — w buildAuthorizationUrl używamy tylko
-    // codeChallenge (PKCE S256). Verifier zostanie odczytany w /callback.
-    void codeVerifier;
+    // codeVerifier zostaje w tabeli ms_oauth_states — tu używamy tylko codeChallenge (PKCE S256).
+    // Verifier zostanie odczytany w /callback.
+    const { state, codeChallenge } = await createOAuthState(
+      createAdminSupabaseClient(),
+      authResult.id
+    );
 
     const authorizeUrl = buildAuthorizationUrl(state, codeChallenge, authResult.id);
 

@@ -71,6 +71,36 @@ function checkRateLimit(key: string, limit: number): { allowed: boolean; remaini
 }
 
 // ---------------------------------------------------------------------------
+// Limit rozmiaru body
+// ---------------------------------------------------------------------------
+
+const MAX_BODY_BYTES = 1_048_576; // 1MB
+
+/**
+ * Sprawdza rozmiar body bez Content-Length, czytając klon strumienia.
+ * Przerywa odczyt po przekroczeniu limitu — nie buforuje całego żądania.
+ */
+async function isBodyTooLarge(request: Request): Promise<boolean> {
+  if (!request.body) return false;
+  const reader = request.clone().body?.getReader();
+  if (!reader) return false;
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) return false;
+      total += value.byteLength;
+      if (total > MAX_BODY_BYTES) {
+        await reader.cancel();
+        return true;
+      }
+    }
+  } catch {
+    return false;
+  }
+}
+
+// ---------------------------------------------------------------------------
 // Idempotency-Key cache (in-memory, 24h TTL)
 // ---------------------------------------------------------------------------
 
@@ -123,7 +153,9 @@ function extractSubFromJwt(authHeader: string): string | null {
     const token = authHeader.replace(/^Bearer\s+/i, "");
     const parts = token.split(".");
     if (parts.length !== 3) return null;
-    const payload = JSON.parse(atob(parts[1]));
+    // Payload JWT jest w base64url (-, _, bez paddingu) — atob wymaga standardowego base64
+    const b64 = parts[1].replace(/-/g, "+").replace(/_/g, "/");
+    const payload = JSON.parse(atob(b64.padEnd(Math.ceil(b64.length / 4) * 4, "=")));
     if (typeof payload.sub !== "string") return null;
     // Walidacja formatu UUID — odrzucamy sfabrykowane wartości
     if (!UUID_PATTERN.test(payload.sub)) return null;
@@ -158,9 +190,13 @@ export const onRequest = defineMiddleware(async (context, next) => {
     }
   );
 
-  // Body size limit — ochrona przed memory exhaustion (1MB)
+  // Body size limit — ochrona przed memory exhaustion (1MB).
+  // Bez Content-Length (Transfer-Encoding: chunked) liczymy bajty strumienia.
   const contentLength = context.request.headers.get("content-length");
-  if (contentLength && parseInt(contentLength, 10) > 1_048_576) {
+  const tooLarge = contentLength
+    ? parseInt(contentLength, 10) > MAX_BODY_BYTES
+    : await isBodyTooLarge(context.request);
+  if (tooLarge) {
     return new Response(
       JSON.stringify({
         error: "Payload Too Large",
@@ -217,6 +253,7 @@ export const onRequest = defineMiddleware(async (context, next) => {
         status: 429,
         headers: {
           "Content-Type": "application/json",
+          "Access-Control-Allow-Origin": getCorsOrigin(),
           "Retry-After": String(Math.ceil((rate.resetAt - Date.now()) / 1000)),
           "X-RateLimit-Limit": String(limit),
           "X-RateLimit-Remaining": "0",
@@ -229,7 +266,9 @@ export const onRequest = defineMiddleware(async (context, next) => {
   if (method === "POST") {
     const idempotencyKey = context.request.headers.get("idempotency-key");
     if (idempotencyKey) {
-      const cacheKey = `${clientId}:${idempotencyKey}`;
+      // Klucz obejmuje ścieżkę — ten sam Idempotency-Key na innym endpoincie
+      // nie może zwrócić odpowiedzi z cache innej operacji.
+      const cacheKey = `${clientId}:${pathname}:${idempotencyKey}`;
       const cached = idempotencyCache.get(cacheKey);
 
       if (cached && cached.expiresAt > Date.now()) {
@@ -263,13 +302,15 @@ export const onRequest = defineMiddleware(async (context, next) => {
         });
       }
 
-      return new Response(responseBody, {
+      const idempotentResponse = new Response(responseBody, {
         status: response.status,
         headers: {
           ...responseHeaders,
+          "X-RateLimit-Limit": String(limit),
           "X-RateLimit-Remaining": String(rate.remaining),
         },
       });
+      return maybeCompress(context.request, idempotentResponse);
     }
   }
 

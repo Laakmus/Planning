@@ -25,6 +25,10 @@ vi.mock("@/lib/services/ms-graph.service", () => ({
   buildAuthorizationUrl: vi.fn(),
 }));
 
+vi.mock("@/lib/services/user-admin.service", () => ({
+  createAdminSupabaseClient: vi.fn(() => ({ from: vi.fn() })),
+}));
+
 import { GET } from "../start";
 import * as apiHelpers from "@/lib/api-helpers";
 import * as oauthState from "@/lib/oauth-state";
@@ -84,7 +88,7 @@ beforeEach(() => {
   );
 
   mockGetAuth.mockResolvedValue(MOCK_USER);
-  mockCreateOAuthState.mockReturnValue({
+  mockCreateOAuthState.mockResolvedValue({
     state: "state-abc",
     codeVerifier: "verifier-xyz",
     codeChallenge: "challenge-123",
@@ -122,7 +126,7 @@ describe("GET /api/v1/ms-oauth/start", () => {
     await GET(makeContext());
 
     // Assert
-    expect(mockCreateOAuthState).toHaveBeenCalledWith(MOCK_USER.id);
+    expect(mockCreateOAuthState).toHaveBeenCalledWith(expect.anything(), MOCK_USER.id);
   });
 
   it("passes state, codeChallenge and userId to buildAuthorizationUrl", async () => {
@@ -139,9 +143,7 @@ describe("GET /api/v1/ms-oauth/start", () => {
 
   it("returns 500 when createOAuthState throws", async () => {
     // Arrange
-    mockCreateOAuthState.mockImplementation(() => {
-      throw new Error("boom");
-    });
+    mockCreateOAuthState.mockRejectedValue(new Error("boom"));
 
     // Act
     const response = await GET(makeContext());

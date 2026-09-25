@@ -29,7 +29,7 @@ function prune(timestamps: number[], now: number): number[] {
  * Jeżeli tak — rejestruje próbę i zwraca `{ allowed: true }`.
  * Jeżeli nie — zwraca `{ allowed: false, retryAfterSec }`.
  *
- * @param ip — adres IP klienta (z nagłówka `x-forwarded-for` lub `context.clientAddress`)
+ * @param ip — adres IP klienta (z `getClientIp`)
  */
 export function checkLoginRateLimit(
   ip: string
@@ -111,4 +111,16 @@ export function checkActivateRateLimit(
 
 export function __resetActivateRateLimit(): void {
   activateBuckets.clear();
+}
+
+/**
+ * Ekstrakcja IP klienta dla rate limitu.
+ * `Fly-Client-IP` ustawia proxy Fly.io (klient nie może go nadpisać).
+ * Nie używamy `x-forwarded-for` — pierwszy element listy kontroluje klient,
+ * co pozwalało obejść limit prób.
+ */
+export function getClientIp(request: Request, clientAddress: string | undefined): string {
+  const flyIp = request.headers.get("fly-client-ip")?.trim();
+  if (flyIp) return flyIp;
+  return clientAddress ?? "unknown";
 }

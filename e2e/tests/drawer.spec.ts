@@ -17,31 +17,30 @@ test.describe("Drawer zlecenia", () => {
     await ordersPage.clickRow("ZT2026/0009");
     await drawerPage.waitForLoaded();
 
-    // Znajdz pole uwag (generalNotes — textarea)
-    const notesField = drawerPage.drawer.locator("textarea").last();
-    if (await notesField.isVisible()) {
-      const testNote = `Test E2E ${Date.now()}`;
-      await notesField.fill(testNote);
+    // Pole uwag (generalNotes) — czekamy na widoczność (wcześniej `if (isVisible())`
+    // sprawdzało zanim pole się wyrenderowało i test pomijał zapis)
+    const notesField = drawerPage.drawer.getByPlaceholder("Dodatkowe uwagi do zlecenia…");
+    await expect(notesField).toBeVisible({ timeout: 5_000 });
+    const testNote = `Test E2E ${Date.now()}`;
+    await notesField.fill(testNote);
 
-      // Przycisk Zapisz powinien byc aktywny
-      await expect(drawerPage.saveButton).toBeEnabled();
+    // Przycisk Zapisz powinien byc aktywny
+    await expect(drawerPage.saveButton).toBeEnabled();
 
-      // Rejestruj listener PRZED kliknieciem Zapisz
-      const responsePromise = ordersPage.page.waitForResponse(
-        (resp) =>
-          resp.url().includes("/api/v1/orders") &&
-          resp.request().method() === "PUT",
-        { timeout: 15_000 },
-      );
-      await drawerPage.save();
+    // Rejestruj listener PRZED kliknieciem Zapisz
+    const responsePromise = ordersPage.page.waitForResponse(
+      (resp) =>
+        resp.url().includes("/api/v1/orders") &&
+        resp.request().method() === "PUT",
+      { timeout: 15_000 },
+    );
+    await drawerPage.save();
+    expect((await responsePromise).ok()).toBeTruthy();
 
-      // Poczekaj na response API
-      await responsePromise;
-    }
-
-    // handleSave zamyka drawer automatycznie — nie wywoluj close() recznie
-    // (race condition: drawer moze byc juz zamkniety po save)
-    await drawerPage.drawer.waitFor({ state: "hidden", timeout: 10_000 });
+    // PRD: po zapisie drawer zostaje otwarty z odświeżonymi danymi
+    await expect(drawerPage.drawer).toBeVisible();
+    await expect(drawerPage.saveButton).toBeDisabled({ timeout: 10_000 });
+    await expect(notesField).toHaveValue(testNote);
   });
 
   test("creates new order via button", async ({ ordersPage, drawerPage }) => {

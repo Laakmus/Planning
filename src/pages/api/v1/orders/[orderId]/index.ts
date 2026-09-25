@@ -88,7 +88,7 @@ export const PUT: APIRoute = async ({ params, locals, request }) => {
       return errorResponse(
         409,
         "Conflict",
-        "Zlecenie jest zablokowane przez innego użytkownika."
+        "Zlecenie jest zablokowane lub zostało zmienione przez innego użytkownika. Odśwież i spróbuj ponownie."
       );
     }
     if (msg === "FORBIDDEN_EDIT") {

@@ -52,11 +52,21 @@ function toISODateString(d: Date): string {
   return `${y}-${m}-${day}`;
 }
 
+/** Formatter daty kalendarzowej w strefie Polski (serwer działa w UTC). */
+const WARSAW_DATE_FORMAT = new Intl.DateTimeFormat("en-CA", {
+  timeZone: "Europe/Warsaw",
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
 /**
- * Oblicza bieżący numer tygodnia ISO.
+ * Oblicza bieżący numer tygodnia ISO wg daty w Europe/Warsaw.
+ * Strefa czasowa serwera (UTC) dawała poprzedni tydzień w poniedziałek 00:00–02:00 czasu PL.
  */
 export function getCurrentISOWeek(now: Date): { week: number; year: number } {
-  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
+  const [y, m, day] = WARSAW_DATE_FORMAT.format(now).split("-").map(Number);
+  const d = new Date(Date.UTC(y, m - 1, day));
   // Przesuń do najbliższego czwartku (ISO: czwartek = ten sam tydzień)
   d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
   const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));

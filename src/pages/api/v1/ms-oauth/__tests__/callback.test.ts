@@ -139,7 +139,7 @@ describe("GET /api/v1/ms-oauth/callback", () => {
       success: true,
       data: { code: "abc", state: "unknown" },
     });
-    mockConsumeOAuthState.mockReturnValue(null);
+    mockConsumeOAuthState.mockResolvedValue(null);
 
     // Act
     const response = await GET(makeContext("?code=abc&state=unknown"));
@@ -155,13 +155,26 @@ describe("GET /api/v1/ms-oauth/callback", () => {
     expect(mockExchange).not.toHaveBeenCalled();
   });
 
+  it("returns 400 when consumeOAuthState throws (DB error)", async () => {
+    mockSchema.safeParse.mockReturnValue({
+      success: true,
+      data: { code: "abc", state: "some-state" },
+    });
+    mockConsumeOAuthState.mockRejectedValue(new Error("db down"));
+
+    const response = await GET(makeContext("?code=abc&state=some-state"));
+
+    expect(response.status).toBe(400);
+    expect(mockExchange).not.toHaveBeenCalled();
+  });
+
   it("happy path: exchanges code, fetches /me, saves tokens, redirects with ms_connected=1", async () => {
     // Arrange
     mockSchema.safeParse.mockReturnValue({
       success: true,
       data: { code: "the-code", state: "the-state" },
     });
-    mockConsumeOAuthState.mockReturnValue({
+    mockConsumeOAuthState.mockResolvedValue({
       userId: "user-1",
       codeVerifier: "verifier-1",
     });
@@ -204,7 +217,7 @@ describe("GET /api/v1/ms-oauth/callback", () => {
       success: true,
       data: { code: "bad-code", state: "the-state" },
     });
-    mockConsumeOAuthState.mockReturnValue({
+    mockConsumeOAuthState.mockResolvedValue({
       userId: "user-1",
       codeVerifier: "verifier-1",
     });
@@ -226,7 +239,7 @@ describe("GET /api/v1/ms-oauth/callback", () => {
       success: true,
       data: { code: "the-code", state: "the-state" },
     });
-    mockConsumeOAuthState.mockReturnValue({
+    mockConsumeOAuthState.mockResolvedValue({
       userId: "user-1",
       codeVerifier: "verifier-1",
     });
