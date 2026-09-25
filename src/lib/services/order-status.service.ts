@@ -6,10 +6,10 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { ChangeStatusResponseDto, DeleteOrderResponseDto, RestoreOrderResponseDto } from "../../types";
-import type { ChangeStatusParams } from "../validators/order.validator";
-import { isManualTransitionAllowed, ORDER_STATUS, TERMINAL_STATUSES } from "../order-status";
+import type { Database } from "@/db/database.types";
+import type { ChangeStatusResponseDto, DeleteOrderResponseDto, RestoreOrderResponseDto } from "@/types";
+import type { ChangeStatusParams } from "@/lib/validators/order.validator";
+import { isManualTransitionAllowed, ORDER_STATUS, TERMINAL_STATUSES } from "@/lib/order-status";
 
 
 /**

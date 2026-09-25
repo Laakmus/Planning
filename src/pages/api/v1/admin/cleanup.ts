@@ -16,10 +16,10 @@ import {
   jsonResponse,
   logError,
   requireAdmin,
-} from "../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   cleanupCancelledOrders,
-} from "../../../../lib/services/cleanup.service";
+} from "@/lib/services/cleanup.service";
 import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const POST: APIRoute = async ({ locals }) => {

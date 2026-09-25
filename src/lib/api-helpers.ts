@@ -7,8 +7,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../db/database.types";
-import type { AuthMeDto } from "../types";
+import type { Database } from "@/db/database.types";
+import type { AuthMeDto } from "@/types";
 import { getEnv } from "./env";
 import { logger } from "./logger";
 import { captureException } from "./sentry";

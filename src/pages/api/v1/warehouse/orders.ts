@@ -21,12 +21,12 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   logError,
-} from "../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   getCurrentISOWeek,
   getWarehouseWeekOrders,
-} from "../../../../lib/services/warehouse.service";
-import { warehouseQuerySchema } from "../../../../lib/validators/order.validator";
+} from "@/lib/services/warehouse.service";
+import { warehouseQuerySchema } from "@/lib/validators/order.validator";
 
 export const GET: APIRoute = async ({ locals, request }) => {
   if (!locals.supabase) {

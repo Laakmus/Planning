@@ -6,10 +6,10 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { LockOrderResponseDto, UnlockOrderResponseDto } from "../../types";
-import { getEnv } from "../env";
-import { TERMINAL_STATUSES } from "../order-status";
+import type { Database } from "@/db/database.types";
+import type { LockOrderResponseDto, UnlockOrderResponseDto } from "@/types";
+import { getEnv } from "@/lib/env";
+import { TERMINAL_STATUSES } from "@/lib/order-status";
 
 /** Czas wygasania blokady w minutach (konfigurowalny przez env). */
 const LOCK_EXPIRY_MINUTES = parseInt(getEnv("LOCK_EXPIRY_MINUTES") ?? "15", 10);

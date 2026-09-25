@@ -22,7 +22,7 @@ import {
   errorResponse,
   getAuthenticatedUser,
   logError,
-} from "../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import { tryCreateAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const POST: APIRoute = async ({ locals }) => {

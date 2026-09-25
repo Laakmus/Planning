@@ -23,7 +23,7 @@ import {
   type PdfStopData,
   type PdfItemData,
 } from "./pdf-sections";
-import { LOGO_BASE64 } from "../../../components/orders/order-view/constants";
+import { LOGO_BASE64 } from "@/components/orders/order-view/constants";
 
 // ---------------------------------------------------------------------------
 // Interfejs wejściowy

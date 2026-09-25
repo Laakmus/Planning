@@ -5,9 +5,9 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { DuplicateOrderResponseDto, OrderDetailResponseDto } from "../../types";
-import type { DuplicateOrderParams, PrepareEmailParams } from "../validators/order.validator";
+import type { Database } from "@/db/database.types";
+import type { DuplicateOrderResponseDto, OrderDetailResponseDto } from "@/types";
+import type { DuplicateOrderParams, PrepareEmailParams } from "@/lib/validators/order.validator";
 
 import { getOrderDetail } from "./order-detail.service";
 import { buildEmlWithPdfAttachment } from "./eml/eml-builder.service";
@@ -19,7 +19,7 @@ import {
 } from "./order-snapshot.service";
 import { resolvePdfData } from "./pdf/pdf-data-resolver";
 import { generateOrderPdf } from "./pdf/pdf-generator.service";
-import { EMAIL_SENDABLE_STATUSES, STATUS_AFTER_EMAIL } from "../order-status";
+import { EMAIL_SENDABLE_STATUSES, STATUS_AFTER_EMAIL } from "@/lib/order-status";
 
 export type PrepareEmailResult =
   | { success: true; format: "eml"; emlContent: string; orderNo: string }

@@ -10,10 +10,10 @@
  */
 
 import type { SupabaseClient } from "@supabase/supabase-js";
-import type { Database } from "../../db/database.types";
-import { logger } from "../logger";
-import { createAdminSupabaseClient } from "../supabase-admin";
-import { ORDER_STATUS } from "../order-status";
+import type { Database } from "@/db/database.types";
+import { logger } from "@/lib/logger";
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
+import { ORDER_STATUS } from "@/lib/order-status";
 
 // ---------------------------------------------------------------------------
 // Stałe

@@ -14,16 +14,16 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
+import type { Database } from "@/db/database.types";
 import type {
   AdminUserDto,
   CreateUserRequest,
   InviteLinkDto,
   UpdateUserRequest,
   UserListQuery,
-} from "../../types/user-profile.types";
-import type { PaginatedResponse, UserRole } from "../../types/common";
-import { getEnv } from "../env";
+} from "@/types/user-profile.types";
+import type { PaginatedResponse, UserRole } from "@/types/common";
+import { getEnv } from "@/lib/env";
 import { buildActivateUrl, generateInviteToken } from "./invite-token.service";
 
 /** Publiczny base URL aplikacji — używany do budowania linków invite. */

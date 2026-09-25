@@ -15,7 +15,7 @@ import {
   type OrderStatusCode,
 } from "@/lib/view-models";
 
-import { StatusBadge } from "../StatusBadge";
+import { StatusBadge } from "@/components/orders/StatusBadge";
 import { ORDER_STATUS } from "@/lib/order-status";
 
 interface StatusSectionProps {

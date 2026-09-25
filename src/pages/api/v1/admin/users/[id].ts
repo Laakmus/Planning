@@ -15,12 +15,12 @@ import {
   logError,
   parseJsonBody,
   requireAdmin,
-} from "../../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   deactivateUser,
   updateUser,
-} from "../../../../../lib/services/user-admin.service";
-import { updateUserSchema } from "../../../../../lib/validators/auth.validator";
+} from "@/lib/services/user-admin.service";
+import { updateUserSchema } from "@/lib/validators/auth.validator";
 import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 // ---------------------------------------------------------------------------

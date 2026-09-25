@@ -31,16 +31,16 @@ import {
   jsonResponse,
   logError,
   requireWriteAccess,
-} from "../../../../../lib/api-helpers";
-import { buildOrderEmailContent } from "../../../../../lib/services/email-content.service";
+} from "@/lib/api-helpers";
+import { buildOrderEmailContent } from "@/lib/services/email-content.service";
 import {
   createDraftEmail,
   getValidAccessToken,
-} from "../../../../../lib/services/ms-graph.service";
-import { getOrderDetail } from "../../../../../lib/services/order-detail.service";
-import { prepareEmailForOrder } from "../../../../../lib/services/order.service";
-import { prepareEmailGraphSchema } from "../../../../../lib/validators/ms-oauth.validator";
-import type { PrepareEmailGraphResponseDto } from "../../../../../types";
+} from "@/lib/services/ms-graph.service";
+import { getOrderDetail } from "@/lib/services/order-detail.service";
+import { prepareEmailForOrder } from "@/lib/services/order.service";
+import { prepareEmailGraphSchema } from "@/lib/validators/ms-oauth.validator";
+import type { PrepareEmailGraphResponseDto } from "@/types";
 
 export const POST: APIRoute = async ({ params, locals, request }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

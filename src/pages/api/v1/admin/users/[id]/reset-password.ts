@@ -15,11 +15,11 @@ import {
   logError,
   parseJsonBody,
   requireAdmin,
-} from "../../../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   resetUserPassword,
-} from "../../../../../../lib/services/user-admin.service";
-import { resetPasswordSchema } from "../../../../../../lib/validators/auth.validator";
+} from "@/lib/services/user-admin.service";
+import { resetPasswordSchema } from "@/lib/validators/auth.validator";
 import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const POST: APIRoute = async (context) => {

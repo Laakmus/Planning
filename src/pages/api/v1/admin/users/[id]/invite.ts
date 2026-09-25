@@ -14,10 +14,10 @@ import {
   jsonResponse,
   logError,
   requireAdmin,
-} from "../../../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   regenerateInvite,
-} from "../../../../../../lib/services/user-admin.service";
+} from "@/lib/services/user-admin.service";
 import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const POST: APIRoute = async (context) => {

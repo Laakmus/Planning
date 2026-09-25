@@ -14,7 +14,7 @@ import {
   errorResponse,
   getAuthenticatedUser,
   jsonResponse,
-} from "../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 
 export const GET: APIRoute = async ({ locals }) => {
   if (!locals.supabase) {

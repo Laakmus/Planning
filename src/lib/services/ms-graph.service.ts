@@ -17,14 +17,14 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
+import type { Database } from "@/db/database.types";
 import type {
   MsGraphMeResponse,
   MsOAuthTokenRecord,
   MsTokenResponse,
-} from "../../types";
-import { logError } from "../api-helpers";
-import { getEnv } from "../env";
+} from "@/types";
+import { logError } from "@/lib/api-helpers";
+import { getEnv } from "@/lib/env";
 
 // ---------------------------------------------------------------------------
 // Konfiguracja (env)

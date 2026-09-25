@@ -5,7 +5,7 @@
 import { z } from "zod";
 
 import { isoDateSchema, isoTimeSchema } from "./common.validator";
-import { ORDER_STATUS, ORDER_STATUS_CODES } from "../order-status";
+import { ORDER_STATUS, ORDER_STATUS_CODES } from "@/lib/order-status";
 
 /** Dozwolone kody statusu zlecenia (order_statuses.code). */
 const orderStatusCodeEnum = z.enum(ORDER_STATUS_CODES);

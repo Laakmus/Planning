@@ -28,14 +28,14 @@ import {
   errorResponse,
   logError,
   parseQueryParams,
-} from "../../../../lib/api-helpers";
-import { consumeOAuthState } from "../../../../lib/oauth-state";
+} from "@/lib/api-helpers";
+import { consumeOAuthState } from "@/lib/oauth-state";
 import {
   exchangeCodeForTokens,
   getMsUser,
   saveTokens,
-} from "../../../../lib/services/ms-graph.service";
-import { oauthCallbackQuerySchema } from "../../../../lib/validators/ms-oauth.validator";
+} from "@/lib/services/ms-graph.service";
+import { oauthCallbackQuerySchema } from "@/lib/validators/ms-oauth.validator";
 import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 import { getEnv } from "@/lib/env";
 

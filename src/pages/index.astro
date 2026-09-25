@@ -6,8 +6,8 @@
  * Zmienne Supabase przekazywane jako props (PUBLIC_*), żeby klient
  * mógł nawiązać sesję bezpośrednio z przeglądarki.
  */
-import Layout from "../layouts/Layout.astro";
-import LoginCard from "../components/auth/LoginCard";
+import Layout from "@/layouts/Layout.astro";
+import LoginCard from "@/components/auth/LoginCard";
 
 const supabaseUrl = import.meta.env.PUBLIC_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.PUBLIC_SUPABASE_ANON_KEY;

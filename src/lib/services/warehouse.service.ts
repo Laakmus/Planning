@@ -6,18 +6,18 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
+import type { Database } from "@/db/database.types";
 import type {
   WarehouseDayDto,
   WarehouseItemDto,
   WarehouseOrderEntryDto,
   WarehouseWeekResponseDto,
-} from "../../types";
-import { WAREHOUSE_VISIBLE_STATUSES } from "../order-status";
-import { addDaysUTC, formatUTCDate, getISOWeekMonday } from "../week-utils";
+} from "@/types";
+import { WAREHOUSE_VISIBLE_STATUSES } from "@/lib/order-status";
+import { addDaysUTC, formatUTCDate, getISOWeekMonday } from "@/lib/week-utils";
 
 // Re-eksport dla kompatybilności (endpoint /warehouse/orders, testy)
-export { getCurrentISOWeek } from "../week-utils";
+export { getCurrentISOWeek } from "@/lib/week-utils";
 
 
 /** Nazwy dni tygodnia (pon-pt). */

@@ -12,7 +12,7 @@ import {
   jsonResponse,
   logError,
   requireWriteAccess,
-} from "../../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 
 export const GET: APIRoute = async ({ locals, request }) => {
   if (!locals.supabase) {

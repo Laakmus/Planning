@@ -14,7 +14,7 @@ import {
   getAuthenticatedUser,
   jsonResponse,
   isValidUUID,
-} from "../../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 
 export const GET: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

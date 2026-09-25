@@ -15,13 +15,13 @@
 
 import type { APIRoute } from "astro";
 
-import type { MsOAuthStatusDto } from "../../../../types";
+import type { MsOAuthStatusDto } from "@/types";
 import {
   errorResponse,
   getAuthenticatedUser,
   jsonResponse,
   logError,
-} from "../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const GET: APIRoute = async ({ locals }) => {

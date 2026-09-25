@@ -15,8 +15,8 @@ import {
   jsonResponse,
   parseJsonBody,
   requireWriteAccess,
-} from "../../../../lib/api-helpers";
-import { dictionarySyncSchema } from "../../../../lib/validators/order.validator";
+} from "@/lib/api-helpers";
+import { dictionarySyncSchema } from "@/lib/validators/order.validator";
 
 export const POST: APIRoute = async ({ locals, request }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

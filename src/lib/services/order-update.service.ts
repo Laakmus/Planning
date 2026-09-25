@@ -5,9 +5,9 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { PatchStopResponseDto, UpdateOrderResponseDto } from "../../types";
-import type { PatchStopParams, UpdateOrderParams } from "../validators/order.validator";
+import type { Database } from "@/db/database.types";
+import type { PatchStopResponseDto, UpdateOrderResponseDto } from "@/types";
+import type { PatchStopParams, UpdateOrderParams } from "@/lib/validators/order.validator";
 
 import {
   batchBuildSnapshotsForItems,
@@ -20,7 +20,7 @@ import {
   MAX_UNLOADING_STOPS,
   validateForeignKeys,
 } from "./order-snapshot.service";
-import { ORDER_STATUS, SENT_STATUSES, TERMINAL_STATUSES } from "../order-status";
+import { ORDER_STATUS, SENT_STATUSES, TERMINAL_STATUSES } from "@/lib/order-status";
 
 /** Statusy, z których nie wolno edytować zlecenia (PUT). */
 const READONLY_STATUSES = TERMINAL_STATUSES;

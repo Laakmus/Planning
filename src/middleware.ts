@@ -6,12 +6,12 @@
  */
 import { defineMiddleware } from "astro:middleware";
 import { createClient } from "@supabase/supabase-js";
-import type { Database } from "./db/database.types";
-import { getCorsOrigin } from "./lib/api-helpers";
-import { initSentry } from "./lib/sentry";
-import { startCleanupScheduler } from "./lib/services/cleanup.service";
-import { maybeUpdateLastSeen } from "./lib/user-presence";
-import { getEnv } from "./lib/env";
+import type { Database } from "@/db/database.types";
+import { getCorsOrigin } from "@/lib/api-helpers";
+import { initSentry } from "@/lib/sentry";
+import { startCleanupScheduler } from "@/lib/services/cleanup.service";
+import { maybeUpdateLastSeen } from "@/lib/user-presence";
+import { getEnv } from "@/lib/env";
 
 // Inicjalizacja Sentry — no-op gdy brak PUBLIC_SENTRY_DSN (async, fire-and-forget)
 initSentry().catch(() => {});

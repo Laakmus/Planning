@@ -12,8 +12,8 @@ import {
   parseQueryParams,
   isValidUUID,
   logError,
-} from "../../../lib/api-helpers";
-import { getLocations } from "../../../lib/services/dictionary.service";
+} from "@/lib/api-helpers";
+import { getLocations } from "@/lib/services/dictionary.service";
 
 export const GET: APIRoute = async ({ locals, request }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

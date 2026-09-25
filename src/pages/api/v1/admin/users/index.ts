@@ -17,12 +17,12 @@ import {
   parseJsonBody,
   parseQueryParams,
   requireAdmin,
-} from "../../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   createUser,
   listUsers,
-} from "../../../../../lib/services/user-admin.service";
-import { createUserSchema } from "../../../../../lib/validators/auth.validator";
+} from "@/lib/services/user-admin.service";
+import { createUserSchema } from "@/lib/validators/auth.validator";
 import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 // ---------------------------------------------------------------------------

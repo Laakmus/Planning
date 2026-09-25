@@ -11,13 +11,13 @@ import {
   getAuthenticatedUser,
   requireWriteAccess,
   logError,
-} from "../../../../../lib/api-helpers";
+} from "@/lib/api-helpers";
 import {
   getWarehouseWeekOrders,
-} from "../../../../../lib/services/warehouse.service";
-import { generateWarehouseReportPdf } from "../../../../../lib/services/pdf/warehouse-pdf-generator.service";
-import { buildEmlWithPdfAttachment } from "../../../../../lib/services/eml/eml-builder.service";
-import { warehouseReportSendEmailSchema } from "../../../../../lib/validators/warehouse-report.validator";
+} from "@/lib/services/warehouse.service";
+import { generateWarehouseReportPdf } from "@/lib/services/pdf/warehouse-pdf-generator.service";
+import { buildEmlWithPdfAttachment } from "@/lib/services/eml/eml-builder.service";
+import { warehouseReportSendEmailSchema } from "@/lib/validators/warehouse-report.validator";
 
 export const POST: APIRoute = async ({ locals, request }) => {
   if (!locals.supabase) {

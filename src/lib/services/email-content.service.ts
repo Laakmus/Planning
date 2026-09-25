@@ -14,8 +14,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import type { OrderDetailResponseDto } from "../../types";
+import type { Database } from "@/db/database.types";
+import type { OrderDetailResponseDto } from "@/types";
 
 import { resolvePdfData } from "./pdf/pdf-data-resolver";
 import { generateOrderPdf } from "./pdf/pdf-generator.service";

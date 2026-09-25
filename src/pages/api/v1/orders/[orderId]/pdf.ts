@@ -16,10 +16,10 @@ import {
   isValidUUID,
   logError,
   requireWriteAccess,
-} from "../../../../../lib/api-helpers";
-import { getOrderDetail } from "../../../../../lib/services/order.service";
-import { resolvePdfData } from "../../../../../lib/services/pdf/pdf-data-resolver";
-import { generateOrderPdf } from "../../../../../lib/services/pdf/pdf-generator.service";
+} from "@/lib/api-helpers";
+import { getOrderDetail } from "@/lib/services/order.service";
+import { resolvePdfData } from "@/lib/services/pdf/pdf-data-resolver";
+import { generateOrderPdf } from "@/lib/services/pdf/pdf-generator.service";
 
 export const POST: APIRoute = async ({ params, locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

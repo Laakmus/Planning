@@ -5,8 +5,8 @@
 
 import type { SupabaseClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../db/database.types";
-import { ORDER_STATUS } from "../order-status";
+import type { Database } from "@/db/database.types";
+import { ORDER_STATUS } from "@/lib/order-status";
 
 export const STATUS_ROBOCZE = ORDER_STATUS.DRAFT;
 
