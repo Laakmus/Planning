@@ -14,6 +14,10 @@ import type {
   WarehouseWeekResponseDto,
 } from "../../types";
 import { WAREHOUSE_VISIBLE_STATUSES } from "../order-status";
+import { addDaysUTC, formatUTCDate, getISOWeekMonday } from "../week-utils";
+
+// Re-eksport dla kompatybilności (endpoint /warehouse/orders, testy)
+export { getCurrentISOWeek } from "../week-utils";
 
 
 /** Nazwy dni tygodnia (pon-pt). */
@@ -24,48 +28,6 @@ const DAY_NAMES_PL = [
   "Czwartek",
   "Piątek",
 ];
-
-/**
- * Oblicza poniedziałek danego tygodnia ISO.
- * Tydzień ISO: tydzień zawierający 4 stycznia danego roku, zaczynający się w poniedziałek.
- */
-function getISOWeekMonday(year: number, week: number): Date {
-  const jan4 = new Date(year, 0, 4);
-  const dayOfWeek = jan4.getDay() || 7;
-  const monday = new Date(jan4);
-  monday.setDate(jan4.getDate() - dayOfWeek + 1 + (week - 1) * 7);
-  return monday;
-}
-
-/** Formatuje Date do YYYY-MM-DD. */
-function toISODateString(d: Date): string {
-  const y = d.getFullYear();
-  const m = String(d.getMonth() + 1).padStart(2, "0");
-  const day = String(d.getDate()).padStart(2, "0");
-  return `${y}-${m}-${day}`;
-}
-
-/** Formatter daty kalendarzowej w strefie Polski (serwer działa w UTC). */
-const WARSAW_DATE_FORMAT = new Intl.DateTimeFormat("en-CA", {
-  timeZone: "Europe/Warsaw",
-  year: "numeric",
-  month: "2-digit",
-  day: "2-digit",
-});
-
-/**
- * Oblicza bieżący numer tygodnia ISO wg daty w Europe/Warsaw.
- * Strefa czasowa serwera (UTC) dawała poprzedni tydzień w poniedziałek 00:00–02:00 czasu PL.
- */
-export function getCurrentISOWeek(now: Date): { week: number; year: number } {
-  const [y, m, day] = WARSAW_DATE_FORMAT.format(now).split("-").map(Number);
-  const d = new Date(Date.UTC(y, m - 1, day));
-  // Przesuń do najbliższego czwartku (ISO: czwartek = ten sam tydzień)
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const weekNo = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  return { week: weekNo, year: d.getUTCFullYear() };
-}
 
 /**
  * Pobiera tygodniowy widok magazynowy dla danej lokalizacji.
@@ -86,23 +48,17 @@ export async function getWarehouseWeekOrders(
 ): Promise<WarehouseWeekResponseDto> {
   // Oblicz zakres dat
   const monday = getISOWeekMonday(year, week);
-  const friday = new Date(monday);
-  friday.setDate(monday.getDate() + 4);
-  const sunday = new Date(monday);
-  sunday.setDate(monday.getDate() + 6);
 
-  const weekStart = toISODateString(monday);
+  const weekStart = formatUTCDate(monday);
   // W DTO zwracamy piątek jako koniec tygodnia roboczego
-  const weekEnd = toISODateString(friday);
+  const weekEnd = formatUTCDate(addDaysUTC(monday, 4));
   // W query DB używamy niedzieli — stopy weekendowe muszą być pobierane
-  const dbWeekEnd = toISODateString(sunday);
+  const dbWeekEnd = formatUTCDate(addDaysUTC(monday, 6));
 
   // Przygotuj daty pon-pt
   const weekDates: string[] = [];
   for (let i = 0; i < 5; i++) {
-    const d = new Date(monday);
-    d.setDate(monday.getDate() + i);
-    weekDates.push(toISODateString(d));
+    weekDates.push(formatUTCDate(addDaysUTC(monday, i)));
   }
 
   // Pobierz stopy z datą w zakresie tygodnia (pon-nd) LUB bez daty
@@ -203,9 +159,9 @@ export async function getWarehouseWeekOrders(
 
   for (const stop of validDatedStops) {
     const stopDate = stop.date_local as string;
-    const dateObj = new Date(stopDate + "T00:00:00");
-    // getDay(): 0=nd, 1=pon, ..., 6=sob
-    const jsDay = dateObj.getDay();
+    const dateObj = new Date(stopDate + "T00:00:00Z");
+    // getUTCDay(): 0=nd, 1=pon, ..., 6=sob (data kalendarzowa — bez wpływu strefy procesu)
+    const jsDay = dateObj.getUTCDay();
     // Konwersja na indeks: pon=0, wt=1, ..., pt=4
     let dayIndex = jsDay === 0 ? 6 : jsDay - 1; // nd=6, pon=0, wt=1, ..., sob=5
 

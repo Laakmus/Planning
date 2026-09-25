@@ -7,16 +7,7 @@ import { useState, useEffect, useCallback, useRef } from "react";
 import { getISOWeeksInYear } from "date-fns";
 import type { WarehouseWeekResponseDto } from "@/types";
 import { useAuth } from "@/contexts/AuthContext";
-
-/** Oblicz bieżący numer tygodnia ISO */
-function getCurrentISOWeek(): { week: number; year: number } {
-  const now = new Date();
-  const d = new Date(Date.UTC(now.getFullYear(), now.getMonth(), now.getDate()));
-  d.setUTCDate(d.getUTCDate() + 4 - (d.getUTCDay() || 7));
-  const yearStart = new Date(Date.UTC(d.getUTCFullYear(), 0, 1));
-  const week = Math.ceil(((d.getTime() - yearStart.getTime()) / 86400000 + 1) / 7);
-  return { week, year: d.getUTCFullYear() };
-}
+import { getCurrentISOWeek } from "@/lib/week-utils";
 
 /** Parsuj week/year z URL (tylko client-side) */
 function getInitialWeekYear(): { week: number; year: number } {
