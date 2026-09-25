@@ -17,14 +17,13 @@
  */
 
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
 
 import {
   errorResponse,
   getAuthenticatedUser,
   logError,
 } from "../../../../lib/api-helpers";
-import type { Database } from "../../../../db/database.types";
+import { tryCreateAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const POST: APIRoute = async ({ locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);
@@ -34,18 +33,11 @@ export const POST: APIRoute = async ({ locals }) => {
 
   try {
     // Service role — omija RLS, gwarantuje UPDATE niezależnie od polityk
-    const url = import.meta.env.SUPABASE_URL ?? process.env.SUPABASE_URL;
-    const serviceKey =
-      import.meta.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-    if (!url || !serviceKey) {
+    const supabase = tryCreateAdminSupabaseClient();
+    if (!supabase) {
       // Brak konfiguracji — odpowiadamy 204, frontend kontynuuje logout
       return new Response(null, { status: 204 });
     }
-
-    const supabase = createClient<Database>(url, serviceKey, {
-      auth: { persistSession: false, autoRefreshToken: false },
-    });
 
     // Zeruj last_seen_at — user natychmiast pokaże się jako offline
     const { error } = await supabase

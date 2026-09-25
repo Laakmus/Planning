@@ -9,26 +9,29 @@ import type { APIRoute } from "astro";
 
 import {
   errorResponse,
+  getAuthenticatedUser,
   isValidUUID,
   jsonResponse,
   logError,
   parseJsonBody,
+  requireAdmin,
 } from "../../../../../lib/api-helpers";
-import { requireAdmin } from "../../../../../lib/auth/requireAdmin";
 import {
-  createAdminSupabaseClient,
   deactivateUser,
   updateUser,
 } from "../../../../../lib/services/user-admin.service";
 import { updateUserSchema } from "../../../../../lib/validators/auth.validator";
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 // ---------------------------------------------------------------------------
 // PATCH /api/v1/admin/users/:id
 // ---------------------------------------------------------------------------
 
 export const PATCH: APIRoute = async (context) => {
-  const authResult = await requireAdmin(context);
+  const authResult = await getAuthenticatedUser(context.locals.supabase);
   if (authResult instanceof Response) return authResult;
+  const forbidden = requireAdmin(authResult);
+  if (forbidden) return forbidden;
 
   const id = context.params.id;
   if (!id || !isValidUUID(id)) {
@@ -55,7 +58,7 @@ export const PATCH: APIRoute = async (context) => {
 
   try {
     const supabase = createAdminSupabaseClient();
-    const result = await updateUser(supabase, id, parsed.data, authResult.userId);
+    const result = await updateUser(supabase, id, parsed.data, authResult.id);
     return jsonResponse(result, 200);
   } catch (err) {
     const msg = err instanceof Error ? err.message : "";
@@ -86,8 +89,10 @@ export const PATCH: APIRoute = async (context) => {
 // ---------------------------------------------------------------------------
 
 export const DELETE: APIRoute = async (context) => {
-  const authResult = await requireAdmin(context);
+  const authResult = await getAuthenticatedUser(context.locals.supabase);
   if (authResult instanceof Response) return authResult;
+  const forbidden = requireAdmin(authResult);
+  if (forbidden) return forbidden;
 
   const id = context.params.id;
   if (!id || !isValidUUID(id)) {
@@ -96,7 +101,7 @@ export const DELETE: APIRoute = async (context) => {
 
   try {
     const supabase = createAdminSupabaseClient();
-    await deactivateUser(supabase, id, authResult.userId);
+    await deactivateUser(supabase, id, authResult.id);
     // 204 No Content — brak body
     return new Response(null, { status: 204 });
   } catch (err) {

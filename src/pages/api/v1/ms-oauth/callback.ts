@@ -22,9 +22,7 @@
  */
 
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../../../db/database.types";
 import {
   COMMON_HEADERS,
   errorResponse,
@@ -38,26 +36,14 @@ import {
   saveTokens,
 } from "../../../../lib/services/ms-graph.service";
 import { oauthCallbackQuerySchema } from "../../../../lib/validators/ms-oauth.validator";
-
-/** Odczyt zmiennej środowiskowej z fallbackiem na `process.env`. */
-function getEnv(name: string): string {
-  return import.meta.env[name] ?? process.env[name] ?? "";
-}
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
+import { getEnv } from "@/lib/env";
 
 /** Buduje URL przekierowania po sukcesie / błędzie callbacku. */
 function buildRedirectUrl(query: Record<string, string>): string {
-  const base = getEnv("PUBLIC_BASE_URL") || "http://localhost:4321";
+  const base = getEnv("PUBLIC_BASE_URL") ?? "http://localhost:4321";
   const search = new URLSearchParams(query).toString();
   return `${base.replace(/\/+$/, "")}/settings/email?${search}`;
-}
-
-/** Klient Supabase z service_role — wymagany do zapisu tokenów (omija RLS user_id = auth.uid()). */
-function createAdminClient() {
-  const url = getEnv("SUPABASE_URL");
-  const serviceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
-  return createClient<Database>(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
 }
 
 export const GET: APIRoute = async ({ request }) => {
@@ -89,10 +75,9 @@ export const GET: APIRoute = async ({ request }) => {
 
   // Wariant sukcesu: weryfikujemy state + wymieniamy code na tokeny
   const { code, state } = parsed.data;
-  const admin = createAdminClient();
   let stateRecord: Awaited<ReturnType<typeof consumeOAuthState>>;
   try {
-    stateRecord = await consumeOAuthState(admin, state);
+    stateRecord = await consumeOAuthState(createAdminSupabaseClient(), state);
   } catch (err) {
     logError("[GET /api/v1/ms-oauth/callback] consumeOAuthState", err);
     stateRecord = null;
@@ -114,7 +99,7 @@ export const GET: APIRoute = async ({ request }) => {
     const msUser = await getMsUser(tokenResponse.access_token);
 
     // 3. Zapis do DB (service_role omija RLS)
-    await saveTokens(admin, stateRecord.userId, tokenResponse, msUser);
+    await saveTokens(createAdminSupabaseClient(), stateRecord.userId, tokenResponse, msUser);
 
     // 4. Redirect na settings/email z flagą sukcesu
     const redirectUrl = buildRedirectUrl({ ms_connected: "1" });

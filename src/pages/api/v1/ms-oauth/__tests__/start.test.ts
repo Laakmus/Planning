@@ -25,7 +25,7 @@ vi.mock("@/lib/services/ms-graph.service", () => ({
   buildAuthorizationUrl: vi.fn(),
 }));
 
-vi.mock("@/lib/services/user-admin.service", () => ({
+vi.mock("@/lib/supabase-admin", () => ({
   createAdminSupabaseClient: vi.fn(() => ({ from: vi.fn() })),
 }));
 

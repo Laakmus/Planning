@@ -12,7 +12,7 @@
  * Wszystkie metody wymagają klienta service_role (auth.admin.* wymaga uprawnień admina Supabase).
  */
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../../db/database.types";
 import type {
@@ -23,39 +23,12 @@ import type {
   UserListQuery,
 } from "../../types/user-profile.types";
 import type { PaginatedResponse, UserRole } from "../../types/common";
+import { getEnv } from "../env";
 import { buildActivateUrl, generateInviteToken } from "./invite-token.service";
 
 /** Publiczny base URL aplikacji — używany do budowania linków invite. */
 function getPublicBaseUrl(): string {
-  return (
-    import.meta.env.PUBLIC_BASE_URL ??
-    process.env.PUBLIC_BASE_URL ??
-    "http://localhost:4321"
-  );
-}
-
-// ---------------------------------------------------------------------------
-// Service-role client — opcjonalny helper (endpoint może przekazać własny)
-// ---------------------------------------------------------------------------
-
-/**
- * Tworzy klienta service_role dla operacji admin (auth.admin.*).
- * Wymaga SUPABASE_URL + SUPABASE_SERVICE_ROLE_KEY w env.
- */
-export function createAdminSupabaseClient(): SupabaseClient<Database> {
-  const url = import.meta.env.SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const serviceRoleKey =
-    import.meta.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceRoleKey) {
-    throw new Error(
-      "Brak SUPABASE_URL lub SUPABASE_SERVICE_ROLE_KEY — nie można utworzyć klienta admin."
-    );
-  }
-
-  return createClient<Database>(url, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
+  return getEnv("PUBLIC_BASE_URL") ?? "http://localhost:4321";
 }
 
 // ---------------------------------------------------------------------------

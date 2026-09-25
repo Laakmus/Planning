@@ -11,12 +11,7 @@ import { getCorsOrigin } from "./lib/api-helpers";
 import { initSentry } from "./lib/sentry";
 import { startCleanupScheduler } from "./lib/services/cleanup.service";
 import { maybeUpdateLastSeen } from "./lib/user-presence";
-
-// Pomocnicza funkcja do odczytu zmiennych środowiskowych
-// Astro import.meta.env nie zawsze czyta z process.env na wszystkich platformach
-function getEnv(key: string): string {
-  return import.meta.env[key] ?? process.env[key] ?? "";
-}
+import { getEnv } from "./lib/env";
 
 // Inicjalizacja Sentry — no-op gdy brak PUBLIC_SENTRY_DSN (async, fire-and-forget)
 initSentry().catch(() => {});
@@ -182,8 +177,8 @@ export const onRequest = defineMiddleware(async (context, next) => {
   // Inject Supabase client with user's JWT token (enables RLS)
   const authHeader = context.request.headers.get("authorization") ?? "";
   context.locals.supabase = createClient<Database>(
-    getEnv("SUPABASE_URL"),
-    getEnv("SUPABASE_ANON_KEY"),
+    getEnv("SUPABASE_URL") ?? "",
+    getEnv("SUPABASE_ANON_KEY") ?? "",
     {
       global: { headers: { Authorization: authHeader } },
       auth: { persistSession: false, autoRefreshToken: false },

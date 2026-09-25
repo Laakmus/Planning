@@ -9,9 +9,10 @@
  * order_status_history, order_change_log.
  */
 
-import { createClient, type SupabaseClient } from "@supabase/supabase-js";
+import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../db/database.types";
 import { logger } from "../logger";
+import { createAdminSupabaseClient } from "../supabase-admin";
 
 // ---------------------------------------------------------------------------
 // Stałe
@@ -22,29 +23,6 @@ const RETENTION_MS = 24 * 60 * 60 * 1000;
 
 /** Interwał schedulera w milisekundach (1h). */
 const SCHEDULER_INTERVAL_MS = 60 * 60 * 1000;
-
-// ---------------------------------------------------------------------------
-// Service-role client (pomija RLS — cleanup działa bez sesji użytkownika)
-// ---------------------------------------------------------------------------
-
-/**
- * Tworzy klienta Supabase z kluczem service_role.
- * Wymaga zmiennych środowiskowych SUPABASE_URL i SUPABASE_SERVICE_ROLE_KEY.
- */
-export function createServiceRoleClient(): SupabaseClient<Database> {
-  const url = import.meta.env.SUPABASE_URL ?? process.env.SUPABASE_URL;
-  const serviceRoleKey = import.meta.env.SUPABASE_SERVICE_ROLE_KEY ?? process.env.SUPABASE_SERVICE_ROLE_KEY;
-
-  if (!url || !serviceRoleKey) {
-    throw new Error(
-      "Brak SUPABASE_URL lub SUPABASE_SERVICE_ROLE_KEY — nie można utworzyć klienta service_role."
-    );
-  }
-
-  return createClient<Database>(url, serviceRoleKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
 
 // ---------------------------------------------------------------------------
 // Logika czyszczenia
@@ -206,7 +184,7 @@ export function stopCleanupScheduler(): void {
  */
 async function runScheduledCleanup(): Promise<void> {
   try {
-    const supabase = createServiceRoleClient();
+    const supabase = createAdminSupabaseClient();
     await cleanupCancelledOrders(supabase);
   } catch (err) {
     logger.error(

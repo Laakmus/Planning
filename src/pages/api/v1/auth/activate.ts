@@ -14,29 +14,14 @@
  */
 
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
 import { ZodError } from "zod";
 
-import type { Database } from "@/db/database.types";
 import type { ActivateAccountResponse } from "@/types/auth.types";
 import { errorResponse, jsonResponse, logError, parseJsonBody } from "@/lib/api-helpers";
 import { checkActivateRateLimit, getClientIp } from "@/lib/auth/rate-limit";
 import { hashInviteToken } from "@/lib/services/invite-token.service";
 import { activateAccountSchema } from "@/lib/validators/auth.validator";
-
-/** Odczyt zmiennej środowiskowej z fallbackiem na `process.env`. */
-function getEnv(key: string): string {
-  return import.meta.env[key] ?? process.env[key] ?? "";
-}
-
-/** Klient Supabase z service_role — omija RLS, potrzebne do UPDATE user_profiles. */
-function createAdminClient() {
-  const url = getEnv("SUPABASE_URL");
-  const serviceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
-  return createClient<Database>(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   // 0. Rate-limit per IP (defense-in-depth — token 32B SHA-256 jest bezpieczny,
@@ -81,7 +66,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   }
 
   try {
-    const admin = createAdminClient();
+    const admin = createAdminSupabaseClient();
     const hash = hashInviteToken(input.token);
 
     // 2. Lookup po hashu

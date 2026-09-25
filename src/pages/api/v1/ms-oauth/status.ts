@@ -14,9 +14,7 @@
  */
 
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
 
-import type { Database } from "../../../../db/database.types";
 import type { MsOAuthStatusDto } from "../../../../types";
 import {
   errorResponse,
@@ -24,27 +22,14 @@ import {
   jsonResponse,
   logError,
 } from "../../../../lib/api-helpers";
-
-/** Odczyt zmiennej środowiskowej. */
-function getEnv(name: string): string {
-  return import.meta.env[name] ?? process.env[name] ?? "";
-}
-
-/** Klient service_role — czyta rekord zawsze (omija RLS, niezależnie od JWT). */
-function createAdminClient() {
-  const url = getEnv("SUPABASE_URL");
-  const serviceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
-  return createClient<Database>(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const GET: APIRoute = async ({ locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);
   if (authResult instanceof Response) return authResult;
 
   try {
-    const admin = createAdminClient();
+    const admin = createAdminSupabaseClient();
     // Tylko metadane — NIE wyciągamy zaszyfrowanych tokenów (oszczędność + brak potrzeby).
     const { data, error } = await admin
       .from("ms_oauth_tokens")

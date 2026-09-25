@@ -11,19 +11,19 @@ import { z } from "zod";
 
 import {
   errorResponse,
+  getAuthenticatedUser,
   jsonResponse,
   logError,
   parseJsonBody,
   parseQueryParams,
+  requireAdmin,
 } from "../../../../../lib/api-helpers";
-// requireAdmin z A3a-1 — guard na poziomie context.locals (sesja + rola ADMIN)
-import { requireAdmin } from "../../../../../lib/auth/requireAdmin";
 import {
-  createAdminSupabaseClient,
   createUser,
   listUsers,
 } from "../../../../../lib/services/user-admin.service";
 import { createUserSchema } from "../../../../../lib/validators/auth.validator";
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 // ---------------------------------------------------------------------------
 // Zod schema dla query params GET /admin/users
@@ -51,8 +51,10 @@ const userListQuerySchema = z.object({
 
 export const GET: APIRoute = async (context) => {
   // Auth guard — sesja + rola ADMIN (rzuca 401/403 jako Response)
-  const authResult = await requireAdmin(context);
+  const authResult = await getAuthenticatedUser(context.locals.supabase);
   if (authResult instanceof Response) return authResult;
+  const forbidden = requireAdmin(authResult);
+  if (forbidden) return forbidden;
 
   // Walidacja query
   const url = new URL(context.request.url);
@@ -94,8 +96,10 @@ export const GET: APIRoute = async (context) => {
 // ---------------------------------------------------------------------------
 
 export const POST: APIRoute = async (context) => {
-  const authResult = await requireAdmin(context);
+  const authResult = await getAuthenticatedUser(context.locals.supabase);
   if (authResult instanceof Response) return authResult;
+  const forbidden = requireAdmin(authResult);
+  if (forbidden) return forbidden;
 
   // Parse JSON body
   let body: unknown;

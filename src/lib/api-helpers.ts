@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../db/database.types";
 import type { AuthMeDto } from "../types";
+import { getEnv } from "./env";
 import { logger } from "./logger";
 import { captureException } from "./sentry";
 import { getCurrentUser } from "./services/auth.service";
@@ -19,7 +20,7 @@ const UUID_REGEX =
 
 /** Zwraca skonfigurowany CORS origin (env lub domyślny localhost). */
 export function getCorsOrigin(): string {
-  return import.meta.env.CORS_ORIGIN ?? process.env.CORS_ORIGIN ?? "http://localhost:4321";
+  return getEnv("CORS_ORIGIN") ?? "http://localhost:4321";
 }
 
 // Walidacja CORS_ORIGIN w produkcji

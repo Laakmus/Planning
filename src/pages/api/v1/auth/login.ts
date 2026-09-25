@@ -16,37 +16,13 @@
  */
 
 import type { APIRoute } from "astro";
-import { createClient } from "@supabase/supabase-js";
 import { ZodError } from "zod";
 
-import type { Database } from "@/db/database.types";
 import type { UsernameLoginResponse } from "@/types/auth.types";
 import { errorResponse, jsonResponse, logError, parseJsonBody } from "@/lib/api-helpers";
 import { checkLoginRateLimit, getClientIp } from "@/lib/auth/rate-limit";
 import { loginUsernameSchema } from "@/lib/validators/auth.validator";
-
-/** Odczyt zmiennej środowiskowej z fallbackiem na `process.env`. */
-function getEnv(key: string): string {
-  return import.meta.env[key] ?? process.env[key] ?? "";
-}
-
-/** Klient Supabase z service_role — omija RLS, używany do RPC i odczytu user_profiles. */
-function createAdminClient() {
-  const url = getEnv("SUPABASE_URL");
-  const serviceKey = getEnv("SUPABASE_SERVICE_ROLE_KEY");
-  return createClient<Database>(url, serviceKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
-
-/** Klient Supabase z anon key — używany do `signInWithPassword` (logowanie anonimowe). */
-function createAnonClient() {
-  const url = getEnv("SUPABASE_URL");
-  const anonKey = getEnv("SUPABASE_ANON_KEY");
-  return createClient<Database>(url, anonKey, {
-    auth: { persistSession: false, autoRefreshToken: false },
-  });
-}
+import { createAdminSupabaseClient, createAnonSupabaseClient } from "@/lib/supabase-admin";
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   // 1. Rate limit po IP
@@ -91,7 +67,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
   }
 
   try {
-    const admin = createAdminClient();
+    const admin = createAdminSupabaseClient();
 
     // 3. Resolve username → email + is_active (RPC SECURITY DEFINER)
     const { data: rpcRows, error: rpcError } = await admin.rpc(
@@ -114,7 +90,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     //    Kolejność (anti-enumeration): NAJPIERW weryfikujemy hasło, DOPIERO POTEM is_active.
     //    Dzięki temu atakujący bez znajomości hasła nie dowie się, czy username istnieje
     //    (istniejący-zły-hasło i nieistniejący dostają ten sam 401).
-    const anon = createAnonClient();
+    const anon = createAnonSupabaseClient();
     const { data: signInData, error: signInError } = await anon.auth.signInWithPassword({
       email: row.email,
       password: input.password,

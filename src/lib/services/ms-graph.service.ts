@@ -24,6 +24,7 @@ import type {
   MsTokenResponse,
 } from "../../types";
 import { logError } from "../api-helpers";
+import { getEnv } from "../env";
 
 // ---------------------------------------------------------------------------
 // Konfiguracja (env)
@@ -34,16 +35,6 @@ const GRAPH_BASE = "https://graph.microsoft.com/v1.0";
 
 /** Standardowy zestaw scope-ów wymaganych przez aplikację. */
 const MS_OAUTH_SCOPES = "Mail.ReadWrite Mail.Send offline_access User.Read";
-
-/** Helper czytający zmienną środowiskową (Astro `import.meta.env` lub `process.env`). */
-function getEnv(name: string): string | undefined {
-  // Astro/Vite: dostęp przez import.meta.env w SSR
-  const fromImport = (import.meta as ImportMeta & { env?: Record<string, string | undefined> })
-    .env?.[name];
-  if (fromImport) return fromImport;
-  // Fallback do process.env (Node)
-  return process.env[name];
-}
 
 /** Zwraca skonfigurowany tenant (`common`, GUID, lub `organizations`). */
 function getTenantId(): string {

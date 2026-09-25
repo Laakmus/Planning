@@ -25,7 +25,7 @@ import {
 } from "../../../../lib/api-helpers";
 import { createOAuthState } from "../../../../lib/oauth-state";
 import { buildAuthorizationUrl } from "../../../../lib/services/ms-graph.service";
-import { createAdminSupabaseClient } from "../../../../lib/services/user-admin.service";
+import { createAdminSupabaseClient } from "@/lib/supabase-admin";
 
 export const GET: APIRoute = async ({ locals }) => {
   const authResult = await getAuthenticatedUser(locals.supabase);

@@ -8,9 +8,10 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 
 import type { Database } from "../../db/database.types";
 import type { LockOrderResponseDto, UnlockOrderResponseDto } from "../../types";
+import { getEnv } from "../env";
 
 /** Czas wygasania blokady w minutach (konfigurowalny przez env). */
-const LOCK_EXPIRY_MINUTES = parseInt(import.meta.env?.LOCK_EXPIRY_MINUTES ?? "15", 10);
+const LOCK_EXPIRY_MINUTES = parseInt(getEnv("LOCK_EXPIRY_MINUTES") ?? "15", 10);
 
 /**
  * Ustawia blokadę edycji zlecenia dla bieżącego użytkownika.
