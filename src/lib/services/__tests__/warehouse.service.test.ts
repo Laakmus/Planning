@@ -18,6 +18,13 @@ import { getCurrentISOWeek } from "../warehouse.service";
 // ---------------------------------------------------------------------------
 
 describe("getCurrentISOWeek", () => {
+  it("uses Europe/Warsaw date — Monday 00:30 PL (Sunday 22:30 UTC) is already the new week", () => {
+    // 2026-09-28 (poniedziałek) 00:30 CEST = 2026-09-27T22:30Z
+    const result = getCurrentISOWeek(new Date("2026-09-27T22:30:00Z"));
+
+    expect(result).toEqual({ week: 40, year: 2026 });
+  });
+
   it("returns week=2, year=2026 for 2026-01-05 (Monday of week 2)", () => {
     // Poniedziałek drugiego tygodnia 2026
     const result = getCurrentISOWeek(new Date(2026, 0, 5));

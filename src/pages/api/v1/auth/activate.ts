@@ -20,16 +20,9 @@ import { ZodError } from "zod";
 import type { Database } from "@/db/database.types";
 import type { ActivateAccountResponse } from "@/types/auth.types";
 import { errorResponse, jsonResponse, logError, parseJsonBody } from "@/lib/api-helpers";
-import { checkActivateRateLimit } from "@/lib/auth/rate-limit";
+import { checkActivateRateLimit, getClientIp } from "@/lib/auth/rate-limit";
 import { hashInviteToken } from "@/lib/services/invite-token.service";
 import { activateAccountSchema } from "@/lib/validators/auth.validator";
-
-/** Pobiera IP klienta z nagłówków (z fallbackiem). */
-function getClientIp(request: Request, clientAddress: string | undefined): string {
-  const fwd = request.headers.get("x-forwarded-for");
-  if (fwd) return fwd.split(",")[0]!.trim();
-  return clientAddress ?? "unknown";
-}
 
 /** Odczyt zmiennej środowiskowej z fallbackiem na `process.env`. */
 function getEnv(key: string): string {

@@ -22,7 +22,7 @@ import { ZodError } from "zod";
 import type { Database } from "@/db/database.types";
 import type { UsernameLoginResponse } from "@/types/auth.types";
 import { errorResponse, jsonResponse, logError, parseJsonBody } from "@/lib/api-helpers";
-import { checkLoginRateLimit } from "@/lib/auth/rate-limit";
+import { checkLoginRateLimit, getClientIp } from "@/lib/auth/rate-limit";
 import { loginUsernameSchema } from "@/lib/validators/auth.validator";
 
 /** Odczyt zmiennej środowiskowej z fallbackiem na `process.env`. */
@@ -48,19 +48,9 @@ function createAnonClient() {
   });
 }
 
-/** Ekstrakcja IP klienta — preferujemy `x-forwarded-for`, fallback na `clientAddress`. */
-function extractClientIp(request: Request, clientAddress: string | undefined): string {
-  const forwarded = request.headers.get("x-forwarded-for");
-  if (forwarded) {
-    // `x-forwarded-for` może zawierać listę: "client, proxy1, proxy2"
-    return forwarded.split(",")[0].trim();
-  }
-  return clientAddress ?? "unknown";
-}
-
 export const POST: APIRoute = async ({ request, clientAddress }) => {
   // 1. Rate limit po IP
-  const ip = extractClientIp(request, clientAddress);
+  const ip = getClientIp(request, clientAddress);
   const rate = checkLoginRateLimit(ip);
   if (!rate.allowed) {
     return new Response(

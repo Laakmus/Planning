@@ -283,11 +283,14 @@ export async function updateOrder(
     .from("transport_orders")
     .update(updatePayload as OrderUpdate, { count: "exact" })
     .eq("id", orderId)
-    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`);
+    .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`)
+    // Guard statusu: bez niego równoległe anulowanie (cancelOrder) zostałoby
+    // nadpisane statusem wyliczonym ze starego status_code (zlecenie "wraca" z anulowanych).
+    .eq("status_code", order.status_code);
 
   if (updateError) throw updateError;
   if (updatedCount === 0) {
-    // 0 rows matched — lock was taken by another user between SELECT and UPDATE
+    // 0 rows matched — blokada przejęta lub status zmieniony między SELECT a UPDATE
     throw new Error("LOCKED");
   }
 

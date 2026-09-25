@@ -19,7 +19,9 @@ const { title = "System Zleceń Transportowych" } = Astro.props;
         } else {
           document.documentElement.classList.remove('dark');
         }
-      } catch (e) {}
+      } catch {
+        // localStorage niedostępny (tryb prywatny) — zostaje motyw domyślny
+      }
     </script>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />

@@ -9,6 +9,7 @@ import {
   __resetLoginRateLimit,
   checkActivateRateLimit,
   checkLoginRateLimit,
+  getClientIp,
 } from "../rate-limit";
 
 describe("checkLoginRateLimit — 10 prób / 15 min / IP", () => {
@@ -84,5 +85,21 @@ describe("checkActivateRateLimit — 20 prób / 15 min / IP (osobny bucket)", ()
     expect(checkLoginRateLimit("4.4.4.4").allowed).toBe(false);
     // Activate bucket nietknięty
     expect(checkActivateRateLimit("4.4.4.4").allowed).toBe(true);
+  });
+});
+
+describe("getClientIp — IP dla rate limitu", () => {
+  it("preferuje Fly-Client-IP", () => {
+    const req = new Request("http://x", { headers: { "fly-client-ip": "1.2.3.4" } });
+    expect(getClientIp(req, "9.9.9.9")).toBe("1.2.3.4");
+  });
+
+  it("ignoruje x-forwarded-for (kontrolowany przez klienta)", () => {
+    const req = new Request("http://x", { headers: { "x-forwarded-for": "6.6.6.6, 10.0.0.1" } });
+    expect(getClientIp(req, "9.9.9.9")).toBe("9.9.9.9");
+  });
+
+  it("fallback na 'unknown' gdy brak danych", () => {
+    expect(getClientIp(new Request("http://x"), undefined)).toBe("unknown");
   });
 });

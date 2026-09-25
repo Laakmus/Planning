@@ -75,6 +75,8 @@ interface TableMock {
  */
 interface InsertTrackers {
   changeLogInsertMock?: ReturnType<typeof vi.fn>;
+  /** Przechwytuje argumenty .eq() na UPDATE transport_orders. */
+  orderUpdateEqMock?: ReturnType<typeof vi.fn>;
 }
 
 function buildOrderServiceMock(
@@ -155,6 +157,13 @@ function buildOrderServiceMock(
       const updMethods = ["eq", "or", "not", "in", "neq", "is"];
       for (const um of updMethods) {
         updChain[um] = vi.fn().mockReturnValue(updChain);
+      }
+      if (table === "transport_orders" && trackers?.orderUpdateEqMock) {
+        const eqTracker = trackers.orderUpdateEqMock as unknown as (col: string, val: unknown) => void;
+        updChain.eq = vi.fn().mockImplementation((col: string, val: unknown) => {
+          eqTracker(col, val);
+          return updChain;
+        });
       }
       updChain.select = vi.fn().mockReturnValue(updChain);
       updChain.single = vi.fn().mockResolvedValue(updateRes);
@@ -753,6 +762,37 @@ describe("updateOrder", () => {
       await expect(
         updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, params)
       ).rejects.toThrow("LOCKED");
+    });
+
+    it("UPDATE zawiera guard status_code (równoległe anulowanie nie jest nadpisywane)", async () => {
+      const orderUpdateEqMock = vi.fn();
+      const supabase = buildOrderServiceMock(
+        {
+          transport_orders: {
+            select: {
+              data: {
+                id: VALID_ORDER_ID,
+                order_no: "ZT2026/0001",
+                status_code: "wysłane",
+                locked_by_user_id: null,
+              },
+              error: null,
+            },
+            update: { data: null, error: null, count: 0 },
+          },
+          transport_types: { select: { data: { code: "PL" }, error: null } },
+          companies: { select: { data: { id: VALID_COMPANY_ID }, error: null } },
+          locations: { select: { data: [], error: null } },
+          products: { select: { data: [], error: null } },
+        },
+        undefined,
+        { orderUpdateEqMock }
+      );
+
+      await expect(
+        updateOrder(supabase, VALID_USER_ID, VALID_ORDER_ID, makeUpdateOrderParams())
+      ).rejects.toThrow("LOCKED");
+      expect(orderUpdateEqMock).toHaveBeenCalledWith("status_code", "wysłane");
     });
   });
 
