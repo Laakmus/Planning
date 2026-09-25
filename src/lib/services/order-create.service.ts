@@ -8,6 +8,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "@/db/database.types";
 import type { CreateOrderResponseDto } from "@/types";
 import type { CreateOrderParams } from "@/lib/validators/order.validator";
+import { createOrderWithChildren } from "@/lib/services/order-write.service";
 
 import {
   autoSetDocumentsAndCurrency,
@@ -30,7 +31,7 @@ import {
  * Waliduje FK (transportTypeCode, carrierCompanyId, locationId, productId).
  *
  * @param supabase — klient Supabase
- * @param userId — id użytkownika (created_by_user_id)
+ * @param userId — id użytkownika (created_by_user_id ustawia RPC z auth.uid() — ten sam użytkownik)
  * @param params — dane z createOrderSchema
  * @returns CreateOrderResponseDto; rzuca FK_VALIDATION z details przy błędach FK
  */
@@ -160,8 +161,7 @@ export async function createOrder(
     params.generalNotes
   );
 
-  // 10. INSERT transport_orders
-  type OrderInsert = Database["public"]["Tables"]["transport_orders"]["Insert"];
+  // 10. Dane zlecenia (created_by_user_id ustawia RPC = auth.uid())
   const insertPayload: Record<string, unknown> = {
     order_no: orderNo,
     status_code: STATUS_ROBOCZE,
@@ -169,7 +169,6 @@ export async function createOrder(
     currency_code: currencyCode,
     vehicle_type_text: params.vehicleTypeText ?? null,
     vehicle_capacity_volume_m3: params.vehicleCapacityVolumeM3 ?? null,
-    created_by_user_id: userId,
     carrier_company_id: params.carrierCompanyId ?? null,
     carrier_name_snapshot: carrierSnapshots.carrier_name_snapshot,
     carrier_address_snapshot: carrierSnapshots.carrier_address_snapshot,
@@ -209,63 +208,33 @@ export async function createOrder(
     search_text: searchText,
   };
 
-  const { data: order, error: orderError } = await supabase
-    .from("transport_orders")
-    .insert(insertPayload as OrderInsert)
-    .select("id, created_at")
-    .single();
-
-  if (orderError || !order) throw orderError ?? new Error("Insert order failed");
+  // 11-12. Zlecenie + stopy + towary + wpis „Utworzono zlecenie" — jedna transakcja (RPC).
+  // Błąd w dowolnym kroku = brak zlecenia (wcześniej: kompensujący DELETE, który też mógł zawieść).
+  const order = await createOrderWithChildren(supabase, {
+    order: insertPayload,
+    stops: stopsWithSnapshots.map((s) => ({
+      kind: s.kind,
+      sequence_no: s.sequenceNo,
+      date_local: s.dateLocal,
+      time_local: s.timeLocal,
+      location_id: s.locationId,
+      location_name_snapshot: s.locationNameSnapshot,
+      company_name_snapshot: s.companyNameSnapshot,
+      address_snapshot: s.addressSnapshot,
+      notes: s.notes,
+    })),
+    items: itemsWithSnapshots.map((i) => ({
+      product_id: i.productId,
+      product_name_snapshot: i.productNameSnapshot,
+      default_loading_method_snapshot: i.defaultLoadingMethodSnapshot,
+      loading_method_code: i.loadingMethodCode,
+      quantity_tons: i.quantityTons,
+      notes: i.notes,
+    })),
+    changeLog: [{ field_name: "order_created", old_value: null, new_value: orderNo }],
+  });
 
   const orderId = order.id;
-
-  // 11-12. INSERT order_stops + order_items z kompensującym cleanup (M-01)
-  try {
-    if (stopsWithSnapshots.length > 0) {
-      const stopsInsert = stopsWithSnapshots.map((s) => ({
-        order_id: orderId,
-        kind: s.kind,
-        sequence_no: s.sequenceNo,
-        date_local: s.dateLocal,
-        time_local: s.timeLocal,
-        location_id: s.locationId,
-        location_name_snapshot: s.locationNameSnapshot,
-        company_name_snapshot: s.companyNameSnapshot,
-        address_snapshot: s.addressSnapshot,
-        notes: s.notes,
-      }));
-      const { error: stopsError } = await supabase.from("order_stops").insert(stopsInsert);
-      if (stopsError) throw stopsError;
-    }
-
-    if (itemsWithSnapshots.length > 0) {
-      const itemsInsert = itemsWithSnapshots.map((i) => ({
-        order_id: orderId,
-        product_id: i.productId,
-        product_name_snapshot: i.productNameSnapshot,
-        default_loading_method_snapshot: i.defaultLoadingMethodSnapshot,
-        loading_method_code: i.loadingMethodCode,
-        quantity_tons: i.quantityTons,
-        notes: i.notes,
-      }));
-      const { error: itemsError } = await supabase.from("order_items").insert(itemsInsert);
-      if (itemsError) throw itemsError;
-    }
-  } catch (err) {
-    // Kompensujący cleanup — usuń osierocony nagłówek zlecenia
-    await supabase.from("transport_orders").delete().eq("id", orderId);
-    throw err;
-  }
-
-  // Audit trail: wpis "Utworzono zlecenie"
-  const { error: createdLogErr } = await supabase.from("order_change_log").insert({
-    order_id: orderId,
-    field_name: "order_created",
-    old_value: null,
-    new_value: orderNo,
-    changed_by_user_id: userId,
-  });
-  if (createdLogErr) throw createdLogErr;
 
   // Pobierz nazwę statusu dla odpowiedzi DTO (api-plan §2.4)
   const { data: statusRow } = await supabase
@@ -279,6 +248,6 @@ export async function createOrder(
     orderNo,
     statusCode: STATUS_ROBOCZE,
     statusName: statusRow?.name ?? STATUS_ROBOCZE,
-    createdAt: order.created_at,
+    createdAt: order.createdAt,
   };
 }

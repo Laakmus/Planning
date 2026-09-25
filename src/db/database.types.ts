@@ -853,6 +853,31 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      apply_order_changes: {
+        Args: {
+          p_change_log?: Json
+          p_expected_status: string
+          p_ignore_lock?: boolean
+          p_item_delete_ids?: string[]
+          p_items?: Json
+          p_order: Json
+          p_order_id: string
+          p_status_history?: Json
+          p_stop_delete_ids?: string[]
+          p_stops?: Json
+        }
+        Returns: Json
+      }
+      create_order_with_children: {
+        Args: {
+          p_change_log?: Json
+          p_items?: Json
+          p_order: Json
+          p_status_history?: Json
+          p_stops?: Json
+        }
+        Returns: Json
+      }
       current_user_is_admin_or_planner: { Args: never; Returns: boolean }
       decrypt_ms_token: {
         Args: { p_encrypted: string; p_key: string }

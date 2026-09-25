@@ -1,6 +1,6 @@
 # Lista rzeczy do zrobienia (TODO)
 
-> Ostatnia aktualizacja: 2026-09-25 (audyt bugów: 8 poprawek + testy, patrz „Audyt 2026-09-25”)
+> Ostatnia aktualizacja: 2026-09-25 (audyt: bugi, jakość kodu, transakcje — patrz „Audyt 2026-09-25”)
 
 ---
 
@@ -24,18 +24,39 @@
 
 ---
 
-## Audyt 2026-09-25 — bugi
+## Audyt 2026-09-25 — bugi i jakość kodu
 
-- [x] RPC `resolve_username_to_email` — tylko service_role (migracja `20260925000000_restrict_resolve_username.sql`)
-- [x] Rate limit login/activate — IP z `Fly-Client-IP` zamiast `x-forwarded-for` (`getClientIp` w `lib/auth/rate-limit.ts`)
-- [x] `updateOrder` — guard `status_code` w UPDATE (równoległe anulowanie nie jest nadpisywane)
-- [x] Middleware — dekodowanie JWT base64url, Idempotency-Key per ścieżka, CORS na 429, nagłówki/kompresja na ścieżce idempotentnej
-- [x] `getCurrentISOWeek` — data w Europe/Warsaw
-- [x] ESLint — ignorowanie `.claude/`, globalne k6, pusty catch w `Layout.astro`
-- [ ] **HIGH** `updateOrder` / `createOrder` / `duplicateOrder` nie są transakcyjne — przenieść do RPC plpgsql
-- [ ] **HIGH** Stan in-memory (OAuth state, rate limit, idempotency, scheduler cleanup) vs `fly.toml` `min_machines_running = 0`
-- [ ] **LOW** Limit 1MB w middleware sprawdza tylko `content-length` (chunked omija)
-- [ ] **LOW** ESLint nie lintuje plików `.ts/.tsx` (brak typescript-eslint)
+Gałęzie (stackowane): `fix/audit-bugs` → `refactor/code-quality` → `fix/transactional-order-writes`
+
+**Bugi (`fix/audit-bugs`)**
+- [x] RPC `resolve_username_to_email` — tylko service_role
+- [x] Rate limit login/activate — IP z `Fly-Client-IP` (`getClientIp`)
+- [x] `updateOrder` — guard `status_code` (równoległe anulowanie nie jest nadpisywane)
+- [x] Middleware — JWT base64url, Idempotency-Key per ścieżka, CORS na 429, limit 1MB także bez Content-Length
+- [x] OAuth state w tabeli `ms_oauth_states` (działa przy wielu maszynach Fly)
+- [x] `getCurrentISOWeek` w Europe/Warsaw
+- [x] Niestabilny test AuthContext (waitFor bez asercji)
+
+**Jakość (`refactor/code-quality`)**
+- [x] `lib/env.ts`, `lib/supabase-admin.ts` zamiast kopii `getEnv` / klientów service_role
+- [x] Jeden `requireAdmin` (api-helpers)
+- [x] `lib/order-status.ts` — stałe statusów + wspólna matryca przejść (UI + backend)
+- [x] Jedna implementacja tygodni ISO (`week-utils`)
+- [x] Importy `@/`, typescript-eslint + react-hooks, `npm run typecheck` w CI
+- [x] Bug: `handleAddOrder` bez `user` w zależnościach (puste dane kontaktowe)
+- [x] `findInternalLocation` (location.service) zamiast 3 kopii
+
+**Transakcje (`fix/transactional-order-writes`)**
+- [x] RPC `apply_order_changes` / `create_order_with_children` — zapis zleceń atomowo
+- [x] Seed: synchronizacja `order_no_counters` (db reset → duplikat order_no)
+- [x] `logError` loguje PostgrestError (było "[object Object]")
+- [x] Testy SQL: `supabase/tests/order_rpc_test.sql`
+
+**Do decyzji użytkownika**
+- [ ] `fly.toml` `min_machines_running = 0` — rate limit / idempotency / scheduler cleanup nadal in-memory
+- [ ] Czy anulowanie/zmiana statusu ma respektować blokadę edycji (teraz: nie — `ignoreLock`)
+- [ ] Stare worktree w `.claude/worktrees/` mają niezacommitowane zmiany — przejrzeć i usunąć
+- [ ] Zaaplikować nowe migracje na produkcji (`supabase db push`)
 
 ## Do zrobienia — HIGH
 
