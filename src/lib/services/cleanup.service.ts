@@ -13,6 +13,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../db/database.types";
 import { logger } from "../logger";
 import { createAdminSupabaseClient } from "../supabase-admin";
+import { ORDER_STATUS } from "../order-status";
 
 // ---------------------------------------------------------------------------
 // Stałe
@@ -60,7 +61,7 @@ export async function cleanupCancelledOrders(
   const { data: candidates, error: fetchError } = await supabase
     .from("order_status_history")
     .select("order_id, changed_at")
-    .eq("new_status_code", "anulowane")
+    .eq("new_status_code", ORDER_STATUS.CANCELLED)
     .lt("changed_at", cutoffDate)
     .order("changed_at", { ascending: false });
 
@@ -83,7 +84,7 @@ export async function cleanupCancelledOrders(
     .from("transport_orders")
     .select("id")
     .in("id", candidateOrderIds)
-    .eq("status_code", "anulowane");
+    .eq("status_code", ORDER_STATUS.CANCELLED);
 
   if (confirmError) {
     throw new Error(`Błąd weryfikacji statusu zleceń: ${confirmError.message}`);

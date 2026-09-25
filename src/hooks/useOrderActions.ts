@@ -17,6 +17,7 @@ import type {
   EntryFixedResponseDto,
   OrderListItemDto,
 } from "@/types";
+import { ORDER_STATUS } from "@/lib/order-status";
 
 interface UseOrderActionsOptions {
   api: ApiClient;
@@ -176,7 +177,7 @@ export function useOrderActions({
       try {
         await api.post(`/api/v1/orders/${orderId}/status`, {
           newStatusCode: newStatus,
-          ...(newStatus === "reklamacja" && complaintReason ? { complaintReason } : {}),
+          ...(newStatus === ORDER_STATUS.COMPLAINT && complaintReason ? { complaintReason } : {}),
         });
         toast.success("Status zmieniony.");
         silentRefetch();

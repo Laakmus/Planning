@@ -20,6 +20,7 @@ import type {
 
 import { formDataToViewData, viewDataToFormData } from "@/components/orders/order-view/types";
 import type { OrderViewData } from "@/components/orders/order-view/types";
+import { ORDER_STATUS } from "@/lib/order-status";
 
 // ---------------------------------------------------------------------------
 // Helpers
@@ -31,7 +32,7 @@ function createEmptyDetail(): OrderDetailResponseDto {
     order: {
       id: crypto.randomUUID(),
       orderNo: "",
-      statusCode: "robocze",
+      statusCode: ORDER_STATUS.DRAFT,
       transportTypeCode: "PL",
       currencyCode: "PLN",
       priceAmount: null,
@@ -344,7 +345,7 @@ export function useOrderDrawer({
       if (isSaving) return;
 
       // Walidacja: powód reklamacji wymagany
-      if (pendingStatus === "reklamacja" && !complaintReason?.trim()) {
+      if (pendingStatus === ORDER_STATUS.COMPLAINT && !complaintReason?.trim()) {
         toast.error("Podaj powód reklamacji.");
         return;
       }

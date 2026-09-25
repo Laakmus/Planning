@@ -20,14 +20,13 @@ import {
   MAX_UNLOADING_STOPS,
   validateForeignKeys,
 } from "./order-snapshot.service";
+import { ORDER_STATUS, SENT_STATUSES, TERMINAL_STATUSES } from "../order-status";
 
 /** Statusy, z których nie wolno edytować zlecenia (PUT). */
-const READONLY_STATUSES = new Set(["zrealizowane", "anulowane"]);
+const READONLY_STATUSES = TERMINAL_STATUSES;
 
 /** Statusy powodujące automatyczne przejście na „korekta" przy edycji pól biznesowych. */
-const AUTO_KOREKTA_FROM = new Set(["wysłane", "korekta wysłane"]);
-
-const STATUS_KOREKTA = "korekta";
+const AUTO_KOREKTA_FROM = SENT_STATUSES;
 
 /**
  * Pełna aktualizacja zlecenia (nagłówek + punkty trasy + pozycje).
@@ -213,7 +212,7 @@ export async function updateOrder(
 
   let newStatusCode = order.status_code;
   if (AUTO_KOREKTA_FROM.has(order.status_code)) {
-    newStatusCode = STATUS_KOREKTA;
+    newStatusCode = ORDER_STATUS.CORRECTION;
   }
 
   // search_text
@@ -901,13 +900,13 @@ export async function patchStop(
         first_loading_country: denorm.first_loading_country,
         first_unloading_country: denorm.first_unloading_country,
         summary_route: denorm.summary_route,
-        ...(shouldAutoKorekta ? { status_code: STATUS_KOREKTA } : {}),
+        ...(shouldAutoKorekta ? { status_code: ORDER_STATUS.CORRECTION } : {}),
       } as OrderUpdate,
       { count: "exact" }
     )
     .eq("id", orderId)
     .or(`locked_by_user_id.is.null,locked_by_user_id.eq.${userId}`)
-    .not("status_code", "in", "(zrealizowane,anulowane)");
+    .not("status_code", "in", `(${[...TERMINAL_STATUSES].join(",")})`);
   if (denormErr) throw denormErr;
   // Jeśli UPDATE nie trafił żadnego wiersza — zlecenie zostało zrealizowane/anulowane równolegle
   if (!denormCount || denormCount === 0) {
@@ -919,7 +918,7 @@ export async function patchStop(
     const { error: histErr } = await supabase.from("order_status_history").insert({
       order_id: orderId,
       old_status_code: order.status_code,
-      new_status_code: STATUS_KOREKTA,
+      new_status_code: ORDER_STATUS.CORRECTION,
       changed_by_user_id: userId,
     });
     if (histErr) throw histErr;

@@ -13,15 +13,8 @@ import type {
   WarehouseOrderEntryDto,
   WarehouseWeekResponseDto,
 } from "../../types";
+import { WAREHOUSE_VISIBLE_STATUSES } from "../order-status";
 
-/** Statusy zleceń widoczne w widoku magazynowym. */
-const WAREHOUSE_VISIBLE_STATUSES = [
-  "robocze",
-  "wysłane",
-  "korekta",
-  "korekta wysłane",
-  "reklamacja",
-];
 
 /** Nazwy dni tygodnia (pon-pt). */
 const DAY_NAMES_PL = [

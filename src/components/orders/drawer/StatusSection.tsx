@@ -16,6 +16,7 @@ import {
 } from "@/lib/view-models";
 
 import { StatusBadge } from "../StatusBadge";
+import { ORDER_STATUS } from "@/lib/order-status";
 
 interface StatusSectionProps {
   currentStatusCode: string;
@@ -77,8 +78,8 @@ export const StatusSection = memo(function StatusSection({
     ALLOWED_MANUAL_STATUS_TRANSITIONS[currentStatusCode as OrderStatusCode] ?? [];
 
   // M-11: Rozdzielenie warunków — przejście na reklamację vs. aktualnie w reklamacji
-  const isChangingToComplaint = pendingStatusCode === "reklamacja";
-  const isCurrentlyComplaint = currentStatusCode === "reklamacja";
+  const isChangingToComplaint = pendingStatusCode === ORDER_STATUS.COMPLAINT;
+  const isCurrentlyComplaint = currentStatusCode === ORDER_STATUS.COMPLAINT;
 
   function handleStatusClick(code: OrderStatusCode) {
     if (pendingStatusCode === code) {

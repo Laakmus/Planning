@@ -16,15 +16,13 @@ import { weekNumberToDateRange } from "@/lib/week-utils";
 
 import { AutocompleteFilter } from "./AutocompleteFilter";
 import { ListSettings } from "./ListSettings";
+import { ORDER_STATUS_CODES } from "@/lib/order-status";
 
 /** Dozwolone kody rodzajów transportu (PRD §3.1.2a). */
 const VALID_TRANSPORT_CODES = new Set(["PL", "EXP", "EXP_K", "IMP"]);
 
 /** Dozwolone kody statusów (PRD §5). */
-const VALID_STATUS_CODES = new Set<OrderStatusCode>([
-  "robocze", "wysłane", "korekta", "korekta wysłane",
-  "zrealizowane", "reklamacja", "anulowane",
-]);
+const VALID_STATUS_CODES = new Set<OrderStatusCode>(ORDER_STATUS_CODES);
 
 interface FilterBarProps {
   filters: OrderListFilters;

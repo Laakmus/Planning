@@ -19,6 +19,7 @@ import {
 } from "./order-snapshot.service";
 import { resolvePdfData } from "./pdf/pdf-data-resolver";
 import { generateOrderPdf } from "./pdf/pdf-generator.service";
+import { EMAIL_SENDABLE_STATUSES, STATUS_AFTER_EMAIL } from "../order-status";
 
 export type PrepareEmailResult =
   | { success: true; format: "eml"; emlContent: string; orderNo: string }
@@ -200,20 +201,10 @@ export async function duplicateOrder(
 }
 
 /** Statusy dozwolone do „przygotuj email" (wysłanie). */
-const PREPARE_EMAIL_ALLOWED_STATUSES = new Set([
-  "robocze",
-  "korekta",
-  "wysłane",
-  "korekta wysłane",
-]);
+const PREPARE_EMAIL_ALLOWED_STATUSES = EMAIL_SENDABLE_STATUSES;
 
 /** Mapowanie status → nowy status przy wysłaniu. */
-const PREPARE_EMAIL_STATUS_TRANSITION: Record<string, string> = {
-  robocze: "wysłane",
-  korekta: "korekta wysłane",
-  wysłane: "wysłane",
-  "korekta wysłane": "korekta wysłane",
-};
+const PREPARE_EMAIL_STATUS_TRANSITION = STATUS_AFTER_EMAIL;
 
 /** Buduje temat emaila: {orderNo} -{odbiorcy} - {carrier} - {załadunki} - zał. {DD/MM/YYYY} */
 function buildEmailSubject(detail: OrderDetailResponseDto): string {

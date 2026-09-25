@@ -26,6 +26,7 @@ import { DrawerSkeleton } from "./DrawerSkeleton";
 import { OrderForm } from "./OrderForm";
 import { PreviewUnsavedDialog } from "./PreviewUnsavedDialog";
 import { UnsavedChangesDialog } from "./UnsavedChangesDialog";
+import { EMAIL_SENDABLE_STATUSES } from "@/lib/order-status";
 
 interface OrderDrawerProps {
   orderId: string | null;
@@ -213,7 +214,7 @@ export function OrderDrawer({
                 onSendEmail={
                   !isReadOnly &&
                   detail &&
-                  (detail.order.statusCode === "robocze" || detail.order.statusCode === "korekta" || detail.order.statusCode === "wysłane" || detail.order.statusCode === "korekta wysłane")
+                  EMAIL_SENDABLE_STATUSES.has(detail.order.statusCode)
                     ? handleSendEmailFromDrawer
                     : undefined
                 }

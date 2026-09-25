@@ -9,6 +9,7 @@ import type { SupabaseClient } from "@supabase/supabase-js";
 import type { Database } from "../../db/database.types";
 import type { LockOrderResponseDto, UnlockOrderResponseDto } from "../../types";
 import { getEnv } from "../env";
+import { TERMINAL_STATUSES } from "../order-status";
 
 /** Czas wygasania blokady w minutach (konfigurowalny przez env). */
 const LOCK_EXPIRY_MINUTES = parseInt(getEnv("LOCK_EXPIRY_MINUTES") ?? "15", 10);
@@ -40,7 +41,7 @@ export async function lockOrder(
   if (statusError) throw statusError;
   if (!orderStatus) return null;
 
-  if (orderStatus.status_code === "anulowane" || orderStatus.status_code === "zrealizowane") {
+  if (TERMINAL_STATUSES.has(orderStatus.status_code)) {
     throw new Error("LOCK_TERMINAL_STATUS");
   }
 

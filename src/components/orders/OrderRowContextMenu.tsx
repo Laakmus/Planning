@@ -25,6 +25,7 @@ import {
   type OrderStatusCode,
   type ViewGroup,
 } from "@/lib/view-models";
+import { EMAIL_SENDABLE_STATUSES, ORDER_STATUS } from "@/lib/order-status";
 
 /** Carrier cell color options. */
 const CARRIER_COLORS = [
@@ -106,7 +107,7 @@ export function OrderRowContextMenu({
             <ContextMenuSeparator />
 
             {/* Wyślij maila */}
-            {(statusCode === "robocze" || statusCode === "korekta" || statusCode === "wysłane" || statusCode === "korekta wysłane") && (
+            {EMAIL_SENDABLE_STATUSES.has(statusCode) && (
               <ContextMenuItem onClick={() => onSendEmail(orderId)}>
                 Wyślij maila
               </ContextMenuItem>
@@ -187,7 +188,7 @@ export function OrderRowContextMenu({
             )}
 
             {/* Anuluj zlecenie — nie wyświetlaj w zakładce Zrealizowane (PRD 3.1.7) */}
-            {statusCode !== "anulowane" && !isCompleted && (
+            {statusCode !== ORDER_STATUS.CANCELLED && !isCompleted && (
               <ContextMenuItem
                 onClick={() => onCancel(orderId, orderNo)}
                 className="text-red-600 dark:text-red-400 focus:text-red-600 dark:focus:text-red-400"
